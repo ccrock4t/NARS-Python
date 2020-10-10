@@ -60,7 +60,7 @@ class SubjectPredicate:
 
 class Term:
     def __init__(self, termString):
-        assert (isinstance(termString, str)), "termString must be a str"
+        assert (isinstance(termString, str)), termString + " must be a str"
         self.string = termString
 
     def __str__(self):

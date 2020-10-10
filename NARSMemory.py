@@ -1,5 +1,5 @@
 from NALGrammar import *
-from Control_Mechanism import *
+from ControlMechanism import *
 
 class Memory:
     def __init__(self, game):
@@ -17,12 +17,11 @@ class Memory:
         self.add_new_edge_from_sentence(sentence)
 
     def conceptualize(self, term):
-        global game
         assert_term(term)
         if term not in self.concepts:
             c = Concept(term)
             self.concepts[term] = c
-            self.game.draw_new_concept()
+            self.game.pend_new_concept_to_draw(str(term))
 
     def forget(self, term):
         assert_term(term)
