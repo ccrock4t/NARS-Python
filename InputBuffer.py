@@ -1,25 +1,21 @@
 from NALGrammar import *
+import Globals
 
 
-def add_input(sentence_string, memory):
-    sentence = parse_input_sentence_string(sentence_string)
-    process_input_sentence(sentence, memory)
+def add_input(input_string):
+    sentence = parse_sentence(input_string)
+    process_sentence(sentence)
 
+def process_sentence(sentence):
+    print("IN: " + sentence.get_formatted_string())
+    Globals.memory.process_judgment(sentence)
 
-# Input syntax:
-#   <term copula term>punctuation %f;c%
-# Returns:
-#   Sentence
-def process_input_sentence(sentence, memory):
-    print("IN: " + str(sentence))
-    memory.add_sentence_to_memory(sentence)
+def parse_sentence(sentence_string):
+    """
+    Parameter: sentence_string - String of NAL syntax <term copula term>punctuation %f;c%
 
-# Input syntax:
-#   <term copula term>punctuation %f;c%
-# Returns:
-#   Sentence
-def parse_input_sentence_string(sentence_string):
-    # Parse Statement
+    Returns: Sentence parsed from sentence_string
+    """
     start_idx = sentence_string.find(StatementSyntax.Start.value)
     assert(start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " not found. Exiting.."
     end_idx = sentence_string.rfind(StatementSyntax.End.value)
@@ -30,7 +26,7 @@ def parse_input_sentence_string(sentence_string):
     punctuation = Punctuation.get_punctuation(punctuation_str)
     assert (punctuation is not None), punctuation_str + " is not punctuation. Exiting.."
 
-    copula, copulaIdx = get_main_copula_and_index(sentence_string)
+    copula, copulaIdx = parse_copula_and_index(sentence_string)
     assert (copulaIdx != -1), "Copula not found. Exiting.."
 
     subject_str = sentence_string[start_idx + 1:copulaIdx].strip()
@@ -41,21 +37,30 @@ def parse_input_sentence_string(sentence_string):
 
     #Parse Truth Value, if it exists
     start_truth_val_idx = sentence_string.find(StatementSyntax.TruthValMarker.value)
+    middle_truth_val_idx = sentence_string.find(StatementSyntax.TruthValDivider.value)
     end_truth_val_idx = sentence_string.rfind(StatementSyntax.TruthValMarker.value)
 
     if start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx:
-        # default truth value
+        # No truth value, use default truth value
         truth_value = TruthValue(1.0, 0.9)
     else:
-        # parse truth value
-        truth_value = TruthValue(1.0, 0.9)
+        # Parse truth value from string
+        freq = sentence_string[start_truth_val_idx+1:middle_truth_val_idx]
+        conf = sentence_string[middle_truth_val_idx+1:end_truth_val_idx]
+        truth_value = TruthValue(freq, conf)
 
     statement = Statement(subj_pred, copula)
     sentence = Sentence(statement, truth_value, punctuation)
+
     return sentence
 
 
-def get_main_copula_and_index(statement_string):
+def parse_copula_and_index(statement_string):
+    """
+    Parameter: statement_string - String of NAL syntax <term copula term>
+
+    Returns: copula, copula index
+    """
     depth = 0
     for i, v in enumerate(statement_string):
         if v == "(":
@@ -64,4 +69,5 @@ def get_main_copula_and_index(statement_string):
             depth = depth - 1
         elif i + 3 <= len(statement_string) and Copula.is_copula(statement_string[i:i + 3]):
             return Copula.get_copula(statement_string[i:i + 3]), i
+
     return None, -1

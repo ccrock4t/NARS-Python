@@ -71,7 +71,7 @@ class Punctuation(enum.Enum):
     Judgment = "."
     Question = "?"  # on truth-value
     Goal = "!"
-    Quest = "!"  # on desire-value
+    Quest = "@"  # on desire-value
 
     @classmethod
     def is_punctuation(cls, value):

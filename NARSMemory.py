@@ -1,12 +1,11 @@
 from NALGrammar import *
-from ControlMechanism import *
+from NARSDataStructures import Bag
 
 class Memory:
-    def __init__(self, game):
-        self.game = game
-        self.concepts = {}
+    def __init__(self):
+        self.concepts = Bag(item_type=Concept)
 
-    def add_sentence_to_memory(self, sentence):
+    def process_judgment(self, sentence):
         assert_sentence(sentence)
         subject = sentence.statement.subjectPredicate.subject
         predicate = sentence.statement.subjectPredicate.predicate
@@ -14,21 +13,19 @@ class Memory:
         self.conceptualize(subject)
         self.conceptualize(predicate)
         self.conceptualize(sentence.statement.term)
-        self.add_new_edge_from_sentence(sentence)
+        self.add_new_termlink_from_sentence(sentence)
 
     def conceptualize(self, term):
         assert_term(term)
-        if term not in self.concepts:
-            c = Concept(term)
-            self.concepts[term] = c
-            self.game.pend_new_concept_to_draw(str(term))
+        c = Concept(term)
+        self.concepts.put(c)
 
     def forget(self, term):
         assert_term(term)
         if term in self.concepts:
             self.concepts.pop(term)
 
-    def add_new_edge_from_sentence(self, sentence):
+    def add_new_termlink_from_sentence(self, sentence):
         subject_term = sentence.statement.subjectPredicate.subject
         predicate_term = sentence.statement.subjectPredicate.predicate
 
@@ -36,22 +33,22 @@ class Memory:
         predicate_concept = self.get_concept_from_term(predicate_term)
 
         edge = Edge(subject_concept, predicate_concept, sentence.statement.copula, sentence.truthValue)
-        subject_concept.add_outgoing_edge(edge)
-        predicate_concept.add_incoming_edge(edge)
+        subject_concept.add_outgoing_termlink(edge)
+        predicate_concept.add_incoming_termlink(edge)
 
     def get_concept_from_term(self, term):
         assert_term(term)
-        if term in self.concepts:
-            return self.concepts[term]
+        return Concept(term)
 
 
 class Concept:
     def __init__(self, term):
+        assert_term(term)
         self.term = term
         self.incomingEdges = {}
         self.outgoingEdges = {}
 
-    def add_incoming_edge(self, edge):
+    def add_incoming_termlink(self, edge):
         assert_edge(edge)
         # this concept is the predicate
         subject = edge.subject
@@ -60,14 +57,14 @@ class Concept:
         else:
             self.incomingEdges[subject] = [edge]
 
-    def remove_incoming_edge(self, edge):
+    def remove_incoming_termlink(self, edge):
         assert_edge(edge)
         # this concept is the predicate
         subject = edge.subject
         if subject in self.incomingEdges:
             self.incomingEdges[subject].remove(edge)
 
-    def add_outgoing_edge(self, edge):
+    def add_outgoing_termlink(self, edge):
         assert_edge(edge)
         # this concept is the subject
         predicate = edge.predicate
@@ -76,15 +73,24 @@ class Concept:
         else:
             self.incomingEdges[predicate] = [edge]
 
-    def remove_outgoing_edge(self, edge):
+    def remove_outgoing_termlink(self, edge):
         assert_edge(edge)
         # this concept is the predicate
         predicate = edge.predicate
         if predicate in self.outgoingEdges:
             self.incomingEdges[predicate].remove(edge)
 
+    def get_formatted_string(self):
+        return self.term.get_formatted_string()
+
     def __str__(self):
-        return str(self.term)
+        return self.term.get_formatted_string()
+
+    def __eq__(self, other):
+        return self.term.get_formatted_string() == other.term.get_formatted_string()
+
+    def __hash__(self):
+        return hash(self.term.get_formatted_string())
 
 
 class Edge:
