@@ -1,5 +1,6 @@
 from NALGrammar import *
 import Globals
+import Config
 
 
 def add_input(input_string):
@@ -12,7 +13,7 @@ def process_sentence(sentence):
 
 def parse_sentence(sentence_string):
     """
-    Parameter: sentence_string - String of NAL syntax <term copula term>punctuation %f;c%
+    Parameter: sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
 
     Returns: Sentence parsed from sentence_string
     """
@@ -25,6 +26,9 @@ def parse_sentence(sentence_string):
     punctuation_str = sentence_string[punctuation_idx]
     punctuation = Punctuation.get_punctuation(punctuation_str)
     assert (punctuation is not None), punctuation_str + " is not punctuation. Exiting.."
+
+    #todo accept more input types
+    assert (punctuation == Punctuation.Judgment), " Currently only accepting Judgments. Exiting.."
 
     copula, copulaIdx = parse_copula_and_index(sentence_string)
     assert (copulaIdx != -1), "Copula not found. Exiting.."
@@ -42,7 +46,7 @@ def parse_sentence(sentence_string):
 
     if start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx:
         # No truth value, use default truth value
-        truth_value = TruthValue(1.0, 0.9)
+        truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE)
     else:
         # Parse truth value from string
         freq = sentence_string[start_truth_val_idx+1:middle_truth_val_idx]

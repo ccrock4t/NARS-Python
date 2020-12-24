@@ -2,8 +2,11 @@ from NALGrammar import *
 from NARSDataStructures import Bag
 
 class Memory:
+    """
+    NARS Memory
+    """
     def __init__(self):
-        self.concepts = Bag(item_type=Concept)
+        self.concepts_bag = Bag(item_type=Concept)
 
     def process_judgment(self, sentence):
         assert_sentence(sentence)
@@ -18,12 +21,12 @@ class Memory:
     def conceptualize(self, term):
         assert_term(term)
         c = Concept(term)
-        self.concepts.put(c)
+        self.concepts_bag.put_new_item(c)
 
     def forget(self, term):
         assert_term(term)
-        if term in self.concepts:
-            self.concepts.pop(term)
+        #if term in self.concepts_bag:
+         #   self.concepts_bag.pop(term)
 
     def add_new_termlink_from_sentence(self, sentence):
         subject_term = sentence.statement.subjectPredicate.subject
@@ -42,6 +45,9 @@ class Memory:
 
 
 class Concept:
+    """
+    NARS Concept
+    """
     def __init__(self, term):
         assert_term(term)
         self.term = term

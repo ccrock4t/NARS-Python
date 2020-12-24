@@ -95,6 +95,7 @@ class CompoundTerm(Term):
         str = self.connector
         for subterm in self.subterms:
             str = str + "," + subterm
+
         return "(" + str + ")"
 
 

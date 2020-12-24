@@ -6,9 +6,9 @@ from NALGrammar import *
 # ==== NAL Inference Rules ====
 # ==== ==== ==== ==== ==== ====
 
-# ++++ ++++ ++++ ++++ ++++ ++++
+# ++++ ++++ ++++ ++++ ++++ ++++  ++++  ++++
 # ++++ (Binary truth value operations) ++++
-# ++++ ++++ ++++ ++++ ++++ ++++
+# ++++ ++++ ++++ ++++ ++++ ++++  ++++  ++++
 
 
 def band(*argv):
@@ -18,7 +18,10 @@ def band(*argv):
     -----------------
 
     Input:
-        NAL Binary Values
+        argv - NAL Binary Values
+
+    Output:
+        argv1*argv2*...*argvn
     """
     res = 1
     for arg in argv:
@@ -32,7 +35,10 @@ def bor(*argv):
     -----------------
 
     Input:
-        NAL Binary Values
+        argv - NAL Binary Values
+
+    Output:
+         1-((1-argv1)*(1-argv2)*...*(1-argvn))
     """
     res = 1
     for arg in argv:
@@ -46,7 +52,10 @@ def bnot(arg):
     -----------------
 
     Input:
-        NAL Binary Value
+        arg - NAL Binary Value
+
+    Output:
+        1 - arg
     """
     return 1 - arg
 
@@ -144,7 +153,7 @@ def nal_decision(p, d):
 
      -----------------
 
-     Make the decision to accept a goal as an active goal
+     Make the decision to purse a goal based on its plausability and decision
 
      Input:
        p: Potential goal's plausability
@@ -152,11 +161,9 @@ def nal_decision(p, d):
        d: Potential goal's decision
 
      Output:
-       True or false, whether to make a goal active
+       True or false, whether to pursue the goal
     """
     return p * (d - 0.5) > Config.t
-
-
 
 
 def nal_expectation(f, c):
