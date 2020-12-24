@@ -1,1 +1,3 @@
-# NARS-Graph
+# NARS-Python
+
+NARS theory implemented in Python
