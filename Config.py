@@ -1,16 +1,28 @@
-#System Parameters
+"""
+    Author: Christian Hahm
+    Created: October 9, 2020
+"""
+"""
+    System Parameters
+"""
 k = 1 # evidential horizon
 t = 1 # decision rule (goal decision-making) threshold
+MINDFULNESS = 0.5 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) vs. allocating to ruminating / pondering concepts
 
-#Bags
+"""
+    Bags
+"""
 DEFAULT_BAG_CAPACITY = 30 # how many items can fit in a bag
 DEFAULT_BAG_NUMBER_OF_BUCKETS = 101 # how many probability buckets are there? e.g. 101 allows 101 probability values (between [0%, 100%])
 
-#others
+"""
+    Others
+"""
 TRUTH_EPSILON = 0.01 #determines the internal precision used for TruthValue calculations.
 
-#Default Input Task Values
-
+"""
+    Default Input Task Values
+"""
 DEFAULT_CONCEPT_EXPECTATION = 0.6
 DEFAULT_CONCEPT_EXPECTATION_GOAL = 0.6
 

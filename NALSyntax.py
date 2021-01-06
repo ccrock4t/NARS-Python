@@ -1,6 +1,8 @@
 import enum
-
-
+"""
+    Author: Christian Hahm
+    Created: October 9, 2020
+"""
 class StatementSyntax(enum.Enum):
     # Primary copula
     Start = "<"

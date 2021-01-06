@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="BranchesTreeState">
     <expand>
       <path>
@@ -20,11 +23,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fd616af4-ca7b-4665-a740-381ee29e5fe0" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/NARS-Graph.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/NARS-Graph.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Globals.py" beforeDir="false" afterPath="$PROJECT_DIR$/Globals.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/InputBuffer.py" beforeDir="false" afterPath="$PROJECT_DIR$/InputBuffer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALGrammar.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALGrammar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALInferenceRules.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALInferenceRules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NALSyntax.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALSyntax.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARS.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARS.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARSDataStructures.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSDataStructures.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARSMemory.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSMemory.py" afterDir="false" />
@@ -54,9 +61,30 @@
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="RunManager" selected="Python.NARS">
+    <configuration name="Asserts" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="NARS-Graph" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Asserts.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="Config" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NARS-Graph" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -91,27 +119,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="C:\Users\hahm.19\Desktop\Research\NAL-Neurons\NARS-Python\NARS.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Control_Mechanism" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="NARS-Graph" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\hahm.19\Desktop\Research\NAL-Neurons\NARS-Graph\ControlMechanism.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -165,10 +172,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.NARS" />
+        <item itemvalue="Python.Asserts" />
         <item itemvalue="Python.InputBuffer" />
         <item itemvalue="Python.Config" />
         <item itemvalue="Python.ControlMechanism" />
-        <item itemvalue="Python.Control_Mechanism" />
       </list>
     </recent_temporary>
   </component>
@@ -203,37 +210,57 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="733" y="321" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1608786641292" />
-    <state width="1607" height="206" key="GridCell.Tab.0.bottom" timestamp="1608843086168">
+    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1609391913069">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1607" height="206" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1608843086168" />
-    <state width="1607" height="206" key="GridCell.Tab.0.center" timestamp="1608843086168">
+    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609391913069" />
+    <state x="355" y="157" key="FileChooserDialogImpl" timestamp="1609564476132">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1607" height="206" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1608843086168" />
-    <state width="1607" height="206" key="GridCell.Tab.0.left" timestamp="1608843086168">
+    <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1609564476132" />
+    <state width="1899" height="196" key="GridCell.Tab.0.bottom" timestamp="1609545231585">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1607" height="206" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1608843086168" />
-    <state width="1607" height="206" key="GridCell.Tab.0.right" timestamp="1608843086168">
+    <state width="1899" height="196" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
+    <state width="1899" height="196" key="GridCell.Tab.0.center" timestamp="1609545231585">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1607" height="206" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1608843086168" />
-    <state width="949" height="348" key="GridCell.Tab.1.bottom" timestamp="1608839855301">
+    <state width="1899" height="196" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
+    <state width="1899" height="196" key="GridCell.Tab.0.left" timestamp="1609545231585">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1608839855301" />
-    <state width="949" height="348" key="GridCell.Tab.1.center" timestamp="1608839855301">
+    <state width="1899" height="196" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
+    <state width="1899" height="196" key="GridCell.Tab.0.right" timestamp="1609545231585">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1608839855301" />
-    <state width="949" height="348" key="GridCell.Tab.1.left" timestamp="1608839855301">
+    <state width="1899" height="196" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
+    <state width="949" height="348" key="GridCell.Tab.1.bottom" timestamp="1608843332726">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1608839855301" />
-    <state width="949" height="348" key="GridCell.Tab.1.right" timestamp="1608839855301">
+    <state width="949" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
+    <state width="949" height="348" key="GridCell.Tab.1.center" timestamp="1608843332726">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1608839855301" />
+    <state width="949" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
+    <state width="949" height="348" key="GridCell.Tab.1.left" timestamp="1608843332726">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="949" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
+    <state width="949" height="348" key="GridCell.Tab.1.right" timestamp="1608843332726">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="949" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
+    <state x="69" y="74" width="916" height="711" key="SettingsEditor" timestamp="1609539431001">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="69" y="74" width="916" height="711" key="SettingsEditor/0.0.1920.1040@0.0.1920.1040" timestamp="1609539431001" />
+    <state x="803" y="305" key="refactoring.ChangeSignatureDialog" timestamp="1609539390008">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="803" y="305" key="refactoring.ChangeSignatureDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609539390008" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1609540355215">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1609540355215" />
   </component>
 </project>

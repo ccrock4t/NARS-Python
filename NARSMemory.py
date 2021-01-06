@@ -1,90 +1,86 @@
 from NALGrammar import *
-from NARSDataStructures import Bag
-
+from NARSDataStructures import Bag, assert_task
+"""
+    Author: Christian Hahm
+    Created: October 9, 2020
+"""
 class Memory:
     """
-    NARS Memory
+        NARS Memory
     """
     def __init__(self):
         self.concepts_bag = Bag(item_type=Concept)
 
-    def process_judgment(self, sentence):
-        assert_sentence(sentence)
-        subject = sentence.statement.subjectPredicate.subject
-        predicate = sentence.statement.subjectPredicate.predicate
+    def get_number_of_concepts(self):
+        """
+            Get the number of concepts that exist in memory
+        """
+        return self.concepts_bag.count
 
-        self.conceptualize(subject)
-        self.conceptualize(predicate)
-        self.conceptualize(sentence.statement.term)
-        self.add_new_termlink_from_sentence(sentence)
+    def conceptualize_term(self, term):
+        """
+            Create a new concept and add it to the bag
 
-    def conceptualize(self, term):
+            Returns: Concept
+        """
         assert_term(term)
         c = Concept(term)
         self.concepts_bag.put_new_item(c)
+        return c
+
+    def get_concept(self, term):
+        concept_item = self.concepts_bag.get(str(term))
+        if concept_item is None:
+            return None
+        return concept_item.object
 
     def forget(self, term):
         assert_term(term)
-        #if term in self.concepts_bag:
-         #   self.concepts_bag.pop(term)
-
-    def add_new_termlink_from_sentence(self, sentence):
-        subject_term = sentence.statement.subjectPredicate.subject
-        predicate_term = sentence.statement.subjectPredicate.predicate
-
-        subject_concept = self.get_concept_from_term(subject_term)
-        predicate_concept = self.get_concept_from_term(predicate_term)
-
-        edge = Edge(subject_concept, predicate_concept, sentence.statement.copula, sentence.truthValue)
-        subject_concept.add_outgoing_termlink(edge)
-        predicate_concept.add_incoming_termlink(edge)
-
-    def get_concept_from_term(self, term):
-        assert_term(term)
-        return Concept(term)
 
 
 class Concept:
     """
-    NARS Concept
+        NARS Concept
     """
     def __init__(self, term):
         assert_term(term)
         self.term = term
-        self.incomingEdges = {}
-        self.outgoingEdges = {}
+        self.term_links = {}
+        self.task_links = {}
+        self.beliefs_table = {}
+        self.goals_table = {}
 
-    def add_incoming_termlink(self, edge):
-        assert_edge(edge)
-        # this concept is the predicate
-        subject = edge.subject
-        if subject in self.incomingEdges:
-            self.incomingEdges[subject].append(edge)
-        else:
-            self.incomingEdges[subject] = [edge]
+    def add_term_link(self, concept):
+        """
+            Add a term link, linking this concept to another concept
+        """
+        assert_concept(concept)
+        self.term_links[concept.term] = concept
 
-    def remove_incoming_termlink(self, edge):
-        assert_edge(edge)
-        # this concept is the predicate
-        subject = edge.subject
-        if subject in self.incomingEdges:
-            self.incomingEdges[subject].remove(edge)
+    def remove_term_link(self, term):
+        """
+            Remove a term link
+        """
+        assert_term(term)
+        assert(term in self.term_links), term + "must be in term links."
+        self.term_links.pop(term)
 
-    def add_outgoing_termlink(self, edge):
-        assert_edge(edge)
-        # this concept is the subject
-        predicate = edge.predicate
-        if predicate in self.outgoingEdges:
-            self.incomingEdges[predicate].append(edge)
-        else:
-            self.incomingEdges[predicate] = [edge]
+    def add_task_link(self, task):
+        """
+            Add a task link if it doesn't exist, linking this concept to a task
+        """
+        assert_task(task)
+        if task in self.task_links:
+            return
+        self.task_links[task] = task
 
-    def remove_outgoing_termlink(self, edge):
-        assert_edge(edge)
-        # this concept is the predicate
-        predicate = edge.predicate
-        if predicate in self.outgoingEdges:
-            self.incomingEdges[predicate].remove(edge)
+    def remove_task_link(self, task):
+        """
+            Remove a task link
+        """
+        assert_task(task)
+        assert(task in self.task_links), task + "must be in task links."
+        self.task_links.pop(task)
 
     def get_formatted_string(self):
         return self.term.get_formatted_string()
@@ -96,21 +92,11 @@ class Concept:
         return self.term.get_formatted_string() == other.term.get_formatted_string()
 
     def __hash__(self):
-        return hash(self.term.get_formatted_string())
+        """
+            A concept is named by its term
+        """
+        return hash(str(self.term))
 
-
-class Edge:
-    def __init__(self, subject, predicate, copula, truth_value):
-        assert_concept(subject)
-        assert_concept(predicate)
-        self.subject = subject
-        self.predicate = predicate
-        self.copula = copula
-        self.truthValue = truth_value
-
-
+# Asserts
 def assert_concept(c):
     assert (isinstance(c, Concept)), str(c) + " must be a Concept"
-
-def assert_edge(edge):
-    assert (isinstance(edge, Edge)), str(edge) + " must be an Edge"

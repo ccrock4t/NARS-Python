@@ -1,7 +1,14 @@
 import Config
 import random
+
+import Globals
 import NALInferenceRules
 
+from NALGrammar import assert_sentence
+"""
+    Author: Christian Hahm
+    Created: December 24, 2020
+"""
 class Bag:
     """
         Probabilistic priority-queue
@@ -29,14 +36,12 @@ class Bag:
         """
             Convert an object into an item and place the item in the bag
         """
-        assert (isinstance(object, self.item_type)), "item must be of type " + str(self.item_type)
-        if str(object) not in self.item_lookup_table:
+        assert (isinstance(object, self.item_type)), "object must be of type " + str(self.item_type)
+        if hash(object) not in self.item_lookup_table:
             # create item
             item = Bag.Item(object)
-            key = item.key
-
             #put into lookup table and bucket
-            self.item_lookup_table[key] = item
+            self.item_lookup_table[hash(object)] = item
             self.priority_buckets[item.get_new_bucket_number()].append(item)
 
             self.count = self.count + 1
@@ -47,16 +52,27 @@ class Bag:
             Place an item in the bag
         """
         assert (isinstance(item, Bag.Item)), "item must be of type " + str(Bag.Item)
-        if item.key not in self.item_lookup_table:
-            #put into lookup table and bucket
-            self.item_lookup_table[item.key] = item
+        assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
+        if hash(item.object) not in self.item_lookup_table:
+            # put item into lookup table and bucket
+            self.item_lookup_table[hash(item.object)] = item
             self.priority_buckets[item.get_new_bucket_number()].append(item)
 
             self.count = self.count + 1
 
-    def get(self, object=None):
+    def get(self, object):
         """
-            Get an item from the bag, either probabilistically or from its object key
+            Get an item from the bag from its object
+
+            Returns None if the object isn't in the bag
+        """
+        if hash(object) in self.item_lookup_table:
+            return self.item_lookup_table[hash(object)]
+        return None
+
+    def take(self, object=None):
+        """
+            Remove an item from the bag, either probabilistically or from its object
 
             Input:
                 object - if object is not passed, probabilistically removes it's corresponding item from the bag
@@ -68,16 +84,16 @@ class Bag:
         self.count = self.count - 1
 
         if object is None:
-            return self.remove_item_probabilistically()
-        return self.remove_item_by_key(str(object))
+            return self.take_item_probabilistically()
+        return self.take_item_by_key(hash(object))
 
-    def remove_item_by_key(self, key):
-        assert(key in self.item_lookup_table),"Given key does not exist in this bag"
+    def take_item_by_key(self, key):
+        assert(key in self.item_lookup_table), "Given key does not exist in this bag"
         item = self.item_lookup_table.pop(key)
         self.priority_buckets[item.current_bucket_number].remove(item)
         return item
 
-    def remove_item_probabilistically(self):
+    def take_item_probabilistically(self):
         """
             Probabilistically selects a priority value / bucket, then removes an item from that bucket.
         """
@@ -93,14 +109,14 @@ class Bag:
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
 
         # select item from selected bucket
-        item = self.remove_random_item_from_current_bucket()
+        item = self.take_random_item_from_current_bucket()
 
-        #also remove from lookup table
-        self.item_lookup_table.pop(item.key)
+        # also remove from lookup table
+        self.item_lookup_table.pop(hash(item.object))
 
         return item
 
-    def remove_random_item_from_current_bucket(self):
+    def take_random_item_from_current_bucket(self):
         """
             Get an item from the currently selected bucket
         """
@@ -135,18 +151,17 @@ class Bag:
         def __init__(self, object):
             self.object = object
             self.budget = Bag.Item.Budget(priority=0.9, durability=0.9, quality=0.9)
-            self.key = str(object)
             self.current_bucket_number = self.get_new_bucket_number()
 
         def get_new_bucket_number(self):
             """
-                Output: The bucket number this item belongs in
-                This item's priority rounded to 2 decimals * 100 (as an int)
+                Output: The bucket number this item belongs in.
+                It is calculated as this item's priority rounded to 2 decimals * 100 (as an int)
             """
             return int(round(self.budget.priority, 2) * 100)
 
         class Budget:
-            def __init__(self, priority=0, durability=0, quality=0):
+            def __init__(self, priority=0.0, durability=0.0, quality=0.0):
                 self.priority = priority
                 self.durability = durability
                 self.quality = quality
@@ -166,9 +181,30 @@ class Bag:
             def decrease_durability(self, v):
                 self.durability = NALInferenceRules.band(self.durability, v)
 
+
 class Buffer:
     """
         Time-restricted Bag
+        todo: implement Buffer
     """
     def __init__(self):
         self.capacity = Config.DEFAULT_BAG_CAPACITY
+
+class Task:
+    """
+       NARS Task
+    """
+    def __init__(self, sentence):
+        assert_sentence(sentence)
+        self.sentence = sentence
+        self.timestamp = Globals.executed_cycles
+
+    def __hash__(self):
+        return self.timestamp
+
+    def __str__(self):
+        return self.sentence.statement.term.get_formatted_string() + " " + str(self.timestamp)
+
+# Asserts
+def assert_task(j):
+    assert(isinstance(j, Task)), str(j) + " must be a Task"

@@ -1,10 +1,15 @@
 import Config
 from NALGrammar import *
+"""
+==== ==== ==== ==== ==== ====
+==== NAL Inference Rules ====
+==== ==== ==== ==== ==== ====
+
+    Author: Christian Hahm
+    Created: October 8, 2020
+"""
 
 
-# ==== ==== ==== ==== ==== ====
-# ==== NAL Inference Rules ====
-# ==== ==== ==== ==== ==== ====
 
 # ++++ ++++ ++++ ++++ ++++ ++++  ++++  ++++
 # ++++ (Binary truth value operations) ++++
@@ -85,7 +90,7 @@ def nal_revision(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = j1.subjectPredicate
+    resultsubjpred = j1.subject_predicate
 
     # Truth Value
     (wp1, w1, wn1), (wp2, w2, wn2) = getevidence_from2sentences(j1, j2)
@@ -125,8 +130,8 @@ def nal_choice(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    subjpred1 = j1.subjectPredicate
-    subjpred2 = j2.subjectPredicate
+    subjpred1 = j1.subject_predicate
+    subjpred2 = j2.subject_predicate
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -261,7 +266,7 @@ def nal_deduction(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.subject, j1.statement.subjectPredicate.predicate)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.subject_term, j1.statement.subject_predicate.predicate_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -295,7 +300,7 @@ def nal_analogy(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.subject, j1.statement.subjectPredicate.predicate)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.subject_term, j1.statement.subject_predicate.predicate_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -330,7 +335,7 @@ def nal_resemblance(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.subject, j1.statement.subjectPredicate.predicate)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.subject_term, j1.statement.subject_predicate.predicate_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -372,7 +377,7 @@ def nal_abduction(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.subject, j1.statement.subjectPredicate.subject)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.subject_term, j1.statement.subject_predicate.subject_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -412,7 +417,7 @@ def nal_induction(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.predicate, j1.statement.subjectPredicate.predicate)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.predicate_term, j1.statement.subject_predicate.predicate_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -450,7 +455,7 @@ def nal_exemplification(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.predicate, j1.statement.subjectPredicate.subject)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.predicate_term, j1.statement.subject_predicate.subject_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -487,7 +492,7 @@ def nal_comparison(j1, j2):
     assert_sentence(j2)
 
     # Subject Predicate
-    resultsubjpred = SubjectPredicate(j2.statement.subjectPredicate.predicate, j1.statement.subjectPredicate.predicate)
+    resultsubjpred = SubjectPredicate(j2.statement.subject_predicate.predicate_term, j1.statement.subject_predicate.predicate_term)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -552,7 +557,7 @@ def gettruthvalues_fromsentence(j):
     Output:
         f, c
     """
-    return j.truthValue.frequency, j.truthValue.confidence
+    return j.value.frequency, j.value.confidence
 
 def getevidence_from2sentences(j1, j2):
     """
