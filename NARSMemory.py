@@ -19,14 +19,17 @@ class Memory:
 
     def conceptualize_term(self, term):
         """
-            Create a new concept and add it to the bag
+            If term doesn't name existing concept, create a new concept from a term and add it to the bag
+            If term does name existing concept, return the concept
 
             Returns: Concept
         """
         assert_term(term)
-        c = Concept(term)
-        self.concepts_bag.put_new_item(c)
-        return c
+        assert(self.get_concept(term) is None), "Cannot create new concept. Concept already exists."
+        # create new concept
+        concept = Concept(term)
+        self.concepts_bag.put_new_item_from_object(concept)
+        return concept
 
     def get_concept(self, term):
         concept_item = self.concepts_bag.get(str(term))
@@ -47,25 +50,32 @@ class Concept:
         self.term = term
         self.term_links = {}
         self.task_links = {}
-        self.beliefs_table = {}
-        self.goals_table = {}
+        self.belief_table = {}
+        self.desire_table = {}
 
-    def add_term_link(self, concept):
+    def merge_into_belief_table(self, judgment):
         """
-            Add a term link, linking this concept to another concept
+            merge judgment task into beliefs table
+        """
+
+    def set_term_link(self, concept):
+        """
+            Set a bidirectional term link, linking this concept with another concept
         """
         assert_concept(concept)
         self.term_links[concept.term] = concept
+        concept.term_links[self.term] = self
 
-    def remove_term_link(self, term):
+    def remove_term_link(self, concept):
         """
-            Remove a term link
+            Remove a bidirectional term link between this concept and another concept
         """
-        assert_term(term)
-        assert(term in self.term_links), term + "must be in term links."
-        self.term_links.pop(term)
+        assert_concept(concept)
+        assert(concept.term in self.term_links), concept.term + "must be in term links."
+        self.term_links.pop(concept.term)
+        concept.term_links.pop(self.term)
 
-    def add_task_link(self, task):
+    def set_task_link(self, task):
         """
             Add a task link if it doesn't exist, linking this concept to a task
         """

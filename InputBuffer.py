@@ -1,5 +1,6 @@
+import NALGrammar
 from NALGrammar import *
-import Globals
+import Global
 import Config
 from NARSDataStructures import Task
 """
@@ -7,14 +8,18 @@ from NARSDataStructures import Task
     Created: October 9, 2020
 """
 def add_input(input_string):
-    sentence = parse_sentence(input_string)
+    try:
+        sentence = parse_sentence(input_string)
+    except AssertionError as msg:
+        print("INPUT REJECTED: " + str(msg))
+        return
     process_sentence(sentence)
 
 def process_sentence(sentence):
     print("IN: " + sentence.get_formatted_string())
     # create new task
     task = Task(sentence)
-    Globals.NARS.overall_experience_buffer.put_new_item(task)
+    Global.NARS.overall_experience_buffer.put_new_item_from_object(task)
 
 def parse_sentence(sentence_string):
     """
@@ -22,37 +27,36 @@ def parse_sentence(sentence_string):
 
     Returns: Sentence parsed from sentence_string
     """
-
     # Find statement start and statement end
     start_idx = sentence_string.find(StatementSyntax.Start.value)
-    assert(start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " not found. Exiting.."
+    if start_idx != -1:
+        start_idx = sentence_string.find(StatementSyntax.Start_Alternate.value)
+
+    assert(start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " or " + StatementSyntax.Start_Alternate.value + " not found."
+
     end_idx = sentence_string.rfind(StatementSyntax.End.value)
-    assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " not found. Exiting.."
+    if end_idx != -1:
+        end_idx = sentence_string.find(StatementSyntax.End_Alternate.value)
+    assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " or " + StatementSyntax.End_Alternate.value + " not found."
 
     # Find sentence punctuation
     punctuation_idx = end_idx + 1
     punctuation_str = sentence_string[punctuation_idx]
     punctuation = Punctuation.get_punctuation(punctuation_str)
-    assert (punctuation is not None), punctuation_str + " is not punctuation. Exiting.."
+    assert (punctuation is not None), punctuation_str + " is not punctuation."
 
     # todo accept more input types
-    assert (punctuation == Punctuation.Judgment), " Currently only accepting Judgments. Exiting.."
+    assert (punctuation == Punctuation.Judgment), " Currently only accepting Judgments."
 
-    # Find statement copula
-    copula, copulaIdx = parse_copula_and_index(sentence_string)
-    assert (copulaIdx != -1), "Copula not found. Exiting.."
+    # Find statement copula, subject string, and predicate string
+    subject, predicate, copula, copula_idx = parse_subject_predicate_copula_and_copula_index(sentence_string[start_idx:end_idx+1])
 
-    # Find subject and predicate
-    subject_str = sentence_string[start_idx + 1:copulaIdx].strip()
-    predicate_str = sentence_string[copulaIdx + len(copula.value):end_idx].strip()
-    subject = Term(subject_str)
-    predicate = Term(predicate_str)
-    subj_pred = SubjectPredicate(subject, predicate)
+    statement = Statement(subject, predicate, copula)
 
     # Find Tense, if it exists
     tense = None
     for t in Tense:
-        tense_idx = sentence_string.find(t)
+        tense_idx = sentence_string.find(str(t))
         if tense_idx != -1: # found a tense
             tense = sentence_string[tense_idx: tense_idx + len(t)]
 
@@ -70,27 +74,9 @@ def parse_sentence(sentence_string):
         conf = sentence_string[middle_truth_val_idx+1:end_truth_val_idx]
         truth_value = TruthValue(freq, conf)
 
-    statement = Statement(subj_pred, copula)
-
     if punctuation == Punctuation.Judgment:
         sentence = Judgment(statement, truth_value)
 
     return sentence
 
 
-def parse_copula_and_index(statement_string):
-    """
-    Parameter: statement_string - String of NAL syntax <term copula term>
-
-    Returns: copula, copula index
-    """
-    depth = 0
-    for i, v in enumerate(statement_string):
-        if v == "(":
-            depth = depth + 1
-        elif v == ")":
-            depth = depth - 1
-        elif i + 3 <= len(statement_string) and Copula.is_copula(statement_string[i:i + 3]):
-            return Copula.get_copula(statement_string[i:i + 3]), i
-
-    return None, -1

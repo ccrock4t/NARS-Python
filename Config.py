@@ -6,19 +6,20 @@
     System Parameters
 """
 k = 1 # evidential horizon
-t = 1 # decision rule (goal decision-making) threshold
+t = 0.25 # decision rule (goal decision-making) threshold
 MINDFULNESS = 0.5 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) vs. allocating to ruminating / pondering concepts
 
 """
     Bags
 """
-DEFAULT_BAG_CAPACITY = 30 # how many items can fit in a bag
-DEFAULT_BAG_NUMBER_OF_BUCKETS = 101 # how many probability buckets are there? e.g. 101 allows 101 probability values (between [0%, 100%])
+BAG_CAPACITY = 30 # how many items can fit in a bag
+BAG_NUMBER_OF_BUCKETS = 101 # how many probability buckets are there? e.g. 101 allows 101 probability values (between [0%, 100%])
 
 """
     Others
 """
-TRUTH_EPSILON = 0.01 #determines the internal precision used for TruthValue calculations.
+TRUTH_EPSILON = 0.01 # minimum size that truth-value can be incremented/
+MAX_EVIDENTIAL_BASE_LENGTH = 20000 # maximum IDs to store documenting evidential base
 
 """
     Default Input Task Values

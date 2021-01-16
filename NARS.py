@@ -1,6 +1,7 @@
 import InputBuffer
+import NALGrammar
 from NARSMemory import Memory
-import Globals
+import Global
 import threading
 import os
 from NARSDataStructures import *
@@ -25,8 +26,8 @@ class NARS:
         if task_item is None:
             return # nothing to observe
 
-        if Globals.PRINT_ATTENTION:
-            print("OBSERVED: Task "+ str(task_item.object))
+        if Global.PRINT_ATTENTION:
+            print("Observe: " + str(task_item.object))
 
         # process task
         self.process_task(task_item.object)
@@ -43,8 +44,8 @@ class NARS:
         if concept_item is None:
             return # nothing to ponder
 
-        if Globals.PRINT_ATTENTION:
-            print("CONSIDERED: Concept " + str(concept_item.object))
+        if Global.PRINT_ATTENTION:
+            print("Consider: " + str(concept_item.object))
 
         # get task and belief from concept
 
@@ -66,65 +67,49 @@ class NARS:
         assert_task(task)
 
         # get terms from sentence
-        subject_term = task.sentence.statement.term.get_subject_term()
-        predicate_term = task.sentence.statement.term.get_predicate_term()
-        statement_term = task.sentence.statement.term
-
-        # get concepts
-        statement_concept = self.memory.get_concept(statement_term)
-        subject_concept = self.memory.get_concept(subject_term)
-        predicate_concept = self.memory.get_concept(predicate_term)
-
-        # create it if it doesn't exist
-        if statement_concept is None:
-            statement_concept, subject_concept, predicate_concept = self.process_new_judgment(task)
-
-        # add task links if they don't exist
-        statement_concept.add_task_link(task)
-        subject_concept.add_task_link(task)
-        predicate_concept.add_task_link(task)
-
-    def process_new_judgment(self, task):
-
-        """
-            Create a new statement concept
-            Also creates new subject/predicate concepts if they don't exist
-            Also connects term links
-        """
-        assert_task(task)
-        # get terms
         statement_term = task.sentence.statement.term
         subject_term = statement_term.get_subject_term()
         predicate_term = statement_term.get_predicate_term()
 
-        # get concepts
-        subject_concept = self.memory.get_concept(subject_term)
-        predicate_concept = self.memory.get_concept(predicate_term)
+        # get/create statement concept, and sub-term concepts recursively
+        statement_concept = self.get_concept_from_term(statement_term)
 
-        # create concepts if they don't exist
-        if subject_concept is None:
-            subject_concept = self.memory.conceptualize_term(subject_term)
-        if predicate_concept is None:
-            predicate_concept = self.memory.conceptualize_term(predicate_term)
+        # get subject-predicate concepts
+        subject_concept = self.get_concept_from_term(subject_term)
+        predicate_concept = self.get_concept_from_term(predicate_term)
 
-        # create new statement concept
-        statement_concept = self.memory.conceptualize_term(statement_term)
+        # set task links if they don't exist
+        statement_concept.set_task_link(task)
+        subject_concept.set_task_link(task)
+        predicate_concept.set_task_link(task)
 
-        # do term linking
-        statement_concept.add_term_link(subject_concept)
-        statement_concept.add_term_link(predicate_concept)
-        subject_concept.add_term_link(statement_concept)
-        predicate_concept.add_term_link(statement_concept)
+        # add judgment to concept belief table
+        statement_concept.merge_into_belief_table(task)
 
-        return statement_concept, subject_concept, predicate_concept
+    def get_concept_from_term(self, term):
+        """
+            Get the concept named by a term, and create it if it doesn't exist.
+            Also creates all sub-term concepts if they do not exist.
+        """
+        concept = self.memory.get_concept(term)
 
+        if concept is None:
+            # concept must be created, and potentially sub-concepts
+            concept = self.memory.conceptualize_term(term)
+            if isinstance(term, NALGrammar.CompoundTerm):
+                for subterm in term.subterms:
+                    # get subterm concepts
+                    subconcept = self.get_concept_from_term(subterm)
+                    # do term linking with subterms
+                    concept.set_term_link(subconcept)
 
+        return concept
 
 def main():
     # set globals
-    Globals.NARS = NARS()
-    Globals.PRINT_ATTENTION = False
-    Globals.executed_cycles = 0
+    Global.NARS = NARS()
+    Global.PRINT_ATTENTION = True
+    Global.current_cycle_number = 0
 
     # launch user input thread
     t = threading.Thread(target=get_user_input, name="user input thread")
@@ -134,7 +119,7 @@ def main():
     # run NARS
     while True:
         do_working_cycle()
-        Globals.executed_cycles = Globals.executed_cycles + 1
+        Global.current_cycle_number = Global.current_cycle_number + 1
 
 
 def do_working_cycle():
@@ -144,10 +129,12 @@ def do_working_cycle():
     """
     rand = random.random()
 
-    if rand < Config.MINDFULNESS: #OBSERVE
-        Globals.NARS.Observe()
-    else: #CONSIDER
-        Globals.NARS.Consider()
+    if rand < Config.MINDFULNESS:
+        # OBSERVE
+        Global.NARS.Observe()
+    else:
+        # CONSIDER
+        Global.NARS.Consider()
 
 
 def get_user_input():
@@ -159,8 +146,8 @@ def get_user_input():
     while userinput != "exit":
         userinput = input("")
         if userinput == "count":
-            print("Memory count: " + str(Globals.NARS.memory.get_number_of_concepts()))
-            print("Buffer count: " + str(Globals.NARS.overall_experience_buffer.count))
+            print("Memory count: " + str(Global.NARS.memory.get_number_of_concepts()))
+            print("Buffer count: " + str(Global.NARS.overall_experience_buffer.count))
         else:
             InputBuffer.add_input(userinput)
 

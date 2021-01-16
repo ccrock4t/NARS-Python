@@ -1,3 +1,5 @@
+import Global
+import NALSyntax
 from NALSyntax import *
 """
     Author: Christian Hahm
@@ -12,11 +14,28 @@ class Sentence:
         assert_punctuation(punctuation)
 
         self.statement = statement
-        self.value = value
+        self.value = value # truth-value or desire-value
         self.punctuation = punctuation
+        self.stamp = Sentence.Stamp()
 
     def get_formatted_string(self):
         return self.statement.get_formatted_string() + str(self.punctuation.value) + " " + self.value.get_formatted_string()
+
+    class Stamp():
+        def __init__(self):
+            self.id = -1
+            self.creation_time = Global.current_cycle_number # when was stamp created (in inference cycles)?
+            self.occurrence_time = -1 # when did this statement occur (in inference cycles)
+            self.syntactic_complexity = -1 # number of subterms
+            self.evidential_base = Sentence.EvidentialBase(self.id)
+
+    class EvidentialBase:
+        def __init__(self, id):
+            self.evidential_base = [id] # how was the sentence derived?
+
+        def merge_evidential_base_into_self(self, other_base):
+            new_basis = [self.evidential_base[:], other_base[:]] # merge both bases
+            self.evidential_base = new_basis
 
 class Judgment(Sentence):
     """
@@ -31,19 +50,21 @@ class Statement:
     """
         <Term Copula Term>
     """
-    def __init__(self, subject_predicate, copula):
-        assert_subject_predicate(subject_predicate)
+    def __init__(self, subject, predicate, copula):
+        assert_term(subject)
+        assert_term(predicate)
         assert_copula(copula)
 
-        self.subject_predicate = subject_predicate
+        self.subject_term = subject
+        self.predicate_term = predicate
         self.copula = copula
-        self.term = StatementTerm(subject_predicate.subject_term, subject_predicate.predicate_term, copula)
+        self.term = StatementTerm(subject, predicate, copula)
 
     def get_formatted_string(self):
         return str(StatementSyntax.Start.value) \
-               + self.subject_predicate.subject_term.get_formatted_string() \
+               + self.subject_term.get_formatted_string() \
                + " " + str(self.copula.value) + " " \
-               + self.subject_predicate.predicate_term.get_formatted_string() \
+               + self.predicate_term.get_formatted_string() \
                + str(StatementSyntax.End.value)
 
 class EvidentialValue:
@@ -82,23 +103,11 @@ class TruthValue(EvidentialValue):
         self.tense = tense
         super().__init__(frequency=frequency, confidence=confidence)
 
-
-class SubjectPredicate:
-    """
-        An object that holds a subject and predicate term
-    """
-    def __init__(self, subject, predicate):
-        assert_term(subject)
-        assert_term(predicate)
-        self.subject_term = subject
-        self.predicate_term = predicate
-
-
 class Term:
     """
         A valid word.
 
-        Base class for all terms, and can be used for Atomic terms
+        Base class for all terms. Use to create any term
     """
     def __init__(self, term_string):
         assert (isinstance(term_string, str)), term_string + " must be a str"
@@ -118,33 +127,91 @@ class Term:
     def __str__(self):
         return self.get_formatted_string()
 
-
-
-class CompoundTerm(Term):
+class AtomicTerm(Term):
     """
-        A term that contains multiple atomic subterms.
+        An atomic term
 
-        (Connector T1, T2, ..., Tn)
+        T
     """
-    def __init__(self, subterms, connector):
+    def __init__(self, term_string):
         """
         Input:
             subterms: array of terms or compound terms
 
             connector: Connector
         """
-        for subterm in subterms:
-            assert_term(subterm)
+        assert(AtomicTerm.is_valid_term(term_string)), term_string + " is not a valid Atomic Term name."
+        super().__init__(term_string)
+
+    @classmethod
+    def is_valid_term(cls, term_string):
+        return term_string in NALSyntax.valid_term_chars
+
+
+class CompoundTerm(Term):
+    """
+        A term that contains multiple atomic subterms connected by a connector (including copula).
+
+        (Connector T1, T2, ..., Tn)
+    """
+    def __init__(self, subterms, connector):
+        """
+        Input:
+            subterms: array of immediate subterms
+
+            connector: subterm connector
+        """
         self.subterms = subterms
         self.connector = connector
         super().__init__(self.get_formatted_string())
 
-    def get_formatted_string(self):
-        str = self.connector
-        for subterm in self.subterms:
-            str = str + "," + subterm
+    @classmethod
+    def from_string(cls, term_string):
+        subterms, connector = cls.parse_immediate_subterms_and_connector(term_string)
+        return cls(subterms, connector)
 
-        return "(" + str + ")"
+    @classmethod
+    def parse_immediate_subterms_and_connector(cls, term_string):
+        subterms = []
+        internal_string = term_string[1:len(term_string)-1]
+
+        connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
+
+        if connector is None:
+            connector = TermConnector.get_term_connector_from_string(internal_string[0])
+
+        assert(connector is not None), "Connector could not be parsed from CompoundTerm string."
+        assert (internal_string[len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string."
+
+        internal_terms_string = internal_string[len(connector.value)+1:]
+
+        depth = 0
+        subterm_string = ""
+        for i, c in enumerate(internal_terms_string):
+            if c == "(":
+                depth = depth + 1
+            elif c == ")":
+                depth = depth - 1
+
+            if depth == 0:
+                if c == ",":
+                    subterm_string = subterm_string.strip()
+                    subterms.append(MakeTermFromString(subterm_string))
+                    subterm_string = ""
+                else:
+                    subterm_string = subterm_string + c
+
+        subterm_string = subterm_string.strip()
+        subterms.append(MakeTermFromString(subterm_string))
+
+        return subterms, connector
+
+    def get_formatted_string(self):
+        string = self.connector.value
+        for subterm in self.subterms:
+            string = string + "," + str(subterm)
+
+        return "(" + string + ")"
 
 
 class StatementTerm(CompoundTerm):
@@ -159,6 +226,11 @@ class StatementTerm(CompoundTerm):
         assert_copula(copula)
         super().__init__([subject, predicate], copula)
 
+    @classmethod
+    def from_string(cls, term_string):
+        subject, predicate, connector, _ = parse_subject_predicate_copula_and_copula_index(term_string)
+        return cls(subject, predicate, connector)
+
     def get_subject_term(self):
         return self.subterms[0]
 
@@ -171,6 +243,52 @@ class StatementTerm(CompoundTerm):
     def get_formatted_string(self):
         string = self.get_subject_term().get_formatted_string() + self.get_copula_string() + self.get_predicate_term().get_formatted_string()
         return "(" + string + ")"
+
+def MakeTermFromString(term_string):
+    """
+        either an atomic term, or a statement/compound term surrounded in parentheses.
+    """
+    if term_string[0] == "(":
+        assert(term_string[len(term_string) - 1] == ")"), "Compound term must have ending parenthesis"
+        term_connector = TermConnector.get_term_connector_from_string(term_string[1])
+        statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2])
+        if term_connector is None and statement_connector is None:
+            # statement term
+            term = StatementTerm.from_string(term_string)
+        else:
+            # compound term
+            term = CompoundTerm.from_string(term_string)
+    else:
+        term = AtomicTerm(term_string)
+
+    return term
+
+def parse_subject_predicate_copula_and_copula_index(statement_string):
+    """
+    Parameter: statement_string - String of NAL syntax <term copula term> or (term copula term)
+
+    Returns: top-level subject term, predicate term, copula, copula index
+    """
+
+    # get copula
+    copula = -1
+    copula_idx = -1
+    depth = 0
+    for i, v in enumerate(statement_string):
+        if v == "(" or :
+            depth = depth + 1
+        elif v == ")":
+            depth = depth - 1
+        elif depth == 0 and i + 3 <= len(statement_string) and Copula.is_string_a_copula(statement_string[i:i + 3]):
+            copula, copula_idx = Copula.get_copula_from_string(statement_string[i:i + 3]), i
+
+    assert (copula_idx != -1), "Copula not found. Exiting.."
+
+
+    subject_str = statement_string[1:copula_idx].strip() # get subject string
+    predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string)-1].strip() #get predicate string
+
+    return MakeTermFromString(subject_str), MakeTermFromString(predicate_str), copula, copula_idx
 
 def assert_term(t):
     assert (isinstance(t, Term)), str(t) + " must be a Term"
@@ -189,9 +307,6 @@ def assert_truth_value(j):
 
 def assert_punctuation(j):
     assert (isinstance(j, Punctuation)), str(j) + " must be a Punctuation"
-
-def assert_subject_predicate(j):
-    assert (isinstance(j, SubjectPredicate)), str(j) + " must be a SubjectPredicate"
 
 def assert_copula(j):
     assert (isinstance(j, Copula)), str(j) + " must be a Copula"

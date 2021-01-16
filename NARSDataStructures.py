@@ -1,7 +1,7 @@
 import Config
 import random
 
-import Globals
+import Global
 import NALInferenceRules
 
 from NALGrammar import assert_sentence
@@ -19,20 +19,20 @@ class Bag:
         (e.g. 100 buckets, bucket 1 - hold items with 0.01 priority,  bucket 50 - hold items with 0.50 priority)
     """
     def __init__(self, item_type):
-        self.item_type = item_type
+        self.item_type = item_type # the class of the objects  this bag stores (be wrapped in Item)
 
-        self.capacity = Config.DEFAULT_BAG_CAPACITY
-        self.number_of_buckets = Config.DEFAULT_BAG_NUMBER_OF_BUCKETS
+        self.capacity = Config.BAG_CAPACITY # maximum number of items that can be stored in this bag
+        self.number_of_buckets = Config.BAG_NUMBER_OF_BUCKETS # number of buckets in the bag (the bag's granularity)
         self.item_lookup_table = dict() # for accessing item by key
-        self.priority_buckets = dict() # for accessing items by priority
+        self.buckets = dict() # for accessing items by priority
 
         self.current_bucket_number = 0 # keeps track of the Bag's current bucket number
         self.count = 0
 
         for i in range(0, self.number_of_buckets):
-            self.priority_buckets[i] = []
+            self.buckets[i] = []
 
-    def put_new_item(self, object):
+    def put_new_item_from_object(self, object):
         """
             Convert an object into an item and place the item in the bag
         """
@@ -42,8 +42,7 @@ class Bag:
             item = Bag.Item(object)
             #put into lookup table and bucket
             self.item_lookup_table[hash(object)] = item
-            self.priority_buckets[item.get_new_bucket_number()].append(item)
-
+            self.buckets[item.get_new_bucket_number()].append(item)
             self.count = self.count + 1
 
 
@@ -56,7 +55,7 @@ class Bag:
         if hash(item.object) not in self.item_lookup_table:
             # put item into lookup table and bucket
             self.item_lookup_table[hash(item.object)] = item
-            self.priority_buckets[item.get_new_bucket_number()].append(item)
+            self.buckets[item.get_new_bucket_number()].append(item)
 
             self.count = self.count + 1
 
@@ -79,9 +78,7 @@ class Bag:
                         if object is passed, the item is not removed from the bag
         """
         if self.count == 0:
-            return None
-
-        self.count = self.count - 1
+            return None # no items
 
         if object is None:
             return self.take_item_probabilistically()
@@ -89,8 +86,9 @@ class Bag:
 
     def take_item_by_key(self, key):
         assert(key in self.item_lookup_table), "Given key does not exist in this bag"
-        item = self.item_lookup_table.pop(key)
-        self.priority_buckets[item.current_bucket_number].remove(item)
+        item = self.item_lookup_table.pop(key) # remove item reference from lookup table
+        self.buckets[item.current_bucket_number].remove(item) # remove item reference from bucket
+        self.count = self.count - 1 # decrement bag count
         return item
 
     def take_item_probabilistically(self):
@@ -108,29 +106,23 @@ class Bag:
             self.move_to_next_nonempty_bucket() # try next non-empty bucket
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
 
-        # select item from selected bucket
-        item = self.take_random_item_from_current_bucket()
-
-        # also remove from lookup table
+        # pop random item from currently selected bucket
+        rnd = random.random()  # randomly generated number in [0.0, 1.0)
+        maxidx = len(self.buckets[self.current_bucket_number]) - 1
+        randidx = int(round(rnd * maxidx))
+        item = self.buckets[self.current_bucket_number].pop(randidx)
+        # remove item reference from lookup table
         self.item_lookup_table.pop(hash(item.object))
+        self.count = self.count - 1 # decrement bag count
 
         return item
-
-    def take_random_item_from_current_bucket(self):
-        """
-            Get an item from the currently selected bucket
-        """
-        rnd = random.random()  # randomly generated number in [0.0, 1.0)
-        maxidx = len(self.priority_buckets[self.current_bucket_number]) - 1
-        randidx = int(round(rnd * maxidx))
-        return self.priority_buckets[self.current_bucket_number].pop(randidx)
 
     def move_to_next_nonempty_bucket(self):
         """
             Select the next non-empty bucket after the currently selected bucket
         """
         self.move_to_next_bucket()
-        while len(self.priority_buckets[self.current_bucket_number]) == 0:
+        while len(self.buckets[self.current_bucket_number]) == 0:
             self.move_to_next_bucket()
 
     def move_to_next_bucket(self):
@@ -141,7 +133,7 @@ class Bag:
 
     class Item:
         """
-            Item in a bag
+            Item in a bag. Wraps the objects stored in this bag
 
             Consists of:
                 object (e.g. Concept, Task, etc.)
@@ -188,7 +180,7 @@ class Buffer:
         todo: implement Buffer
     """
     def __init__(self):
-        self.capacity = Config.DEFAULT_BAG_CAPACITY
+        self.capacity = Config.BAG_CAPACITY
 
 class Task:
     """
@@ -197,7 +189,7 @@ class Task:
     def __init__(self, sentence):
         assert_sentence(sentence)
         self.sentence = sentence
-        self.timestamp = Globals.executed_cycles
+        self.timestamp = Global.current_cycle_number
 
     def __hash__(self):
         return self.timestamp

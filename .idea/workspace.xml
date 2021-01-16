@@ -23,11 +23,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fd616af4-ca7b-4665-a740-381ee29e5fe0" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/NARS-Graph.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/NARS-Graph.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Globals.py" beforeDir="false" afterPath="$PROJECT_DIR$/Globals.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Globals.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/InputBuffer.py" beforeDir="false" afterPath="$PROJECT_DIR$/InputBuffer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALGrammar.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALGrammar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALInferenceRules.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALInferenceRules.py" afterDir="false" />
@@ -60,7 +58,7 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../CARLA/scenariorunner/srunner/jpl_scenarios" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="RunManager" selected="Python.NARS">
@@ -214,53 +212,68 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609391913069" />
-    <state x="355" y="157" key="FileChooserDialogImpl" timestamp="1609564476132">
+    <state x="355" y="157" key="FileChooserDialogImpl" timestamp="1610046647645">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1609564476132" />
-    <state width="1899" height="196" key="GridCell.Tab.0.bottom" timestamp="1609545231585">
+    <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1610046647645" />
+    <state width="1899" height="348" key="GridCell.Tab.0.bottom" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="196" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
-    <state width="1899" height="196" key="GridCell.Tab.0.center" timestamp="1609545231585">
+    <state width="1899" height="348" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1899" height="348" key="GridCell.Tab.0.center" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="196" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
-    <state width="1899" height="196" key="GridCell.Tab.0.left" timestamp="1609545231585">
+    <state width="1899" height="348" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1899" height="348" key="GridCell.Tab.0.left" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="196" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
-    <state width="1899" height="196" key="GridCell.Tab.0.right" timestamp="1609545231585">
+    <state width="1899" height="348" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1899" height="348" key="GridCell.Tab.0.right" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="196" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609545231585" />
-    <state width="949" height="348" key="GridCell.Tab.1.bottom" timestamp="1608843332726">
+    <state width="1899" height="348" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1899" height="348" key="GridCell.Tab.1.bottom" timestamp="1609996298397">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
-    <state width="949" height="348" key="GridCell.Tab.1.center" timestamp="1608843332726">
+    <state width="1899" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298397" />
+    <state width="1899" height="348" key="GridCell.Tab.1.center" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
-    <state width="949" height="348" key="GridCell.Tab.1.left" timestamp="1608843332726">
+    <state width="1899" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1899" height="348" key="GridCell.Tab.1.left" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
-    <state width="949" height="348" key="GridCell.Tab.1.right" timestamp="1608843332726">
+    <state width="1899" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1899" height="348" key="GridCell.Tab.1.right" timestamp="1609996298396">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="949" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1608843332726" />
+    <state width="1899" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
     <state x="69" y="74" width="916" height="711" key="SettingsEditor" timestamp="1609539431001">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="69" y="74" width="916" height="711" key="SettingsEditor/0.0.1920.1040@0.0.1920.1040" timestamp="1609539431001" />
+    <state x="667" y="119" width="585" height="801" key="find.popup" timestamp="1610783255220">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="667" y="119" width="585" height="801" key="find.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1610783255220" />
     <state x="803" y="305" key="refactoring.ChangeSignatureDialog" timestamp="1609539390008">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="803" y="305" key="refactoring.ChangeSignatureDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609539390008" />
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1609540355215">
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1610783252684">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1609540355215" />
+    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1610783252684" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/NALGrammar.py</url>
+          <line>250</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
