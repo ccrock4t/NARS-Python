@@ -1,5 +1,6 @@
 import InputBuffer
 import NALGrammar
+from NALSyntax import Punctuation
 from NARSMemory import Memory
 import Global
 import threading
@@ -57,12 +58,13 @@ class NARS:
             Process a Narsese task
         """
         assert_task(task)
-        self.process_judgment(task)
+        if task.sentence.punctuation == Punctuation.Judgment:
+            self.process_judgment(task)
 
     def process_judgment(self, task):
         """
             Process a Narsese judgment task
-            Add task links
+            Add task links if they don't exist
         """
         assert_task(task)
 
@@ -83,8 +85,11 @@ class NARS:
         subject_concept.set_task_link(task)
         predicate_concept.set_task_link(task)
 
-        # add judgment to concept belief table
+        # add judgment into concept belief table
         statement_concept.merge_into_belief_table(task)
+
+
+
 
     def get_concept_from_term(self, term):
         """

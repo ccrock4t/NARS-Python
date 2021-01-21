@@ -15,9 +15,6 @@ from NALGrammar import *
     ++++ (Binary truth value operations) ++++
     ++++ ++++ ++++ ++++ ++++ ++++  ++++  ++++
 """
-
-
-
 def band(*argv):
     """
     Binary AND
@@ -72,8 +69,6 @@ def bnot(arg):
     ++++  (Local inference rules) ++++
     ++++ ++++ ++++ ++++ ++++ ++++ ++++
 """
-
-
 
 def nal_revision(j1, j2):
     """
@@ -270,8 +265,8 @@ def nal_deduction(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.subject_predicate.subject_term,
-                                j1.statement.subject_predicate.predicate_term, Copula.Inheritance)
+    resultStatement = Statement(j2.statement.subject_term,
+                                j1.statement.predicate_term, Copula.Inheritance)
     # Get Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
@@ -338,7 +333,7 @@ def nal_resemblance(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.subject_predicate.subject_term, j1.statement.subject_predicate.predicate_term, Copula.Similarity)
+    resultStatement = Statement(j2.statement.subject_term, j1.statement.predicate_term, Copula.Similarity)
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -348,7 +343,6 @@ def nal_resemblance(j1, j2):
 
     resulttruth = TruthValue(f3, c3)
 
-    resultStatement = Statement(j2.statement.subject_predicate.subject_term, j1.statement.subject_predicate.predicate_term, Copula.Similarity)
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
     return result
 
@@ -421,8 +415,8 @@ def nal_induction(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.subject_predicate.predicate_term,
-                                j1.statement.subject_predicate.predicate_term, Copula.Inheritance)
+    resultStatement = Statement(j2.statement.predicate_term,
+                                j1.statement.predicate_term, Copula.Inheritance)
 
     # Get Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -458,8 +452,8 @@ def nal_exemplification(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.subject_predicate.predicate_term,
-                                j1.statement.subject_predicate.subject_term, Copula.Inheritance)
+    resultStatement = Statement(j2.statement.predicate_term,
+                                j1.statement.subject_term, Copula.Inheritance)
 
     # Get Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -494,7 +488,7 @@ def nal_comparison(j1, j2):
     assert_sentence(j2)
 
     # Statement
-    resultStatement = Statement(j2.statement.subject_predicate.predicate_term, j1.statement.subject_predicate.predicate_term, Copula.Similarity)
+    resultStatement = Statement(j2.statement.predicate_term, j1.statement.predicate_term, Copula.Similarity)
 
     # Get Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)

@@ -24,14 +24,10 @@
   <component name="ChangeListManager">
     <list default="true" id="fd616af4-ca7b-4665-a740-381ee29e5fe0" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Globals.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/InputBuffer.py" beforeDir="false" afterPath="$PROJECT_DIR$/InputBuffer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALGrammar.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALGrammar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALInferenceRules.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALInferenceRules.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NALSyntax.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALSyntax.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARS.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARS.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NARSDataStructures.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSDataStructures.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARSMemory.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSMemory.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -58,7 +54,7 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../CARLA/scenariorunner/srunner/jpl_scenarios" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../TruePAL/CARLA/scenario_runner/srunner/scenarios" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
   <component name="RunManager" selected="Python.NARS">
@@ -208,30 +204,34 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="733" y="321" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1608786641292" />
+    <state x="354" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1610784025350">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="354" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1610784025350" />
     <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1609391913069">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609391913069" />
-    <state x="355" y="157" key="FileChooserDialogImpl" timestamp="1610046647645">
+    <state x="355" y="157" key="FileChooserDialogImpl" timestamp="1610832938347">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1610046647645" />
-    <state width="1899" height="348" key="GridCell.Tab.0.bottom" timestamp="1609996298396">
+    <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1610832938347" />
+    <state width="1599" height="76" key="GridCell.Tab.0.bottom" timestamp="1610785943214">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="348" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
-    <state width="1899" height="348" key="GridCell.Tab.0.center" timestamp="1609996298396">
+    <state width="1599" height="76" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
+    <state width="1599" height="76" key="GridCell.Tab.0.center" timestamp="1610785943214">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="348" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
-    <state width="1899" height="348" key="GridCell.Tab.0.left" timestamp="1609996298396">
+    <state width="1599" height="76" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
+    <state width="1599" height="76" key="GridCell.Tab.0.left" timestamp="1610785943214">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="348" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
-    <state width="1899" height="348" key="GridCell.Tab.0.right" timestamp="1609996298396">
+    <state width="1599" height="76" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
+    <state width="1599" height="76" key="GridCell.Tab.0.right" timestamp="1610785943214">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1899" height="348" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
+    <state width="1599" height="76" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
     <state width="1899" height="348" key="GridCell.Tab.1.bottom" timestamp="1609996298397">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
@@ -270,7 +270,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/NALGrammar.py</url>
-          <line>250</line>
+          <line>257</line>
           <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>

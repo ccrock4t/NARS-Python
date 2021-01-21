@@ -29,14 +29,14 @@ def parse_sentence(sentence_string):
     """
     # Find statement start and statement end
     start_idx = sentence_string.find(StatementSyntax.Start.value)
-    if start_idx != -1:
+    if start_idx == -1:
         start_idx = sentence_string.find(StatementSyntax.Start_Alternate.value)
 
     assert(start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " or " + StatementSyntax.Start_Alternate.value + " not found."
 
     end_idx = sentence_string.rfind(StatementSyntax.End.value)
-    if end_idx != -1:
-        end_idx = sentence_string.find(StatementSyntax.End_Alternate.value)
+    if end_idx == -1:
+        end_idx = sentence_string.rfind(StatementSyntax.End_Alternate.value)
     assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " or " + StatementSyntax.End_Alternate.value + " not found."
 
     # Find sentence punctuation

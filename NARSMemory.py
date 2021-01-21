@@ -57,6 +57,12 @@ class Concept:
         """
             merge judgment task into beliefs table
         """
+        #todo finish this
+        # merge it with all the other beliefs if possible
+        for belief in self.belief_table:
+            belief.revise(judgment)
+
+        #todo add the sole statement to the table
 
     def set_term_link(self, concept):
         """

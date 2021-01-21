@@ -166,15 +166,22 @@ class CompoundTerm(Term):
         super().__init__(self.get_formatted_string())
 
     @classmethod
-    def from_string(cls, term_string):
-        subterms, connector = cls.parse_immediate_subterms_and_connector(term_string)
+    def from_string(cls, compound_term_string):
+        """
+            Create a compound term from a string representing a compound term
+        """
+        subterms, connector = cls.parse_toplevel_subterms_and_connector(compound_term_string)
         return cls(subterms, connector)
 
     @classmethod
-    def parse_immediate_subterms_and_connector(cls, term_string):
-        subterms = []
-        internal_string = term_string[1:len(term_string)-1]
+    def parse_toplevel_subterms_and_connector(cls, compound_term_string):
+        """
+            Parse out all top-level subterms from a string representing a compound term
 
+            compound_term_string - a string representing a compound term
+        """
+        subterms = []
+        internal_string = compound_term_string[1:len(compound_term_string) - 1]
         connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
 
         if connector is None:
@@ -188,9 +195,9 @@ class CompoundTerm(Term):
         depth = 0
         subterm_string = ""
         for i, c in enumerate(internal_terms_string):
-            if c == "(":
+            if c == StatementSyntax.Start_Alternate.value or c == StatementSyntax.Start.value:
                 depth = depth + 1
-            elif c == ")":
+            elif c == StatementSyntax.End_Alternate.value:
                 depth = depth - 1
 
             if depth == 0:
@@ -250,8 +257,8 @@ def MakeTermFromString(term_string):
     """
     if term_string[0] == "(":
         assert(term_string[len(term_string) - 1] == ")"), "Compound term must have ending parenthesis"
-        term_connector = TermConnector.get_term_connector_from_string(term_string[1])
-        statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2])
+        term_connector = TermConnector.get_term_connector_from_string(term_string[1]) # ex: (*,t1,t2)
+        statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2]) # ex: (&&,t1,t2)
         if term_connector is None and statement_connector is None:
             # statement term
             term = StatementTerm.from_string(term_string)
@@ -269,21 +276,22 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
 
     Returns: top-level subject term, predicate term, copula, copula index
     """
-
+    print(statement_string)
     # get copula
     copula = -1
     copula_idx = -1
     depth = 0
     for i, v in enumerate(statement_string):
-        if v == "(" or :
+        print(v)
+        if v == StatementSyntax.Start_Alternate.value or v == StatementSyntax.Start.value:
             depth = depth + 1
-        elif v == ")":
+        elif v == StatementSyntax.End_Alternate.value:
             depth = depth - 1
-        elif depth == 0 and i + 3 <= len(statement_string) and Copula.is_string_a_copula(statement_string[i:i + 3]):
+        elif depth == 1 and i + 3 <= len(statement_string) and Copula.is_string_a_copula(statement_string[i:i + 3]):
             copula, copula_idx = Copula.get_copula_from_string(statement_string[i:i + 3]), i
+        print(depth)
 
     assert (copula_idx != -1), "Copula not found. Exiting.."
-
 
     subject_str = statement_string[1:copula_idx].strip() # get subject string
     predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string)-1].strip() #get predicate string
