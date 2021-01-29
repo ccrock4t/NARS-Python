@@ -1,10 +1,10 @@
 import Config
 import random
-
+import sys
 import Global
 import NALInferenceRules
-
 from NALGrammar import assert_sentence
+
 """
     Author: Christian Hahm
     Created: December 24, 2020
@@ -182,6 +182,154 @@ class Buffer:
     def __init__(self):
         self.capacity = Config.BAG_CAPACITY
 
+
+class Table:
+    """
+       NARS Table, stored within Concepts.
+       Stored using a MaxHeap
+    """
+    def __init__(self):
+        self.maxheap = MaxHeap(Config.TABLE_CAPACITY)
+
+    def merge(self, sentence_to_merge):
+        """
+            Merge a sentence fully into the table
+        """
+        for sentence in self.maxheap:
+            sentence.revise(sentence_to_merge)
+
+
+class MaxHeap:
+    """
+        A max heap that purges lowest-value items when it overflows
+    """
+    def __init__(self, maxsize=Config.TABLE_CAPACITY):
+        self.maxsize = maxsize
+        self.size = 0
+        self.heap = [0] * (self.maxsize + 1)
+        self.heap[0] = sys.maxsize
+        self.FRONT = 1
+
+    def parent(self, pos):
+        """
+            Function to return the position of
+            parent for the node currently
+            at pos
+        """
+        return pos // 2
+
+    def left_child(self, pos):
+        """
+            Function to return the position of
+            the left child for the node currently
+            at pos
+        """
+        return 2 * pos
+
+    def right_child(self, pos):
+        """
+            Function to return the position of
+            the right child for the node currently
+            at pos
+        """
+        return (2 * pos) + 1
+
+    def is_leaf(self, pos):
+        """
+            Function that returns true if the passed
+            node is a leaf node
+        """
+        if (self.size // 2) <= pos <= self.size:
+            return True
+        return False
+
+    def swap(self, fpos, spos):
+        """
+            Function to swap two nodes of the heap
+        """
+        self.heap[fpos], self.heap[spos] = (self.heap[spos], self.heap[fpos])
+
+    def max_heapify(self, pos):
+        """
+            Function to heapify the node at pos
+            If the node is a non-leaf node and smaller
+            than any of its child
+        """
+        if not self.is_leaf(pos):
+            if self.heap[pos] < self.heap[self.left_child(pos)] or self.heap[pos] < self.heap[self.right_child(pos)]:
+                # Swap with the left child and heapify
+                # the left child
+                if self.heap[self.left_child(pos)] > self.heap[self.right_child(pos)]:
+                    self.swap(pos, self.left_child(pos))
+                    self.max_heapify(self.left_child(pos))
+                    # Swap with the right child and heapify
+                    # the right child
+                else:
+                    self.swap(pos, self.right_child(pos))
+                    self.max_heapify(self.right_child(pos))
+
+    def insert(self, element):
+        """
+            Function to insert a node into the heap
+            Time complexity: O(log n)
+        """
+        if self.size >= self.maxsize:
+            # purge oldest item
+            return
+        # add new item
+        self.size += 1
+        self.heap[self.size] = element
+        current = self.size
+        while self.heap[current] > self.heap[self.parent(current)]:
+            self.swap(current, self.parent(current))
+            current = self.parent(current)
+
+    def __iter__(self):
+        self.n = 1
+        return self
+
+    def __next__(self):
+        if self.n <= self.size:
+            result = self.heap[self.n]
+            self.n += 1
+            return result
+        else:
+            raise StopIteration
+
+    def print(self):
+        """
+            Function to print the contents of the heap
+        """
+        for i in range(1, (self.size // 2) + 1):
+            print(" PARENT : " + str(self.heap[i]) +
+                  " LEFT CHILD : " + str(self.heap[2 * i]) +
+                  " RIGHT CHILD : " + str(self.heap[2 * i + 1]))
+
+    def extractMax(self):
+        """
+            Function to remove and return the maximum
+            element from the heap
+            Time complexity: O(log n)
+        """
+        popped = self.heap[self.FRONT]
+        self.heap[self.FRONT] = self.heap[self.size]
+        self.size -= 1
+        self.max_heapify(self.FRONT)
+        return popped
+
+    def extractMin(self):
+        """
+            Function to remove and return the minimum
+            element from the heap
+            Time complexity: O(n)
+        """
+        minimumElement = self.heap[self.size // 2]
+        for i in range(1 + self.size // 2, self.size):
+            minimumElement = min(minimumElement, self.heap[i]);
+
+        return minimumElement
+
+
 class Task:
     """
        NARS Task
@@ -196,6 +344,7 @@ class Task:
 
     def __str__(self):
         return self.sentence.statement.term.get_formatted_string() + " " + str(self.timestamp)
+
 
 # Asserts
 def assert_task(j):

@@ -1,5 +1,6 @@
 from NALGrammar import *
-from NARSDataStructures import Bag, assert_task
+from NARSDataStructures import Bag, assert_task, Table
+
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -50,19 +51,17 @@ class Concept:
         self.term = term
         self.term_links = {}
         self.task_links = {}
-        self.belief_table = {}
-        self.desire_table = {}
+        self.belief_table = Table()
+        self.desire_table = Table()
 
     def merge_into_belief_table(self, judgment):
         """
             merge judgment task into beliefs table
         """
-        #todo finish this
         # merge it with all the other beliefs if possible
-        for belief in self.belief_table:
-            belief.revise(judgment)
-
-        #todo add the sole statement to the table
+        Table.merge(judgment)
+        #add the statement itself to the table
+        Table.insert(judgment)
 
     def set_term_link(self, concept):
         """

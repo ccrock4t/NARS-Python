@@ -1,6 +1,8 @@
 import Global
 import NALSyntax
 from NALSyntax import *
+import NARSDataStructures
+
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -18,24 +20,61 @@ class Sentence:
         self.punctuation = punctuation
         self.stamp = Sentence.Stamp()
 
+    def revise(self, sentence):
+        """
+            Revise sentence into self
+        """
+        assert(sentence.punctuation == self.punctuation), "Cannot revise 2 Sentences with different Punctuation"
+        # compute new truth value
+        # merge in evidential basis
+        #todo self.
+
+
     def get_formatted_string(self):
         return self.statement.get_formatted_string() + str(self.punctuation.value) + " " + self.value.get_formatted_string()
 
-    class Stamp():
+    class Stamp:
+        """
+            (id, tcr, toc, C, E) ∈ N×N×N×N×P(N)
+            where 'id' represents a unique ID
+            'tcr' a creation time (in inferencecycles)
+            'toc' an occurrence time (in inference cycles)
+            'Ca' syntactic complexity (the number of subterms in the associated term)
+            'E' an evidential set.
+        """
         def __init__(self):
             self.id = -1
             self.creation_time = Global.current_cycle_number # when was stamp created (in inference cycles)?
             self.occurrence_time = -1 # when did this statement occur (in inference cycles)
             self.syntactic_complexity = -1 # number of subterms
-            self.evidential_base = Sentence.EvidentialBase(self.id)
+            self.evidential_base = self.EvidentialBase(self.id)
 
-    class EvidentialBase:
-        def __init__(self, id):
-            self.evidential_base = [id] # how was the sentence derived?
+        class EvidentialBase:
+            """
+                Stores history of how the sentence was derived
+            """
+            def __init__(self, id):
+                self.base = NARSDataStructures.Table()
+                self.base.insert(id)
+                #todo MAX_EVIDENTIAL_BASE_LENGTH
 
-        def merge_evidential_base_into_self(self, other_base):
-            new_basis = [self.evidential_base[:], other_base[:]] # merge both bases
-            self.evidential_base = new_basis
+
+            def merge_evidential_base_into_self(self, other_base):
+                """
+                    Merge other evidential base into self
+                """
+                assert(not self.has_evidential_overlap(other_base)),"Cannot merge sentences with overlapping evidential bases"
+                self.base = [self.base[:], other_base[:]] # merge both bases into self
+
+            def has_evidential_overlap(self, other_base):
+                """
+                    Check does other base has overlapping evidence with self?
+                """
+                for basis in other_base:
+                    if basis in self.base:
+                        return True
+                return False
+
 
 class Judgment(Sentence):
     """

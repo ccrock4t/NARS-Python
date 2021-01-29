@@ -24,10 +24,9 @@
   <component name="ChangeListManager">
     <list default="true" id="fd616af4-ca7b-4665-a740-381ee29e5fe0" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/InputBuffer.py" beforeDir="false" afterPath="$PROJECT_DIR$/InputBuffer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALGrammar.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALGrammar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NALInferenceRules.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALInferenceRules.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NARS.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARS.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NARSDataStructures.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSDataStructures.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARSMemory.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSMemory.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -57,7 +56,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../TruePAL/CARLA/scenario_runner/srunner/scenarios" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.NARS">
+  <component name="RunManager" selected="Python.DataStructureTests">
     <configuration name="Asserts" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NARS-Graph" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -100,7 +99,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="ControlMechanism" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="DataStructureTests" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NARS-Graph" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -108,11 +107,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/TestCases" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\hahm.19\Desktop\Research\NAL-Neurons\NARS-Python\NARS.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/TestCases/DataStructureTests.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -165,11 +164,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.DataStructureTests" />
         <item itemvalue="Python.NARS" />
         <item itemvalue="Python.Asserts" />
         <item itemvalue="Python.InputBuffer" />
         <item itemvalue="Python.Config" />
-        <item itemvalue="Python.ControlMechanism" />
       </list>
     </recent_temporary>
   </component>
@@ -216,22 +215,22 @@
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1610832938347" />
-    <state width="1599" height="76" key="GridCell.Tab.0.bottom" timestamp="1610785943214">
+    <state width="1596" height="281" key="GridCell.Tab.0.bottom" timestamp="1611957863560">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1599" height="76" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
-    <state width="1599" height="76" key="GridCell.Tab.0.center" timestamp="1610785943214">
+    <state width="1596" height="281" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1611957863560" />
+    <state width="1596" height="281" key="GridCell.Tab.0.center" timestamp="1611957863560">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1599" height="76" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
-    <state width="1599" height="76" key="GridCell.Tab.0.left" timestamp="1610785943214">
+    <state width="1596" height="281" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1611957863560" />
+    <state width="1596" height="281" key="GridCell.Tab.0.left" timestamp="1611957863560">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1599" height="76" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
-    <state width="1599" height="76" key="GridCell.Tab.0.right" timestamp="1610785943214">
+    <state width="1596" height="281" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1611957863560" />
+    <state width="1596" height="281" key="GridCell.Tab.0.right" timestamp="1611957863560">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
-    <state width="1599" height="76" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1610785943214" />
+    <state width="1596" height="281" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1611957863560" />
     <state width="1899" height="348" key="GridCell.Tab.1.bottom" timestamp="1609996298397">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
@@ -270,7 +269,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/NALGrammar.py</url>
-          <line>257</line>
+          <line>296</line>
           <option name="timeStamp" value="7" />
         </line-breakpoint>
       </breakpoints>
