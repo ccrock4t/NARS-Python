@@ -1,8 +1,8 @@
 import NARSDataStructures
 
-def maxheaptest_insert3_removemax():
+def test_maxheap_removemax():
     heap = NARSDataStructures.MaxHeap()
-    insert = [1, 3, 6]
+    insert = [1, 2, 3, 4, 5, 6]
     maximum = max(insert)
     for i in insert:
         heap.insert(i)
@@ -10,9 +10,10 @@ def maxheaptest_insert3_removemax():
     heapmax = heap.extractMax()
     assert(heapmax == maximum), "Heap did not properly retrieve maximum value"
 
-def maxheaptest_insert3_removemin():
+
+def test_maxheap_removemin():
     heap = NARSDataStructures.MaxHeap()
-    insert = [1, 3, 6]
+    insert = [1, 2, 3, 4, 5, 6]
     minimum = min(insert)
     for i in insert:
         heap.insert(i)
@@ -20,9 +21,11 @@ def maxheaptest_insert3_removemin():
     heapmin = heap.extractMin()
     assert (heapmin == minimum), "Heap did not properly retrieve minimum value"
 
+
 if __name__ == "__main__":
     """
         MaxHeap Tests
     """
-    maxheaptest_insert3_removemax()
+    test_maxheap_removemax()
+    test_maxheap_removemin()
     print("Everything passed")
