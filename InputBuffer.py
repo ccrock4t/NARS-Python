@@ -23,7 +23,7 @@ def process_sentence(sentence):
     print("IN: " + sentence.get_formatted_string())
     # create new task
     task = Task(sentence, is_input_task=True)
-    Global.NARS.overall_experience_buffer.put_new_item_from_object(task)
+    Global.NARS.overall_experience_buffer.put_new_item(task)
 
 def parse_sentence(sentence_string):
     """
@@ -45,7 +45,7 @@ def parse_sentence(sentence_string):
     punctuation = Punctuation.get_punctuation(punctuation_str)
     assert (punctuation is not None), punctuation_str + " is not punctuation."
 
-    # todo accept more input types
+    # todo add support for goals
     assert (punctuation == Punctuation.Judgment or punctuation == Punctuation.Question), " Currently only accepting Judgments and Questions."
 
     # Find statement copula, subject string, and predicate string

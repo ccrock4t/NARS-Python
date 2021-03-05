@@ -30,11 +30,14 @@ class Memory:
         assert(self.get_concept(term) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         concept = Concept(term)
-        self.concepts_bag.put_new_item_from_object(concept)
+        self.concepts_bag.put_new_item(concept)
         return concept
 
     def get_concept(self, term):
-        concept_item = self.concepts_bag.peek(str(term))
+        """
+            Get a concept from memory using its term
+        """
+        concept_item = self.concepts_bag.peek(hash(str(term)))
         if concept_item is None:
             return None
         return concept_item.object

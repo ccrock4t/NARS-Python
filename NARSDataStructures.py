@@ -37,16 +37,18 @@ class Bag:
         for i in range(0, self.number_of_buckets):
             self.buckets[i] = []
 
-    def put_new_item_from_object(self, object):
+    def put_new_item(self, object):
         """
-            Insert a new object in the bag - it is wrapped in an item
+            Insert a new object in the bag - it will be wrapped in an item
+            The object/item can be accessed by object's key, which is the hash of its string representation.
         """
         assert (isinstance(object, self.item_type)), "object must be of type " + str(self.item_type)
-        if hash(object) not in self.item_lookup_table:
+        key = hash(object)
+        if key not in self.item_lookup_table:
             # create item
             item = Bag.Item(object)
             # put item into lookup table and bucket
-            self.item_lookup_table[hash(object)] = item
+            self.item_lookup_table[key] = item
             self.buckets[item.get_new_bucket_number()].append(item)
             self.count = self.count + 1
 
@@ -56,21 +58,21 @@ class Bag:
         """
         assert (isinstance(item, Bag.Item)), "item must be of type " + str(Bag.Item)
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
-        if hash(item.object) not in self.item_lookup_table:
+        key = hash(item.object)
+        if key not in self.item_lookup_table:
             # put item into lookup table and bucket
-            self.item_lookup_table[hash(item.object)] = item
+            self.item_lookup_table[key] = item
             self.buckets[item.get_new_bucket_number()].append(item)
-
             self.count = self.count + 1
 
-    def peek(self, object):
+    def peek(self, key):
         """
-            Peek an item from the bag using its object as a key
+            Peek an item from the bag using its key
 
             Returns None if the object isn't in the bag
         """
-        if hash(object) in self.item_lookup_table:
-            return self.item_lookup_table[hash(object)]
+        if key in self.item_lookup_table:
+            return self.item_lookup_table[key]
         return None
 
     def take(self, object=None):
