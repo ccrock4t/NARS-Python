@@ -4,6 +4,7 @@ from NARSDataStructures import Bag, assert_task, Table
 """
     Author: Christian Hahm
     Created: October 9, 2020
+    Purpose: Defines NARS internal memory
 """
 class Memory:
     """
@@ -33,7 +34,7 @@ class Memory:
         return concept
 
     def get_concept(self, term):
-        concept_item = self.concepts_bag.get(str(term))
+        concept_item = self.concepts_bag.peek(str(term))
         if concept_item is None:
             return None
         return concept_item.object
@@ -51,17 +52,8 @@ class Concept:
         self.term = term
         self.term_links = {}
         self.task_links = {}
-        self.belief_table = Table()
-        self.desire_table = Table()
-
-    def merge_into_belief_table(self, judgment):
-        """
-            merge judgment task into beliefs table
-        """
-        # merge it with all the other beliefs if possible
-        Table.merge(judgment)
-        #add the statement itself to the table
-        Table.insert(judgment)
+        self.belief_table = Table(Punctuation.Judgment)
+        self.desire_table = Table(Punctuation.Goal)
 
     def set_term_link(self, concept):
         """
@@ -74,6 +66,7 @@ class Concept:
     def remove_term_link(self, concept):
         """
             Remove a bidirectional term link between this concept and another concept
+            todo: use this somewhere
         """
         assert_concept(concept)
         assert(concept.term in self.term_links), concept.term + "must be in term links."

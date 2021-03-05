@@ -24,8 +24,18 @@
   <component name="ChangeListManager">
     <list default="true" id="fd616af4-ca7b-4665-a740-381ee29e5fe0" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Global.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/InputBuffer.py" beforeDir="false" afterPath="$PROJECT_DIR$/InputBuffer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NALGrammar.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALGrammar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NALInferenceRules.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALInferenceRules.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NALSyntax.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALSyntax.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARS in Python - Technical Documentation.docx" beforeDir="false" afterPath="$PROJECT_DIR$/NARS in Python - Technical Documentation.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NARS.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARS.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NARSDataStructures.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSDataStructures.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NARSMemory.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSMemory.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TestCases/DataStructureTests.py" beforeDir="false" afterPath="$PROJECT_DIR$/TestCases/DataStructureTests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TestCases/Test.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +52,14 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="ProjectId" id="1lztl2uRHQHBRP9VI1d4e3jRY2z" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="1" id="Add" />
@@ -51,10 +69,11 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../TruePAL/CARLA/scenario_runner/srunner/scenarios" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
+    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Python" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../TruePAL/CARLA/scenario_runner" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.DataStructureTests">
+  <component name="RunManager" selected="Python.NARS">
     <configuration name="Asserts" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NARS-Graph" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -68,27 +87,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Asserts.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Config" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="NARS-Graph" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Config.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -118,27 +116,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="InputBuffer" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="NARS-Graph" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/InputBuffer.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="NARS" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NARS-Graph" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -160,13 +137,55 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="NARSDataStructures" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="NARS-Graph" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/NARSDataStructures.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="scratch" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="NARS-Graph" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.DataStructureTests" />
         <item itemvalue="Python.NARS" />
+        <item itemvalue="Python.DataStructureTests" />
+        <item itemvalue="Python.NARSDataStructures" />
+        <item itemvalue="Python.scratch" />
         <item itemvalue="Python.Asserts" />
-        <item itemvalue="Python.InputBuffer" />
-        <item itemvalue="Python.Config" />
       </list>
     </recent_temporary>
   </component>
@@ -195,82 +214,5 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
-  </component>
-  <component name="WindowStateProjectService">
-    <state x="733" y="321" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1608786641292">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="733" y="321" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1040@0.0.1920.1040" timestamp="1608786641292" />
-    <state x="354" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1610784025350">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="354" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1610784025350" />
-    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1609391913069">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="690" y="266" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609391913069" />
-    <state x="355" y="157" key="FileChooserDialogImpl" timestamp="1610832938347">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="355" y="157" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1610832938347" />
-    <state width="1596" height="239" key="GridCell.Tab.0.bottom" timestamp="1611965236293">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1596" height="239" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1611965236293" />
-    <state width="1596" height="239" key="GridCell.Tab.0.center" timestamp="1611965236293">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1596" height="239" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1611965236293" />
-    <state width="1596" height="239" key="GridCell.Tab.0.left" timestamp="1611965236293">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1596" height="239" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1611965236293" />
-    <state width="1596" height="239" key="GridCell.Tab.0.right" timestamp="1611965236293">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1596" height="239" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1611965236293" />
-    <state width="1899" height="348" key="GridCell.Tab.1.bottom" timestamp="1609996298397">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298397" />
-    <state width="1899" height="348" key="GridCell.Tab.1.center" timestamp="1609996298396">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.center/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
-    <state width="1899" height="348" key="GridCell.Tab.1.left" timestamp="1609996298396">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.left/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
-    <state width="1899" height="348" key="GridCell.Tab.1.right" timestamp="1609996298396">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state width="1899" height="348" key="GridCell.Tab.1.right/0.0.1920.1040@0.0.1920.1040" timestamp="1609996298396" />
-    <state x="69" y="74" width="916" height="711" key="SettingsEditor" timestamp="1609539431001">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="69" y="74" width="916" height="711" key="SettingsEditor/0.0.1920.1040@0.0.1920.1040" timestamp="1609539431001" />
-    <state x="667" y="119" width="585" height="801" key="find.popup" timestamp="1610783255220">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="667" y="119" width="585" height="801" key="find.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1610783255220" />
-    <state x="803" y="305" key="refactoring.ChangeSignatureDialog" timestamp="1609539390008">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="803" y="305" key="refactoring.ChangeSignatureDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1609539390008" />
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup" timestamp="1610783252684">
-      <screen x="0" y="0" width="1920" height="1040" />
-    </state>
-    <state x="623" y="225" width="672" height="678" key="search.everywhere.popup/0.0.1920.1040@0.0.1920.1040" timestamp="1610783252684" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/NALGrammar.py</url>
-          <line>296</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

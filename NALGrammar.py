@@ -1,37 +1,43 @@
 import Global
 import NALSyntax
+from NALInferenceRules import *
 from NALSyntax import *
 import NARSDataStructures
 
 """
     Author: Christian Hahm
     Created: October 9, 2020
+    Purpose: Enforces Narsese grammar that is used throughout the project
 """
 class Sentence:
     """
-        <Statement><Punctuation> <value>
+        sentence ::= <statement><punctuation> %<value>%
     """
     def __init__(self, statement, value, punctuation):
         assert_statement(statement)
         assert_punctuation(punctuation)
 
         self.statement = statement
-        self.value = value # truth-value or desire-value
+        self.value = value # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
         self.punctuation = punctuation
         self.stamp = Sentence.Stamp()
 
     def revise(self, sentence):
+        #todo fix this, can't re-assign self
         """
             Revise sentence into self
         """
-        assert(sentence.punctuation == self.punctuation), "Cannot revise 2 Sentences with different Punctuation"
-        # compute new truth value
-        # merge in evidential basis
-        #todo self.
+        # revise the 2 sentences
+        self = nal_revision(self, sentence)
 
+    def has_evidential_overlap(self, sentence):
+        assert_sentence(sentence)
+        return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
 
     def get_formatted_string(self):
-        return self.statement.get_formatted_string() + str(self.punctuation.value) + " " + self.value.get_formatted_string()
+        string = self.statement.get_formatted_string() + str(self.punctuation.value)
+        if self.value is not None: string = string + " " + self.value.get_formatted_string()
+        return string
 
     class Stamp:
         """
@@ -43,7 +49,7 @@ class Sentence:
             'E' an evidential set.
         """
         def __init__(self):
-            self.id = -1
+            self.id = -1 #todo, add IDs
             self.creation_time = Global.current_cycle_number # when was stamp created (in inference cycles)?
             self.occurrence_time = -1 # when did this statement occur (in inference cycles)
             self.syntactic_complexity = -1 # number of subterms
@@ -54,40 +60,47 @@ class Sentence:
                 Stores history of how the sentence was derived
             """
             def __init__(self, id):
-                self.base = NARSDataStructures.Table()
-                self.base.insert(id)
+                self.base = []
+                self.base.append(id)
                 #todo MAX_EVIDENTIAL_BASE_LENGTH
 
 
             def merge_evidential_base_into_self(self, other_base):
                 """
-                    Merge other evidential base into self
+                    Merge other evidential base into self.
+                    This function assumes the base to merge does not have evidential overlap with this base
                 """
-                assert(not self.has_evidential_overlap(other_base)),"Cannot merge sentences with overlapping evidential bases"
                 self.base = [self.base[:], other_base[:]] # merge both bases into self
 
             def has_evidential_overlap(self, other_base):
                 """
                     Check does other base has overlapping evidence with self?
+                    O(M + N)
+                    https://stackoverflow.com/questions/3170055/test-if-lists-share-any-items-in-python
                 """
-                for basis in other_base:
-                    if basis in self.base:
-                        return True
-                return False
+                return not set(self.base).isdisjoint(other_base)
 
 
 class Judgment(Sentence):
     """
-        <Statement>. <truth-value>
+        judgment ::= <statement>. %<truth-value>%
     """
     def __init__(self, statement, value):
         assert_statement(statement)
         assert_truth_value(value)
         super().__init__(statement, value, Punctuation.Judgment)
 
+class Question(Sentence):
+    """
+        question ::= <statement>? %<truth-value>%
+    """
+    def __init__(self, statement):
+        assert_statement(statement)
+        super().__init__(statement, None, Punctuation.Question)
+
 class Statement:
     """
-        <Term Copula Term>
+        statement ::= <subject><copula><predicate>
     """
     def __init__(self, subject, predicate, copula):
         assert_term(subject)
@@ -126,7 +139,7 @@ class EvidentialValue:
 class DesireValue(EvidentialValue):
     """
         <frequency, confidence>
-        Describing S ==> D,
+        For a virtual judgement S |=> D,
         how much the associated statement S implies the overall desired state of NARS, D
     """
     def __init__(self, frequency, confidence):
@@ -144,9 +157,7 @@ class TruthValue(EvidentialValue):
 
 class Term:
     """
-        A valid word.
-
-        Base class for all terms. Use to create any term
+        Base class for all terms.
     """
     def __init__(self, term_string):
         assert (isinstance(term_string, str)), term_string + " must be a str"
@@ -166,9 +177,30 @@ class Term:
     def __str__(self):
         return self.get_formatted_string()
 
+    @classmethod
+    def make_term_from_string(cls, term_string):
+        """
+            either an atomic term, or a statement/compound term surrounded in parentheses.
+        """
+        if term_string[0] == "(":
+            assert (term_string[len(term_string) - 1] == ")"), "Compound term must have ending parenthesis"
+            term_connector = TermConnector.get_term_connector_from_string(term_string[1])  # ex: (*,t1,t2)
+            statement_connector = StatementConnector.get_statement_connector_from_string(
+                term_string[0:2])  # ex: (&&,t1,t2)
+            if term_connector is None and statement_connector is None:
+                # statement term
+                term = StatementTerm.from_string(term_string)
+            else:
+                # compound term
+                term = CompoundTerm.from_string(term_string)
+        else:
+            term = AtomicTerm(term_string)
+
+        return term
+
 class AtomicTerm(Term):
     """
-        An atomic term
+        An atomic term. Any valid word
 
         T
     """
@@ -234,15 +266,15 @@ class CompoundTerm(Term):
         depth = 0
         subterm_string = ""
         for i, c in enumerate(internal_terms_string):
-            if c == StatementSyntax.Start_Alternate.value or c == StatementSyntax.Start.value:
+            if c == StatementSyntax.Start.value:
                 depth = depth + 1
-            elif c == StatementSyntax.End_Alternate.value:
+            elif c == StatementSyntax.End.value:
                 depth = depth - 1
 
             if depth == 0:
                 if c == ",":
                     subterm_string = subterm_string.strip()
-                    subterms.append(MakeTermFromString(subterm_string))
+                    subterms.append(Term.make_term_from_string(subterm_string))
                     subterm_string = ""
                 else:
                     subterm_string = subterm_string + c
@@ -287,55 +319,38 @@ class StatementTerm(CompoundTerm):
         return str(self.connector.value)
 
     def get_formatted_string(self):
-        string = self.get_subject_term().get_formatted_string() + self.get_copula_string() + self.get_predicate_term().get_formatted_string()
-        return "(" + string + ")"
-
-def MakeTermFromString(term_string):
-    """
-        either an atomic term, or a statement/compound term surrounded in parentheses.
-    """
-    if term_string[0] == "(":
-        assert(term_string[len(term_string) - 1] == ")"), "Compound term must have ending parenthesis"
-        term_connector = TermConnector.get_term_connector_from_string(term_string[1]) # ex: (*,t1,t2)
-        statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2]) # ex: (&&,t1,t2)
-        if term_connector is None and statement_connector is None:
-            # statement term
-            term = StatementTerm.from_string(term_string)
-        else:
-            # compound term
-            term = CompoundTerm.from_string(term_string)
-    else:
-        term = AtomicTerm(term_string)
-
-    return term
+        string = self.get_subject_term().get_formatted_string() + " " + self.get_copula_string() + " "  + self.get_predicate_term().get_formatted_string()
+        return NALSyntax.StatementSyntax.Start.value + string + NALSyntax.StatementSyntax.End.value
 
 def parse_subject_predicate_copula_and_copula_index(statement_string):
     """
-    Parameter: statement_string - String of NAL syntax <term copula term> or (term copula term)
+        Parameter: statement_string - String of NAL syntax <term copula term> or (term copula term)
 
-    Returns: top-level subject term, predicate term, copula, copula index
+        Returns: top-level subject term, predicate term, copula, copula index
     """
-    print(statement_string)
+
     # get copula
     copula = -1
     copula_idx = -1
     depth = 0
+
+    # todo print(statement_string)
     for i, v in enumerate(statement_string):
-        print(v)
-        if v == StatementSyntax.Start_Alternate.value or v == StatementSyntax.Start.value:
+        #print(v)
+        if v == StatementSyntax.Start.value:
             depth = depth + 1
-        elif v == StatementSyntax.End_Alternate.value:
+        elif v == StatementSyntax.End.value:
             depth = depth - 1
         elif depth == 1 and i + 3 <= len(statement_string) and Copula.is_string_a_copula(statement_string[i:i + 3]):
             copula, copula_idx = Copula.get_copula_from_string(statement_string[i:i + 3]), i
-        print(depth)
+        #print(depth)
 
     assert (copula_idx != -1), "Copula not found. Exiting.."
 
     subject_str = statement_string[1:copula_idx].strip() # get subject string
     predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string)-1].strip() #get predicate string
 
-    return MakeTermFromString(subject_str), MakeTermFromString(predicate_str), copula, copula_idx
+    return Term.make_term_from_string(subject_str), Term.make_term_from_string(predicate_str), copula, copula_idx
 
 def assert_term(t):
     assert (isinstance(t, Term)), str(t) + " must be a Term"

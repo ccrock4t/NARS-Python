@@ -1,11 +1,11 @@
 import InputBuffer
-import NALGrammar
 from NALSyntax import Punctuation
 from NARSMemory import Memory
-import Global
 import threading
 import os
 from NARSDataStructures import *
+import tkinter as tk
+
 """
     Author: Christian Hahm
     Created: October 8, 2020
@@ -58,12 +58,17 @@ class NARS:
             Process a Narsese task
         """
         assert_task(task)
-        if task.sentence.punctuation == Punctuation.Judgment:
-            self.process_judgment(task)
+        if task.needs_initial_processing: #
+            if task.sentence.punctuation == Punctuation.Judgment:
+                self.initial_process_judgment(task)
+            elif task.sentence.punctuation == Punctuation.Question:
+                self.initial_process_question(task)
 
-    def process_judgment(self, task):
+        #todo implement continued processing
+
+    def initial_process_judgment(self, task):
         """
-            Process a Narsese judgment task
+            Process a Narsese judgment task, for the first time it is selected
             Add task links if they don't exist
         """
         assert_task(task)
@@ -73,7 +78,7 @@ class NARS:
         subject_term = statement_term.get_subject_term()
         predicate_term = statement_term.get_predicate_term()
 
-        # get/create statement concept, and sub-term concepts recursively
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.get_concept_from_term(statement_term)
 
         # get subject-predicate concepts
@@ -86,10 +91,34 @@ class NARS:
         predicate_concept.set_task_link(task)
 
         # add judgment into concept belief table
-        statement_concept.merge_into_belief_table(task)
+        statement_concept.belief_table.insert(task.sentence)
 
+    def initial_process_question(self, task):
+        """
+            Process a Narsese question task, for the first time it is selected
+        """
+        assert_task(task)
 
+        # get terms from sentence
+        statement_term = task.sentence.statement.term
+        subject_term = statement_term.get_subject_term()
+        predicate_term = statement_term.get_predicate_term()
 
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
+        statement_concept = self.get_concept_from_term(statement_term)
+
+        # get subject-predicate concepts
+        subject_concept = self.get_concept_from_term(subject_term)
+        predicate_concept = self.get_concept_from_term(predicate_term)
+
+        # early quit if belief table is empty
+        if len(statement_concept.belief_table) == 0: return
+        # get the best answer from concept belief table
+        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
+        if task.is_from_input: print("OUT: " + best_answer.get_formatted_string())
+
+        # initial processing complete
+        task.needs_initial_processing = False
 
     def get_concept_from_term(self, term):
         """
@@ -113,50 +142,54 @@ class NARS:
 def main():
     # set globals
     Global.NARS = NARS()
-    Global.PRINT_ATTENTION = True
     Global.current_cycle_number = 0
+    Global.PRINT_ATTENTION = False
 
-    # launch user input thread
-    t = threading.Thread(target=get_user_input, name="user input thread")
+    # launch NARS thread in Console
+    t = threading.Thread(target=do_working_cycle, name="NARS thread")
     t.daemon = True
     t.start()
 
-    # run NARS
-    while True:
-        do_working_cycle()
-        Global.current_cycle_number = Global.current_cycle_number + 1
+    # launch GUI
+    window = tk.Tk()
+    window.title("NARS in Python")
+    window.geometry('450x40')
 
+    # input GUI
+    def input_clicked(event=None):
+        # put input into NARS input buffer
+        InputBuffer.add_input(input_field.get())
+        # empty input field
+        input_field.delete(0, tk.END)
+        input_field.insert(0, "")
+
+    input_lbl = tk.Label(window, text="Input: ")
+    input_lbl.grid(column=0, row=0)
+    input_field = tk.Entry(window,width=50)
+    input_field.grid(column=1, row=0)
+
+    window.bind('<Return>', func=input_clicked)
+    send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)
+    send_input_btn.grid(column=2, row=0)
+
+    window.mainloop()
 
 def do_working_cycle():
     """
         Perform one working cycle.
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
-    rand = random.random()
+    while True:
+        rand = random.random()
 
-    if rand < Config.MINDFULNESS:
-        # OBSERVE
-        Global.NARS.Observe()
-    else:
-        # CONSIDER
-        Global.NARS.Consider()
-
-
-def get_user_input():
-    """
-        Get user input from standard I/O
-    """
-    userinput = ""
-
-    while userinput != "exit":
-        userinput = input("")
-        if userinput == "count":
-            print("Memory count: " + str(Global.NARS.memory.get_number_of_concepts()))
-            print("Buffer count: " + str(Global.NARS.overall_experience_buffer.count))
+        if rand < Config.MINDFULNESS:
+            # OBSERVE
+            Global.NARS.Observe()
         else:
-            InputBuffer.add_input(userinput)
+            # CONSIDER
+            Global.NARS.Consider()
 
-    os._exit()
+        Global.current_cycle_number = Global.current_cycle_number + 1
 
 
 if __name__ == "__main__":

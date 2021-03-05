@@ -2,13 +2,12 @@ import enum
 """
     Author: Christian Hahm
     Created: October 9, 2020
+    Purpose: Defines the syntax to be used for Narsese
 """
 class StatementSyntax(enum.Enum):
     # Primary copula
-    Start = "<"
-    Start_Alternate = "("
-    End = ">"
-    End_Alternate = ")"
+    Start = "("
+    End = ")"
     TruthValMarker = "%"
     TruthValDivider = ";"
 
@@ -24,7 +23,6 @@ class StatementConnector(enum.Enum):
     Disjunction = "||"
     SequentialConjunction = "&/"
     ParallelConjunction = "&|"
-
 
     @classmethod
     def is_string_a_statement_connector(cls, value):

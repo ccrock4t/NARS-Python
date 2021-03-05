@@ -1,15 +1,19 @@
-import NALGrammar
 from NALGrammar import *
 import Global
 import Config
 from NARSDataStructures import Task
+import tkinter as tk
 """
     Author: Christian Hahm
     Created: October 9, 2020
 """
 def add_input(input_string):
     try:
-        sentence = parse_sentence(input_string)
+        if input_string == "count":
+            print("Memory count: " + str(Global.NARS.memory.get_number_of_concepts()))
+            print("Buffer count: " + str(Global.NARS.overall_experience_buffer.count))
+        else:
+            sentence = parse_sentence(input_string)
     except AssertionError as msg:
         print("INPUT REJECTED: " + str(msg))
         return
@@ -18,7 +22,7 @@ def add_input(input_string):
 def process_sentence(sentence):
     print("IN: " + sentence.get_formatted_string())
     # create new task
-    task = Task(sentence)
+    task = Task(sentence, is_input_task=True)
     Global.NARS.overall_experience_buffer.put_new_item_from_object(task)
 
 def parse_sentence(sentence_string):
@@ -29,24 +33,20 @@ def parse_sentence(sentence_string):
     """
     # Find statement start and statement end
     start_idx = sentence_string.find(StatementSyntax.Start.value)
-    if start_idx == -1:
-        start_idx = sentence_string.find(StatementSyntax.Start_Alternate.value)
-
-    assert(start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " or " + StatementSyntax.Start_Alternate.value + " not found."
+    assert(start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " not found."
 
     end_idx = sentence_string.rfind(StatementSyntax.End.value)
-    if end_idx == -1:
-        end_idx = sentence_string.rfind(StatementSyntax.End_Alternate.value)
-    assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " or " + StatementSyntax.End_Alternate.value + " not found."
+    assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " not found."
 
     # Find sentence punctuation
     punctuation_idx = end_idx + 1
+    assert(punctuation_idx < len(sentence_string)), "No punctuation found."
     punctuation_str = sentence_string[punctuation_idx]
     punctuation = Punctuation.get_punctuation(punctuation_str)
     assert (punctuation is not None), punctuation_str + " is not punctuation."
 
     # todo accept more input types
-    assert (punctuation == Punctuation.Judgment), " Currently only accepting Judgments."
+    assert (punctuation == Punctuation.Judgment or punctuation == Punctuation.Question), " Currently only accepting Judgments and Questions."
 
     # Find statement copula, subject string, and predicate string
     subject, predicate, copula, copula_idx = parse_subject_predicate_copula_and_copula_index(sentence_string[start_idx:end_idx+1])
@@ -70,12 +70,14 @@ def parse_sentence(sentence_string):
         truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE)
     else:
         # Parse truth value from string
-        freq = sentence_string[start_truth_val_idx+1:middle_truth_val_idx]
-        conf = sentence_string[middle_truth_val_idx+1:end_truth_val_idx]
+        freq = float(sentence_string[start_truth_val_idx+1:middle_truth_val_idx])
+        conf = float(sentence_string[middle_truth_val_idx+1:end_truth_val_idx])
         truth_value = TruthValue(freq, conf)
 
     if punctuation == Punctuation.Judgment:
         sentence = Judgment(statement, truth_value)
+    elif punctuation == Punctuation.Question:
+        sentence = Question(statement)
 
     return sentence
 

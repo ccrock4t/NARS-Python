@@ -1,5 +1,5 @@
-import Config
 from NALGrammar import *
+
 """
 ==== ==== ==== ==== ==== ====
 ==== NAL Inference Rules ====
@@ -7,6 +7,7 @@ from NALGrammar import *
 
     Author: Christian Hahm
     Created: October 8, 2020
+    Purpose: Defines the NAL inference rules
 """
 
 
@@ -17,15 +18,15 @@ from NALGrammar import *
 """
 def band(*argv):
     """
-    Binary AND
+        Binary AND
 
-    -----------------
+        -----------------
 
-    Input:
-        argv - NAL Binary Values
+        Input:
+            argv - NAL Binary Values
 
-    Output:
-        argv1*argv2*...*argvn
+        Output:
+            argv1*argv2*...*argvn
     """
     res = 1
     for arg in argv:
@@ -34,15 +35,15 @@ def band(*argv):
 
 def bor(*argv):
     """
-    Binary OR
+        Binary OR
 
-    -----------------
+        -----------------
 
-    Input:
-        argv - NAL Binary Values
+        Input:
+            argv - NAL Binary Values
 
-    Output:
-         1-((1-argv1)*(1-argv2)*...*(1-argvn))
+        Output:
+             1-((1-argv1)*(1-argv2)*...*(1-argvn))
     """
     res = 1
     for arg in argv:
@@ -51,15 +52,15 @@ def bor(*argv):
 
 def bnot(arg):
     """
-    Binary Not
+        Binary Not
 
-    -----------------
+        -----------------
 
-    Input:
-        arg - NAL Binary Value
+        Input:
+            arg - NAL Binary Value
 
-    Output:
-        1 - arg
+        Output:
+            1 - arg
     """
     return 1 - arg
 
@@ -72,23 +73,25 @@ def bnot(arg):
 
 def nal_revision(j1, j2):
     """
-    Revision Rule
+        Revision Rule
 
-    -----------------
+        -----------------
 
-    Revises two instances of the same sentence with different truth values.
+        Revises two instances of the same sentence with different truth values.
+        Also merges their evidential bases.
 
-    j1 and j2 must have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
+        j1 and j2 must have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
 
-    Input:
-      j1: Sentence (Statement <f1, c1>)
+        Input:
+          j1: Sentence (Statement <f1, c1>)
 
-      j2: Sentence (Statement <f2, c2>)
-    Output:
-      :- Sentence (Statement <f3, c3>)
+          j2: Sentence (Statement <f2, c2>)
+        Output:
+          :- Sentence (Statement <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
+    assert (j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
     # Subject Predicate
     resultsubjpred = j1.subject_predicate
 
@@ -100,31 +103,36 @@ def nal_revision(j1, j2):
     wn3 = wn1 + wn2
     w3 = wp3 + wn3
     f3, c3 = getfreqconf_fromevidence(wp3, w3)
-    resulttruth = TruthValue(f3, c3)
 
+    # Create the resultant sentence
+    resulttruth = TruthValue(f3, c3)
     resultStatement = Statement(resultsubjpred, Copula.Inheritance)
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
+    # merge in the parent sentence's evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
     return result
 
 
 
 def nal_choice(j1, j2):
     """
-     Choice Rule
+         Choice Rule
 
-     -----------------
+         -----------------
 
-     Choose the better answer (according to the choice rule) between 2 different sentences.
-     If the statements are the same, the statement with the highest confidence is chosen.
-     If they are different, the statement with the highest expectation is chosen.
+         Choose the better answer (according to the choice rule) between 2 different sentences.
+         If the statements are the same, the statement with the highest confidence is chosen.
+         If they are different, the statement with the highest expectation is chosen.
 
-     Input:
-       j1: Sentence (Statement <f1, c1>)
+         Input:
+           j1: Sentence (Statement <f1, c1>)
 
-       j2: Sentence (Statement <f2, c2>)
+           j2: Sentence (Statement <f2, c2>)
 
-     Output:
-       j1 or j2, depending on which is better according to the choice rule
+         Output:
+           j1 or j2, depending on which is better according to the choice rule
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -154,34 +162,34 @@ def nal_choice(j1, j2):
 
 def nal_decision(d):
     """
-     Decision Rule
+         Decision Rule
 
-     -----------------
+         -----------------
 
-     Make the decision to purse a desire based on its expected desirability
+         Make the decision to purse a desire based on its expected desirability
 
-     Input:
-       d: Desire's desirability
+         Input:
+           d: Desire's desirability
 
-     Output:
-       True or false, whether to pursue the goal
+         Output:
+           True or false, whether to pursue the goal
     """
     return abs(d - 0.5) > Config.t
 
 
 def nal_expectation(f, c):
     """
-    Expectation
+        Expectation
 
-    -----------------
+        -----------------
 
-     Input:
-        f: frequency
+         Input:
+            f: frequency
 
-        c: confidence
+            c: confidence
 
-     Output:
-        expectation value
+         Output:
+            expectation value
     """
     return c * (f - 0.5) + 0.5
 
@@ -194,12 +202,12 @@ def nal_expectation(f, c):
 
 def nal_negation(j):
     """
-     Negation
+         Negation
 
-     -----------------
+         -----------------
 
-     Input:
-       j: Sentence (Statement <f, c>)
+         Input:
+           j: Sentence (Statement <f, c>)
     """
     assert_sentence(j)
     # Truth Value
@@ -247,20 +255,20 @@ def nal_contrapositive(j1, j2):
 
 def nal_deduction(j1, j2):
     """
-    Deduction (Strong syllogism)
+        Deduction (Strong syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (M --> P <f1, c1>)
+        Input:
+            j1: Sentence (M --> P <f1, c1>)
 
-        j2: Sentence (S --> M <f2, c2>)
-    Truth Val:
-        f3: and(f1,f2)
+            j2: Sentence (S --> M <f2, c2>)
+        Truth Val:
+            f3: and(f1,f2)
 
-        c3: and(f1,f2,c1,c2)
-    Output:
-        :- Sentence (S --> P <f3, c3>)
+            c3: and(f1,f2,c1,c2)
+        Output:
+            :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -280,20 +288,20 @@ def nal_deduction(j1, j2):
 
 def nal_analogy(j1, j2):
     """
-    Analogy (Strong syllogism)
+        Analogy (Strong syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (M --> P <f1, c1>)
+        Input:
+            j1: Sentence (M --> P <f1, c1>)
 
-        j2: Sentence (S <-> M <f2, c2>)
-    Truth Val:
-        f: and(f1,f2)
+            j2: Sentence (S <-> M <f2, c2>)
+        Truth Val:
+            f: and(f1,f2)
 
-        c: and(f2,c1,c2)
-    Output:
-        :- Sentence (S --> P <f3, c3>)
+            c: and(f2,c1,c2)
+        Output:
+            :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -315,20 +323,20 @@ def nal_analogy(j1, j2):
 
 def nal_resemblance(j1, j2):
     """
-    Resemblance (Strong syllogism)
+        Resemblance (Strong syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (M <-> P <f1, c1>)
+        Input:
+            j1: Sentence (M <-> P <f1, c1>)
 
-        j2: Sentence (S <-> M <f2, c2>)
-    Truth Val:
-        f: and(f1,f2)
+            j2: Sentence (S <-> M <f2, c2>)
+        Truth Val:
+            f: and(f1,f2)
 
-        c: and(or(f1,f2),c1,c2)
-    Output:
-        :- Sentence (S <-> P <f3, c3>)
+            c: and(or(f1,f2),c1,c2)
+        Output:
+            :- Sentence (S <-> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -356,22 +364,22 @@ def nal_resemblance(j1, j2):
 
 def nal_abduction(j1, j2):
     """
-    Abduction (Weak syllogism)
+        Abduction (Weak syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (P --> M <f1, c1>)
+        Input:
+            j1: Sentence (P --> M <f1, c1>)
 
-        j2: Sentence (S --> M <f2, c2>)
-    Evidence:
-        w+: and(f1,f2,c1,c2)
+            j2: Sentence (S --> M <f2, c2>)
+        Evidence:
+            w+: and(f1,f2,c1,c2)
 
-        w-: and(f1,c1,not(f2),c2)
+            w-: and(f1,c1,not(f2),c2)
 
-        w: and(f1,c1,c2)
-    Output:
-        :- Sentence (S --> P <f3, c3>)
+            w: and(f1,c1,c2)
+        Output:
+            :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -395,22 +403,22 @@ def nal_abduction(j1, j2):
 
 def nal_induction(j1, j2):
     """
-    Induction (Weak syllogism)
+        Induction (Weak syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (M --> P <f1, c1>)
+        Input:
+            j1: Sentence (M --> P <f1, c1>)
 
-        j2: Sentence (M --> S <f2, c2>)
-    Evidence:
-        w+: and(f1,f2,c1,c2)
+            j2: Sentence (M --> S <f2, c2>)
+        Evidence:
+            w+: and(f1,f2,c1,c2)
 
-        w-: and(f2,c2,not(f1),c1)
+            w-: and(f2,c2,not(f1),c1)
 
-        w: and(f2,c1,c2)
-    Output:
-        :- Sentence (S --> P <f3, c3>)
+            w: and(f2,c1,c2)
+        Output:
+            :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -432,22 +440,22 @@ def nal_induction(j1, j2):
 
 def nal_exemplification(j1, j2):
     """
-    Exemplification (Weak syllogism)
+        Exemplification (Weak syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (P --> M <f1, c1>)
+        Input:
+            j1: Sentence (P --> M <f1, c1>)
 
-        j2: Sentence (M --> S <f2, c2>)
-    Evidence:
-        w+: and(f1,c1,f2,c2)
+            j2: Sentence (M --> S <f2, c2>)
+        Evidence:
+            w+: and(f1,c1,f2,c2)
 
-        w-: 0
+            w-: 0
 
-        w: w+
-    Output:
-        :- Sentence (S --> P <f3, c3>)
+            w: w+
+        Output:
+            :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -469,20 +477,20 @@ def nal_exemplification(j1, j2):
 
 def nal_comparison(j1, j2):
     """
-    Comparison (Weak syllogism)
+        Comparison (Weak syllogism)
 
-    -----------------
+        -----------------
 
-    Input:
-        j1: Sentence (M --> P <f1, c1>)
+        Input:
+            j1: Sentence (M --> P <f1, c1>)
 
-        j2: Sentence (M --> S <f2, c2>)
-    Evidence:
-        w+: and(f1,c1,f2,c2)
+            j2: Sentence (M --> S <f2, c2>)
+        Evidence:
+            w+: and(f1,c1,f2,c2)
 
-        w: and(or(f1,f2),c1,c2)
-    Output:
-        :- Sentence (S <-> P <f3, c3>)
+            w: and(or(f1,f2),c1,c2)
+        Output:
+            :- Sentence (S <-> P <f3, c3>)
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -511,12 +519,12 @@ def nal_comparison(j1, j2):
 
 def getfreqconf_fromevidence(wp, w):
     """
-    Input:
-        wp: positive evidence w+
+        Input:
+            wp: positive evidence w+
 
-        w: total evidence w
-    Output:
-        frequency, confidence
+            w: total evidence w
+        Output:
+            frequency, confidence
     """
     f = wp / w
     c = w / (w + Config.k)
@@ -524,12 +532,12 @@ def getfreqconf_fromevidence(wp, w):
 
 def getevidence_fromfreqconf(f, c):
     """
-    Input:
-        f: frequency
+        Input:
+            f: frequency
 
-        c: confidence
-    Output:
-        w+, w, w-
+            c: confidence
+        Output:
+            w+, w, w-
     """
     wp = Config.k * f * c / (1 - c)
     w = Config.k * c / (1 - c)
@@ -537,32 +545,32 @@ def getevidence_fromfreqconf(f, c):
 
 def gettruthvalues_from2sentences(j1, j2):
     """
-    Input:
-        j1: Statement <f1, c1>
+        Input:
+            j1: Statement <f1, c1>
 
-        j2: Statement <f2, c2>
-    Output:
-        f1, c1, f2, c2
+            j2: Statement <f2, c2>
+        Output:
+            f1, c1, f2, c2
     """
     return gettruthvalues_fromsentence(j1), gettruthvalues_fromsentence(j2)
 
 def gettruthvalues_fromsentence(j):
     """
-    Input:
-        j: Statement <f, c>
-    Output:
-        f, c
+        Input:
+            j: Statement <f, c>
+        Output:
+            f, c
     """
     return j.value.frequency, j.value.confidence
 
 def getevidence_from2sentences(j1, j2):
     """
-    Input:
-        j1: Statement <f1, c1>
+        Input:
+            j1: Statement <f1, c1>
 
-        j2: Statement <f2, c2>
-    Output:
-        w1+, w1, w1-, w2+, w2, w2-
+            j2: Statement <f2, c2>
+        Output:
+            w1+, w1, w1-, w2+, w2, w2-
     """
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
     return getevidence_fromfreqconf(f1, c1), getevidence_fromfreqconf(f2, c2)

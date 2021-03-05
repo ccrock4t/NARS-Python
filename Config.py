@@ -1,22 +1,23 @@
 """
     Author: Christian Hahm
     Created: October 9, 2020
+    Purpose: Specific configuration settings for NARS
 """
 """
     System Parameters
 """
 k = 1 # evidential horizon
 t = 0.25 # decision rule (goal decision-making) threshold
-MINDFULNESS = 0.5 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) vs. allocating to ruminating / pondering concepts
+MINDFULNESS = 0.5 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) vs. pondering concepts
 
 """
     Bags
 """
 BAG_CAPACITY = 100 # how many items can fit in a bag
-BAG_NUMBER_OF_BUCKETS = 101 # how many probability buckets are there? e.g. 101 allows 101 probability values (between [0%, 100%])
+BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 allows 100 probability values in [0%, 100%)
 
 """
-Tables
+    Tables
 """
 TABLE_CAPACITY = 30
 
