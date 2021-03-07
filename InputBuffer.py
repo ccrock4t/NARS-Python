@@ -1,8 +1,8 @@
 from NALGrammar import *
-import Global
+from Global import Global
 import Config
 from NARSDataStructures import Task
-import tkinter as tk
+
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -10,17 +10,17 @@ import tkinter as tk
 def add_input(input_string):
     try:
         if input_string == "count":
-            print("Memory count: " + str(Global.NARS.memory.get_number_of_concepts()))
-            print("Buffer count: " + str(Global.NARS.overall_experience_buffer.count))
+            Global.print_to_output("Memory count: " + str(Global.NARS.memory.get_number_of_concepts()))
+            Global.print_to_output("Buffer count: " + str(Global.NARS.overall_experience_buffer.count))
         else:
             sentence = parse_sentence(input_string)
     except AssertionError as msg:
-        print("INPUT REJECTED: " + str(msg))
+        Global.print_to_output("INPUT REJECTED: " + str(msg))
         return
     process_sentence(sentence)
 
 def process_sentence(sentence):
-    print("IN: " + sentence.get_formatted_string())
+    Global.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = Task(sentence, is_input_task=True)
     Global.NARS.overall_experience_buffer.put_new_item(task)

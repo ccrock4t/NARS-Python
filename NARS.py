@@ -1,10 +1,12 @@
 import InputBuffer
+from NALInferenceRules import nal_revision
 from NALSyntax import Punctuation
 from NARSMemory import Memory
 import threading
 import os
 from NARSDataStructures import *
 import tkinter as tk
+from Global import Global
 
 """
     Author: Christian Hahm
@@ -58,15 +60,14 @@ class NARS:
             Process a Narsese task
         """
         assert_task(task)
-        if task.needs_initial_processing: #
-            if task.sentence.punctuation == Punctuation.Judgment:
-                self.initial_process_judgment(task)
-            elif task.sentence.punctuation == Punctuation.Question:
-                self.initial_process_question(task)
+        if task.sentence.punctuation == Punctuation.Judgment:
+            self.process_judgment(task)
+        elif task.sentence.punctuation == Punctuation.Question:
+            self.process_question(task)
 
         #todo implement continued processing
 
-    def initial_process_judgment(self, task):
+    def process_judgment(self, task):
         """
             Process a Narsese judgment task, for the first time it is selected
             Add task links if they don't exist
@@ -90,10 +91,22 @@ class NARS:
         subject_concept.set_task_link(task)
         predicate_concept.set_task_link(task)
 
-        # add judgment into concept belief table
-        statement_concept.belief_table.insert(task.sentence)
+        if task.needs_initial_processing:
+            # add judgment into concept belief table
+            statement_concept.belief_table.insert(task.sentence)
+            task.needs_initial_processing = False
+        else:
+            # get most confident belief of the same content
+            belief = statement_concept.belief_table.peek()
+            if belief is None: return
+            if belief.has_evidential_overlap(task.sentence): return
+            # do revision
+            derived_sentence = nal_revision(belief, task.sentence)
+            derived_task = Task(derived_sentence)
+            self.overall_experience_buffer.put_new_item(derived_task)
 
-    def initial_process_question(self, task):
+
+    def process_question(self, task):
         """
             Process a Narsese question task, for the first time it is selected
         """
@@ -111,14 +124,20 @@ class NARS:
         subject_concept = self.get_concept_from_term(subject_term)
         predicate_concept = self.get_concept_from_term(predicate_term)
 
-        # early quit if belief table is empty
-        if len(statement_concept.belief_table) == 0: return
-        # get the best answer from concept belief table
-        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
-        if task.is_from_input: print("OUT: " + best_answer.get_formatted_string())
+        if task.needs_initial_processing:
+            # early quit if belief table is empty
+            if len(statement_concept.belief_table) == 0: return
+            # get the best answer from concept belief table
+            best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
+            if best_answer is None: return
+            if task.is_from_input:
+                Global.print_to_output("OUT: " + best_answer.get_formatted_string())
 
-        # initial processing complete
-        task.needs_initial_processing = False
+            # initial processing complete
+            task.needs_initial_processing = False
+        else:
+            if len(statement_concept.belief_table) == 0: return
+
 
     def get_concept_from_term(self, term):
         """
@@ -142,8 +161,6 @@ class NARS:
 def main():
     # set globals
     Global.NARS = NARS()
-    Global.current_cycle_number = 0
-    Global.PRINT_ATTENTION = False
 
     # launch NARS thread in Console
     t = threading.Thread(target=do_working_cycle, name="NARS thread")
@@ -153,7 +170,10 @@ def main():
     # launch GUI
     window = tk.Tk()
     window.title("NARS in Python")
-    window.geometry('450x40')
+    window.geometry('1100x500')
+
+    Global.output_textbox = tk.Text(window, height=25, width=75)
+    Global.output_textbox.grid(column=0, row=0)
 
     # input GUI
     def input_clicked(event=None):
@@ -164,13 +184,14 @@ def main():
         input_field.insert(0, "")
 
     input_lbl = tk.Label(window, text="Input: ")
-    input_lbl.grid(column=0, row=0)
+    input_lbl.grid(column=1, row=0)
     input_field = tk.Entry(window,width=50)
-    input_field.grid(column=1, row=0)
+    input_field.grid(column=2, row=0)
+    input_field.focus()
 
     window.bind('<Return>', func=input_clicked)
     send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)
-    send_input_btn.grid(column=2, row=0)
+    send_input_btn.grid(column=3, row=0)
 
     window.mainloop()
 

@@ -1,8 +1,5 @@
-import Global
-import NALSyntax
-from NALInferenceRules import *
+from Global import Global
 from NALSyntax import *
-import NARSDataStructures
 
 """
     Author: Christian Hahm
@@ -22,14 +19,6 @@ class Sentence:
         self.punctuation = punctuation
         self.stamp = Sentence.Stamp()
 
-    def revise(self, sentence):
-        #todo fix this, can't re-assign self
-        """
-            Revise sentence into self
-        """
-        # revise the 2 sentences
-        self = nal_revision(self, sentence)
-
     def has_evidential_overlap(self, sentence):
         assert_sentence(sentence)
         return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
@@ -48,12 +37,18 @@ class Sentence:
             'Ca' syntactic complexity (the number of subterms in the associated term)
             'E' an evidential set.
         """
+        next_stamp_id = 0
         def __init__(self):
-            self.id = -1 #todo, add IDs
-            self.creation_time = Global.current_cycle_number # when was stamp created (in inference cycles)?
-            self.occurrence_time = -1 # when did this statement occur (in inference cycles)
-            self.syntactic_complexity = -1 # number of subterms
+            self.id = self.get_next_stamp_id()
+            self.creation_time = Global.current_cycle_number # when was this stamp created (in inference cycles)?
+            self.occurrence_time = -1 # todo, estimate of when did this event occur (in inference cycles)
+            self.syntactic_complexity = -1 # todo, number of subterms
             self.evidential_base = self.EvidentialBase(self.id)
+
+        @classmethod
+        def get_next_stamp_id(cls):
+            cls.next_stamp_id = cls.next_stamp_id + 1
+            return cls.next_stamp_id - 1
 
         class EvidentialBase:
             """
@@ -70,7 +65,14 @@ class Sentence:
                     Merge other evidential base into self.
                     This function assumes the base to merge does not have evidential overlap with this base
                 """
-                self.base = [self.base[:], other_base[:]] # merge both bases into self
+                newbase = []
+                for id in self.base:
+                    newbase.append(id)
+
+                for id in other_base.base:
+                    newbase.append(id)
+
+                self.base = newbase
 
             def has_evidential_overlap(self, other_base):
                 """
@@ -78,7 +80,7 @@ class Sentence:
                     O(M + N)
                     https://stackoverflow.com/questions/3170055/test-if-lists-share-any-items-in-python
                 """
-                return not set(self.base).isdisjoint(other_base)
+                return not set(self.base).isdisjoint(other_base.base)
 
 
 class Judgment(Sentence):
@@ -216,7 +218,9 @@ class AtomicTerm(Term):
 
     @classmethod
     def is_valid_term(cls, term_string):
-        return term_string in NALSyntax.valid_term_chars
+        for char in term_string:
+            if char not in valid_term_chars: return False
+        return True
 
 
 class CompoundTerm(Term):
@@ -320,7 +324,7 @@ class StatementTerm(CompoundTerm):
 
     def get_formatted_string(self):
         string = self.get_subject_term().get_formatted_string() + " " + self.get_copula_string() + " "  + self.get_predicate_term().get_formatted_string()
-        return NALSyntax.StatementSyntax.Start.value + string + NALSyntax.StatementSyntax.End.value
+        return StatementSyntax.Start.value + string + StatementSyntax.End.value
 
 def parse_subject_predicate_copula_and_copula_index(statement_string):
     """

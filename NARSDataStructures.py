@@ -4,7 +4,7 @@ from depq import DEPQ
 
 import Config
 import random
-import Global
+from Global import Global
 import NALInferenceRules
 import NALGrammar
 
@@ -34,7 +34,7 @@ class Bag:
         self.count = 0 # number of items in the bag
 
         # initialize buckets
-        for i in range(0, self.number_of_buckets):
+        for i in range(1, self.number_of_buckets+1):
             self.buckets[i] = []
 
     def put_new_item(self, object):
@@ -103,17 +103,18 @@ class Bag:
         """
         self.move_to_next_nonempty_bucket()  # try next non-empty bucket
         rnd = random.random()  # randomly generated number in [0.0, 1.0)
+        bucket_probability = self.current_bucket_number / self.number_of_buckets
 
-        # select the current bucket only if rnd is smaller than
-        # the ratio of the bucket number to total number of buckets
-        # (e.g. the first bucket will never be selected (0% priority),
-        # the last bucket is guaranteed to be selected (100% priority))
-        while rnd >= (self.current_bucket_number / (self.number_of_buckets - 1)):
+        # select the current bucket only if rnd is below the bucket's probability threshold
+        # (e.g. 100 buckets in a bag, bucket 1 has 1% chance of being chosen. Therefore 'rnd' must be
+        # smaller than 0.01 to be chosen)
+        while rnd >= bucket_probability:
+            # bucket was not selected, try next bucket
             self.move_to_next_nonempty_bucket() # try next non-empty bucket
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
 
         # pop random item from currently selected bucket
-        rnd = random.random()  # randomly generated number in [0.0, 1.0)
+        rnd = random.random()  # another randomly generated number in [0.0, 1.0)
         maxidx = len(self.buckets[self.current_bucket_number]) - 1
         randidx = int(round(rnd * maxidx))
         item = self.buckets[self.current_bucket_number].pop(randidx)
@@ -135,7 +136,7 @@ class Bag:
         """
             Select the next bucket after the currently selected bucket
         """
-        self.current_bucket_number = (self.current_bucket_number + 1) % self.number_of_buckets
+        self.current_bucket_number = ((self.current_bucket_number + 1) % self.number_of_buckets) + 1
 
     class Item:
         """
@@ -154,9 +155,11 @@ class Bag:
         def get_new_bucket_number(self):
             """
                 Output: The bucket number this item belongs in.
-                It is calculated as this item's priority rounded to 2 decimals * 100 (as an int)
+                It is calculated as this item's priority [0,1] converted to a corresponding probability
+                based on Bag granularity
+                (e.g. Priority=0.5, 100 buckets -> bucket 50, 200 buckets -> bucket 100, 50 buckets -> bucket 25)
             """
-            return int(round(self.budget.priority, 2) * 100)
+            return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS/100
 
         class Budget:
             def __init__(self, priority=0.0, durability=0.0, quality=0.0):
@@ -258,7 +261,7 @@ class Task:
     """
        NARS Task
     """
-    def __init__(self, sentence, is_input_task: bool):
+    def __init__(self, sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
         self.creation_timestamp: int = Global.current_cycle_number # stamp the task at creation time
@@ -269,7 +272,7 @@ class Task:
         return self.creation_timestamp
 
     def __str__(self):
-        return self.sentence.get_formatted_string() + " " + str(self.creation_timestamp)
+        return self.sentence.get_formatted_string() + " " + str(self.sentence.stamp.id)
 
 
 # Asserts

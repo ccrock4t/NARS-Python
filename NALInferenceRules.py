@@ -1,3 +1,4 @@
+import Config
 from NALGrammar import *
 
 """
@@ -92,8 +93,6 @@ def nal_revision(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     assert (j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
-    # Subject Predicate
-    resultsubjpred = j1.subject_predicate
 
     # Get Truth Value
     (wp1, w1, wn1), (wp2, w2, wn2) = getevidence_from2sentences(j1, j2)
@@ -106,7 +105,7 @@ def nal_revision(j1, j2):
 
     # Create the resultant sentence
     resulttruth = TruthValue(f3, c3)
-    resultStatement = Statement(resultsubjpred, Copula.Inheritance)
+    resultStatement = Statement(j1.statement.subject_term, j1.statement.predicate_term, Copula.Inheritance)
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
     # merge in the parent sentence's evidential bases
