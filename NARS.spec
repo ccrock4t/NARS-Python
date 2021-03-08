@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['NARS.py'],
-             pathex=['C:\\Users\\hahm.19\\Desktop\\Research\\NAL-Neurons\\NARS-Python'],
+             pathex=['C:\\Users\\hahm.19\\Desktop\\Research\\NARS-Python'],
              binaries=[],
              datas=[],
              hiddenimports=[],
