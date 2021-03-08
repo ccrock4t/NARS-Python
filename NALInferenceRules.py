@@ -207,24 +207,12 @@ def nal_negation(j):
 
          Input:
            j: Sentence (Statement <f, c>)
+
+         Output:
     """
     assert_sentence(j)
-    # Truth Value
-    f1, c1 = gettruthvalues_fromsentence(j)
-    _, w, w1n = getevidence_fromfreqconf(f1, c1)
-
-    # negate evidence
-    wp = w1n
-
-    # get negated frequency and confidence
-    f, c = getfreqconf_fromevidence(wp, w)
-
-    resulttruth = TruthValue(f, c)
-
-    resultStatement = Statement(j.s, Copula.Inheritance)
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
-
-    return result
+    j.value.frequency = 1 - j.value.frequency
+    return j
 
 
 # Conversion
@@ -283,6 +271,11 @@ def nal_deduction(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+
     return result
 
 def nal_analogy(j1, j2):

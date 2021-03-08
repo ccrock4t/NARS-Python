@@ -1,7 +1,7 @@
 import time
 
 import InputBuffer
-from NALInferenceRules import nal_revision
+from NALInferenceRules import nal_revision, nal_deduction
 from NALSyntax import Punctuation
 from NARSMemory import Memory
 import threading
@@ -79,11 +79,11 @@ class NARS:
         predicate_term = statement_term.get_predicate_term()
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.get_concept_from_term(statement_term)
+        statement_concept = self.memory.get_concept(statement_term)
 
         # get subject-predicate concepts
-        subject_concept = self.get_concept_from_term(subject_term)
-        predicate_concept = self.get_concept_from_term(predicate_term)
+        subject_concept = self.memory.get_concept(subject_term)
+        predicate_concept = self.memory.get_concept(predicate_term)
 
         # set task links if they don't exist
         statement_concept.set_task_link(task)
@@ -95,17 +95,41 @@ class NARS:
             statement_concept.belief_table.insert(task.sentence)
             task.needs_initial_processing = False
         else:
-            # get most confident belief of the same content
-            belief = statement_concept.belief_table.peek()
-            if belief is None: return
-            if belief.has_evidential_overlap(task.sentence): return
-            # do revision
-            derived_sentence = nal_revision(belief, task.sentence)
-            derived_task = Task(derived_sentence)
-            print("Revision derived new task " + str(derived_task))
-            print("Derived task evidential base " + str(derived_task.sentence.stamp.evidential_base.base))
-            self.overall_experience_buffer.put_new_item(derived_task)
+            """
+                Revision stage
+            """
+            belief = statement_concept.belief_table.peek() # get most confident belief of the same content
+            if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (belief not in task.interacted_beliefs):
+                derived_sentence = nal_revision(belief, task.sentence) #perform revision
+                task.interacted_beliefs.append(belief)
+                derived_task = Task(derived_sentence)
+                print("Revision derived new task " + str(derived_task))
+                print("Derived task evidential base " + str(derived_task.sentence.stamp.evidential_base.base))
+                self.overall_experience_buffer.put_new_item(derived_task)
 
+            """
+                Forward Inference stage
+            """
+            related_concept = self.memory.get_semantically_related_concept(statement_concept)
+            if related_concept is None: return # no related concepts!
+            belief = related_concept.belief_table.peek() # get most confident belief of the same content
+            if not task.sentence.has_evidential_overlap(belief) and (belief not in task.interacted_beliefs):
+                if subject_term == belief.statement.term.get_predicate_term() :
+                    # M-->P, S-->M
+                    # deduction
+                    derived_sentence = nal_deduction(task.sentence, belief)
+                elif predicate_term == belief.statement.term.get_subject_term():
+                    # S-->M, M-->P
+                    # deduction
+                    derived_sentence = nal_deduction(belief, task.sentence)
+                else:
+                    assert False, "error, concept not related"
+
+                task.interacted_beliefs.append(belief)
+                derived_task = Task(derived_sentence)
+                print("Deduction derived new task " + str(derived_task))
+                print("Derived task evidential base " + str(derived_task.sentence.stamp.evidential_base.base))
+                self.overall_experience_buffer.put_new_item(derived_task)
 
     def process_question(self, task):
         """
@@ -119,11 +143,11 @@ class NARS:
         predicate_term = statement_term.get_predicate_term()
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.get_concept_from_term(statement_term)
+        statement_concept = self.memory.get_concept(statement_term)
 
         # get subject-predicate concepts
-        subject_concept = self.get_concept_from_term(subject_term)
-        predicate_concept = self.get_concept_from_term(predicate_term)
+        subject_concept = self.memory.get_concept(subject_term)
+        predicate_concept = self.memory.get_concept(predicate_term)
 
         if task.needs_initial_processing:
             # early quit if belief table is empty
@@ -140,45 +164,36 @@ class NARS:
             if len(statement_concept.belief_table) == 0: return
 
 
-    def get_concept_from_term(self, term):
-        """
-            Get the concept named by a term, and create it if it doesn't exist.
-            Also creates all sub-term concepts if they do not exist.
-        """
-        concept = self.memory.get_concept(term)
-
-        if concept is None:
-            # concept must be created, and potentially sub-concepts
-            concept = self.memory.conceptualize_term(term)
-            if isinstance(term, NALGrammar.CompoundTerm):
-                for subterm in term.subterms:
-                    # get subterm concepts
-                    subconcept = self.get_concept_from_term(subterm)
-                    # do term linking with subterms
-                    concept.set_term_link(subconcept)
-
-        return concept
-
 def main():
+    """
+        This is where the program starts
+        Creates threads, populates some globals, and runs the NARS.
+    """
     # set globals
     Global.NARS = NARS()
 
-    #setup GUI
+    #setup internal GUI
+    internal_GUI_thread = threading.Thread(target=setup_internal_gui, name="Internal GUI thread")
+    internal_GUI_thread.daemon = True
+    internal_GUI_thread.start()
+
+    time.sleep(0.25)
+
+    #setup interface GUI
     interface_GUI_thread = threading.Thread(target=setup_interface_gui, name="Interface GUI thread")
     interface_GUI_thread.daemon = True
     interface_GUI_thread.start()
+    # let the gui threads initialize
+    time.sleep(1)
 
-    #setup GUI
-    interal_GUI_thread = threading.Thread(target=setup_internal_gui, name="Internal GUI thread")
-    interal_GUI_thread.daemon = True
-    interal_GUI_thread.start()
-
-    # Start NARS
+    # Finally, start NARS
     do_working_cycles()
 
 
-
 def setup_internal_gui():
+    """
+        Setup the internal GUI window, displaying the system's buffers and memory
+    """
     # launch GUI
     window = tk.Tk()
     window.title("NARS in Python - Internal Data")
@@ -199,19 +214,34 @@ def setup_internal_gui():
     window.mainloop()
 
 def setup_interface_gui():
+    """
+        Setup the interface GUI window, displaying the system's i/o channels
+    """
     # launch GUI
     window = tk.Tk()
     window.title("NARS in Python - Interface")
-    window.geometry('650x500')
+    window.geometry('700x500')
 
+    output_width = 3
+    output_height = 2
+
+    #row 0
+    output_lbl = tk.Label(window, text="Output: ")
+    output_lbl.grid(row=0, column=0, columnspan=output_width)
+
+    #row 1
     output_scrollbar = tk.Scrollbar(window)
     output_scrollbar.grid(row=1, column=3, sticky='ns')
 
-    output_lbl = tk.Label(window, text="Output: ")
-    output_lbl.grid(column=0, row=0, columnspan=3)
-
     Global.output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
-    Global.output_textbox.grid(column=0, row=1, columnspan=3)
+    Global.output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
+
+    speed_slider_lbl = tk.Label(window, text="millisec/step: ")
+    speed_slider_lbl.grid(row=1, column=4, sticky='s')
+
+    #row 2
+    Global.speed_slider = tk.Scale(window,from_=1000, to=0)
+    Global.speed_slider.grid(row=2, column=4,sticky='ns')
 
     # input GUI
     def input_clicked(event=None):
@@ -222,15 +252,17 @@ def setup_interface_gui():
         input_field.insert(0, "")
 
     input_lbl = tk.Label(window, text="Input: ")
-    input_lbl.grid(column=0, row=2)
+    input_lbl.grid(column=0, row=3)
 
     input_field = tk.Entry(window,width=50)
-    input_field.grid(column=1, row=2)
+    input_field.grid(column=1, row=3)
     input_field.focus()
 
     window.bind('<Return>', func=input_clicked)
     send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)
-    send_input_btn.grid(column=2, row=2)
+    send_input_btn.grid(column=2, row=3)
+
+    window.focus()
 
     window.mainloop()
 
@@ -240,6 +272,7 @@ def do_working_cycles():
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
     while True:
+        time.sleep(Global.speed_slider.get() / 1000)
         rand = random.random()
         if rand < Config.MINDFULNESS:
             # OBSERVE

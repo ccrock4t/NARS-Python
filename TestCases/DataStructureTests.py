@@ -4,6 +4,11 @@ from NALSyntax import Punctuation
 import NARS
 from NARSMemory import Concept
 
+"""
+    Author: Christian Hahm
+    Created: January 29, 2021
+    Purpose: Defines NARS internal memory
+"""
 
 def test_table_removemax():
     heap = NARSDataStructures.Table()
@@ -32,9 +37,9 @@ def test_table_removemin():
 
 def test_concept_termlinking():
     testnars = NARS.NARS()
-    statement_concept = testnars.get_concept_from_term(Term.make_term_from_string("(A-->B)"))
-    conceptA = testnars.get_concept_from_term(Term.make_term_from_string("A"))
-    conceptB = testnars.get_concept_from_term(Term.make_term_from_string("B"))
+    statement_concept = testnars.memory.get_concept(Term.make_term_from_string("(A-->B)"))
+    conceptA = testnars.memory.get_concept(Term.make_term_from_string("A"))
+    conceptB = testnars.memory.get_concept(Term.make_term_from_string("B"))
 
     assert (statement_concept.term_links.count == 2), "Concept " + str(statement_concept) + " does not have 2 termlinks"
     assert (conceptA.term_links.count == 1), "Concept " + str(conceptA) + " does not have 1 termlink"

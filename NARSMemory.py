@@ -1,3 +1,6 @@
+from random import random
+
+import NALGrammar
 from NALGrammar import *
 from NARSDataStructures import Bag, assert_task, Table, Task
 
@@ -27,7 +30,7 @@ class Memory:
             Returns: Concept
         """
         assert_term(term)
-        assert(self.get_concept(term) is None), "Cannot create new concept. Concept already exists."
+        assert(self.concepts_bag.peek(hash(str(term))) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         concept = Concept(term)
         self.concepts_bag.put_new_item(concept)
@@ -35,12 +38,55 @@ class Memory:
 
     def get_concept(self, term):
         """
-            Get a concept from memory using its term
-        """
+              Get the concept from memory using its term,
+              and create it if it doesn't exist.
+              Also creates all sub-term concepts if they do not exist.
+          """
         concept_item = self.concepts_bag.peek(hash(str(term)))
-        if concept_item is None:
-            return None
-        return concept_item.object
+        if concept_item is not None: return concept_item.object # return if got concept
+
+        # concept must be created, and potentially its sub-concepts
+        concept = self.conceptualize_term(term)
+        if isinstance(term, NALGrammar.CompoundTerm):
+            for subterm in term.subterms:
+                # get/create subterm concepts
+                subconcept = self.get_concept(subterm)
+
+                if isinstance(term, NALGrammar.StatementTerm):
+                    # do term linking with subterms
+                    concept.set_term_link(subconcept)
+
+        return concept
+
+    def get_semantically_related_concept(self, concept):
+        """
+            Get a belief (named by a Statement Term) that is semantically related to the given concept by a term
+
+            Returns None if no such belief exists
+        """
+        related_concept = None
+
+        if isinstance(concept.term, StatementTerm):
+            subject = concept.term.get_subject_term()
+            predicate = concept.term.get_predicate_term()
+
+            related_concept_from_subject = self.get_semantically_related_concept(self.get_concept(subject))
+            related_concept_from_predicate = self.get_semantically_related_concept(self.get_concept(predicate))
+
+            if related_concept_from_subject is not None and related_concept_from_predicate is None: #none from subject
+                related_concept = related_concept_from_subject
+            elif related_concept_from_subject is None and related_concept_from_predicate is not None: #none from predicate
+                related_concept = related_concept_from_predicate
+            elif related_concept_from_subject is not None and related_concept_from_predicate is not None: #one from both
+                rand = random()
+                if(rand < 0.5):
+                    related_concept = related_concept_from_subject
+                else:
+                    related_concept = related_concept_from_predicate
+        else:
+            related_concept = concept.term_links.peek().object
+
+        return related_concept
 
     def forget(self, term):
         assert_term(term)

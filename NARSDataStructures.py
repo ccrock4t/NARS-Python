@@ -74,15 +74,23 @@ class Bag:
             #GUI
             Global.print_to_output(msg=str(item.object), selfobj=self)
 
-    def peek(self, key):
+    def peek(self, key=None):
         """
-            Peek an item from the bag using its key
+            Peek an item from the bag using its key.
+            If key is None, peeks probabilistically
 
             Returns None if the object isn't in the bag
         """
-        if key in self.item_lookup_table:
-            return self.item_lookup_table[key]
-        return None
+        if self.count == 0:
+            return None # no items
+
+        item = None
+        if key is None:
+            item, _ = self._peek_item_probabilistically()
+        else:
+            if key in self.item_lookup_table:
+                item = self.item_lookup_table[key]
+        return item
 
     def take(self, object=None):
         """
@@ -96,10 +104,10 @@ class Bag:
             return None # no items
 
         if object is None:
-            return self.take_item_probabilistically()
-        return self.take_item_by_key(hash(object))
+            return self._take_item_probabilistically()
+        return self._take_item_by_key(hash(object))
 
-    def take_item_by_key(self, key):
+    def _take_item_by_key(self, key):
         assert(key in self.item_lookup_table), "Given key does not exist in this bag"
         item = self.item_lookup_table.pop(key) # remove item reference from lookup table
         self.buckets[item.current_bucket_number].remove(item) # remove item reference from bucket
@@ -110,11 +118,28 @@ class Bag:
 
         return item
 
-    def take_item_probabilistically(self):
+    def _take_item_probabilistically(self):
         """
             Probabilistically selects a priority value / bucket, then removes an item from that bucket.
         """
-        self.move_to_next_nonempty_bucket()  # try next non-empty bucket
+        _, randidx = self._peek_item_probabilistically()
+        item = self.buckets[self.current_bucket_number].pop(randidx)
+        # remove item reference from lookup table
+        self.item_lookup_table.pop(hash(item.object))
+        self.count = self.count - 1 # decrement bag count
+
+        # update GUI
+        Global.remove_from_output(str(item.object), selfobj=self)
+
+        return item
+
+    def _peek_item_probabilistically(self):
+        """
+            Probabilistically selects a priority value / bucket, then peeks an item from that bucket.
+
+            Returns: item, index of item in current bucket
+        """
+        self._move_to_next_nonempty_bucket()  # try next non-empty bucket
         rnd = random.random()  # randomly generated number in [0.0, 1.0)
         bucket_probability = self.current_bucket_number / self.number_of_buckets
 
@@ -123,32 +148,26 @@ class Bag:
         # smaller than 0.01 to be chosen)
         while rnd >= bucket_probability:
             # bucket was not selected, try next bucket
-            self.move_to_next_nonempty_bucket() # try next non-empty bucket
+            self._move_to_next_nonempty_bucket() # try next non-empty bucket
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
 
         # pop random item from currently selected bucket
         rnd = random.random()  # another randomly generated number in [0.0, 1.0)
         maxidx = len(self.buckets[self.current_bucket_number]) - 1
         randidx = int(round(rnd * maxidx))
-        item = self.buckets[self.current_bucket_number].pop(randidx)
-        # remove item reference from lookup table
-        self.item_lookup_table.pop(hash(item.object))
-        self.count = self.count - 1 # decrement bag count
+        item = self.buckets[self.current_bucket_number][randidx]
 
-        # GUI
-        Global.remove_from_output(str(item.object), selfobj=self)
+        return item, randidx
 
-        return item
-
-    def move_to_next_nonempty_bucket(self):
+    def _move_to_next_nonempty_bucket(self):
         """
             Select the next non-empty bucket after the currently selected bucket
         """
-        self.move_to_next_bucket()
+        self._move_to_next_bucket()
         while len(self.buckets[self.current_bucket_number]) == 0:
-            self.move_to_next_bucket()
+            self._move_to_next_bucket()
 
-    def move_to_next_bucket(self):
+    def _move_to_next_bucket(self):
         """
             Select the next bucket after the currently selected bucket
         """
@@ -281,12 +300,13 @@ class Task:
     def __init__(self, sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
-        self.creation_timestamp: int = Global.current_cycle_number # stamp the task at creation time
+        self.creation_timestamp: int = Global.current_cycle_number # save the task's creation time
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
+        self.interacted_beliefs = [] #list of beliefs this task has already interacted with
 
     def __hash__(self):
-        return self.creation_timestamp
+        return self.sentence.stamp.id
 
     def __str__(self):
         return self.sentence.get_formatted_string() + " " + str(self.sentence.stamp.id)
