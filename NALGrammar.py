@@ -8,7 +8,7 @@ from NALSyntax import *
 """
 class Sentence:
     """
-        sentence ::= <statement><punctuation> %<value>%
+        sentence ::= <statement><punctuation> %<value>%G
     """
     def __init__(self, statement, value, punctuation):
         assert_statement(statement)

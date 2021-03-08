@@ -8,7 +8,7 @@ import threading
 import os
 from NARSDataStructures import *
 import tkinter as tk
-from Global import Global
+from Global import GlobalGUI, Global
 
 """
     Author: Christian Hahm
@@ -31,9 +31,6 @@ class NARS:
         if task_item is None:
             return # nothing to observe
 
-        if Global.PRINT_ATTENTION:
-            print("Observe: " + str(task_item.object))
-
         # process task
         self.process_task(task_item.object)
 
@@ -48,9 +45,6 @@ class NARS:
 
         if concept_item is None:
             return # nothing to ponder
-
-        if Global.PRINT_ATTENTION:
-            print("Consider: " + str(concept_item.object))
 
         # get task and belief from concept
 
@@ -123,7 +117,7 @@ class NARS:
                     # deduction
                     derived_sentence = nal_deduction(belief, task.sentence)
                 else:
-                    assert False, "error, concept not related"
+                    assert False, "error, concept " + subject_term + " and " + predicate_term + " not related"
 
                 task.interacted_beliefs.append(belief)
                 derived_task = Task(derived_sentence)
@@ -156,7 +150,7 @@ class NARS:
             best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
             if best_answer is None: return
             if task.is_from_input:
-                Global.print_to_output("OUT: " + best_answer.get_formatted_string())
+                GlobalGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
 
             # initial processing complete
             task.needs_initial_processing = False
@@ -171,24 +165,36 @@ def main():
     """
     # set globals
     Global.NARS = NARS()
+    GlobalGUI.gui_print_internal_data = False # Setting this to False will significantly increase speed
+    GlobalGUI.gui_use_interface = False # Setting this to False uses the shell as interface
 
     #setup internal GUI
-    internal_GUI_thread = threading.Thread(target=setup_internal_gui, name="Internal GUI thread")
-    internal_GUI_thread.daemon = True
-    internal_GUI_thread.start()
-
-    time.sleep(0.25)
+    if GlobalGUI.gui_print_internal_data:
+        internal_GUI_thread = threading.Thread(target=setup_internal_gui, name="Internal GUI thread")
+        internal_GUI_thread.daemon = True
+        internal_GUI_thread.start()
+        time.sleep(0.25)
 
     #setup interface GUI
-    interface_GUI_thread = threading.Thread(target=setup_interface_gui, name="Interface GUI thread")
-    interface_GUI_thread.daemon = True
-    interface_GUI_thread.start()
+    if GlobalGUI.gui_use_interface:
+        interface_thread = threading.Thread(target=setup_interface_gui, name="Interface GUI thread")
+    else:
+        # launch user input thread
+        interface_thread = threading.Thread(target=get_user_input, name="user input thread")
+
+    interface_thread.daemon = True
+    interface_thread.start()
     # let the gui threads initialize
     time.sleep(1)
 
-    # Finally, start NARS
+    # Finally, start NARS in the shell
     do_working_cycles()
 
+def get_user_input():
+    userinput = ""
+    while userinput != "exit":
+        userinput = input("")
+        InputBuffer.add_input(userinput)
 
 def setup_internal_gui():
     """
@@ -202,14 +208,14 @@ def setup_internal_gui():
     output_lbl2 = tk.Label(window, text="Task Buffer: ")
     output_lbl2.grid(column=0, row=0)
 
-    Global.experience_buffer_listbox = tk.Listbox(window, height=25, width=75)
-    Global.experience_buffer_listbox.grid(column=0, row=1, columnspan=2)
+    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=25, width=75)
+    GlobalGUI.gui_experience_buffer_listbox.grid(column=0, row=1, columnspan=2)
 
     output_lbl3 = tk.Label(window, text="Concepts: ")
     output_lbl3.grid(column=3, row=0)
 
-    Global.concept_bag_listbox = tk.Listbox(window, height=25, width=75)
-    Global.concept_bag_listbox.grid(column=3, row=1, columnspan=2)
+    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=25, width=75)
+    GlobalGUI.gui_concept_bag_listbox.grid(column=3, row=1, columnspan=2)
 
     window.mainloop()
 
@@ -220,10 +226,10 @@ def setup_interface_gui():
     # launch GUI
     window = tk.Tk()
     window.title("NARS in Python - Interface")
-    window.geometry('700x500')
+    window.geometry('750x500')
 
     output_width = 3
-    output_height = 2
+    output_height = 3
 
     #row 0
     output_lbl = tk.Label(window, text="Output: ")
@@ -231,17 +237,22 @@ def setup_interface_gui():
 
     #row 1
     output_scrollbar = tk.Scrollbar(window)
-    output_scrollbar.grid(row=1, column=3, sticky='ns')
+    output_scrollbar.grid(row=1, column=3, rowspan=output_height, sticky='ns')
 
-    Global.output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
-    Global.output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
+    GlobalGUI.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
+    GlobalGUI.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
 
-    speed_slider_lbl = tk.Label(window, text="millisec/step: ")
-    speed_slider_lbl.grid(row=1, column=4, sticky='s')
+    GlobalGUI.gui_total_cycles_lbl = tk.Label(window, text="Cycle #0")
+    GlobalGUI.gui_total_cycles_lbl.grid(row=1, column=4, sticky='s')
+
+    speed_slider_lbl = tk.Label(window, text="Cycle Delay in millisec: ")
+    speed_slider_lbl.grid(row=2, column=4, sticky='s')
 
     #row 2
-    Global.speed_slider = tk.Scale(window,from_=1000, to=0)
-    Global.speed_slider.grid(row=2, column=4,sticky='ns')
+    max_delay = 1000 # in milliseconds
+    GlobalGUI.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
+    GlobalGUI.gui_delay_slider.grid(row=3, column=4, sticky='ns')
+    GlobalGUI.gui_delay_slider.set(max_delay)
 
     # input GUI
     def input_clicked(event=None):
@@ -252,15 +263,15 @@ def setup_interface_gui():
         input_field.insert(0, "")
 
     input_lbl = tk.Label(window, text="Input: ")
-    input_lbl.grid(column=0, row=3)
+    input_lbl.grid(column=0, row=4)
 
     input_field = tk.Entry(window,width=50)
-    input_field.grid(column=1, row=3)
+    input_field.grid(column=1, row=4)
     input_field.focus()
 
     window.bind('<Return>', func=input_clicked)
     send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)
-    send_input_btn.grid(column=2, row=3)
+    send_input_btn.grid(column=2, row=4)
 
     window.focus()
 
@@ -272,7 +283,9 @@ def do_working_cycles():
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
     while True:
-        time.sleep(Global.speed_slider.get() / 1000)
+        if GlobalGUI.gui_use_interface:
+            GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
+            time.sleep(GlobalGUI.gui_delay_slider.get() / 1000)
         rand = random.random()
         if rand < Config.MINDFULNESS:
             # OBSERVE
@@ -282,6 +295,7 @@ def do_working_cycles():
             Global.NARS.Consider()
 
         Global.current_cycle_number = Global.current_cycle_number + 1
+
 
 
 if __name__ == "__main__":

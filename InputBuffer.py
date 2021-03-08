@@ -1,5 +1,5 @@
 from NALGrammar import *
-from Global import Global
+from Global import GlobalGUI
 import Config
 from NARSDataStructures import Task
 
@@ -10,18 +10,18 @@ from NARSDataStructures import Task
 def add_input(input_string):
     try:
         if input_string == "count":
-            Global.print_to_output("Memory count (concepts in memory): " + str(Global.NARS.memory.get_number_of_concepts()))
-            Global.print_to_output("Buffer count (tasks in buffer): " + str(Global.NARS.overall_experience_buffer.count))
+            GlobalGUI.print_to_output("Memory count (concepts in memory): " + str(GlobalGUI.NARS.memory.get_number_of_concepts()))
+            GlobalGUI.print_to_output("Buffer count (tasks in buffer): " + str(GlobalGUI.NARS.overall_experience_buffer.count))
             return
         else:
             sentence = parse_sentence(input_string)
     except AssertionError as msg:
-        Global.print_to_output("INPUT REJECTED: " + str(msg))
+        GlobalGUI.print_to_output("INPUT REJECTED: " + str(msg))
         return
     process_sentence(sentence)
 
 def process_sentence(sentence):
-    Global.print_to_output("IN: " + sentence.get_formatted_string())
+    GlobalGUI.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = Task(sentence, is_input_task=True)
     Global.NARS.overall_experience_buffer.put_new_item(task)

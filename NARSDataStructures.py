@@ -4,7 +4,7 @@ from depq import DEPQ
 import tkinter as tk
 import Config
 import random
-from Global import Global
+from Global import GlobalGUI, Global
 import NALInferenceRules
 import NALGrammar
 
@@ -56,7 +56,7 @@ class Bag:
             self.count = self.count + 1
 
             # GUI
-            Global.print_to_output(msg=str(item.object), selfobj=self)
+            GlobalGUI.print_to_output(msg=str(item.object), selfobj=self)
 
     def put(self, item):
         """
@@ -72,7 +72,7 @@ class Bag:
             self.count = self.count + 1
 
             #GUI
-            Global.print_to_output(msg=str(item.object), selfobj=self)
+            GlobalGUI.print_to_output(msg=str(item.object), selfobj=self)
 
     def peek(self, key=None):
         """
@@ -114,7 +114,7 @@ class Bag:
         self.count = self.count - 1 # decrement bag count
 
         # GUI
-        Global.remove_from_output(str(item.object), selfobj=self)
+        GlobalGUI.remove_from_output(str(item.object), selfobj=self)
 
         return item
 
@@ -129,7 +129,7 @@ class Bag:
         self.count = self.count - 1 # decrement bag count
 
         # update GUI
-        Global.remove_from_output(str(item.object), selfobj=self)
+        GlobalGUI.remove_from_output(str(item.object), selfobj=self)
 
         return item
 
