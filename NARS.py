@@ -1,3 +1,5 @@
+import time
+
 import InputBuffer
 from NALInferenceRules import nal_revision
 from NALSyntax import Punctuation
@@ -65,12 +67,9 @@ class NARS:
         elif task.sentence.punctuation == Punctuation.Question:
             self.process_question(task)
 
-        #todo implement continued processing
-
     def process_judgment(self, task):
         """
-            Process a Narsese judgment task, for the first time it is selected
-            Add task links if they don't exist
+            Process a Narsese judgment task
         """
         assert_task(task)
 
@@ -103,12 +102,14 @@ class NARS:
             # do revision
             derived_sentence = nal_revision(belief, task.sentence)
             derived_task = Task(derived_sentence)
+            print("Revision derived new task " + str(derived_task))
+            print("Derived task evidential base " + str(derived_task.sentence.stamp.evidential_base.base))
             self.overall_experience_buffer.put_new_item(derived_task)
 
 
     def process_question(self, task):
         """
-            Process a Narsese question task, for the first time it is selected
+            Process a Narsese question task
         """
         assert_task(task)
 
@@ -162,18 +163,55 @@ def main():
     # set globals
     Global.NARS = NARS()
 
-    # launch NARS thread in Console
-    t = threading.Thread(target=do_working_cycle, name="NARS thread")
-    t.daemon = True
-    t.start()
+    #setup GUI
+    interface_GUI_thread = threading.Thread(target=setup_interface_gui, name="Interface GUI thread")
+    interface_GUI_thread.daemon = True
+    interface_GUI_thread.start()
 
+    #setup GUI
+    interal_GUI_thread = threading.Thread(target=setup_internal_gui, name="Internal GUI thread")
+    interal_GUI_thread.daemon = True
+    interal_GUI_thread.start()
+
+    # Start NARS
+    do_working_cycles()
+
+
+
+def setup_internal_gui():
     # launch GUI
     window = tk.Tk()
-    window.title("NARS in Python")
-    window.geometry('1100x500')
+    window.title("NARS in Python - Internal Data")
+    window.geometry('925x425')
 
-    Global.output_textbox = tk.Text(window, height=25, width=75)
-    Global.output_textbox.grid(column=0, row=0)
+    output_lbl2 = tk.Label(window, text="Task Buffer: ")
+    output_lbl2.grid(column=0, row=0)
+
+    Global.experience_buffer_listbox = tk.Listbox(window, height=25, width=75)
+    Global.experience_buffer_listbox.grid(column=0, row=1, columnspan=2)
+
+    output_lbl3 = tk.Label(window, text="Concepts: ")
+    output_lbl3.grid(column=3, row=0)
+
+    Global.concept_bag_listbox = tk.Listbox(window, height=25, width=75)
+    Global.concept_bag_listbox.grid(column=3, row=1, columnspan=2)
+
+    window.mainloop()
+
+def setup_interface_gui():
+    # launch GUI
+    window = tk.Tk()
+    window.title("NARS in Python - Interface")
+    window.geometry('650x500')
+
+    output_scrollbar = tk.Scrollbar(window)
+    output_scrollbar.grid(row=1, column=3, sticky='ns')
+
+    output_lbl = tk.Label(window, text="Output: ")
+    output_lbl.grid(column=0, row=0, columnspan=3)
+
+    Global.output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
+    Global.output_textbox.grid(column=0, row=1, columnspan=3)
 
     # input GUI
     def input_clicked(event=None):
@@ -184,25 +222,25 @@ def main():
         input_field.insert(0, "")
 
     input_lbl = tk.Label(window, text="Input: ")
-    input_lbl.grid(column=1, row=0)
+    input_lbl.grid(column=0, row=2)
+
     input_field = tk.Entry(window,width=50)
-    input_field.grid(column=2, row=0)
+    input_field.grid(column=1, row=2)
     input_field.focus()
 
     window.bind('<Return>', func=input_clicked)
     send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)
-    send_input_btn.grid(column=3, row=0)
+    send_input_btn.grid(column=2, row=2)
 
     window.mainloop()
 
-def do_working_cycle():
+def do_working_cycles():
     """
         Perform one working cycle.
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
     while True:
         rand = random.random()
-
         if rand < Config.MINDFULNESS:
             # OBSERVE
             Global.NARS.Observe()

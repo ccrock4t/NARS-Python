@@ -28,9 +28,10 @@
       <change beforePath="$PROJECT_DIR$/Global.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/InputBuffer.py" beforeDir="false" afterPath="$PROJECT_DIR$/InputBuffer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NALGrammar.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALGrammar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NALInferenceRules.py" beforeDir="false" afterPath="$PROJECT_DIR$/NALInferenceRules.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARS.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARS.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NARSDataStructures.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSDataStructures.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NARSMemory.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARSMemory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TestCases/DataStructureTests.py" beforeDir="false" afterPath="$PROJECT_DIR$/TestCases/DataStructureTests.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -1,5 +1,5 @@
 from NALGrammar import *
-from NARSDataStructures import Bag, assert_task, Table
+from NARSDataStructures import Bag, assert_task, Table, Task
 
 """
     Author: Christian Hahm
@@ -52,19 +52,20 @@ class Concept:
     """
     def __init__(self, term):
         assert_term(term)
-        self.term = term
-        self.term_links = {}
-        self.task_links = {}
+        self.term = term # concept's unique ID
+        self.term_links = Bag(item_type=Concept) # Bag of related concepts (related by term)
+        self.task_links = Bag(item_type=Task) # Bag of related tasks
         self.belief_table = Table(Punctuation.Judgment)
         self.desire_table = Table(Punctuation.Goal)
 
     def set_term_link(self, concept):
         """
-            Set a bidirectional term link, linking this concept with another concept
+            Set a bidirectional term link between 2 concepts. Does nothing if the link already exists
         """
         assert_concept(concept)
-        self.term_links[concept.term] = concept
-        concept.term_links[self.term] = self
+        if concept in self.term_links: return # already linked
+        self.term_links.put_new_item(concept)
+        concept.term_links.put_new_item(self)
 
     def remove_term_link(self, concept):
         """
@@ -73,8 +74,8 @@ class Concept:
         """
         assert_concept(concept)
         assert(concept.term in self.term_links), concept.term + "must be in term links."
-        self.term_links.pop(concept.term)
-        concept.term_links.pop(self.term)
+        self.term_links.take(object=concept.term)
+        concept.term_links.take(object=self.term)
 
     def set_task_link(self, task):
         """
@@ -83,7 +84,7 @@ class Concept:
         assert_task(task)
         if task in self.task_links:
             return
-        self.task_links[task] = task
+        self.task_links.put_new_item(task)
 
     def remove_task_link(self, task):
         """

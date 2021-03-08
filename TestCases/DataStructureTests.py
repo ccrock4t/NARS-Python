@@ -1,6 +1,8 @@
 import NARSDataStructures
 from NALGrammar import *
 from NALSyntax import Punctuation
+import NARS
+from NARSMemory import Concept
 
 
 def test_table_removemax():
@@ -12,7 +14,6 @@ def test_table_removemax():
                  TruthValue(0.9, c), Punctuation.Judgment)
         heap.insert(sentence)
     heapmax = heap.extract_max().value.confidence
-    print(heapmax)
     assert(heapmax == maximum), "Heap did not properly retrieve maximum value"
 
 
@@ -27,9 +28,28 @@ def test_table_removemin():
         heap.insert(sentence)
 
     heapmin = heap.extract_min().value.confidence
-    print(heapmin)
     assert (heapmin == minimum), "Heap did not properly retrieve minimum value"
 
+def test_concept_termlinking():
+    testnars = NARS.NARS()
+    statement_concept = testnars.get_concept_from_term(Term.make_term_from_string("(A-->B)"))
+    conceptA = testnars.get_concept_from_term(Term.make_term_from_string("A"))
+    conceptB = testnars.get_concept_from_term(Term.make_term_from_string("B"))
+
+    assert (statement_concept.term_links.count == 2), "Concept " + str(statement_concept) + " does not have 2 termlinks"
+    assert (conceptA.term_links.count == 1), "Concept " + str(conceptA) + " does not have 1 termlink"
+    assert (conceptB.term_links.count == 1), "Concept " + str(conceptB) + " does not have 1 termlink"
+
+    statement_concept.remove_term_link(conceptA) # remove concept A's termlink
+
+    assert (statement_concept.term_links.count == 1), "Concept " + str(statement_concept) + " does not have 1 termlink"
+    assert (conceptA.term_links.count == 0), "Concept " + str(conceptA) + " does not have 0 termlinks"
+    assert (conceptB.term_links.count == 1), "Concept " + str(conceptB) + " does not have 1 termlink"
+
+    take = statement_concept.term_links.take().object # take out the only remaining concept (concept B)
+
+    assert (take == conceptB), "Removed concept was not Concept 'B'"
+    assert (conceptB.term_links.count == 1), "Concept does not have 1 termlink"
 
 if __name__ == "__main__":
     """
@@ -37,4 +57,5 @@ if __name__ == "__main__":
     """
     test_table_removemax()
     test_table_removemin()
+    test_concept_termlinking()
     print("Everything passed")

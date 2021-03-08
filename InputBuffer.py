@@ -10,8 +10,9 @@ from NARSDataStructures import Task
 def add_input(input_string):
     try:
         if input_string == "count":
-            Global.print_to_output("Memory count: " + str(Global.NARS.memory.get_number_of_concepts()))
-            Global.print_to_output("Buffer count: " + str(Global.NARS.overall_experience_buffer.count))
+            Global.print_to_output("Memory count (concepts in memory): " + str(Global.NARS.memory.get_number_of_concepts()))
+            Global.print_to_output("Buffer count (tasks in buffer): " + str(Global.NARS.overall_experience_buffer.count))
+            return
         else:
             sentence = parse_sentence(input_string)
     except AssertionError as msg:

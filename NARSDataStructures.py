@@ -1,7 +1,7 @@
 import heapq
 
 from depq import DEPQ
-
+import tkinter as tk
 import Config
 import random
 from Global import Global
@@ -37,6 +37,9 @@ class Bag:
         for i in range(1, self.number_of_buckets+1):
             self.buckets[i] = []
 
+    def __contains__(self, object):
+        return (hash(object) in self.item_lookup_table)
+
     def put_new_item(self, object):
         """
             Insert a new object in the bag - it will be wrapped in an item
@@ -52,6 +55,9 @@ class Bag:
             self.buckets[item.get_new_bucket_number()].append(item)
             self.count = self.count + 1
 
+            # GUI
+            Global.print_to_output(msg=str(item.object), selfobj=self)
+
     def put(self, item):
         """
             Place an item in the bag
@@ -64,6 +70,9 @@ class Bag:
             self.item_lookup_table[key] = item
             self.buckets[item.get_new_bucket_number()].append(item)
             self.count = self.count + 1
+
+            #GUI
+            Global.print_to_output(msg=str(item.object), selfobj=self)
 
     def peek(self, key):
         """
@@ -95,6 +104,10 @@ class Bag:
         item = self.item_lookup_table.pop(key) # remove item reference from lookup table
         self.buckets[item.current_bucket_number].remove(item) # remove item reference from bucket
         self.count = self.count - 1 # decrement bag count
+
+        # GUI
+        Global.remove_from_output(str(item.object), selfobj=self)
+
         return item
 
     def take_item_probabilistically(self):
@@ -121,6 +134,9 @@ class Bag:
         # remove item reference from lookup table
         self.item_lookup_table.pop(hash(item.object))
         self.count = self.count - 1 # decrement bag count
+
+        # GUI
+        Global.remove_from_output(str(item.object), selfobj=self)
 
         return item
 
@@ -149,6 +165,7 @@ class Bag:
         """
         def __init__(self, object):
             self.object = object
+            #todo implement priority
             self.budget = Bag.Item.Budget(priority=0.9, durability=0.9, quality=0.9)
             self.current_bucket_number = self.get_new_bucket_number()
 

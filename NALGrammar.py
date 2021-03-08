@@ -169,6 +169,9 @@ class Term:
         return self.string
 
     def __eq__(self, other):
+        """
+            Terms are equal if their strings are the same
+        """
         if isinstance(other, Term):
             return str(self) == str(other)
         return False
@@ -182,13 +185,15 @@ class Term:
     @classmethod
     def make_term_from_string(cls, term_string):
         """
-            either an atomic term, or a statement/compound term surrounded in parentheses.
+            either an atomic term (e.g. "A")
+
+            or a statement/compound term surrounded in parentheses.
+            (e.g. (&&,A,B) or (A --> B))
         """
         if term_string[0] == "(":
             assert (term_string[len(term_string) - 1] == ")"), "Compound term must have ending parenthesis"
-            term_connector = TermConnector.get_term_connector_from_string(term_string[1])  # ex: (*,t1,t2)
-            statement_connector = StatementConnector.get_statement_connector_from_string(
-                term_string[0:2])  # ex: (&&,t1,t2)
+            term_connector = TermConnector.get_term_connector_from_string(term_string[1])  # e.g.: (*,t1,t2), gets *
+            statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2])  # e.g.: (&&,t1,t2), gets &&
             if term_connector is None and statement_connector is None:
                 # statement term
                 term = StatementTerm.from_string(term_string)
@@ -284,7 +289,7 @@ class CompoundTerm(Term):
                     subterm_string = subterm_string + c
 
         subterm_string = subterm_string.strip()
-        subterms.append(MakeTermFromString(subterm_string))
+        subterms.append(Term.make_term_from_string(subterm_string))
 
         return subterms, connector
 
@@ -323,12 +328,15 @@ class StatementTerm(CompoundTerm):
         return str(self.connector.value)
 
     def get_formatted_string(self):
+        """
+            returns: (Subject copula Predicate)
+        """
         string = self.get_subject_term().get_formatted_string() + " " + self.get_copula_string() + " "  + self.get_predicate_term().get_formatted_string()
         return StatementSyntax.Start.value + string + StatementSyntax.End.value
 
 def parse_subject_predicate_copula_and_copula_index(statement_string):
     """
-        Parameter: statement_string - String of NAL syntax <term copula term> or (term copula term)
+        Parameter: statement_string - String of NAL syntax "(term copula term)"
 
         Returns: top-level subject term, predicate term, copula, copula index
     """
@@ -338,7 +346,6 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
     copula_idx = -1
     depth = 0
 
-    # todo print(statement_string)
     for i, v in enumerate(statement_string):
         #print(v)
         if v == StatementSyntax.Start.value:
