@@ -26,7 +26,7 @@ def band(*argv):
         Input:
             argv - NAL Binary Values
 
-        Output:
+        Returns:
             argv1*argv2*...*argvn
     """
     res = 1
@@ -43,7 +43,7 @@ def bor(*argv):
         Input:
             argv - NAL Binary Values
 
-        Output:
+        Returns:
              1-((1-argv1)*(1-argv2)*...*(1-argvn))
     """
     res = 1
@@ -60,7 +60,7 @@ def bnot(arg):
         Input:
             arg - NAL Binary Value
 
-        Output:
+        Returns:
             1 - arg
     """
     return 1 - arg
@@ -76,18 +76,16 @@ def nal_revision(j1, j2):
     """
         Revision Rule
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Revises two instances of the same sentence with different truth values.
-        Also merges their evidential bases.
-
-        j1 and j2 must have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
 
         Input:
           j1: Sentence (Statement <f1, c1>)
 
           j2: Sentence (Statement <f2, c2>)
-        Output:
+        Returns:
           :- Sentence (Statement <f3, c3>)
     """
     assert_sentence(j1)
@@ -108,9 +106,6 @@ def nal_revision(j1, j2):
     resultStatement = Statement(j1.statement.subject_term, j1.statement.predicate_term, Copula.Inheritance)
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
-    # merge in the parent sentence's evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
     return result
 
 
@@ -130,7 +125,7 @@ def nal_choice(j1, j2):
 
            j2: Sentence (Statement <f2, c2>)
 
-         Output:
+         Returns:
            j1 or j2, depending on which is better according to the choice rule
     """
     assert_sentence(j1)
@@ -170,7 +165,7 @@ def nal_decision(d):
          Input:
            d: Desire's desirability
 
-         Output:
+         Returns:
            True or false, whether to pursue the goal
     """
     return abs(d - 0.5) > Config.t
@@ -187,7 +182,7 @@ def nal_expectation(f, c):
 
             c: confidence
 
-         Output:
+         Returns:
             expectation value
     """
     return c * (f - 0.5) + 0.5
@@ -208,7 +203,7 @@ def nal_negation(j):
          Input:
            j: Sentence (Statement <f, c>)
 
-         Output:
+         Returns:
     """
     assert_sentence(j)
     j.value.frequency = 1 - j.value.frequency
@@ -244,6 +239,7 @@ def nal_deduction(j1, j2):
     """
         Deduction (Strong syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -254,7 +250,7 @@ def nal_deduction(j1, j2):
             f3: and(f1,f2)
 
             c3: and(f1,f2,c1,c2)
-        Output:
+        Returns:
             :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -272,16 +268,13 @@ def nal_deduction(j1, j2):
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
-
     return result
 
 def nal_analogy(j1, j2):
     """
         Analogy (Strong syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -292,7 +285,7 @@ def nal_analogy(j1, j2):
             f: and(f1,f2)
 
             c: and(f2,c1,c2)
-        Output:
+        Returns:
             :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -310,6 +303,7 @@ def nal_analogy(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
     return result
 
 
@@ -317,6 +311,7 @@ def nal_resemblance(j1, j2):
     """
         Resemblance (Strong syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -327,7 +322,7 @@ def nal_resemblance(j1, j2):
             f: and(f1,f2)
 
             c: and(or(f1,f2),c1,c2)
-        Output:
+        Returns:
             :- Sentence (S <-> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -344,6 +339,7 @@ def nal_resemblance(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
     return result
 
 
@@ -358,6 +354,7 @@ def nal_abduction(j1, j2):
     """
         Abduction (Weak syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -370,7 +367,7 @@ def nal_abduction(j1, j2):
             w-: and(f1,c1,not(f2),c2)
 
             w: and(f1,c1,c2)
-        Output:
+        Returns:
             :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -389,6 +386,7 @@ def nal_abduction(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
     return result
 
 
@@ -397,6 +395,7 @@ def nal_induction(j1, j2):
     """
         Induction (Weak syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -409,7 +408,7 @@ def nal_induction(j1, j2):
             w-: and(f2,c2,not(f1),c1)
 
             w: and(f2,c1,c2)
-        Output:
+        Returns:
             :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -428,12 +427,14 @@ def nal_induction(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
     return result
 
 def nal_exemplification(j1, j2):
     """
         Exemplification (Weak syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -446,7 +447,7 @@ def nal_exemplification(j1, j2):
             w-: 0
 
             w: w+
-        Output:
+        Returns:
             :- Sentence (S --> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -465,12 +466,14 @@ def nal_exemplification(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
     return result
 
 def nal_comparison(j1, j2):
     """
         Comparison (Weak syllogism)
 
+        Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
         Input:
@@ -481,7 +484,7 @@ def nal_comparison(j1, j2):
             w+: and(f1,c1,f2,c2)
 
             w: and(or(f1,f2),c1,c2)
-        Output:
+        Returns:
             :- Sentence (S <-> P <f3, c3>)
     """
     assert_sentence(j1)
@@ -500,6 +503,7 @@ def nal_comparison(j1, j2):
     resulttruth = TruthValue(f3, c3)
 
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+
     return result
 
 """
@@ -515,7 +519,7 @@ def getfreqconf_fromevidence(wp, w):
             wp: positive evidence w+
 
             w: total evidence w
-        Output:
+        Returns:
             frequency, confidence
     """
     f = wp / w
@@ -528,7 +532,7 @@ def getevidence_fromfreqconf(f, c):
             f: frequency
 
             c: confidence
-        Output:
+        Returns:
             w+, w, w-
     """
     wp = Config.k * f * c / (1 - c)
@@ -541,7 +545,7 @@ def gettruthvalues_from2sentences(j1, j2):
             j1: Statement <f1, c1>
 
             j2: Statement <f2, c2>
-        Output:
+        Returns:
             f1, c1, f2, c2
     """
     return gettruthvalues_fromsentence(j1), gettruthvalues_fromsentence(j2)
@@ -550,7 +554,7 @@ def gettruthvalues_fromsentence(j):
     """
         Input:
             j: Statement <f, c>
-        Output:
+        Returns:
             f, c
     """
     return j.value.frequency, j.value.confidence
@@ -561,7 +565,7 @@ def getevidence_from2sentences(j1, j2):
             j1: Statement <f1, c1>
 
             j2: Statement <f2, c2>
-        Output:
+        Returns:
             w1+, w1, w1-, w2+, w2, w2-
     """
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)

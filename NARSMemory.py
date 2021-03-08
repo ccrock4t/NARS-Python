@@ -60,31 +60,30 @@ class Memory:
 
     def get_semantically_related_concept(self, concept):
         """
-            Get a belief (named by a Statement Term) that is semantically related to the given concept by a term
+            Get a belief (named by a Statement Term) that is semantically related to the given concept by a term.
+            This can return a belief from the input concept, which can be used in Revision.
 
-            Returns None if no such belief exists
+            Returns None if couldn't find such a belief
         """
         related_concept = None
 
         if isinstance(concept.term, StatementTerm):
-            subject = concept.term.get_subject_term()
-            predicate = concept.term.get_predicate_term()
+            subject_term = concept.term.get_subject_term()
+            predicate_term = concept.term.get_predicate_term()
 
-            related_concept_from_subject = self.get_semantically_related_concept(self.get_concept(subject))
-            related_concept_from_predicate = self.get_semantically_related_concept(self.get_concept(predicate))
+            related_concept_from_subject = self.get_concept(subject_term).term_links.peek().object
+            related_concept_from_predicate = self.get_concept(predicate_term).term_links.peek().object
 
-            if related_concept_from_subject is not None and related_concept_from_predicate is None: #none from subject
+            if related_concept_from_subject is not None and related_concept_from_predicate is None and related_concept_from_subject is not concept: #none from subject
                 related_concept = related_concept_from_subject
-            elif related_concept_from_subject is None and related_concept_from_predicate is not None: #none from predicate
+            elif related_concept_from_subject is None and related_concept_from_predicate is not None and related_concept_from_predicate is not concept: #none from predicate
                 related_concept = related_concept_from_predicate
             elif related_concept_from_subject is not None and related_concept_from_predicate is not None: #one from both
                 rand = random()
-                if(rand < 0.5):
+                if rand < 0.5:
                     related_concept = related_concept_from_subject
-                else:
+                elif rand >= 0.5:
                     related_concept = related_concept_from_predicate
-        else:
-            related_concept = concept.term_links.peek().object
 
         return related_concept
 

@@ -65,14 +65,8 @@ class Sentence:
                     Merge other evidential base into self.
                     This function assumes the base to merge does not have evidential overlap with this base
                 """
-                newbase = []
-                for id in self.base:
-                    newbase.append(id)
-
                 for id in other_base.base:
-                    newbase.append(id)
-
-                self.base = newbase
+                    self.base.append(id)
 
             def has_evidential_overlap(self, other_base):
                 """

@@ -8,7 +8,7 @@
 """
 k = 1 # evidential horizon
 t = 0.25 # decision rule (goal decision-making) threshold
-MINDFULNESS = 0.5 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) vs. pondering concepts
+MINDFULNESS = 1.0 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
 
 """
     Bags

@@ -1,6 +1,7 @@
 import time
 
 import InputBuffer
+import NARSInferenceEngine
 from NALInferenceRules import nal_revision, nal_deduction
 from NALSyntax import Punctuation
 from NARSMemory import Memory
@@ -13,6 +14,7 @@ from Global import GlobalGUI, Global
 """
     Author: Christian Hahm
     Created: October 8, 2020
+    Purpose: Main loop and NARS definition
 """
 class NARS:
     """
@@ -61,6 +63,8 @@ class NARS:
         elif task.sentence.punctuation == Punctuation.Question:
             self.process_question(task)
 
+
+
     def process_judgment(self, task):
         """
             Process a Narsese judgment task
@@ -85,44 +89,35 @@ class NARS:
         predicate_concept.set_task_link(task)
 
         if task.needs_initial_processing:
-            # add judgment into concept belief table
+            """
+                Initial Processing
+                
+                Revise this judgment with the most confident belief, then insert it into the belief table
+            """
+            belief = statement_concept.belief_table.peek() # get most confident related_belief of the same content
+            if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (belief not in task.interacted_beliefs):
+                # perform revision on the belief
+                derived_task = NARSInferenceEngine.perform_inference(task, belief)[0] # only 1 derived task in Revision
+                self.overall_experience_buffer.put_new_item(derived_task)
+
+            # add the judgment itself into concept's belief table
             statement_concept.belief_table.insert(task.sentence)
             task.needs_initial_processing = False
         else:
             """
-                Revision stage
-            """
-            belief = statement_concept.belief_table.peek() # get most confident belief of the same content
-            if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (belief not in task.interacted_beliefs):
-                derived_sentence = nal_revision(belief, task.sentence) #perform revision
-                task.interacted_beliefs.append(belief)
-                derived_task = Task(derived_sentence)
-                print("Revision derived new task " + str(derived_task))
-                print("Derived task evidential base " + str(derived_task.sentence.stamp.evidential_base.base))
-                self.overall_experience_buffer.put_new_item(derived_task)
-
-            """
-                Forward Inference stage
+                Continued processing
+                
+                Do local/forward inference on a related belief
             """
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
             if related_concept is None: return # no related concepts!
-            belief = related_concept.belief_table.peek() # get most confident belief of the same content
-            if not task.sentence.has_evidential_overlap(belief) and (belief not in task.interacted_beliefs):
-                if subject_term == belief.statement.term.get_predicate_term() :
-                    # M-->P, S-->M
-                    # deduction
-                    derived_sentence = nal_deduction(task.sentence, belief)
-                elif predicate_term == belief.statement.term.get_subject_term():
-                    # S-->M, M-->P
-                    # deduction
-                    derived_sentence = nal_deduction(belief, task.sentence)
-                else:
-                    assert False, "error, concept " + subject_term + " and " + predicate_term + " not related"
 
-                task.interacted_beliefs.append(belief)
-                derived_task = Task(derived_sentence)
-                print("Deduction derived new task " + str(derived_task))
-                print("Derived task evidential base " + str(derived_task.sentence.stamp.evidential_base.base))
+            related_belief = related_concept.belief_table.peek() # get most confident related_belief of related concept
+            if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (related_belief in task.interacted_beliefs): return
+
+            derived_tasks = NARSInferenceEngine.perform_inference(task, related_belief)
+            for derived_task in derived_tasks:
+
                 self.overall_experience_buffer.put_new_item(derived_task)
 
     def process_question(self, task):
@@ -165,8 +160,8 @@ def main():
     """
     # set globals
     Global.NARS = NARS()
-    GlobalGUI.gui_print_internal_data = False # Setting this to False will significantly increase speed
-    GlobalGUI.gui_use_interface = False # Setting this to False uses the shell as interface
+    GlobalGUI.gui_print_internal_data = True # Setting this to False will significantly increase speed
+    GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface
 
     #setup internal GUI
     if GlobalGUI.gui_print_internal_data:
@@ -203,18 +198,18 @@ def setup_internal_gui():
     # launch GUI
     window = tk.Tk()
     window.title("NARS in Python - Internal Data")
-    window.geometry('925x425')
+    window.geometry('925x500')
 
     output_lbl2 = tk.Label(window, text="Task Buffer: ")
     output_lbl2.grid(column=0, row=0)
 
-    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=25, width=75)
+    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=Config.BAG_CAPACITY, width=75)
     GlobalGUI.gui_experience_buffer_listbox.grid(column=0, row=1, columnspan=2)
 
     output_lbl3 = tk.Label(window, text="Concepts: ")
     output_lbl3.grid(column=3, row=0)
 
-    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=25, width=75)
+    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=Config.BAG_CAPACITY, width=75)
     GlobalGUI.gui_concept_bag_listbox.grid(column=3, row=1, columnspan=2)
 
     window.mainloop()
@@ -242,16 +237,29 @@ def setup_interface_gui():
     GlobalGUI.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
     GlobalGUI.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
 
+    # row 2
     GlobalGUI.gui_total_cycles_lbl = tk.Label(window, text="Cycle #0")
-    GlobalGUI.gui_total_cycles_lbl.grid(row=1, column=4, sticky='s')
+    GlobalGUI.gui_total_cycles_lbl.grid(row=2, column=4, columnspan=2, sticky='n')
 
     speed_slider_lbl = tk.Label(window, text="Cycle Delay in millisec: ")
-    speed_slider_lbl.grid(row=2, column=4, sticky='s')
+    speed_slider_lbl.grid(row=2, column=4, columnspan=2, sticky='s')
 
-    #row 2
+    #row 3
+    def toggle_pause(event=None):
+        # put input into NARS input buffer
+        Global.paused = not Global.paused
+
+        if Global.paused:
+            GlobalGUI.play_pause_button.config(text="PLAY")
+        else:
+            GlobalGUI.play_pause_button.config(text="PAUSE")
+
+    GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
+    GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
+
     max_delay = 1000 # in milliseconds
     GlobalGUI.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
-    GlobalGUI.gui_delay_slider.grid(row=3, column=4, sticky='ns')
+    GlobalGUI.gui_delay_slider.grid(row=3, column=5, sticky='ns')
     GlobalGUI.gui_delay_slider.set(max_delay)
 
     # input GUI
@@ -283,6 +291,8 @@ def do_working_cycles():
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
     while True:
+        if Global.paused:
+            continue
         if GlobalGUI.gui_use_interface:
             GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
             time.sleep(GlobalGUI.gui_delay_slider.get() / 1000)

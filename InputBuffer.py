@@ -6,6 +6,7 @@ from NARSDataStructures import Task
 """
     Author: Christian Hahm
     Created: October 9, 2020
+    Purpose: Parses an input string and converts it into a Narsese Task which is fed into NARS
 """
 def add_input(input_string):
     try:

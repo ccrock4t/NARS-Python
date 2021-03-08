@@ -11,6 +11,7 @@ class Global:
     """
     NARS = None  # variable to hold NARS instance
     current_cycle_number = 0  # total number of working cycles executed so far
+    paused = False
 
 class GlobalGUI:
     """
@@ -40,7 +41,7 @@ class GlobalGUI:
             else:
                 print(msg)
 
-        if GlobalGUI.gui_print_internal_data:
+        if GlobalGUI.gui_print_internal_data and Global.NARS is not None:
             if selfobj is Global.NARS.overall_experience_buffer:
                 GlobalGUI.gui_experience_buffer_listbox.insert(tk.END, msg)
             elif selfobj is Global.NARS.memory.concepts_bag:
@@ -51,7 +52,7 @@ class GlobalGUI:
         """
             Remove a message from an output GUI box
         """
-        if GlobalGUI.gui_print_internal_data:
+        if GlobalGUI.gui_print_internal_data and Global.NARS is not None:
             if selfobj is Global.NARS.overall_experience_buffer:
                 idx = GlobalGUI.gui_experience_buffer_listbox.get(0, tk.END).index(msg)
                 GlobalGUI.gui_experience_buffer_listbox.delete(idx)

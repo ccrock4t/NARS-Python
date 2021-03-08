@@ -190,7 +190,8 @@ class Bag:
 
         def get_new_bucket_number(self):
             """
-                Output: The bucket number this item belongs in.
+                Returns: The bucket number this item belongs in.
+
                 It is calculated as this item's priority [0,1] converted to a corresponding probability
                 based on Bag granularity
                 (e.g. Priority=0.5, 100 buckets -> bucket 50, 200 buckets -> bucket 100, 50 buckets -> bucket 25)
@@ -239,19 +240,6 @@ class Table:
         self.depq = DEPQ(iterable=None, maxlen=None) #maxheap depq
         self.maxsize = maxsize
 
-    def take(self):
-        """
-            Remove and return the sentence in the table with the highest confidence
-        """
-        return self.extract_max()
-
-    def peek(self):
-        """
-            Peek sentence with highest confidence from the depq
-            O(1)
-        """
-        return self.peek_max()
-
     def insert(self, sentence):
         """
             Insert a Sentence into the depq, sorted by confidence.
@@ -261,32 +249,63 @@ class Table:
         if(len(self.depq) > self.maxsize):
             self.extract_min()
 
+    def take(self):
+        """
+            Remove and return the sentence in the table with the highest confidence
+
+            Returns None if depq is empty
+        """
+        if len(self.depq) == 0: return None
+        return self.extract_max()
+
+    def peek(self):
+        """
+            Peek sentence with highest confidence from the depq
+            O(1)
+
+            Returns None if depq is empty
+        """
+        if len(self.depq) == 0: return None
+        return self.peek_max()
+
     def extract_max(self):
         """
             Extract sentence with highest confidence from the depq
             O(1)
+
+            Returns None if depq is empty
         """
+        if len(self.depq) == 0: return None
         return self.depq.popfirst()[0]
 
     def extract_min(self):
         """
             Extract sentence with lowest confidence from the depq
             O(1)
+
+            Returns None if depq is empty
         """
+        if len(self.depq) == 0: return None
         return self.depq.poplast()[0]
 
     def peek_max(self):
         """
             Peek sentence with highest confidence from the depq
             O(1)
+
+            Returns None if depq is empty
         """
+        if len(self.depq) == 0: return None
         return self.depq.first()
 
     def peek_min(self):
         """
             Peek sentence with lowest confidence from the depq
             O(1)
+
+            Returns None if depq is empty
         """
+        if len(self.depq) == 0: return None
         return self.depq.last()
 
     def __len__(self):
