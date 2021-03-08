@@ -117,7 +117,6 @@ class NARS:
 
             derived_tasks = NARSInferenceEngine.perform_inference(task, related_belief)
             for derived_task in derived_tasks:
-
                 self.overall_experience_buffer.put_new_item(derived_task)
 
     def process_question(self, task):
@@ -128,15 +127,9 @@ class NARS:
 
         # get terms from sentence
         statement_term = task.sentence.statement.term
-        subject_term = statement_term.get_subject_term()
-        predicate_term = statement_term.get_predicate_term()
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.get_concept(statement_term)
-
-        # get subject-predicate concepts
-        subject_concept = self.memory.get_concept(subject_term)
-        predicate_concept = self.memory.get_concept(predicate_term)
 
         if task.needs_initial_processing:
             # early quit if belief table is empty
@@ -156,7 +149,7 @@ class NARS:
 def main():
     """
         This is where the program starts
-        Creates threads, populates some globals, and runs the NARS.
+        Creates threads, populates globals, and runs the NARS.
     """
     # set globals
     Global.NARS = NARS()
@@ -203,13 +196,13 @@ def setup_internal_gui():
     output_lbl2 = tk.Label(window, text="Task Buffer: ")
     output_lbl2.grid(column=0, row=0)
 
-    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=Config.BAG_CAPACITY, width=75)
+    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=Config.BAG_CAPACITY, width=75, font=('', 8))
     GlobalGUI.gui_experience_buffer_listbox.grid(column=0, row=1, columnspan=2)
 
     output_lbl3 = tk.Label(window, text="Concepts: ")
     output_lbl3.grid(column=3, row=0)
 
-    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=Config.BAG_CAPACITY, width=75)
+    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=Config.BAG_CAPACITY, width=75, font=('', 8))
     GlobalGUI.gui_concept_bag_listbox.grid(column=3, row=1, columnspan=2)
 
     window.mainloop()

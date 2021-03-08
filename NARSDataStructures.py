@@ -46,17 +46,8 @@ class Bag:
             The object/item can be accessed by object's key, which is the hash of its string representation.
         """
         assert (isinstance(object, self.item_type)), "object must be of type " + str(self.item_type)
-        key = hash(object)
-        if key not in self.item_lookup_table:
-            # create item
-            item = Bag.Item(object)
-            # put item into lookup table and bucket
-            self.item_lookup_table[key] = item
-            self.buckets[item.get_new_bucket_number()].append(item)
-            self.count = self.count + 1
-
-            # GUI
-            GlobalGUI.print_to_output(msg=str(item.object), selfobj=self)
+        item = Bag.Item(object)
+        self.put(item)
 
     def put(self, item):
         """
@@ -70,6 +61,9 @@ class Bag:
             self.item_lookup_table[key] = item
             self.buckets[item.get_new_bucket_number()].append(item)
             self.count = self.count + 1
+
+            if self.count > self.capacity:
+                self._take_smallest_priority_item()
 
             #GUI
             GlobalGUI.print_to_output(msg=str(item.object), selfobj=self)
@@ -120,7 +114,8 @@ class Bag:
 
     def _take_item_probabilistically(self):
         """
-            Probabilistically selects a priority value / bucket, then removes an item from that bucket.
+            Probabilistically peeks a priority bucket, then peeks an item from that bucket.
+            The peeked item is removed from the bag.
         """
         _, randidx = self._peek_item_probabilistically()
         item = self.buckets[self.current_bucket_number].pop(randidx)
@@ -133,30 +128,66 @@ class Bag:
 
         return item
 
+    def _take_smallest_priority_item(self):
+        """
+            Selects the lowest priority bucket, and removes an item from it.
+        """
+        #store old index so we can restore it
+        oldidx = self.current_bucket_number
+
+        # move to lowest non-empty priority bucket
+        self.current_bucket_number = 0
+        self._move_to_next_nonempty_bucket()
+
+        # peek random item
+        _, randidx = self._peek_random_item_from_current_bucket()
+
+        # remove the item
+        item = self.buckets[self.current_bucket_number].pop(randidx)
+        # remove item reference from lookup table
+        self.item_lookup_table.pop(hash(item.object))
+        self.count = self.count - 1 # decrement bag count
+
+        #restore original index
+        self.current_bucket_number = oldidx
+
+        # update GUI
+        GlobalGUI.remove_from_output(str(item.object), selfobj=self)
+
+        return item
+
     def _peek_item_probabilistically(self):
         """
             Probabilistically selects a priority value / bucket, then peeks an item from that bucket.
 
             Returns: item, index of item in current bucket
         """
+
+        # probabilistically select a priority bucket
         self._move_to_next_nonempty_bucket()  # try next non-empty bucket
         rnd = random.random()  # randomly generated number in [0.0, 1.0)
         bucket_probability = self.current_bucket_number / self.number_of_buckets
 
-        # select the current bucket only if rnd is below the bucket's probability threshold
-        # (e.g. 100 buckets in a bag, bucket 1 has 1% chance of being chosen. Therefore 'rnd' must be
-        # smaller than 0.01 to be chosen)
         while rnd >= bucket_probability:
             # bucket was not selected, try next bucket
             self._move_to_next_nonempty_bucket() # try next non-empty bucket
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
 
+        # peek a random item from the bucket
+        item, randidx = self._peek_random_item_from_current_bucket()
+
+        return item, randidx
+
+    def _peek_random_item_from_current_bucket(self):
+        """
+            Picks an item from the current bucket using uniform randomness.
+            Returns: item, index of item in current bucket
+        """
         # pop random item from currently selected bucket
         rnd = random.random()  # another randomly generated number in [0.0, 1.0)
         maxidx = len(self.buckets[self.current_bucket_number]) - 1
         randidx = int(round(rnd * maxidx))
         item = self.buckets[self.current_bucket_number][randidx]
-
         return item, randidx
 
     def _move_to_next_nonempty_bucket(self):
@@ -171,7 +202,7 @@ class Bag:
         """
             Select the next bucket after the currently selected bucket
         """
-        self.current_bucket_number = ((self.current_bucket_number + 1) % self.number_of_buckets) + 1
+        self.current_bucket_number = (self.current_bucket_number % self.number_of_buckets) + 1
 
     class Item:
         """

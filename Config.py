@@ -13,7 +13,7 @@ MINDFULNESS = 1.0 # between 0-1, how much attention the system allocates to the 
 """
     Bags
 """
-BAG_CAPACITY = 100 # how many items can fit in a bag
+BAG_CAPACITY = 60 # how many items can fit in a bag
 BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 allows 100 probability values in [0%, 100%)
 
 """
