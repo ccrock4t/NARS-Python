@@ -125,12 +125,7 @@ class EvidentialValue:
         self.frequency = frequency
         self.confidence = confidence
 
-    def get_formatted_string(self):
-        return str(StatementSyntax.TruthValMarker.value) \
-               + "{:.2f}".format(self.frequency) \
-               + str(StatementSyntax.TruthValDivider.value) \
-               + "{:.2f}".format(self.confidence) \
-               + str(StatementSyntax.TruthValMarker.value)
+
 
 class DesireValue(EvidentialValue):
     """
@@ -141,6 +136,12 @@ class DesireValue(EvidentialValue):
     def __init__(self, frequency, confidence):
         super().__init__(frequency=frequency, confidence=confidence)
 
+    def get_formatted_string(self):
+        return str(StatementSyntax.TruthValMarker.value) \
+               + "{:.2f}".format(self.frequency) \
+               + str(StatementSyntax.TruthValDivider.value) \
+               + "{:.2f}".format(self.confidence) \
+               + str(StatementSyntax.TruthValMarker.value)
 
 class TruthValue(EvidentialValue):
     """
@@ -150,6 +151,17 @@ class TruthValue(EvidentialValue):
     def __init__(self, frequency, confidence, tense=None):
         self.tense = tense
         super().__init__(frequency=frequency, confidence=confidence)
+
+    def get_formatted_string(self):
+        tense = ""
+        if self.tense is not None:
+            tense = self.tense.value + " "
+        return tense \
+               + str(StatementSyntax.TruthValMarker.value) \
+               + "{:.2f}".format(self.frequency) \
+               + str(StatementSyntax.TruthValDivider.value) \
+               + "{:.2f}".format(self.confidence) \
+               + str(StatementSyntax.TruthValMarker.value)
 
 class Term:
     """
@@ -183,7 +195,6 @@ class Term:
             and calls the correct constructor
         """
         is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (term_string[0] == TermConnector.ExtensionalSetStart.value)
-        print(is_set_term)
         if term_string[0] == StatementSyntax.Start.value:
             assert (term_string[len(term_string) - 1] == StatementSyntax.End.value), "Compound term must have ending parenthesis"
 
@@ -192,11 +203,9 @@ class Term:
 
             if term_connector is None and statement_connector is None:
                 # statement term
-                print("making statement")
                 term = StatementTerm.from_string(term_string)
             else:
                 # compound term
-                print("making compound")
                 term = CompoundTerm.from_string(term_string)
         elif is_set_term:
             term = CompoundTerm.from_string(term_string)

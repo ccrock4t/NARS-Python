@@ -58,9 +58,9 @@ def parse_sentence(sentence_string):
     # Find Tense, if it exists
     tense = None
     for t in Tense:
-        tense_idx = sentence_string.find(str(t))
+        tense_idx = sentence_string.find(t.value)
         if tense_idx != -1: # found a tense
-            tense = sentence_string[tense_idx: tense_idx + len(t)]
+            tense = Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
 
     # Find Truth Value, if it exists
     start_truth_val_idx = sentence_string.find(StatementSyntax.TruthValMarker.value)
@@ -69,12 +69,12 @@ def parse_sentence(sentence_string):
 
     if start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx:
         # No truth value, use default truth value
-        truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE)
+        truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE, tense)
     else:
         # Parse truth value from string
         freq = float(sentence_string[start_truth_val_idx+1:middle_truth_val_idx])
         conf = float(sentence_string[middle_truth_val_idx+1:end_truth_val_idx])
-        truth_value = TruthValue(freq, conf)
+        truth_value = TruthValue(freq, conf, tense)
 
     if punctuation == Punctuation.Judgment:
         sentence = Judgment(statement, truth_value)

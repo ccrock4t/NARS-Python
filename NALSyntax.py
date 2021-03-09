@@ -15,6 +15,14 @@ class Tense(enum.Enum):
     Past = ":\:"
     Present = ":|:"
 
+    @classmethod
+    def get_tense_from_string(cls, value):
+        for tense in cls:
+            if value == tense.value:
+                return tense
+
+        return None
+
 class StatementConnector(enum.Enum):
     # NAL-5
     Negation = "--"
