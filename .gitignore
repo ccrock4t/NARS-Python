@@ -1,1 +1,4 @@
 build
+__pycache__
+.idea
+NARS.spec
