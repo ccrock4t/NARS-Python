@@ -23,7 +23,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fd616af4-ca7b-4665-a740-381ee29e5fe0" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/Documentation/NARS in Python - Technical Documentation.docx" beforeDir="false" afterPath="$PROJECT_DIR$/Documentation/NARS in Python - Technical Documentation.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Global.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NARS.py" beforeDir="false" afterPath="$PROJECT_DIR$/NARS.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +63,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.DataStructureTests">
+  <component name="RunManager" selected="Python.NARS">
     <configuration name="Asserts" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NARS-Graph" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -169,8 +171,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.DataStructureTests" />
         <item itemvalue="Python.NARS" />
+        <item itemvalue="Python.DataStructureTests" />
         <item itemvalue="Python.NARSDataStructures" />
         <item itemvalue="Python.scratch" />
         <item itemvalue="Python.Asserts" />
