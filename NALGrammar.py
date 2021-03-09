@@ -179,21 +179,27 @@ class Term:
     @classmethod
     def make_term_from_string(cls, term_string):
         """
-            either an atomic term (e.g. "A")
-
-            or a statement/compound term surrounded in parentheses.
-            (e.g. (&&,A,B) or (A --> B))
+            Determine if it is an atomic term (e.g. "A") or a statement/compound term (e.g. (&&,A,B,..) or (A --> B))
+            and calls the correct constructor
         """
-        if term_string[0] == "(":
-            assert (term_string[len(term_string) - 1] == ")"), "Compound term must have ending parenthesis"
+        is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (term_string[0] == TermConnector.ExtensionalSetStart.value)
+        print(is_set_term)
+        if term_string[0] == StatementSyntax.Start.value:
+            assert (term_string[len(term_string) - 1] == StatementSyntax.End.value), "Compound term must have ending parenthesis"
+
             term_connector = TermConnector.get_term_connector_from_string(term_string[1])  # e.g.: (*,t1,t2), gets *
             statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2])  # e.g.: (&&,t1,t2), gets &&
+
             if term_connector is None and statement_connector is None:
                 # statement term
+                print("making statement")
                 term = StatementTerm.from_string(term_string)
             else:
                 # compound term
+                print("making compound")
                 term = CompoundTerm.from_string(term_string)
+        elif is_set_term:
+            term = CompoundTerm.from_string(term_string)
         else:
             term = AtomicTerm(term_string)
 
@@ -236,7 +242,9 @@ class CompoundTerm(Term):
             connector: subterm connector
         """
         self.subterms = subterms
-        self.connector = connector
+        self.connector = connector # sets are represented by the opening bracket as the connector, { or [
+        self.is_set = (self.connector.value == TermConnector.IntensionalSetStart.value) or \
+                      (self.connector.value == TermConnector.ExtensionalSetStart.value)
         super().__init__(self.get_formatted_string())
 
     @classmethod
@@ -255,16 +263,21 @@ class CompoundTerm(Term):
             compound_term_string - a string representing a compound term
         """
         subterms = []
-        internal_string = compound_term_string[1:len(compound_term_string) - 1]
-        connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
+        internal_string = compound_term_string[1:-1]
 
+        # check for intensional/extensional set [], {}
+        connector = TermConnector.get_term_connector_from_string(compound_term_string[0])
         if connector is None:
+            #otherwise check for regular connectors
             connector = TermConnector.get_term_connector_from_string(internal_string[0])
+            if connector is None:
+                connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
+            assert (internal_string[len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string."
+            internal_terms_string = internal_string[len(connector.value) + 1:]
+        else:
+            internal_terms_string = internal_string
 
         assert(connector is not None), "Connector could not be parsed from CompoundTerm string."
-        assert (internal_string[len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string."
-
-        internal_terms_string = internal_string[len(connector.value)+1:]
 
         depth = 0
         subterm_string = ""
@@ -274,25 +287,36 @@ class CompoundTerm(Term):
             elif c == StatementSyntax.End.value:
                 depth = depth - 1
 
-            if depth == 0:
-                if c == ",":
-                    subterm_string = subterm_string.strip()
-                    subterms.append(Term.make_term_from_string(subterm_string))
-                    subterm_string = ""
-                else:
-                    subterm_string = subterm_string + c
+            if c == "," and depth == 0:
+                subterm_string = subterm_string.strip()
+                subterm = Term.make_term_from_string(subterm_string)
+                subterms.append(subterm)
+                subterm_string = ""
+            else:
+                subterm_string = subterm_string + c
+
 
         subterm_string = subterm_string.strip()
-        subterms.append(Term.make_term_from_string(subterm_string))
+        subterm = Term.make_term_from_string(subterm_string)
+        subterms.append(subterm)
 
         return subterms, connector
 
     def get_formatted_string(self):
-        string = self.connector.value
-        for subterm in self.subterms:
-            string = string + "," + str(subterm)
+        if self.is_set:
+            string = self.connector.value
+        else:
+            string = self.connector.value + ","
 
-        return "(" + string + ")"
+        for subterm in self.subterms:
+            string = string + str(subterm) + ","
+
+        string = string[:-1]
+
+        if self.is_set:
+            return string + TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
+        else:
+            return "(" + string + ")"
 
 
 class StatementTerm(CompoundTerm):
@@ -341,14 +365,12 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
     depth = 0
 
     for i, v in enumerate(statement_string):
-        #print(v)
         if v == StatementSyntax.Start.value:
             depth = depth + 1
         elif v == StatementSyntax.End.value:
             depth = depth - 1
         elif depth == 1 and i + 3 <= len(statement_string) and Copula.is_string_a_copula(statement_string[i:i + 3]):
             copula, copula_idx = Copula.get_copula_from_string(statement_string[i:i + 3]), i
-        #print(depth)
 
     assert (copula_idx != -1), "Copula not found. Exiting.."
 

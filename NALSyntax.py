@@ -5,7 +5,6 @@ import enum
     Purpose: Defines the syntax to be used for Narsese
 """
 class StatementSyntax(enum.Enum):
-    # Primary copula
     Start = "("
     End = ")"
     TruthValMarker = "%"
@@ -71,6 +70,12 @@ class TermConnector(enum.Enum):
             if value == connector.value:
                 return connector
 
+        return None
+
+    @classmethod
+    def get_set_end_connector_from_set_start_connector(cls, start_connector):
+        if start_connector == TermConnector.ExtensionalSetStart: return TermConnector.ExtensionalSetEnd
+        if start_connector == TermConnector.IntensionalSetStart: return TermConnector.IntensionalSetEnd
         return None
 
 

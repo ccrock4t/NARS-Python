@@ -182,11 +182,14 @@ def do_working_cycles():
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
     while True:
+        # global parameters
         if Global.paused:
             continue
         if GlobalGUI.gui_use_interface:
             GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
             time.sleep(GlobalGUI.gui_delay_slider.get() / 1000)
+
+        # working cycle
         rand = random.random()
         if rand < Config.MINDFULNESS:
             # OBSERVE
