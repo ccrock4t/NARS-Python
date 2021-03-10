@@ -181,7 +181,7 @@ def main():
     """
     # set globals
     Global.NARS = NARS()
-    GlobalGUI.gui_use_internal_data = True  # Setting this to False will significantly increase speed
+    GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     GlobalGUI.gui_use_interface = True  # Setting this to False uses the shell as interface
 
     # setup internal GUI
@@ -192,14 +192,13 @@ def main():
 
     # setup interface GUI
     if not GlobalGUI.gui_use_interface:
-        # launch user input thread
-        interface_thread = threading.Thread(target=NARSGUI.get_user_input, name="user input thread")
-
-        interface_thread.daemon = True
-        interface_thread.start()
+        # launch shell input thread
+        shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread")
+        shell_input_thread.daemon = True
+        shell_input_thread.start()
 
     #setup output thread
-    Global.output_thread = threading.Thread(target=NARSGUI.handle_queued_outputs, name="GUI thread")
+    Global.output_thread = threading.Thread(target=NARSGUI.handle_queued_outputs, name="GUI output thread")
     Global.output_thread.daemon = True
     Global.output_thread.start()
 
@@ -218,7 +217,11 @@ def run():
         if Global.paused:
             continue
         if GlobalGUI.gui_use_interface:
-            time.sleep(GlobalGUI.gui_delay_slider.get() / 1000)
+            delay = GlobalGUI.gui_delay_slider.get() / 1000
+            if delay == 0:
+                time.sleep(0.01) # we can't let it run unfettered in GUI, its too fast for the GUI to update
+            else:
+                time.sleep(delay)
 
         Global.NARS.do_working_cycle()
 

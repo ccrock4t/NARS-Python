@@ -11,8 +11,11 @@ from NARSDataStructures import Task
 def add_input(input_string):
     try:
         if input_string == "count":
-            GlobalGUI.print_to_output("Memory count (concepts in memory): " + str(GlobalGUI.NARS.memory.get_number_of_concepts()))
-            GlobalGUI.print_to_output("Buffer count (tasks in buffer): " + str(GlobalGUI.NARS.overall_experience_buffer.count))
+            GlobalGUI.print_to_output("Memory count (concepts in memory): " + str(Global.NARS.memory.get_number_of_concepts()))
+            GlobalGUI.print_to_output("Buffer count (tasks in buffer): " + str(Global.NARS.overall_experience_buffer.count))
+            return
+        elif input_string == "cycle":
+            GlobalGUI.print_to_output("Current cycle: " + str(Global.current_cycle_number))
             return
         else:
             sentence = parse_sentence(input_string)

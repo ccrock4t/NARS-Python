@@ -64,8 +64,9 @@ class Bag:
             if self.count > self.capacity:
                 self._take_smallest_priority_item()
 
-            # GUI
-            GlobalGUI.print_to_output(msg=str(item.object), data_structure=self)
+            # Print to internal data GUI
+            if GlobalGUI.gui_use_internal_data:
+                GlobalGUI.print_to_output(msg=str(item.object), data_structure=self)
 
     def peek(self, key=None):
         """
@@ -107,7 +108,8 @@ class Bag:
         self.count = self.count - 1  # decrement bag count
 
         # GUI
-        GlobalGUI.remove_from_output(str(item.object), data_structure=self)
+        if GlobalGUI.gui_use_internal_data:
+            GlobalGUI.remove_from_output(str(item.object), data_structure=self)
 
         return item
 

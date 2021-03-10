@@ -111,17 +111,20 @@ class Statement:
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
-
-        self.subject_term = subject
-        self.predicate_term = predicate
         self.copula = copula
         self.term = StatementTerm(subject, predicate, copula)
 
+    def get_subject_term(self):
+        return self.term.get_subject_term()
+
+    def get_predicate_term(self):
+        return self.term.get_predicate_term()
+
     def get_formatted_string(self):
         return str(StatementSyntax.Start.value) \
-               + self.subject_term.get_formatted_string() \
+               + self.get_subject_term().get_formatted_string() \
                + " " + str(self.copula.value) + " " \
-               + self.predicate_term.get_formatted_string() \
+               + self.get_predicate_term().get_formatted_string() \
                + str(StatementSyntax.End.value)
 
 
