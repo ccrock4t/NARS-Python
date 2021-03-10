@@ -126,16 +126,6 @@ def execute_interface_gui(window):
 
     window.focus()
 
-def handle_queued_outputs():
-    while True:
-        if GlobalGUI.outputs_to_add.qsize() > 0:
-            (output_str, gui_listbox) = GlobalGUI.outputs_to_add.get(block=False)
-            GlobalGUI._print_to_output(output_str, gui_listbox)
-        if GlobalGUI.outputs_to_remove.qsize() > 0:
-            (output_str, gui_listbox) = GlobalGUI.outputs_to_remove.get(block=False)
-            GlobalGUI._remove_from_output(output_str, gui_listbox)
-
-
 def get_user_input():
     userinput = ""
     while userinput != "exit":

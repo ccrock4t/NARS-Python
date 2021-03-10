@@ -35,11 +35,6 @@ class GlobalGUI:
     gui_use_internal_data = True
     gui_use_interface = True
 
-    #io daemon
-    output_thread = None
-    outputs_to_add = queue.Queue()
-    outputs_to_remove = queue.Queue()
-
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
         """
@@ -47,12 +42,12 @@ class GlobalGUI:
         """
         if data_structure is Global.NARS.overall_experience_buffer:
             listbox = GlobalGUI.gui_experience_buffer_listbox
-            GlobalGUI.outputs_to_add.put((msg, listbox))
+            GlobalGUI.print_to_output(msg, listbox)
         elif data_structure is Global.NARS.memory.concepts_bag:
             listbox = GlobalGUI.gui_concept_bag_listbox
-            GlobalGUI.outputs_to_add.put((msg, listbox))
+            GlobalGUI.print_to_output(msg, listbox)
         elif data_structure is None:
-            GlobalGUI.outputs_to_add.put((msg, None))
+            GlobalGUI.print_to_output(msg, None)
 
     @classmethod
     def remove_from_output(cls, msg, data_structure=None):
@@ -61,10 +56,10 @@ class GlobalGUI:
         """
         if data_structure is Global.NARS.overall_experience_buffer:
             listbox = GlobalGUI.gui_experience_buffer_listbox
-            GlobalGUI.outputs_to_remove.put((msg, listbox))
+            GlobalGUI._remove_from_output(msg, listbox)
         elif data_structure is Global.NARS.memory.concepts_bag:
             listbox = GlobalGUI.gui_concept_bag_listbox
-            GlobalGUI.outputs_to_remove.put((msg, listbox))
+            GlobalGUI._remove_from_output(msg, listbox)
 
 
     @classmethod

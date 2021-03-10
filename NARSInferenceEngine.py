@@ -77,7 +77,7 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
 
             # comparison
             # j1=M-->P, j2=M-->S
-            derived_sentence = nal_comparison(j1,j2)  # S<->P
+            derived_sentence = nal_comparison(j1,j2)  # S<->P, equivalent to P<->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
             if derived_task is not None: derived_tasks.append(derived_task)
         elif j1_predicate_term == j2_predicate_term:
@@ -96,10 +96,12 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     elif (j1_copula == Copula.Inheritance and j2_copula == Copula.Similarity) or (j1_copula == Copula.Similarity and j2_copula == Copula.Inheritance):
         # analogy
         if j1_copula == Copula.Inheritance:
-            # j1=M-->P, j2=S<->M or j1=M-->P, j2=M<->S
+            # j1=M-->P,
+            # j2=S<->M or j2=M<->S
             derived_sentence = nal_analogy(j1, j2)  # S-->P
         else:
-            # j1=S<->M, j2=M-->P or j1=M<->S, j2=M-->P
+            # j1=S<->M or j1=M<->S
+            # j2=M-->P
             derived_sentence = nal_analogy(j2, j1)  # S-->P
 
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")

@@ -33,7 +33,7 @@ class Memory:
             :returns New Concept created from the term
         """
         assert_term(term)
-        assert (self.concepts_bag.peek(hash(str(term))) is None), "Cannot create new concept. Concept already exists."
+        assert (self.concepts_bag.peek(hash(term)) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         concept = Concept(term)
         self.concepts_bag.put_new_item(concept)
@@ -48,10 +48,15 @@ class Memory:
               :param term: The term naming the concept to peek
               :return Concept named by the term
           """
-        concept_item = self.concepts_bag.peek(hash(str(term)))
+        concept_item = self.concepts_bag.peek(hash(term))
         if concept_item is not None: return concept_item.object  # return if got concept
+        # concept not found
+        if isinstance(term, StatementTerm) and term.connector == Copula.Similarity:
+            #if its a similarity statement term S<->P, check for equivalent Concept P<->S
+            concept_item = self.concepts_bag.peek(hash(term.get_equivalent_term_string()))
+            if concept_item is not None: return concept_item.object  # return if got concept
 
-        # concept not found, it must be created, and potentially its sub-concepts
+        # it must be created, and potentially its sub-concepts
         concept = self.conceptualize_term(term)
         if isinstance(term, NALGrammar.CompoundTerm):
             for subterm in term.subterms:

@@ -197,11 +197,6 @@ def main():
         shell_input_thread.daemon = True
         shell_input_thread.start()
 
-    #setup output thread
-    Global.output_thread = threading.Thread(target=NARSGUI.handle_queued_outputs, name="GUI output thread")
-    Global.output_thread.daemon = True
-    Global.output_thread.start()
-
     time.sleep(1.00)
 
     # Finally, start NARS in the shell
@@ -218,10 +213,7 @@ def run():
             continue
         if GlobalGUI.gui_use_interface:
             delay = GlobalGUI.gui_delay_slider.get() / 1000
-            if delay == 0:
-                time.sleep(0.01) # we can't let it run unfettered in GUI, its too fast for the GUI to update
-            else:
-                time.sleep(delay)
+            time.sleep(delay)
 
         Global.NARS.do_working_cycle()
 

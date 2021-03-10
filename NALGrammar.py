@@ -365,6 +365,8 @@ class StatementTerm(CompoundTerm):
         assert_term(predicate)
         assert_copula(copula)
         super().__init__([subject, predicate], copula)
+        if copula == Copula.Similarity:
+            self.equivalent_term_string = self._get_formatted_string_from_values(predicate, subject)
 
     @classmethod
     def from_string(cls, term_string):
@@ -388,8 +390,14 @@ class StatementTerm(CompoundTerm):
         """
             returns: (Subject copula Predicate)
         """
-        string = self.get_subject_term().get_formatted_string() + " " + self.get_copula_string() + " " + self.get_predicate_term().get_formatted_string()
-        return StatementSyntax.Start.value + string + StatementSyntax.End.value
+        return self._get_formatted_string_from_values(self.get_subject_term(), self.get_predicate_term())
+
+    def _get_formatted_string_from_values(self, subject_term, predicate_term):
+        return StatementSyntax.Start.value + subject_term.get_formatted_string() + " " + self.get_copula_string() + " " + predicate_term.get_formatted_string() + StatementSyntax.End.value
+
+    def get_equivalent_term_string(self):
+        assert(self.connector == Copula.Similarity), "Equivalent terms only available for Similarity"
+        return self.equivalent_term_string
 
 
 def parse_subject_predicate_copula_and_copula_index(statement_string):
