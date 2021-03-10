@@ -21,7 +21,6 @@ class Bag:
         An array of buckets, where each bucket holds items of a certain priority
         (e.g. 100 buckets, bucket 1 - hold items with 0.01 priority,  bucket 50 - hold items with 0.50 priority)
     """
-
     def __init__(self, item_type):
         self.item_type = item_type  # the class of the objects  this bag stores (be wrapped in Item)
 
@@ -66,7 +65,7 @@ class Bag:
                 self._take_smallest_priority_item()
 
             # GUI
-            GlobalGUI.print_to_output(msg=str(item.object), selfobj=self)
+            GlobalGUI.print_to_output(msg=str(item.object), data_structure=self)
 
     def peek(self, key=None):
         """
@@ -108,7 +107,7 @@ class Bag:
         self.count = self.count - 1  # decrement bag count
 
         # GUI
-        GlobalGUI.remove_from_output(str(item.object), selfobj=self)
+        GlobalGUI.remove_from_output(str(item.object), data_structure=self)
 
         return item
 
@@ -124,7 +123,7 @@ class Bag:
         self.count = self.count - 1  # decrement bag count
 
         # update GUI
-        GlobalGUI.remove_from_output(str(item.object), selfobj=self)
+        GlobalGUI.remove_from_output(str(item.object), data_structure=self)
 
         return item
 
@@ -152,7 +151,7 @@ class Bag:
         self.current_bucket_number = oldidx
 
         # update GUI
-        GlobalGUI.remove_from_output(str(item.object), selfobj=self)
+        GlobalGUI.remove_from_output(str(item.object), data_structure=self)
 
         return item
 

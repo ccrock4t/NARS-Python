@@ -8,7 +8,7 @@ from NALInferenceRules import nal_deduction, nal_revision, nal_induction, nal_ab
 from NARSDataStructures import assert_task, Task
 
 
-def perform_inference(t1: Task, j2: Sentence) -> Task:
+def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given Task and belief.
         The resultant sentence's evidential base is appropriately merged from its parents.
@@ -77,7 +77,7 @@ def perform_inference(t1: Task, j2: Sentence) -> Task:
     return derived_tasks
 
 
-def make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inference"):
+def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence, j2: Sentence, inference_rule="Inference"):
     """
             Makes a new task from a derived sentence.
             Returns None for Tautologies.

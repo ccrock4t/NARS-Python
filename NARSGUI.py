@@ -6,16 +6,36 @@ import tkinter as tk
     GUI code (excluding GUI Globals)
 """
 
+def execute_gui():
+    """
+        Setup and run 2 windows on a single thread
+    """
+    if GlobalGUI.gui_use_interface:
+        # launch internal data GUI
+        window = tk.Tk()
+        window.title("NARS in Python - Interface")
+        window.geometry('750x500')
+        execute_interface_gui(window)
 
-def execute_internal_gui():
+        if GlobalGUI.gui_use_internal_data:
+            # launch GUI
+            toplevel = tk.Toplevel()
+            toplevel.title("NARS in Python - Internal Data")
+            toplevel.geometry('650x500')
+            execute_internal_gui(toplevel)
+    elif GlobalGUI.gui_use_internal_data:
+        # launch GUI
+        window = tk.Tk()
+        window.title("NARS in Python - Internal Data")
+        window.geometry('650x500')
+        execute_internal_gui(window)
+
+    window.mainloop()
+
+def execute_internal_gui(window):
     """
         Setup the internal GUI window, displaying the system's buffers and memory
     """
-    # launch GUI
-    window = tk.Tk()
-    window.title("NARS in Python - Internal Data")
-    window.geometry('650x500')
-
     output_height = 30
     output_width = 50
 
@@ -39,18 +59,13 @@ def execute_internal_gui():
                                                    yscrollcommand=concept_bag_scrollbar.set)
     GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
 
-    window.mainloop()
+    return window
 
 
-def execute_interface_gui():
+def execute_interface_gui(window):
     """
         Setup the interface GUI window, displaying the system's i/o channels
     """
-    # launch GUI
-    window = tk.Tk()
-    window.title("NARS in Python - Interface")
-    window.geometry('750x500')
-
     output_width = 3
     output_height = 3
 
@@ -111,7 +126,14 @@ def execute_interface_gui():
 
     window.focus()
 
-    window.mainloop()
+def handle_queued_outputs():
+    while True:
+        if GlobalGUI.outputs_to_add.qsize() > 0:
+            (output_str, gui_listbox) = GlobalGUI.outputs_to_add.get(block=False)
+            GlobalGUI._print_to_output(output_str, gui_listbox)
+        if GlobalGUI.outputs_to_remove.qsize() > 0:
+            (output_str, gui_listbox) = GlobalGUI.outputs_to_remove.get(block=False)
+            GlobalGUI._remove_from_output(output_str, gui_listbox)
 
 
 def get_user_input():

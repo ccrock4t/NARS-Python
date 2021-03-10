@@ -73,7 +73,7 @@ class NARS:
         # return concept to bag
         self.memory.concepts_bag.put(concept_item)
 
-    def process_task(self, task):
+    def process_task(self, task: Task):
         """
             Processes any Narsese task
         """
@@ -83,7 +83,7 @@ class NARS:
         elif task.sentence.punctuation == Punctuation.Question:
             self.process_question(task)
 
-    def process_judgment(self, task):
+    def process_judgment(self, task: Task):
         """
             Processes a Narsese judgment task
         """
@@ -185,31 +185,33 @@ def main():
     GlobalGUI.gui_use_interface = True  # Setting this to False uses the shell as interface
 
     # setup internal GUI
-    if GlobalGUI.gui_use_internal_data:
-        internal_GUI_thread = threading.Thread(target=NARSGUI.execute_internal_gui, name="Internal GUI thread")
-        internal_GUI_thread.daemon = True
-        internal_GUI_thread.start()
-        time.sleep(0.25)
+    if GlobalGUI.gui_use_internal_data or GlobalGUI.gui_use_interface:
+        GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread")
+        GUI_thread.daemon = True
+        GUI_thread.start()
 
     # setup interface GUI
-    if GlobalGUI.gui_use_interface:
-        interface_thread = threading.Thread(target=NARSGUI.execute_interface_gui, name="Interface GUI thread")
-    else:
+    if not GlobalGUI.gui_use_interface:
         # launch user input thread
         interface_thread = threading.Thread(target=NARSGUI.get_user_input, name="user input thread")
 
-    interface_thread.daemon = True
-    interface_thread.start()
-    # let the gui threads initialize
-    time.sleep(1)
+        interface_thread.daemon = True
+        interface_thread.start()
+
+    #setup output thread
+    Global.output_thread = threading.Thread(target=NARSGUI.handle_queued_outputs, name="GUI thread")
+    Global.output_thread.daemon = True
+    Global.output_thread.start()
+
+    time.sleep(1.00)
 
     # Finally, start NARS in the shell
-    do_working_cycles()
+    run()
 
 
-def do_working_cycles():
+def run():
     """
-        In each working cycle, NARS either *Observes* OR *Considers*:
+        Infinite loop of working cycles
     """
     while True:
         # global parameters
