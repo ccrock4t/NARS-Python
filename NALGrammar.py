@@ -6,16 +6,19 @@ from NALSyntax import *
     Created: October 9, 2020
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
+
+
 class Sentence:
     """
         sentence ::= <statement><punctuation> %<value>%G
     """
+
     def __init__(self, statement, value, punctuation):
         assert_statement(statement)
         assert_punctuation(punctuation)
 
         self.statement = statement
-        self.value = value # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
+        self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
         self.punctuation = punctuation
         self.stamp = Sentence.Stamp()
 
@@ -38,11 +41,12 @@ class Sentence:
             'E' an evidential set.
         """
         next_stamp_id = 0
+
         def __init__(self):
             self.id = self.get_next_stamp_id()
-            self.creation_time = Global.current_cycle_number # when was this stamp created (in inference cycles)?
-            self.occurrence_time = -1 # todo, estimate of when did this event occur (in inference cycles)
-            self.syntactic_complexity = -1 # todo, number of subterms
+            self.creation_time = Global.current_cycle_number  # when was this stamp created (in inference cycles)?
+            self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
+            self.syntactic_complexity = -1  # todo, number of subterms
             self.evidential_base = self.EvidentialBase(self.id)
 
         @classmethod
@@ -54,11 +58,11 @@ class Sentence:
             """
                 Stores history of how the sentence was derived
             """
-            def __init__(self, id):
-                self.base = []
-                self.base.append(id)
-                #todo MAX_EVIDENTIAL_BASE_LENGTH
 
+            def __init__(self, id):
+                self.base = []  # array of integer IDs
+                self.base.append(id)  # append this sentence's
+                # todo MAX_EVIDENTIAL_BASE_LENGTH
 
             def merge_evidential_base_into_self(self, other_base):
                 """
@@ -81,23 +85,28 @@ class Judgment(Sentence):
     """
         judgment ::= <statement>. %<truth-value>%
     """
+
     def __init__(self, statement, value):
         assert_statement(statement)
         assert_truth_value(value)
         super().__init__(statement, value, Punctuation.Judgment)
 
+
 class Question(Sentence):
     """
         question ::= <statement>? %<truth-value>%
     """
+
     def __init__(self, statement):
         assert_statement(statement)
         super().__init__(statement, None, Punctuation.Question)
+
 
 class Statement:
     """
         statement ::= <subject><copula><predicate>
     """
+
     def __init__(self, subject, predicate, copula):
         assert_term(subject)
         assert_term(predicate)
@@ -115,16 +124,17 @@ class Statement:
                + self.predicate_term.get_formatted_string() \
                + str(StatementSyntax.End.value)
 
+
 class EvidentialValue:
     """
         <frequency, confidence>
     """
+
     def __init__(self, frequency, confidence):
-        assert(isinstance(frequency, float)), "frequency must be a float"
+        assert (isinstance(frequency, float)), "frequency must be a float"
         assert (isinstance(confidence, float)), "confidence must be a float"
         self.frequency = frequency
         self.confidence = confidence
-
 
 
 class DesireValue(EvidentialValue):
@@ -133,6 +143,7 @@ class DesireValue(EvidentialValue):
         For a virtual judgement S |=> D,
         how much the associated statement S implies the overall desired state of NARS, D
     """
+
     def __init__(self, frequency, confidence):
         super().__init__(frequency=frequency, confidence=confidence)
 
@@ -143,11 +154,13 @@ class DesireValue(EvidentialValue):
                + "{:.2f}".format(self.confidence) \
                + str(StatementSyntax.TruthValMarker.value)
 
+
 class TruthValue(EvidentialValue):
     """
         <frequency, confidence> <tense> <timestamp>
         Describing the evidential basis for the associated statement to be true
     """
+
     def __init__(self, frequency, confidence, tense=None):
         self.tense = tense
         super().__init__(frequency=frequency, confidence=confidence)
@@ -163,10 +176,12 @@ class TruthValue(EvidentialValue):
                + "{:.2f}".format(self.confidence) \
                + str(StatementSyntax.TruthValMarker.value)
 
+
 class Term:
     """
         Base class for all terms.
     """
+
     def __init__(self, term_string):
         assert (isinstance(term_string, str)), term_string + " must be a str"
         self.string = term_string
@@ -192,14 +207,20 @@ class Term:
     def make_term_from_string(cls, term_string):
         """
             Determine if it is an atomic term (e.g. "A") or a statement/compound term (e.g. (&&,A,B,..) or (A --> B))
-            and calls the correct constructor
+            and creates the corresponding type of
+
+            :param term_string - String from which to construct the term
+            :returns Term constructed using the string
         """
-        is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (term_string[0] == TermConnector.ExtensionalSetStart.value)
+        is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (
+                    term_string[0] == TermConnector.ExtensionalSetStart.value)
         if term_string[0] == StatementSyntax.Start.value:
-            assert (term_string[len(term_string) - 1] == StatementSyntax.End.value), "Compound term must have ending parenthesis"
+            assert (term_string[len(
+                term_string) - 1] == StatementSyntax.End.value), "Compound term must have ending parenthesis"
 
             term_connector = TermConnector.get_term_connector_from_string(term_string[1])  # e.g.: (*,t1,t2), gets *
-            statement_connector = StatementConnector.get_statement_connector_from_string(term_string[0:2])  # e.g.: (&&,t1,t2), gets &&
+            statement_connector = StatementConnector.get_statement_connector_from_string(
+                term_string[0:2])  # e.g.: (&&,t1,t2), gets &&
 
             if term_connector is None and statement_connector is None:
                 # statement term
@@ -214,12 +235,12 @@ class Term:
 
         return term
 
+
 class AtomicTerm(Term):
     """
-        An atomic term. Any valid word
-
-        T
+        An atomic term, named by a valid word.
     """
+
     def __init__(self, term_string):
         """
         Input:
@@ -227,7 +248,7 @@ class AtomicTerm(Term):
 
             connector: Connector
         """
-        assert(AtomicTerm.is_valid_term(term_string)), term_string + " is not a valid Atomic Term name."
+        assert (AtomicTerm.is_valid_term(term_string)), term_string + " is not a valid Atomic Term name."
         super().__init__(term_string)
 
     @classmethod
@@ -243,6 +264,7 @@ class CompoundTerm(Term):
 
         (Connector T1, T2, ..., Tn)
     """
+
     def __init__(self, subterms, connector):
         """
         Input:
@@ -251,7 +273,7 @@ class CompoundTerm(Term):
             connector: subterm connector
         """
         self.subterms = subterms
-        self.connector = connector # sets are represented by the opening bracket as the connector, { or [
+        self.connector = connector  # sets are represented by the opening bracket as the connector, { or [
         self.is_set = (self.connector.value == TermConnector.IntensionalSetStart.value) or \
                       (self.connector.value == TermConnector.ExtensionalSetStart.value)
         super().__init__(self.get_formatted_string())
@@ -277,16 +299,17 @@ class CompoundTerm(Term):
         # check for intensional/extensional set [], {}
         connector = TermConnector.get_term_connector_from_string(compound_term_string[0])
         if connector is None:
-            #otherwise check for regular connectors
+            # otherwise check for regular connectors
             connector = TermConnector.get_term_connector_from_string(internal_string[0])
             if connector is None:
                 connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
-            assert (internal_string[len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string."
+            assert (internal_string[
+                        len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string."
             internal_terms_string = internal_string[len(connector.value) + 1:]
         else:
             internal_terms_string = internal_string
 
-        assert(connector is not None), "Connector could not be parsed from CompoundTerm string."
+        assert (connector is not None), "Connector could not be parsed from CompoundTerm string."
 
         depth = 0
         subterm_string = ""
@@ -303,7 +326,6 @@ class CompoundTerm(Term):
                 subterm_string = ""
             else:
                 subterm_string = subterm_string + c
-
 
         subterm_string = subterm_string.strip()
         subterm = Term.make_term_from_string(subterm_string)
@@ -332,8 +354,9 @@ class StatementTerm(CompoundTerm):
     """
         A special kind of compound term with a subject, predicate, and copula
 
-        P --> Q
+        (P --> Q)
     """
+
     def __init__(self, subject, predicate, copula):
         assert_term(subject)
         assert_term(predicate)
@@ -342,6 +365,10 @@ class StatementTerm(CompoundTerm):
 
     @classmethod
     def from_string(cls, term_string):
+        """
+        :param term_string: string to turn into a Statement Term
+        :return: The Statement Term created from the term_string
+        """
         subject, predicate, connector, _ = parse_subject_predicate_copula_and_copula_index(term_string)
         return cls(subject, predicate, connector)
 
@@ -358,8 +385,9 @@ class StatementTerm(CompoundTerm):
         """
             returns: (Subject copula Predicate)
         """
-        string = self.get_subject_term().get_formatted_string() + " " + self.get_copula_string() + " "  + self.get_predicate_term().get_formatted_string()
+        string = self.get_subject_term().get_formatted_string() + " " + self.get_copula_string() + " " + self.get_predicate_term().get_formatted_string()
         return StatementSyntax.Start.value + string + StatementSyntax.End.value
+
 
 def parse_subject_predicate_copula_and_copula_index(statement_string):
     """
@@ -383,28 +411,36 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
 
     assert (copula_idx != -1), "Copula not found. Exiting.."
 
-    subject_str = statement_string[1:copula_idx].strip() # get subject string
-    predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string)-1].strip() #get predicate string
+    subject_str = statement_string[1:copula_idx].strip()  # get subject string
+    predicate_str = statement_string[
+                    copula_idx + len(copula.value):len(statement_string) - 1].strip()  # get predicate string
 
     return Term.make_term_from_string(subject_str), Term.make_term_from_string(predicate_str), copula, copula_idx
+
 
 def assert_term(t):
     assert (isinstance(t, Term)), str(t) + " must be a Term"
 
+
 def assert_statement_term(t):
     assert (isinstance(t, StatementTerm)), str(t) + " must be a Statement Term"
+
 
 def assert_sentence(j):
     assert (isinstance(j, Sentence)), str(j) + " must be a Sentence"
 
+
 def assert_statement(j):
     assert (isinstance(j, Statement)), str(j) + " must be a Statement"
+
 
 def assert_truth_value(j):
     assert (isinstance(j, TruthValue)), str(j) + " must be a TruthValue"
 
+
 def assert_punctuation(j):
     assert (isinstance(j, Punctuation)), str(j) + " must be a Punctuation"
+
 
 def assert_copula(j):
     assert (isinstance(j, Copula)), str(j) + " must be a Copula"

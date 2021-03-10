@@ -67,7 +67,8 @@ def parse_sentence(sentence_string):
     middle_truth_val_idx = sentence_string.find(StatementSyntax.TruthValDivider.value)
     end_truth_val_idx = sentence_string.rfind(StatementSyntax.TruthValMarker.value)
 
-    if start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx:
+    no_truth_value_found = start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx
+    if no_truth_value_found:
         # No truth value, use default truth value
         truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE, tense)
     else:

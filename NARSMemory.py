@@ -9,10 +9,13 @@ from NARSDataStructures import Bag, assert_task, Table, Task
     Created: October 9, 2020
     Purpose: Defines NARS internal memory
 """
+
+
 class Memory:
     """
         NARS Memory
     """
+
     def __init__(self):
         self.concepts_bag = Bag(item_type=Concept)
 
@@ -22,35 +25,38 @@ class Memory:
         """
         return self.concepts_bag.count
 
-    def conceptualize_term(self, term):
+    def conceptualize_term(self, term: Term):
         """
-            If term doesn't name existing concept, create a new concept from a term and add it to the bag
-            If term does name existing concept, return the concept
+            Create a new concept from a term and add it to the bag
 
-            Returns: Concept
+            :param term: The term naming the concept to create
+            :returns New Concept created from the term
         """
         assert_term(term)
-        assert(self.concepts_bag.peek(hash(str(term))) is None), "Cannot create new concept. Concept already exists."
+        assert (self.concepts_bag.peek(hash(str(term))) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         concept = Concept(term)
         self.concepts_bag.put_new_item(concept)
         return concept
 
-    def get_concept(self, term):
+    def peek_concept(self, term: Term):
         """
-              Get the concept from memory using its term,
+              Peek the concept from memory using its term,
               and create it if it doesn't exist.
-              Also creates all sub-term concepts if they do not exist.
+              Also recursively creates all sub-term concepts if they do not exist.
+
+              :param term: The term naming the concept to peek
+              :return Concept named by the term
           """
         concept_item = self.concepts_bag.peek(hash(str(term)))
-        if concept_item is not None: return concept_item.object # return if got concept
+        if concept_item is not None: return concept_item.object  # return if got concept
 
-        # concept must be created, and potentially its sub-concepts
+        # concept not found, it must be created, and potentially its sub-concepts
         concept = self.conceptualize_term(term)
         if isinstance(term, NALGrammar.CompoundTerm):
             for subterm in term.subterms:
                 # get/create subterm concepts
-                subconcept = self.get_concept(subterm)
+                subconcept = self.peek_concept(subterm)
 
                 if isinstance(term, NALGrammar.StatementTerm):
                     # do term linking with subterms
@@ -71,14 +77,14 @@ class Memory:
             subject_term = concept.term.get_subject_term()
             predicate_term = concept.term.get_predicate_term()
 
-            related_concept_from_subject = self.get_concept(subject_term).term_links.peek().object
-            related_concept_from_predicate = self.get_concept(predicate_term).term_links.peek().object
+            related_concept_from_subject = self.peek_concept(subject_term).term_links.peek().object
+            related_concept_from_predicate = self.peek_concept(predicate_term).term_links.peek().object
 
-            if related_concept_from_subject is not None and related_concept_from_predicate is None and related_concept_from_subject is not concept: #none from subject
+            if related_concept_from_subject is not None and related_concept_from_predicate is None and related_concept_from_subject is not concept:  # none from subject
                 related_concept = related_concept_from_subject
-            elif related_concept_from_subject is None and related_concept_from_predicate is not None and related_concept_from_predicate is not concept: #none from predicate
+            elif related_concept_from_subject is None and related_concept_from_predicate is not None and related_concept_from_predicate is not concept:  # none from predicate
                 related_concept = related_concept_from_predicate
-            elif related_concept_from_subject is not None and related_concept_from_predicate is not None: #one from both
+            elif related_concept_from_subject is not None and related_concept_from_predicate is not None:  # one from both
                 rand = random()
                 if rand < 0.5:
                     related_concept = related_concept_from_subject
@@ -95,11 +101,12 @@ class Concept:
     """
         NARS Concept
     """
+
     def __init__(self, term):
         assert_term(term)
-        self.term = term # concept's unique ID
-        self.term_links = Bag(item_type=Concept) # Bag of related concepts (related by term)
-        self.task_links = Bag(item_type=Task) # Bag of related tasks
+        self.term = term  # concept's unique ID
+        self.term_links = Bag(item_type=Concept)  # Bag of related concepts (related by term)
+        self.task_links = Bag(item_type=Task)  # Bag of related tasks
         self.belief_table = Table(Punctuation.Judgment)
         self.desire_table = Table(Punctuation.Goal)
 
@@ -108,7 +115,7 @@ class Concept:
             Set a bidirectional term link between 2 concepts. Does nothing if the link already exists
         """
         assert_concept(concept)
-        if concept in self.term_links: return # already linked
+        if concept in self.term_links: return  # already linked
         self.term_links.put_new_item(concept)
         concept.term_links.put_new_item(self)
 
@@ -118,7 +125,7 @@ class Concept:
             todo: use this somewhere
         """
         assert_concept(concept)
-        assert(concept.term in self.term_links), concept.term + "must be in term links."
+        assert (concept.term in self.term_links), concept.term + "must be in term links."
         self.term_links.take(object=concept.term)
         concept.term_links.take(object=self.term)
 
@@ -136,7 +143,7 @@ class Concept:
             Remove a task link
         """
         assert_task(task)
-        assert(task in self.task_links), task + "must be in task links."
+        assert (task in self.task_links), task + "must be in task links."
         self.task_links.pop(task)
 
     def get_formatted_string(self):
@@ -153,6 +160,7 @@ class Concept:
             A concept is named by its term
         """
         return hash(str(self.term))
+
 
 # Asserts
 def assert_concept(c):

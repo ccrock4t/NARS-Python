@@ -11,12 +11,13 @@ from NALGrammar import *
     Purpose: Defines the NAL inference rules
 """
 
-
 """
     ++++ ++++ ++++ ++++ ++++ ++++  ++++  ++++
     ++++ (Binary truth value operations) ++++
     ++++ ++++ ++++ ++++ ++++ ++++  ++++  ++++
 """
+
+
 def band(*argv):
     """
         Binary AND
@@ -34,6 +35,7 @@ def band(*argv):
         res = res * arg
     return res
 
+
 def bor(*argv):
     """
         Binary OR
@@ -50,6 +52,7 @@ def bor(*argv):
     for arg in argv:
         res = res * (1 - arg)
     return 1 - res
+
 
 def bnot(arg):
     """
@@ -72,6 +75,7 @@ def bnot(arg):
     ++++ ++++ ++++ ++++ ++++ ++++ ++++
 """
 
+
 def nal_revision(j1, j2):
     """
         Revision Rule
@@ -90,7 +94,8 @@ def nal_revision(j1, j2):
     """
     assert_sentence(j1)
     assert_sentence(j2)
-    assert (j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
+    assert (
+                j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
     # Get Truth Value
     (wp1, w1, wn1), (wp2, w2, wn2) = getevidence_from2sentences(j1, j2)
@@ -107,7 +112,6 @@ def nal_revision(j1, j2):
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
     return result
-
 
 
 def nal_choice(j1, j2):
@@ -194,6 +198,7 @@ def nal_expectation(f, c):
     ++++ ++++ ++++ ++++ ++++ ++++
 """
 
+
 def nal_negation(j):
     """
          Negation
@@ -229,11 +234,13 @@ def nal_contrapositive(j1, j2):
     # todo
     return 0
 
+
 """
     ++++ ++++ ++++ ++++ ++++ ++++
     ++++ (Strong syllogism) ++++
     ++++ ++++ ++++ ++++ ++++ ++++
 """
+
 
 def nal_deduction(j1, j2):
     """
@@ -269,6 +276,7 @@ def nal_deduction(j1, j2):
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
     return result
+
 
 def nal_analogy(j1, j2):
     """
@@ -343,12 +351,12 @@ def nal_resemblance(j1, j2):
     return result
 
 
-
 """
     ++++ ++++ ++++ ++++ ++++ ++++
     ++++ (Weak syllogism) ++++
     ++++ ++++ ++++ ++++ ++++ ++++
 """
+
 
 def nal_abduction(j1, j2):
     """
@@ -390,7 +398,6 @@ def nal_abduction(j1, j2):
     return result
 
 
-
 def nal_induction(j1, j2):
     """
         Induction (Weak syllogism)
@@ -429,6 +436,7 @@ def nal_induction(j1, j2):
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
     return result
+
 
 def nal_exemplification(j1, j2):
     """
@@ -469,6 +477,7 @@ def nal_exemplification(j1, j2):
 
     return result
 
+
 def nal_comparison(j1, j2):
     """
         Comparison (Weak syllogism)
@@ -506,6 +515,7 @@ def nal_comparison(j1, j2):
 
     return result
 
+
 """
     ++++ ++++ ++++ ++++ ++++ ++++
     ++++ (Helper function) ++++
@@ -526,6 +536,7 @@ def getfreqconf_fromevidence(wp, w):
     c = w / (w + Config.k)
     return f, c
 
+
 def getevidence_fromfreqconf(f, c):
     """
         Input:
@@ -539,6 +550,7 @@ def getevidence_fromfreqconf(f, c):
     w = Config.k * c / (1 - c)
     return wp, w, w - wp
 
+
 def gettruthvalues_from2sentences(j1, j2):
     """
         Input:
@@ -550,6 +562,7 @@ def gettruthvalues_from2sentences(j1, j2):
     """
     return gettruthvalues_fromsentence(j1), gettruthvalues_fromsentence(j2)
 
+
 def gettruthvalues_fromsentence(j):
     """
         Input:
@@ -558,6 +571,7 @@ def gettruthvalues_fromsentence(j):
             f, c
     """
     return j.value.frequency, j.value.confidence
+
 
 def getevidence_from2sentences(j1, j2):
     """

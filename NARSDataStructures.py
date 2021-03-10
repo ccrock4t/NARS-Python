@@ -1,7 +1,4 @@
-import heapq
-
 from depq import DEPQ
-import tkinter as tk
 import Config
 import random
 from Global import GlobalGUI, Global
@@ -13,6 +10,8 @@ import NALGrammar
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+
+
 class Bag:
     """
         Probabilistic priority-queue
@@ -22,19 +21,20 @@ class Bag:
         An array of buckets, where each bucket holds items of a certain priority
         (e.g. 100 buckets, bucket 1 - hold items with 0.01 priority,  bucket 50 - hold items with 0.50 priority)
     """
+
     def __init__(self, item_type):
-        self.item_type = item_type # the class of the objects  this bag stores (be wrapped in Item)
+        self.item_type = item_type  # the class of the objects  this bag stores (be wrapped in Item)
 
-        self.capacity = Config.BAG_CAPACITY # maximum number of items that can be stored in this bag
-        self.number_of_buckets = Config.BAG_NUMBER_OF_BUCKETS # number of buckets in the bag (the bag's granularity)
-        self.item_lookup_table = dict() # for accessing item by key
-        self.buckets = dict() # for accessing items by priority
+        self.capacity = Config.BAG_CAPACITY  # maximum number of items that can be stored in this bag
+        self.number_of_buckets = Config.BAG_NUMBER_OF_BUCKETS  # number of buckets in the bag (the bag's granularity)
+        self.item_lookup_table = dict()  # for accessing item by key
+        self.buckets = dict()  # for accessing items by priority
 
-        self.current_bucket_number = 0 # keeps track of the Bag's current bucket number
-        self.count = 0 # number of items in the bag
+        self.current_bucket_number = 0  # keeps track of the Bag's current bucket number
+        self.count = 0  # number of items in the bag
 
         # initialize buckets
-        for i in range(1, self.number_of_buckets+1):
+        for i in range(1, self.number_of_buckets + 1):
             self.buckets[i] = []
 
     def __contains__(self, object):
@@ -65,7 +65,7 @@ class Bag:
             if self.count > self.capacity:
                 self._take_smallest_priority_item()
 
-            #GUI
+            # GUI
             GlobalGUI.print_to_output(msg=str(item.object), selfobj=self)
 
     def peek(self, key=None):
@@ -76,7 +76,7 @@ class Bag:
             Returns None if the object isn't in the bag
         """
         if self.count == 0:
-            return None # no items
+            return None  # no items
 
         item = None
         if key is None:
@@ -95,17 +95,17 @@ class Bag:
                         if object is passed, the item is not removed from the bag
         """
         if self.count == 0:
-            return None # no items
+            return None  # no items
 
         if object is None:
             return self._take_item_probabilistically()
         return self._take_item_by_key(hash(object))
 
     def _take_item_by_key(self, key):
-        assert(key in self.item_lookup_table), "Given key does not exist in this bag"
-        item = self.item_lookup_table.pop(key) # remove item reference from lookup table
-        self.buckets[item.current_bucket_number].remove(item) # remove item reference from bucket
-        self.count = self.count - 1 # decrement bag count
+        assert (key in self.item_lookup_table), "Given key does not exist in this bag"
+        item = self.item_lookup_table.pop(key)  # remove item reference from lookup table
+        self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
+        self.count = self.count - 1  # decrement bag count
 
         # GUI
         GlobalGUI.remove_from_output(str(item.object), selfobj=self)
@@ -121,7 +121,7 @@ class Bag:
         item = self.buckets[self.current_bucket_number].pop(randidx)
         # remove item reference from lookup table
         self.item_lookup_table.pop(hash(item.object))
-        self.count = self.count - 1 # decrement bag count
+        self.count = self.count - 1  # decrement bag count
 
         # update GUI
         GlobalGUI.remove_from_output(str(item.object), selfobj=self)
@@ -132,7 +132,7 @@ class Bag:
         """
             Selects the lowest priority bucket, and removes an item from it.
         """
-        #store old index so we can restore it
+        # store old index so we can restore it
         oldidx = self.current_bucket_number
 
         # move to lowest non-empty priority bucket
@@ -146,9 +146,9 @@ class Bag:
         item = self.buckets[self.current_bucket_number].pop(randidx)
         # remove item reference from lookup table
         self.item_lookup_table.pop(hash(item.object))
-        self.count = self.count - 1 # decrement bag count
+        self.count = self.count - 1  # decrement bag count
 
-        #restore original index
+        # restore original index
         self.current_bucket_number = oldidx
 
         # update GUI
@@ -170,7 +170,7 @@ class Bag:
 
         while rnd >= bucket_probability:
             # bucket was not selected, try next bucket
-            self._move_to_next_nonempty_bucket() # try next non-empty bucket
+            self._move_to_next_nonempty_bucket()  # try next non-empty bucket
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
 
         # peek a random item from the bucket
@@ -213,9 +213,10 @@ class Bag:
 
                 budget ($priority;durability;quality$)
         """
+
         def __init__(self, object):
             self.object = object
-            #todo implement priority
+            # todo implement priority
             self.budget = Bag.Item.Budget(priority=0.9, durability=0.9, quality=0.9)
             self.current_bucket_number = self.get_new_bucket_number()
 
@@ -227,7 +228,7 @@ class Bag:
                 based on Bag granularity
                 (e.g. Priority=0.5, 100 buckets -> bucket 50, 200 buckets -> bucket 100, 50 buckets -> bucket 25)
             """
-            return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS/100
+            return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100
 
         class Budget:
             def __init__(self, priority=0.0, durability=0.0, quality=0.0):
@@ -256,6 +257,7 @@ class Buffer:
         Time-restricted Bag
         todo: implement Buffer
     """
+
     def __init__(self):
         self.capacity = Config.BAG_CAPACITY
 
@@ -266,18 +268,20 @@ class Table:
         Tables store Narsese sentences using a double ended priority queue, sorted by confidence
         It purges lowest-confidence items when it overflows.
     """
+
     def __init__(self, punctuation=NALGrammar.Punctuation.Judgment, maxsize=Config.TABLE_CAPACITY):
         self.punctuation = punctuation
-        self.depq = DEPQ(iterable=None, maxlen=None) #maxheap depq
+        self.depq = DEPQ(iterable=None, maxlen=None)  # maxheap depq
         self.maxsize = maxsize
 
     def insert(self, sentence):
         """
             Insert a Sentence into the depq, sorted by confidence.
         """
-        assert(sentence.punctuation == self.punctuation), "Cannot insert sentence into a Table of different punctuation"
+        assert (
+                sentence.punctuation == self.punctuation), "Cannot insert sentence into a Table of different punctuation"
         self.depq.insert(sentence, sentence.value.confidence)
-        if(len(self.depq) > self.maxsize):
+        if (len(self.depq) > self.maxsize):
             self.extract_min()
 
     def take(self):
@@ -347,13 +351,14 @@ class Task:
     """
        NARS Task
     """
+
     def __init__(self, sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
-        self.creation_timestamp: int = Global.current_cycle_number # save the task's creation time
+        self.creation_timestamp: int = Global.current_cycle_number  # save the task's creation time
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
-        self.interacted_beliefs = [] #list of beliefs this task has already interacted with
+        self.interacted_beliefs = []  # list of beliefs this task has already interacted with
 
     def __hash__(self):
         return self.sentence.stamp.id
@@ -364,4 +369,4 @@ class Task:
 
 # Asserts
 def assert_task(j):
-    assert(isinstance(j, Task)), str(j) + " must be a Task"
+    assert (isinstance(j, Task)), str(j) + " must be a Task"

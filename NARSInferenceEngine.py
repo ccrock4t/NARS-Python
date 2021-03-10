@@ -3,23 +3,24 @@
     Created: March 8, 2021
     Purpose: Identifies and performs inference on a task and belief.
 """
-from NALGrammar import assert_sentence
+from NALGrammar import assert_sentence, Sentence
 from NALInferenceRules import nal_deduction, nal_revision, nal_induction, nal_abduction
 from NARSDataStructures import assert_task, Task
 
 
-def perform_inference(t1, j2):
+def perform_inference(t1: Task, j2: Sentence) -> Task:
     """
-        Determines and performs the appropriate inference rules when
-            given a task t1 (containing sentence j1) and a belief j2.
+        Derives a new task by performing the appropriate inference rules on the given Task and belief.
+        The resultant sentence's evidential base is appropriately merged from its parents.
+        Also marks the Task t1 as having interacted with belief j2.
 
-            The resultant sentence's evidential base contains itself, and j1 & j2 evidential bases.
+        :param t1: Task containing sentence j1
+        :param j2: Belief containing sentence j2
 
-
-        Assumes: j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
+        :assumes j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
                 (no evidential overlap)
 
-        Returns: An array of the derived Tasks, or None if the inputs have evidential overlap
+        :returns An array of the derived Tasks, or None if the inputs have evidential overlap
     """
     assert_task(t1)
     assert_sentence(j2)
@@ -63,7 +64,7 @@ def perform_inference(t1, j2):
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
         if derived_task is not None: derived_tasks.append(derived_task)
 
-        # also treat them conversely, as j1=S-->M and j2=P-->M
+        # also process them conversely, where j1=S-->M and j2=P-->M
         derived_sentence = nal_abduction(j2, j1)
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
         if derived_task is not None: derived_tasks.append(derived_task)
@@ -74,6 +75,7 @@ def perform_inference(t1, j2):
     t1.interacted_beliefs.append(j2)  # mark task t1 as interacted with belief j2
 
     return derived_tasks
+
 
 def make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inference"):
     """
@@ -92,6 +94,6 @@ def make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule
     derived_sentence.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
 
     derived_task = Task(derived_sentence)
-    #print(inference_rule + " derived new Task: " + str(derived_task) + " from " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
-    #print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
+    # print(inference_rule + " derived new Task: " + str(derived_task) + " from " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
+    # print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
     return derived_task

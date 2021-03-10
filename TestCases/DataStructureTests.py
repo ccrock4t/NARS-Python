@@ -47,9 +47,9 @@ def test_concept_termlinking():
         Test if term links can be added and removed properly
     """
     testnars = NARS.NARS()
-    statement_concept = testnars.memory.get_concept(Term.make_term_from_string("(A-->B)"))
-    conceptA = testnars.memory.get_concept(Term.make_term_from_string("A"))
-    conceptB = testnars.memory.get_concept(Term.make_term_from_string("B"))
+    statement_concept = testnars.memory.peek_concept(Term.make_term_from_string("(A-->B)"))
+    conceptA = testnars.memory.peek_concept(Term.make_term_from_string("A"))
+    conceptB = testnars.memory.peek_concept(Term.make_term_from_string("B"))
 
     assert (statement_concept.term_links.count == 2), "TEST FAILURE: Concept " + str(statement_concept) + " does not have 2 termlinks"
     assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink"

@@ -6,6 +6,7 @@ import tkinter as tk
     GUI code (excluding GUI Globals)
 """
 
+
 def execute_internal_gui():
     """
         Setup the internal GUI window, displaying the system's buffers and memory
@@ -24,7 +25,8 @@ def execute_internal_gui():
 
     buffer_scrollbar = tk.Scrollbar(window)
     buffer_scrollbar.grid(row=1, column=2, sticky='ns')
-    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8), yscrollcommand=buffer_scrollbar.set)
+    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
+                                                         yscrollcommand=buffer_scrollbar.set)
     GlobalGUI.gui_experience_buffer_listbox.grid(row=1, column=0, columnspan=2)
 
     # Memory Output
@@ -33,10 +35,12 @@ def execute_internal_gui():
 
     concept_bag_scrollbar = tk.Scrollbar(window)
     concept_bag_scrollbar.grid(row=1, column=5, sticky='ns')
-    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8), yscrollcommand=concept_bag_scrollbar.set)
+    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
+                                                   yscrollcommand=concept_bag_scrollbar.set)
     GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
 
     window.mainloop()
+
 
 def execute_interface_gui():
     """
@@ -50,11 +54,11 @@ def execute_interface_gui():
     output_width = 3
     output_height = 3
 
-    #row 0
+    # row 0
     output_lbl = tk.Label(window, text="Output: ")
     output_lbl.grid(row=0, column=0, columnspan=output_width)
 
-    #row 1
+    # row 1
     output_scrollbar = tk.Scrollbar(window)
     output_scrollbar.grid(row=1, column=3, rowspan=output_height, sticky='ns')
 
@@ -68,7 +72,7 @@ def execute_interface_gui():
     speed_slider_lbl = tk.Label(window, text="Cycle Delay in millisec: ")
     speed_slider_lbl.grid(row=2, column=4, columnspan=2, sticky='s')
 
-    #row 3
+    # row 3
     def toggle_pause(event=None):
         # put input into NARS input buffer
         Global.paused = not Global.paused
@@ -81,7 +85,7 @@ def execute_interface_gui():
     GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
     GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
 
-    max_delay = 1000 # in milliseconds
+    max_delay = 1000  # in milliseconds
     GlobalGUI.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
     GlobalGUI.gui_delay_slider.grid(row=3, column=5, sticky='ns')
     GlobalGUI.gui_delay_slider.set(max_delay)
@@ -97,7 +101,7 @@ def execute_interface_gui():
     input_lbl = tk.Label(window, text="Input: ")
     input_lbl.grid(column=0, row=4)
 
-    input_field = tk.Entry(window,width=50)
+    input_field = tk.Entry(window, width=50)
     input_field.grid(column=1, row=4)
     input_field.focus()
 
@@ -108,6 +112,7 @@ def execute_interface_gui():
     window.focus()
 
     window.mainloop()
+
 
 def get_user_input():
     userinput = ""

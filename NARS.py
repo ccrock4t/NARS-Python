@@ -14,13 +14,35 @@ from Global import GlobalGUI, Global
     Created: October 8, 2020
     Purpose: Main loop and NARS definition
 """
+
+
 class NARS:
     """
        NARS Class
     """
+
     def __init__(self):
         self.overall_experience_buffer = Bag(item_type=Task)
         self.memory = Memory()
+
+    def do_working_cycle(self):
+        """
+            Performs 1 working cycle.
+            In each working cycle, NARS either *Observes* OR *Considers*:
+        """
+        if GlobalGUI.gui_use_interface:
+            GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
+
+        # working cycle
+        rand = random.random()
+        if rand < Config.MINDFULNESS:
+            # OBSERVE
+            self.Observe()
+        else:
+            # CONSIDER
+            self.Consider()
+
+        Global.current_cycle_number = Global.current_cycle_number + 1
 
     def Observe(self):
         """
@@ -29,7 +51,7 @@ class NARS:
         task_item = self.overall_experience_buffer.take()
 
         if task_item is None:
-            return # nothing to observe
+            return  # nothing to observe
 
         # process task
         self.process_task(task_item.object)
@@ -44,7 +66,7 @@ class NARS:
         concept_item = self.memory.concepts_bag.take()
 
         if concept_item is None:
-            return # nothing to ponder
+            return  # nothing to ponder
 
         # get task and belief from concept
 
@@ -53,7 +75,7 @@ class NARS:
 
     def process_task(self, task):
         """
-            Process a Narsese task
+            Processes any Narsese task
         """
         assert_task(task)
         if task.sentence.punctuation == Punctuation.Judgment:
@@ -61,11 +83,9 @@ class NARS:
         elif task.sentence.punctuation == Punctuation.Question:
             self.process_question(task)
 
-
-
     def process_judgment(self, task):
         """
-            Process a Narsese judgment task
+            Processes a Narsese judgment task
         """
         assert_task(task)
 
@@ -75,11 +95,11 @@ class NARS:
         predicate_term = statement_term.get_predicate_term()
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.memory.get_concept(statement_term)
+        statement_concept = self.memory.peek_concept(statement_term)
 
         # get subject-predicate concepts
-        subject_concept = self.memory.get_concept(subject_term)
-        predicate_concept = self.memory.get_concept(predicate_term)
+        subject_concept = self.memory.peek_concept(subject_term)
+        predicate_concept = self.memory.peek_concept(predicate_term)
 
         # set task links if they don't exist
         statement_concept.set_task_link(task)
@@ -92,10 +112,11 @@ class NARS:
                 
                 Revise this judgment with the most confident belief, then insert it into the belief table
             """
-            belief = statement_concept.belief_table.peek() # get most confident related_belief of the same content
-            if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (belief not in task.interacted_beliefs):
+            belief = statement_concept.belief_table.peek()  # get most confident related_belief of the same content
+            if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (
+                    belief not in task.interacted_beliefs):
                 # perform revision on the belief
-                derived_task = NARSInferenceEngine.perform_inference(task, belief)[0] # only 1 derived task in Revision
+                derived_task = NARSInferenceEngine.perform_inference(task, belief)[0]  # only 1 derived task in Revision
                 self.overall_experience_buffer.put_new_item(derived_task)
 
             # add the judgment itself into concept's belief table
@@ -108,10 +129,11 @@ class NARS:
                 Do local/forward inference on a related belief
             """
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
-            if related_concept is None: return # no related concepts!
+            if related_concept is None: return  # no related concepts!
 
-            related_belief = related_concept.belief_table.peek() # get most confident related_belief of related concept
-            if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (related_belief in task.interacted_beliefs): return
+            related_belief = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+            if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (
+                    related_belief in task.interacted_beliefs): return
 
             derived_tasks = NARSInferenceEngine.perform_inference(task, related_belief)
             for derived_task in derived_tasks:
@@ -127,11 +149,16 @@ class NARS:
         statement_term = task.sentence.statement.term
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.memory.get_concept(statement_term)
+        statement_concept = self.memory.peek_concept(statement_term)
 
         if task.needs_initial_processing:
-            # early quit if belief table is empty
-            if len(statement_concept.belief_table) == 0: return
+            """
+                Initial Processing
+                
+                Get and print the best answer to the question by peeking the most confident belief in
+                the Question's Concept's Belief Table.
+            """
+            if len(statement_concept.belief_table) == 0: return # early quit if belief table is empty
             # get the best answer from concept belief table
             best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
             if best_answer is None: return
@@ -141,6 +168,9 @@ class NARS:
             # initial processing complete
             task.needs_initial_processing = False
         else:
+            """
+                Continued Processing
+            """
             if len(statement_concept.belief_table) == 0: return
 
 
@@ -151,17 +181,17 @@ def main():
     """
     # set globals
     Global.NARS = NARS()
-    GlobalGUI.gui_use_internal_data = True # Setting this to False will significantly increase speed
-    GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface
+    GlobalGUI.gui_use_internal_data = True  # Setting this to False will significantly increase speed
+    GlobalGUI.gui_use_interface = True  # Setting this to False uses the shell as interface
 
-    #setup internal GUI
+    # setup internal GUI
     if GlobalGUI.gui_use_internal_data:
         internal_GUI_thread = threading.Thread(target=NARSGUI.execute_internal_gui, name="Internal GUI thread")
         internal_GUI_thread.daemon = True
         internal_GUI_thread.start()
         time.sleep(0.25)
 
-    #setup interface GUI
+    # setup interface GUI
     if GlobalGUI.gui_use_interface:
         interface_thread = threading.Thread(target=NARSGUI.execute_interface_gui, name="Interface GUI thread")
     else:
@@ -176,9 +206,9 @@ def main():
     # Finally, start NARS in the shell
     do_working_cycles()
 
+
 def do_working_cycles():
     """
-        Perform one working cycle.
         In each working cycle, NARS either *Observes* OR *Considers*:
     """
     while True:
@@ -186,19 +216,9 @@ def do_working_cycles():
         if Global.paused:
             continue
         if GlobalGUI.gui_use_interface:
-            GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
             time.sleep(GlobalGUI.gui_delay_slider.get() / 1000)
 
-        # working cycle
-        rand = random.random()
-        if rand < Config.MINDFULNESS:
-            # OBSERVE
-            Global.NARS.Observe()
-        else:
-            # CONSIDER
-            Global.NARS.Consider()
-
-        Global.current_cycle_number = Global.current_cycle_number + 1
+        Global.NARS.do_working_cycle()
 
 
 if __name__ == "__main__":
