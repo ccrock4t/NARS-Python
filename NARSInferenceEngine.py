@@ -76,13 +76,12 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
             if derived_task is not None: derived_tasks.append(derived_task)
 
             # comparison
-            # j1=M-->P, j2=M-->S
-            derived_sentence = nal_comparison(j1,j2)  # S<->P, equivalent to P<->S
+            derived_sentence = nal_comparison(j1,j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
             if derived_task is not None: derived_tasks.append(derived_task)
         elif j1_predicate_term == j2_predicate_term:
             # abduction
-            # j1=P -->M, j2=S-->M
+            # j1=P-->M, j2=S-->M
             derived_sentence = nal_abduction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
             if derived_task is not None: derived_tasks.append(derived_task)
@@ -91,20 +90,25 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
             derived_sentence = nal_abduction(j2, j1)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
             if derived_task is not None: derived_tasks.append(derived_task)
+
+            # comparison
+            derived_sentence = nal_comparison(j1, j2)  # S<->P
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
+            if derived_task is not None: derived_tasks.append(derived_task)
         else:
             assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
     elif (j1_copula == Copula.Inheritance and j2_copula == Copula.Similarity) or (j1_copula == Copula.Similarity and j2_copula == Copula.Inheritance):
         # analogy
-        if j1_copula == Copula.Inheritance:
-            # j1=M-->P,
+        if j2_copula == Copula.Similarity:
+            # j1=M-->P or P-->M
             # j2=S<->M or j2=M<->S
-            derived_sentence = nal_analogy(j1, j2)  # S-->P
-        else:
+            derived_sentence = nal_analogy(j1, j2)  # S-->P or P-->S
+        else: #j1 copula is Similarity
             # j1=S<->M or j1=M<->S
-            # j2=M-->P
-            derived_sentence = nal_analogy(j2, j1)  # S-->P
+            # j2=M-->P or P-->M
+            derived_sentence = nal_analogy(j2, j1)  # S-->P or S-->P or P-->S
 
-        derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
+        derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Analogy")
         if derived_task is not None: derived_tasks.append(derived_task)
 
     # mark task as interacted with belief

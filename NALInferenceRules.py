@@ -287,6 +287,8 @@ def nal_analogy(j1, j2):
 
         Input:
             j1: Sentence (M --> P <f1, c1>)
+                or
+            j1: Sentence (P --> M <f1, c1>)
 
             j2: Sentence (S <-> M <f2, c2>)
                 or
@@ -310,8 +312,16 @@ def nal_analogy(j1, j2):
         # j1=M-->P, j2=M<->S
         resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
                                     Copula.Inheritance) # S-->P
+    elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
+        #j1=P-->M, j2=S<->M
+        resultStatement = Statement(j1.statement.get_subject_term(), j2.statement.get_subject_term(),
+                                    Copula.Inheritance) # P-->S
+    elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
+        # j1=P-->M, j2=M<->S
+        resultStatement = Statement(j1.statement.get_subject_term(), j2.statement.get_predicate_term(),
+                                    Copula.Inheritance) # P-->S
     else:
-        assert(False), "Error: Invalid inputs to nal_analogy"
+        assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     # Get Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)

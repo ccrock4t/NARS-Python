@@ -42,12 +42,12 @@ class GlobalGUI:
         """
         if data_structure is Global.NARS.overall_experience_buffer:
             listbox = GlobalGUI.gui_experience_buffer_listbox
-            GlobalGUI.print_to_output(msg, listbox)
+            GlobalGUI._print_to_output(msg, listbox)
         elif data_structure is Global.NARS.memory.concepts_bag:
             listbox = GlobalGUI.gui_concept_bag_listbox
-            GlobalGUI.print_to_output(msg, listbox)
+            GlobalGUI._print_to_output(msg, listbox)
         elif data_structure is None:
-            GlobalGUI.print_to_output(msg, None)
+            GlobalGUI._print_to_output(msg, None)
 
     @classmethod
     def remove_from_output(cls, msg, data_structure=None):
