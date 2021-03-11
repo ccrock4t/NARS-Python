@@ -297,8 +297,11 @@ def nal_analogy(j1, j2):
             f: and(f1,f2)
 
             c: and(f2,c1,c2)
-        Returns:
+        Returns: (depending on j1)
             :- Sentence (S --> P <f3, c3>)
+                or
+            :- Sentence (P --> S <f3, c3>)
+
     """
     assert_sentence(j1)
     assert_sentence(j2)
@@ -345,8 +348,12 @@ def nal_resemblance(j1, j2):
 
         Input:
             j1: Sentence (M <-> P <f1, c1>)
+                or
+            j1: Sentence (P <-> M <f1, c1>)
 
             j2: Sentence (S <-> M <f2, c2>)
+                or
+            j2: Sentence (M <-> S <f2, c2>)
         Truth Val:
             f: and(f1,f2)
 
@@ -357,7 +364,25 @@ def nal_resemblance(j1, j2):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(), Copula.Similarity)
+    if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
+        # j1=M<->P, j2=S<->M
+        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
+                                    Copula.Inheritance)  # S<->P
+    elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
+        # j1=M<->P, j2=M<->S
+        resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
+                                    Copula.Inheritance)  # S<->P
+    elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
+        # j1=P<->M, j2=S<->M
+        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(),
+                                    Copula.Inheritance)  # S<->P
+    elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
+        # j1=P<->M, j2=M<->S
+        resultStatement = Statement(j2.statement.get_predicate_term(), j2.statement.get_subject_term(),
+                                    Copula.Inheritance)  # S<->P
+    else:
+        assert (
+            False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     # Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -508,8 +533,12 @@ def nal_comparison(j1, j2):
 
         Input:
             j1: Sentence (M --> P <f1, c1>)
-
             j2: Sentence (M --> S <f2, c2>)
+
+            or
+
+            j1: Sentence (P --> M <f1, c1>)
+            j2: Sentence (S --> M <f2, c2>)
         Evidence:
             w+: and(f1,c1,f2,c2)
 
@@ -521,7 +550,12 @@ def nal_comparison(j1, j2):
     assert_sentence(j2)
 
     # Statement
-    resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(), Copula.Similarity)
+    if j1.statement.get_subject_term() == j2.statement.get_subject_term():
+        resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(), Copula.Similarity)
+    elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
+        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Similarity)
+    else:
+        assert(False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     # Get Truth Value
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)

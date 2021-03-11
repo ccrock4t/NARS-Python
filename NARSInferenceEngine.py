@@ -5,7 +5,8 @@
 """
 from Global import GlobalGUI
 from NALGrammar import assert_sentence, Sentence, Copula
-from NALInferenceRules import nal_deduction, nal_revision, nal_induction, nal_abduction, nal_comparison, nal_analogy
+from NALInferenceRules import nal_deduction, nal_revision, nal_induction, nal_abduction, nal_comparison, nal_analogy, \
+    nal_exemplification, nal_resemblance
 from NARSDataStructures import assert_task, Task
 
 
@@ -32,47 +33,52 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     # Identify and perform inference
     j1_term = j1.statement.term
     j2_term = j2.statement.term
-    j1_subject_term = j1.statement.term.get_subject_term()
-    j2_subject_term = j2.statement.term.get_subject_term()
-    j1_predicate_term = j1.statement.term.get_predicate_term()
-    j2_predicate_term = j2.statement.term.get_predicate_term()
+    j1_subject_term = j1.statement.get_subject_term()
+    j2_subject_term = j2.statement.get_subject_term()
+    j1_predicate_term = j1.statement.get_predicate_term()
+    j2_predicate_term = j2.statement.get_predicate_term()
     j1_copula = j1.statement.copula
     j2_copula = j2.statement.copula
 
     if j1_subject_term == j2_predicate_term and j2_subject_term == j1_predicate_term:
         # S-->P, P-->S
         # S<->P, P<->S
-        return  # don't do inference, it will result in tautology
+        return derived_tasks # don't do inference, it will result in tautology
 
     if j1_copula == Copula.Inheritance and j2_copula == Copula.Inheritance:
         if j1_term == j2_term:
-            # revision
             # j1=S-->P, j2=S-->P
+            # revision
             derived_sentence = nal_revision(j1, j2) # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
             if derived_task is not None: derived_tasks.append(derived_task)
         elif j1_subject_term == j2_predicate_term:
-            # deduction
             # j1=M-->P, j2=S-->M
+            # or j1=S-->M, j2=M-->P
+            if j1.statement.get_predicate_term() == j2.statement.get_subject_term():  # j1=S-->M, j2=M-->P
+                j1, j2 = j2, j1  # swap
+            # deduction
             derived_sentence = nal_deduction(j1, j2)
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Deduction")
             if derived_task is not None: derived_tasks.append(derived_task)
-        elif j1_predicate_term == j2_subject_term:
-            # deduction
-            # j1=S-->M, j2=M-->P
-            derived_sentence = nal_deduction(j2, j1)  # S-->P
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Deduction")
+
+            # inverse exemplification
+            derived_sentence = nal_exemplification(j2, j1) # P-->S
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Exemplification")
             if derived_task is not None: derived_tasks.append(derived_task)
-        elif j1_subject_term  == j2_subject_term:
-            # induction
+
+            if j1_predicate_term == j2_subject_term: # j1=S-->M, j2=M-->P
+                j1, j2 = j2, j1 # swap back
+        elif j1_subject_term == j2_subject_term:
             # j1=M-->P, j2=M-->S
+            # induction
             derived_sentence = nal_induction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Induction")
             if derived_task is not None: derived_tasks.append(derived_task)
 
-            # also treat them conversely, as j1=M-->S and j2=M-->P
+            # inverse induction
             derived_sentence = nal_induction(j2, j1)  # S-->P
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Induction")
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inverse Induction")
             if derived_task is not None: derived_tasks.append(derived_task)
 
             # comparison
@@ -80,35 +86,54 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
             if derived_task is not None: derived_tasks.append(derived_task)
         elif j1_predicate_term == j2_predicate_term:
-            # abduction
             # j1=P-->M, j2=S-->M
+            # abduction
             derived_sentence = nal_abduction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
             if derived_task is not None: derived_tasks.append(derived_task)
 
-            # also process them conversely, where j1=S-->M and j2=P-->M
+            # inverse abduction
             derived_sentence = nal_abduction(j2, j1)  # S-->P
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inverse Abduction")
             if derived_task is not None: derived_tasks.append(derived_task)
 
             # comparison
             derived_sentence = nal_comparison(j1, j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
             if derived_task is not None: derived_tasks.append(derived_task)
+        elif j1_predicate_term == j2_subject_term:
+            # j1=P-->M, j2=M-->S
+            # Exemplification
+            derived_sentence = nal_exemplification(j1, j2)  # S-->P
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Exemplification")
+            if derived_task is not None: derived_tasks.append(derived_task)
+
+            # inverse deduction
+            derived_sentence = nal_deduction(j2, j1)  # P-->S
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inverse Deduction")
+            if derived_task is not None: derived_tasks.append(derived_task)
         else:
             assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
-    elif (j1_copula == Copula.Inheritance and j2_copula == Copula.Similarity) or (j1_copula == Copula.Similarity and j2_copula == Copula.Inheritance):
+    elif j1_copula == Copula.Inheritance and j2_copula == Copula.Similarity:
+        # j1=M-->P or P-->M
+        # j2=S<->M or M<->S
         # analogy
-        if j2_copula == Copula.Similarity:
-            # j1=M-->P or P-->M
-            # j2=S<->M or j2=M<->S
-            derived_sentence = nal_analogy(j1, j2)  # S-->P or P-->S
-        else: #j1 copula is Similarity
-            # j1=S<->M or j1=M<->S
-            # j2=M-->P or P-->M
-            derived_sentence = nal_analogy(j2, j1)  # S-->P or S-->P or P-->S
-
+        derived_sentence = nal_analogy(j1, j2)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Analogy")
+        if derived_task is not None: derived_tasks.append(derived_task)
+    elif j1_copula == Copula.Similarity and j2_copula == Copula.Inheritance:
+        # j1=M<->P or P<->M
+        # j2=S-->M or M-->S
+        # inverse analogy
+        derived_sentence = nal_analogy(j2, j1)  # S-->P or P-->S
+        derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inverse Analogy")
+        if derived_task is not None: derived_tasks.append(derived_task)
+    elif j1_copula == Copula.Similarity and j2_copula == Copula.Similarity:
+        # j1=M<->P or P<->M
+        # j2=S<->M or M<->S
+        # resemblance
+        derived_sentence = nal_resemblance(j1,j2)  # S<->P
+        derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Resemblance")
         if derived_task is not None: derived_tasks.append(derived_task)
 
     # mark task as interacted with belief
