@@ -188,6 +188,7 @@ class Term:
     def __init__(self, term_string):
         assert (isinstance(term_string, str)), term_string + " must be a str"
         self.string = term_string
+        self.syntactic_complexity = self.calculate_syntactic_complexity()
 
     def get_formatted_string(self):
         return self.string
@@ -205,6 +206,9 @@ class Term:
 
     def __str__(self):
         return self.get_formatted_string()
+
+    def calculate_syntactic_complexity():
+        assert False, "Complexity not defined for Term base class"
 
     @classmethod
     def make_term_from_string(cls, term_string):
@@ -259,6 +263,9 @@ class AtomicTerm(Term):
         for char in term_string:
             if char not in valid_term_chars: return False
         return True
+
+    def calculate_syntactic_complexity(self):
+        return 1
 
 
 class CompoundTerm(Term):
@@ -335,6 +342,17 @@ class CompoundTerm(Term):
         subterms.append(subterm)
 
         return subterms, connector
+
+    def calculate_syntactic_complexity(self):
+        """
+            Recursively calculate the syntactic complexity of
+            the compound term. The connector adds 1 complexity,
+            and the subterms syntactic complexities are summed as well.
+        """
+        count = 1 # the term connector
+        for subterm in self.subterms:
+            count = count + subterm.calculate_syntactic_complexity()
+        return count
 
     def get_formatted_string(self):
         if self.is_set:

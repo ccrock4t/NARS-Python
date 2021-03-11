@@ -7,7 +7,7 @@ from NARSMemory import Concept
 """
     Author: Christian Hahm
     Created: January 29, 2021
-    Purpose: Defines NARS internal memory
+    Purpose: Unit Testing for NARS data structures
 """
 
 def test_table_removemax():
