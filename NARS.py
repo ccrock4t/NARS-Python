@@ -184,14 +184,12 @@ def main():
     GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     GlobalGUI.gui_use_interface = True  # Setting this to False uses the shell as interface
 
-    # setup internal GUI
+    # setup internal/interface GUI
     if GlobalGUI.gui_use_internal_data or GlobalGUI.gui_use_interface:
         GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread")
         GUI_thread.daemon = True
         GUI_thread.start()
-
-    # setup interface GUI
-    if not GlobalGUI.gui_use_interface:
+    elif not GlobalGUI.gui_use_interface:
         # launch shell input thread
         shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread")
         shell_input_thread.daemon = True

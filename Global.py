@@ -22,6 +22,7 @@ class GlobalGUI:
     gui_output_textbox = None  # primary output gui
     gui_delay_slider = None # delay slider
     gui_total_cycles_lbl = None
+    play_pause_button = None
 
     # Internal Data vars
     gui_experience_buffer_listbox = None # output for tasks in experience buffer
@@ -40,6 +41,8 @@ class GlobalGUI:
         """
             Print a message to an output GUI box
         """
+        if Global.NARS is None: return
+
         if data_structure is Global.NARS.overall_experience_buffer:
             listbox = GlobalGUI.gui_experience_buffer_listbox
             GlobalGUI._print_to_output(msg, listbox)
@@ -54,6 +57,8 @@ class GlobalGUI:
         """
             Remove a message from a data structure's output GUI box
         """
+        if Global.NARS is None: return
+
         if data_structure is Global.NARS.overall_experience_buffer:
             listbox = GlobalGUI.gui_experience_buffer_listbox
             GlobalGUI._remove_from_output(msg, listbox)
@@ -106,3 +111,11 @@ class GlobalGUI:
             elif listbox is GlobalGUI.gui_concept_bag_listbox:
                 GlobalGUI.gui_total_concepts_in_memory = GlobalGUI.gui_total_concepts_in_memory - 1
                 GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(GlobalGUI.gui_total_concepts_in_memory))
+
+    @classmethod
+    def set_paused(cls, paused):
+        Global.paused = paused
+        if Global.paused:
+            GlobalGUI.play_pause_button.config(text="PLAY")
+        else:
+            GlobalGUI.play_pause_button.config(text="PAUSE")

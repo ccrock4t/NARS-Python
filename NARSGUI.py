@@ -59,7 +59,26 @@ def execute_internal_gui(window):
                                                    yscrollcommand=concept_bag_scrollbar.set)
     GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
 
-    return window
+    def concept_click_callback(event):
+        """
+            Called when the user clicks on a Concept.
+            Presents a window describing the concept's internal data.
+        """
+        selection = event.widget.curselection()
+        if selection:
+            GlobalGUI.set_paused(True)
+            index = selection[0]
+            concept_name = event.widget.get(index)
+            concept_info_toplevel = tk.Toplevel()
+            concept_info_toplevel.title("Concept Internal Data: " + concept_name)
+            concept_info_toplevel.geometry('500x300')
+
+            label = tk.Label(concept_info_toplevel, text="CONCEPT NAME: " + concept_name)
+            label.grid(row=0,column=0)
+
+            concept_info_toplevel.grab_set() # lock the underlying windows
+
+    GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", concept_click_callback)
 
 
 def execute_interface_gui(window):
@@ -90,12 +109,7 @@ def execute_interface_gui(window):
     # row 3
     def toggle_pause(event=None):
         # put input into NARS input buffer
-        Global.paused = not Global.paused
-
-        if Global.paused:
-            GlobalGUI.play_pause_button.config(text="PLAY")
-        else:
-            GlobalGUI.play_pause_button.config(text="PAUSE")
+        GlobalGUI.set_paused(not Global.paused)
 
     GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
     GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
