@@ -2,7 +2,6 @@
     Author: Christian Hahm
     Created: December 24, 2020
 """
-import queue
 import tkinter as tk
 
 class Global:
@@ -114,6 +113,9 @@ class GlobalGUI:
 
     @classmethod
     def set_paused(cls, paused):
+        """
+            Sets the Global paused parameter and changes the GUI button
+        """
         Global.paused = paused
         if Global.paused:
             GlobalGUI.play_pause_button.config(text="PLAY")

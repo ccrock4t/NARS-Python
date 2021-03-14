@@ -365,7 +365,7 @@ class Task:
         return self.sentence.stamp.id
 
     def __str__(self):
-        return self.sentence.get_formatted_string() + " " + str(self.sentence.stamp.id)
+        return self.sentence.get_formatted_string()
 
 
 # Asserts

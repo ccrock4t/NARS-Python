@@ -18,8 +18,8 @@ def test_table_removemax():
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(confidences)
     for c in confidences:
-        sentence = Sentence(Statement(Term.make_term_from_string("a"), Term.make_term_from_string("b"), Copula.Inheritance),
-                 TruthValue(0.9, c), Punctuation.Judgment)
+        sentence = Sentence(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
+                            TruthValue(0.9, c), Punctuation.Judgment)
         heap.insert(sentence)
     heapmax = heap.extract_max().value.confidence
     assert(heapmax == maximum), "TEST FAILURE: Heap did not properly retrieve maximum value"
@@ -34,8 +34,8 @@ def test_table_removemin():
     minimum = min(confidences)
     for c in confidences:
         #make sentence <a --> b>. %0.9;c%
-        sentence = Sentence(Statement(Term.make_term_from_string("a"), Term.make_term_from_string("b"), Copula.Inheritance),
-                 TruthValue(0.9, c), Punctuation.Judgment)
+        sentence = Sentence(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
+                            TruthValue(0.9, c), Punctuation.Judgment)
         heap.insert(sentence)
 
     heapmin = heap.extract_min().value.confidence
@@ -47,9 +47,9 @@ def test_concept_termlinking():
         Test if term links can be added and removed properly
     """
     testnars = NARS.NARS()
-    statement_concept = testnars.memory.peek_concept(Term.make_term_from_string("(A-->B)"))
-    conceptA = testnars.memory.peek_concept(Term.make_term_from_string("A"))
-    conceptB = testnars.memory.peek_concept(Term.make_term_from_string("B"))
+    statement_concept = testnars.memory.peek_concept(Term.get_term_from_string("(A-->B)"))
+    conceptA = testnars.memory.peek_concept(Term.get_term_from_string("A"))
+    conceptB = testnars.memory.peek_concept(Term.get_term_from_string("B"))
 
     assert (statement_concept.term_links.count == 2), "TEST FAILURE: Concept " + str(statement_concept) + " does not have 2 termlinks"
     assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink"

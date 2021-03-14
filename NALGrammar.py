@@ -22,6 +22,9 @@ class Sentence:
         self.punctuation = punctuation
         self.stamp = Sentence.Stamp()
 
+    def __str__(self):
+        return self.get_formatted_string()
+
     def has_evidential_overlap(self, sentence):
         assert_sentence(sentence)
         return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
@@ -29,6 +32,7 @@ class Sentence:
     def get_formatted_string(self):
         string = self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
+        string = string + " ID: " + str(self.stamp.id)
         return string
 
     class Stamp:
@@ -91,6 +95,9 @@ class Judgment(Sentence):
         assert_truth_value(value)
         super().__init__(statement, value, Punctuation.Judgment)
 
+    def __str__(self):
+        return self.get_formatted_string()
+
 
 class Question(Sentence):
     """
@@ -100,6 +107,9 @@ class Question(Sentence):
     def __init__(self, statement):
         assert_statement(statement)
         super().__init__(statement, None, Punctuation.Question)
+
+    def __str__(self):
+        return self.get_formatted_string()
 
 
 class Statement:
@@ -211,10 +221,10 @@ class Term:
         assert False, "Complexity not defined for Term base class"
 
     @classmethod
-    def make_term_from_string(cls, term_string):
+    def get_term_from_string(cls, term_string):
         """
             Determine if it is an atomic term (e.g. "A") or a statement/compound term (e.g. (&&,A,B,..) or (A --> B))
-            and creates the corresponding type of
+            and creates the corresponding Term.
 
             :param term_string - String from which to construct the term
             :returns Term constructed using the string
@@ -331,14 +341,14 @@ class CompoundTerm(Term):
 
             if c == "," and depth == 0:
                 subterm_string = subterm_string.strip()
-                subterm = Term.make_term_from_string(subterm_string)
+                subterm = Term.get_term_from_string(subterm_string)
                 subterms.append(subterm)
                 subterm_string = ""
             else:
                 subterm_string = subterm_string + c
 
         subterm_string = subterm_string.strip()
-        subterm = Term.make_term_from_string(subterm_string)
+        subterm = Term.get_term_from_string(subterm_string)
         subterms.append(subterm)
 
         return subterms, connector
@@ -444,7 +454,7 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
     predicate_str = statement_string[
                     copula_idx + len(copula.value):len(statement_string) - 1].strip()  # get predicate string
 
-    return Term.make_term_from_string(subject_str), Term.make_term_from_string(predicate_str), copula, copula_idx
+    return Term.get_term_from_string(subject_str), Term.get_term_from_string(predicate_str), copula, copula_idx
 
 
 def assert_term(t):
