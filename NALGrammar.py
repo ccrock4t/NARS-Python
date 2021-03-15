@@ -232,19 +232,19 @@ class Term:
         is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (
                     term_string[0] == TermConnector.ExtensionalSetStart.value)
         if term_string[0] == StatementSyntax.Start.value:
+            """
+                Compound or Statement Term
+            """
             assert (term_string[len(
-                term_string) - 1] == StatementSyntax.End.value), "Compound term must have ending parenthesis"
+                term_string) - 1] == StatementSyntax.End.value), "Compound/Statement term must have ending parenthesis"
 
-            term_connector = TermConnector.get_term_connector_from_string(term_string[1])  # e.g.: (*,t1,t2), gets *
-            statement_connector = StatementConnector.get_statement_connector_from_string(
-                term_string[0:2])  # e.g.: (&&,t1,t2), gets &&
-
-            if term_connector is None and statement_connector is None:
-                # statement term
-                term = StatementTerm.from_string(term_string)
-            else:
+            copula, copula_idx = get_top_level_copula(term_string)
+            if copula is None:
                 # compound term
                 term = CompoundTerm.from_string(term_string)
+            else:
+                # statement term
+                term = StatementTerm.from_string(term_string)
         elif is_set_term:
             term = CompoundTerm.from_string(term_string)
         else:
@@ -316,15 +316,16 @@ class CompoundTerm(Term):
         subterms = []
         internal_string = compound_term_string[1:-1]
 
-        # check for intensional/extensional set [], {}
+        # check for intensional/extensional set [a,b], {a,b}
         connector = TermConnector.get_term_connector_from_string(compound_term_string[0])
         if connector is None:
-            # otherwise check for regular connectors
-            connector = TermConnector.get_term_connector_from_string(internal_string[0])
+            # otherwise check for regular Term/Statement connectors
+            connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
             if connector is None:
-                connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
+                connector = TermConnector.get_term_connector_from_string(internal_string[0])
+            print(str(len(connector.value)+1))
             assert (internal_string[
-                        len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string."
+                        len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string " + compound_term_string
             internal_terms_string = internal_string[len(connector.value) + 1:]
         else:
             internal_terms_string = internal_string
@@ -436,19 +437,8 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
     """
 
     # get copula
-    copula = -1
-    copula_idx = -1
-    depth = 0
-
-    for i, v in enumerate(statement_string):
-        if v == StatementSyntax.Start.value:
-            depth = depth + 1
-        elif v == StatementSyntax.End.value:
-            depth = depth - 1
-        elif depth == 1 and i + 3 <= len(statement_string) and Copula.is_string_a_copula(statement_string[i:i + 3]):
-            copula, copula_idx = Copula.get_copula_from_string(statement_string[i:i + 3]), i
-
-    assert (copula_idx != -1), "Copula not found. Exiting.."
+    copula, copula_idx = get_top_level_copula(statement_string)
+    assert (copula is not None), "Copula not found. Exiting.."
 
     subject_str = statement_string[1:copula_idx].strip()  # get subject string
     predicate_str = statement_string[
@@ -456,6 +446,26 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
 
     return Term.get_term_from_string(subject_str), Term.get_term_from_string(predicate_str), copula, copula_idx
 
+def get_top_level_copula(string):
+    """
+        Searches for top-level copula in the string.
+
+        :returns copula and index if it exists,
+        :returns none and -1 otherwise
+    """
+    copula = None
+    copula_idx = -1
+
+    depth = 0
+    for i, v in enumerate(string):
+        if v == StatementSyntax.Start.value:
+            depth = depth + 1
+        elif v == StatementSyntax.End.value:
+            depth = depth - 1
+        elif depth == 1 and i + 3 <= len(string) and Copula.is_string_a_copula(string[i:i + 3]):
+            copula, copula_idx = Copula.get_copula_from_string(string[i:i + 3]), i
+
+    return copula, copula_idx
 
 def assert_term(t):
     assert (isinstance(t, Term)), str(t) + " must be a Term"

@@ -147,7 +147,8 @@ def execute_interface_gui(window):
     # input GUI
     def input_clicked(event=None):
         # put input into NARS input buffer
-        InputBuffer.add_input(input_field.get())
+        userinput = input_field.get()
+        InputBuffer.add_input(userinput)
         # empty input field
         input_field.delete(0, tk.END)
         input_field.insert(0, "")

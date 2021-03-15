@@ -189,7 +189,8 @@ def main():
         GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread")
         GUI_thread.daemon = True
         GUI_thread.start()
-    elif not GlobalGUI.gui_use_interface:
+
+    if not GlobalGUI.gui_use_interface:
         # launch shell input thread
         shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread")
         shell_input_thread.daemon = True
