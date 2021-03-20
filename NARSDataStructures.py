@@ -60,6 +60,8 @@ class Bag:
             # put item into lookup table and bucket
             self.item_lookup_table[key] = item
             self.buckets[item.get_target_bucket_number()].append(item)
+
+            # increase Bag count
             self.count = self.count + 1
 
             # remove lowest priority item if over capacity
@@ -144,7 +146,7 @@ class Bag:
         self.current_bucket_number = 0
         self._move_to_next_nonempty_bucket()
 
-        # peek random item
+        # peek a random item from the bucket
         _, randidx = self._peek_random_item_from_current_bucket()
 
         # remove the item
@@ -375,6 +377,9 @@ class Task:
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
         self.interacted_beliefs = []  # list of beliefs this task has already interacted with
+
+        #only used for question tasks
+        self.needs_answer_output: bool = True
 
     def __hash__(self):
         return self.sentence.stamp.id

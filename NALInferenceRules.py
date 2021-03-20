@@ -108,6 +108,7 @@ def nal_revision(j1, j2):
 
     # Create the resultant sentence
     resulttruth = TruthValue(f3, c3)
+
     resultStatement = Statement(j1.statement.get_subject_term(), j1.statement.get_predicate_term(), Copula.Inheritance)
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
@@ -215,14 +216,42 @@ def nal_negation(j):
     return j
 
 
-# Conversion
-# Inputs:
-#   j1:
-#   j2:
-# Returns:
-def nal_conversion(j1, j2):
-    # todo
-    return 0
+
+def nal_conversion(j):
+    """
+        Conversion Rule
+
+        Reverses the subject and predicate
+        -----------------
+
+        Input:
+            j1: Sentence (S --> P <f1, c1>)
+        Truth Val:
+            w+: and(f1,c1)
+            w-: 0
+        Returns:
+            :- Sentence (P --> S <f2, c2>)
+    """
+    assert_sentence(j)
+    # Statement
+    resultStatement = Statement(j.statement.get_predicate_term(),
+                                j.statement.get_subject_term(), Copula.Inheritance)
+
+    punctuation = None
+    resulttruth = None
+    if j.punctuation == Punctuation.Judgment:
+        # compute values of combined evidence
+        wp = band(j.value.frequency, j.value.confidence)
+        w = wp
+        f2, c2 = getfreqconf_fromevidence(wp, w)
+        resulttruth = TruthValue(f2, c2)
+        punctuation = Punctuation.Judgment
+    elif j.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
+
+    result = Sentence(resultStatement, resulttruth, punctuation)
+
+    return result
 
 
 # Contrapositive
@@ -265,15 +294,22 @@ def nal_deduction(j1, j2):
     # Statement
     resultStatement = Statement(j2.statement.get_subject_term(),
                                 j1.statement.get_predicate_term(), Copula.Inheritance)
-    # Get Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    # compute values of combined evidence
-    f3 = band(f1, f2)
-    c3 = band(f1, f2, c1, c2)
-    resulttruth = TruthValue(f3, c3)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+        # compute values of combined evidence
+        f3 = band(f1, f2)
+        c3 = band(f1, f2, c1, c2)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
+
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 
@@ -326,15 +362,21 @@ def nal_analogy(j1, j2):
     else:
         assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    # Get Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    # compute values of combined evidence
-    f3 = band(f1, f2)
-    c3 = band(f2, c1, c2)
-    resulttruth = TruthValue(f3, c3)
+        # compute values of combined evidence
+        f3 = band(f1, f2)
+        c3 = band(f2, c1, c2)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 
@@ -384,15 +426,21 @@ def nal_resemblance(j1, j2):
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    # Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    f3 = band(f1, f2)
-    c3 = band(bor(f1, f2), c1, c2)
+        f3 = band(f1, f2)
+        c3 = band(bor(f1, f2), c1, c2)
 
-    resulttruth = TruthValue(f3, c3)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 
@@ -430,16 +478,22 @@ def nal_abduction(j1, j2):
     # Statement
     resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Inheritance)
 
-    # Get Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    # compute values of combined evidence
-    wp = band(f1, f2, c1, c2)
-    w = band(f1, c1, c2)
-    f3, c3 = getfreqconf_fromevidence(wp, w)
-    resulttruth = TruthValue(f3, c3)
+        # compute values of combined evidence
+        wp = band(f1, f2, c1, c2)
+        w = band(f1, c1, c2)
+        f3, c3 = getfreqconf_fromevidence(wp, w)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 
@@ -470,16 +524,22 @@ def nal_induction(j1, j2):
     resultStatement = Statement(j2.statement.get_predicate_term(),
                                 j1.statement.get_predicate_term(), Copula.Inheritance)
 
-    # Get Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    # compute values of combined evidence
-    wp = band(f1, f2, c1, c2)
-    w = band(f2, c1, c2)
-    f3, c3 = getfreqconf_fromevidence(wp, w)
-    resulttruth = TruthValue(f3, c3)
+        # compute values of combined evidence
+        wp = band(f1, f2, c1, c2)
+        w = band(f2, c1, c2)
+        f3, c3 = getfreqconf_fromevidence(wp, w)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 
@@ -510,16 +570,22 @@ def nal_exemplification(j1, j2):
     resultStatement = Statement(j2.statement.get_predicate_term(),
                                 j1.statement.get_subject_term(), Copula.Inheritance)
 
-    # Get Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    # compute values of combined evidence
-    wp = band(f1, f2, c1, c2)
-    w = wp
-    f3, c3 = getfreqconf_fromevidence(wp, w)
-    resulttruth = TruthValue(f3, c3)
+        # compute values of combined evidence
+        wp = band(f1, f2, c1, c2)
+        w = wp
+        f3, c3 = getfreqconf_fromevidence(wp, w)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 
@@ -557,16 +623,22 @@ def nal_comparison(j1, j2):
     else:
         assert(False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    # Get Truth Value
-    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    punctuation = None
+    resulttruth = None
+    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-    # compute values of combined evidence
-    wp = band(f1, f2, c1, c2)
-    w = band(bor(f1, f2), c1, c2)
-    f3, c3 = getfreqconf_fromevidence(wp, w)
-    resulttruth = TruthValue(f3, c3)
+        # compute values of combined evidence
+        wp = band(f1, f2, c1, c2)
+        w = band(bor(f1, f2), c1, c2)
+        f3, c3 = getfreqconf_fromevidence(wp, w)
+        resulttruth = TruthValue(f3, c3)
+        punctuation = Punctuation.Judgment
+    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
+        punctuation = Punctuation.Question
 
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result = Sentence(resultStatement, resulttruth, punctuation)
 
     return result
 

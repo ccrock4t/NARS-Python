@@ -56,9 +56,10 @@ class NARS:
         # process task
         self.process_task(task_item.object)
 
-        # return task to buffer
         # decay priority
         task_item.decay()
+
+        # return task to buffer
         self.overall_experience_buffer.put(task_item)
 
     def Consider(self):
@@ -72,9 +73,10 @@ class NARS:
 
         # get task and belief from concept
 
-        # return concept to bag
         # decay priority
         concept_item.decay()
+
+        # return concept to bag
         self.memory.concepts_bag.put(concept_item)
 
     def process_task(self, task: Task):
@@ -136,6 +138,9 @@ class NARS:
             if related_concept is None: return  # no related concepts!
 
             related_belief = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+
+            # can't process if no related belief, they have evidential overlap,
+            # or they have already interacted previously
             if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (
                     related_belief in task.interacted_beliefs): return
 
@@ -155,27 +160,35 @@ class NARS:
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
 
-        if task.needs_initial_processing:
-            """
-                Initial Processing
-                
-                Get and print the best answer to the question by peeking the most confident belief in
-                the Question's Concept's Belief Table.
-            """
-            if len(statement_concept.belief_table) == 0: return # early quit if belief table is empty
-            # get the best answer from concept belief table
-            best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
-            if best_answer is None: return
-            if task.is_from_input:
+        """
+            Get and print the best answer to the question by peeking the most confident belief in
+            the Question's Concept's Belief Table.
+        """
+        # get the best answer from concept belief table
+        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
+        if best_answer is not None:
+            # Answer the question
+            if task.is_from_input and task.needs_answer_output:
                 GlobalGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
+                task.needs_answer_output = False
 
             # initial processing complete
             task.needs_initial_processing = False
-        else:
-            """
-                Continued Processing
-            """
-            if len(statement_concept.belief_table) == 0: return
+        else: # no answer
+            related_concept = self.memory.get_semantically_related_concept(statement_concept)
+            if related_concept is None: return  # no related concepts!
+
+            related_belief = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+
+            # can't process if no related belief, they have evidential overlap,
+            # or they have already interacted previously
+            if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (
+                    related_belief in task.interacted_beliefs): return
+
+            derived_tasks = NARSInferenceEngine.perform_inference(task, related_belief)
+            for derived_task in derived_tasks:
+                self.overall_experience_buffer.put_new_item(derived_task)
+
 
 
 def main():
@@ -200,7 +213,7 @@ def main():
         shell_input_thread.daemon = True
         shell_input_thread.start()
 
-    time.sleep(1.00)
+    time.sleep(1.00) # give threads time to setup
 
     # Finally, start NARS in the shell
     run()

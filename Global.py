@@ -39,7 +39,7 @@ class GlobalGUI:
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
         """
-            Print a message to an output GUI box
+            Print a message to an output GUI box or the shell
         """
         if Global.NARS is None: return
 
@@ -82,8 +82,9 @@ class GlobalGUI:
             return
 
         # internal data output
+        # insert item sorted by priority
         if GlobalGUI.gui_use_internal_data:
-            string_list = listbox.get(0, tk.END)
+            string_list = listbox.get(0, tk.END) # get all items in the listbox
             msg_priority = msg[msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL)+1:msg.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
             idx_to_insert = tk.END # by default insert at the end
             i = 0
