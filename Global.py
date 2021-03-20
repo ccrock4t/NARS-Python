@@ -114,13 +114,20 @@ class GlobalGUI:
             msg_without_priority = msg[0:msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL)]
             idx_to_remove = -1
             i = 0
+            list = []
             for row in string_list:
                 row_string_without_priority = row[0:row.find(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+                list.append(row_string_without_priority)
                 if msg_without_priority == row_string_without_priority:
                     idx_to_remove = i
                     break
                 i = i + 1
-            if idx_to_remove == -1: return
+            if idx_to_remove == -1:
+                print("ERROR: couldn't remove " + msg)
+                print(msg_without_priority)
+                print("List:")
+                print(list)
+                return
             listbox.delete(idx_to_remove)
             if listbox is GlobalGUI.gui_experience_buffer_listbox:
                 GlobalGUI.gui_total_tasks_in_buffer = GlobalGUI.gui_total_tasks_in_buffer - 1

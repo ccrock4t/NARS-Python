@@ -53,7 +53,7 @@ class Memory:
         # concept not found
         if isinstance(term, StatementTerm) and term.connector == Copula.Similarity:
             #if its a similarity statement term S<->P, check for equivalent Concept P<->S
-            concept_item = self.concepts_bag.peek(hash(term.get_equivalent_term_string()))
+            concept_item = self.concepts_bag.peek(hash(term.get_reverse_term_string()))
             if concept_item is not None: return concept_item.object  # return if got concept
 
         # it must be created, and potentially its sub-concepts

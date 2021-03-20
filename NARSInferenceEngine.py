@@ -42,26 +42,36 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     j1_copula = j1.statement.copula
     j2_copula = j2.statement.copula
 
-    if j1_subject_term == j2_predicate_term and j2_subject_term == j1_predicate_term:
-        # S-->P, P-->S
-        # S<->P, P<->S
-        return derived_tasks  # don't do inference, it will result in tautology
+
+    if not Copula.is_symmetric(j1_copula) or not Copula.is_symmetric(j2_copula):
+        # need to check check for tautology if 1 of the copulas is not symmetric
+        if (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) \
+                or (j1_subject_term == j2_subject_term and j2_predicate_term == j2_predicate_term):
+            # S-->P, P-->S
+            # or S-->P, P<->S
+            return derived_tasks  # don't do inference, it will result in tautology
 
     is_question_task = isinstance(t1, Question)
 
     """
         Identify and perform proper Inference
     """
-    if j1_copula == Copula.Inheritance and j2_copula == Copula.Inheritance:
-        if j1_term == j2_term:
-            # j1=S-->P, j2=S-->P
-            # revision
-            if is_question_task: return
 
-            derived_sentence = nal_revision(j1, j2)  # S-->P
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
-            derived_tasks.append(derived_task)
-        elif j1_subject_term == j2_predicate_term:
+    if j1_term == j2_term:
+        # j1=S-->P, j2=S-->P
+        # or j1=S<->P, j2=S<->P
+        # or j1=S<->P, j2=P<->S
+
+        # Revision
+        if is_question_task: return # can't do revision with questions
+
+        derived_sentence = nal_revision(j1, j2)  # S-->P
+        derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
+        derived_tasks.append(derived_task)
+
+
+    if j1_copula == Copula.Inheritance and j2_copula == Copula.Inheritance:
+        if j1_subject_term == j2_predicate_term:
             # j1=M-->P, j2=S-->M
             # or j1=S-->M, j2=M-->P
             if j1.statement.get_predicate_term() == j2.statement.get_subject_term():
@@ -195,10 +205,10 @@ def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence
         derived_sentence.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
 
     derived_task = Task(derived_sentence)
-    if GlobalGUI.gui_use_interface:
-        j1string = j1.get_formatted_string()
-        j2string = "None" if j2 is None else j2.get_formatted_string()
-        print(inference_rule + " derived new Task: " + str(
-            derived_task) + " from " + j1string + " and " + j2string)
-        print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
+    #if GlobalGUI.gui_use_interface:
+        #j1string = j1.get_formatted_string()
+        #j2string = "None" if j2 is None else j2.get_formatted_string()
+        #print(inference_rule + " derived new Task: " + str(
+        #    derived_task) + " from " + j1string + " and " + j2string)
+        #print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
     return derived_task

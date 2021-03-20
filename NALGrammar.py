@@ -131,11 +131,7 @@ class Statement:
         return self.term.get_predicate_term()
 
     def get_formatted_string(self):
-        return str(StatementSyntax.Start.value) \
-               + self.get_subject_term().get_formatted_string() \
-               + " " + str(self.copula.value) + " " \
-               + self.get_predicate_term().get_formatted_string() \
-               + str(StatementSyntax.End.value)
+        return self.term.get_formatted_string()
 
 
 class EvidentialValue:
@@ -207,7 +203,11 @@ class Term:
         """
             Terms are equal if their strings are the same
         """
-        if isinstance(other, Term):
+        if isinstance(other, StatementTerm):
+            return str(self) == str(other) or str(self) == other.get_reverse_term_string()
+        elif isinstance(self, StatementTerm):
+            return str(self) == str(other) or self.get_reverse_term_string() == str(other)
+        elif isinstance(other, Term): # neither is a Statement term
             return str(self) == str(other)
         return False
 
@@ -422,10 +422,16 @@ class StatementTerm(CompoundTerm):
         return self._get_formatted_string_from_values(self.get_subject_term(), self.get_predicate_term())
 
     def _get_formatted_string_from_values(self, subject_term, predicate_term):
-        return StatementSyntax.Start.value + subject_term.get_formatted_string() + " " + self.get_copula_string() + " " + predicate_term.get_formatted_string() + StatementSyntax.End.value
+        return StatementSyntax.Start.value +\
+               subject_term.get_formatted_string() +\
+               " " + self.get_copula_string() + " " + \
+               predicate_term.get_formatted_string() \
+               + StatementSyntax.End.value
 
-    def get_equivalent_term_string(self):
-        assert(self.connector == Copula.Similarity), "Equivalent terms only available for Similarity"
+    def get_reverse_term_string(self):
+        if not Copula.is_symmetric(self.connector):
+            #no such thing as a reverse term for non-symmetric statements
+            return None
         return self.equivalent_term_string
 
 

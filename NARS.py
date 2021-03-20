@@ -122,8 +122,10 @@ class NARS:
             if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (
                     belief not in task.interacted_beliefs):
                 # perform revision on the belief
-                derived_task = NARSInferenceEngine.perform_inference(task, belief)[0]  # only 1 derived task in Revision
-                self.overall_experience_buffer.put_new_item(derived_task)
+                derived_tasks = NARSInferenceEngine.perform_inference(task, belief)
+                if len(derived_tasks) > 0:
+                    derived_task = derived_tasks[0]  # only 1 derived task in Revision
+                    self.overall_experience_buffer.put_new_item(derived_task)
 
             # add the judgment itself into concept's belief table
             statement_concept.belief_table.insert(task.sentence)

@@ -111,6 +111,13 @@ class Copula(enum.Enum):
     ConcurrentEquivalence = "<|>"
 
     @classmethod
+    def is_symmetric(cls, copula):
+        return copula == cls.Similarity \
+               or copula == cls.Equivalence \
+               or copula == cls.PredictiveEquivalence \
+               or copula == cls.ConcurrentEquivalence
+
+    @classmethod
     def is_string_a_copula(cls, value):
         return value in cls._value2member_map_
 

@@ -64,13 +64,13 @@ class Bag:
             # increase Bag count
             self.count = self.count + 1
 
-            # remove lowest priority item if over capacity
-            if self.count > self.capacity:
-                self._take_smallest_priority_item()
-
             # Print to internal data GUI
             if GlobalGUI.gui_use_internal_data:
                 GlobalGUI.print_to_output(msg=str(item), data_structure=self)
+
+            # remove lowest priority item if over capacity
+            if self.count > self.capacity:
+                self._take_smallest_priority_item()
 
     def peek(self, key=None):
         """
