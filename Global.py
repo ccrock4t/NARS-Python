@@ -30,6 +30,7 @@ class GlobalGUI:
     gui_concepts_output_label = None
     gui_total_tasks_in_buffer = 0
     gui_total_concepts_in_memory = 0
+    GUI_PRIORITY_SYMBOL = "$"
 
     # booleans
     gui_use_internal_data = True
@@ -83,8 +84,16 @@ class GlobalGUI:
         # internal data output
         if GlobalGUI.gui_use_internal_data:
             string_list = listbox.get(0, tk.END)
-            if msg in string_list: return # already added
-            listbox.insert(tk.END, msg)
+            msg_priority = msg[msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL)+1:msg.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+            idx_to_insert = tk.END # by default insert at the end
+            i = 0
+            for row in string_list:
+                row_priority = row[row.find(GlobalGUI.GUI_PRIORITY_SYMBOL)+1:row.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+                if float(msg_priority) >= float(row_priority):
+                    idx_to_insert = i
+                    break
+                i = i + 1
+            listbox.insert(idx_to_insert, msg)
             if listbox is GlobalGUI.gui_experience_buffer_listbox:
                 GlobalGUI.gui_total_tasks_in_buffer = GlobalGUI.gui_total_tasks_in_buffer + 1
                 GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(GlobalGUI.gui_total_tasks_in_buffer))
@@ -101,9 +110,17 @@ class GlobalGUI:
         """
         if GlobalGUI.gui_use_internal_data:
             string_list = listbox.get(0, tk.END)
-            if msg not in string_list: return  # already removed
-            idx = string_list.index(msg)
-            listbox.delete(idx)
+            msg_without_priority = msg[0:msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+            idx_to_remove = -1
+            i = 0
+            for row in string_list:
+                row_string_without_priority = row[0:row.find(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+                if msg_without_priority == row_string_without_priority:
+                    idx_to_remove = i
+                    break
+                i = i + 1
+            if idx_to_remove == -1: return
+            listbox.delete(idx_to_remove)
             if listbox is GlobalGUI.gui_experience_buffer_listbox:
                 GlobalGUI.gui_total_tasks_in_buffer = GlobalGUI.gui_total_tasks_in_buffer - 1
                 GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(GlobalGUI.gui_total_tasks_in_buffer))

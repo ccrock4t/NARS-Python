@@ -15,6 +15,7 @@ MINDFULNESS = 1.0 # between 0-1, how much attention the system allocates to the 
 """
 BAG_CAPACITY = 60 # how many items can fit in a bag
 BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 allows 100 probability values in [0%, 100%)
+BAG_PRIORITY_DECAY_MULTIPLIER = 0.9 # value in [0,1] multiplied w/ priority during priority decay
 
 """
     Tables

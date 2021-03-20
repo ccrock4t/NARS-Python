@@ -54,19 +54,21 @@ class Bag:
         """
         assert (isinstance(item, Bag.Item)), "item must be of type " + str(Bag.Item)
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
+
         key = hash(item.object)
         if key not in self.item_lookup_table:
             # put item into lookup table and bucket
             self.item_lookup_table[key] = item
-            self.buckets[item.get_new_bucket_number()].append(item)
+            self.buckets[item.get_target_bucket_number()].append(item)
             self.count = self.count + 1
 
+            # remove lowest priority item if over capacity
             if self.count > self.capacity:
                 self._take_smallest_priority_item()
 
             # Print to internal data GUI
             if GlobalGUI.gui_use_internal_data:
-                GlobalGUI.print_to_output(msg=str(item.object), data_structure=self)
+                GlobalGUI.print_to_output(msg=str(item), data_structure=self)
 
     def peek(self, key=None):
         """
@@ -109,7 +111,7 @@ class Bag:
 
         # GUI
         if GlobalGUI.gui_use_internal_data:
-            GlobalGUI.remove_from_output(str(item.object), data_structure=self)
+            GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -125,7 +127,9 @@ class Bag:
         self.count = self.count - 1  # decrement bag count
 
         # update GUI
-        GlobalGUI.remove_from_output(str(item.object), data_structure=self)
+        # GUI
+        if GlobalGUI.gui_use_internal_data:
+            GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -153,7 +157,8 @@ class Bag:
         self.current_bucket_number = oldidx
 
         # update GUI
-        GlobalGUI.remove_from_output(str(item.object), data_structure=self)
+        if GlobalGUI.gui_use_internal_data:
+            GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -219,17 +224,27 @@ class Bag:
             self.object = object
             # todo implement priority
             self.budget = Bag.Item.Budget(priority=0.9, durability=0.9, quality=0.9)
-            self.current_bucket_number = self.get_new_bucket_number()
+            self.current_bucket_number = self.get_target_bucket_number()
 
-        def get_new_bucket_number(self):
+        def __str__(self):
+            return str(self.object) + " " + GlobalGUI.GUI_PRIORITY_SYMBOL + "{:.2f}".format(self.budget.priority) + GlobalGUI.GUI_PRIORITY_SYMBOL
+
+        def get_target_bucket_number(self):
             """
-                Returns: The bucket number this item belongs in.
+                Returns: The bucket number this item belongs in according to its priority.
 
                 It is calculated as this item's priority [0,1] converted to a corresponding probability
                 based on Bag granularity
                 (e.g. Priority=0.5, 100 buckets -> bucket 50, 200 buckets -> bucket 100, 50 buckets -> bucket 25)
             """
             return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100
+
+        def decay(self):
+            """
+                Decay this item's priority
+            """
+            if self.budget.priority > 0.05:
+                self.budget.priority = self.budget.priority * Config.BAG_PRIORITY_DECAY_MULTIPLIER
 
         class Budget:
             def __init__(self, priority=0.0, durability=0.0, quality=0.0):

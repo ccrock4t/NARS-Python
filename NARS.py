@@ -57,6 +57,8 @@ class NARS:
         self.process_task(task_item.object)
 
         # return task to buffer
+        # decay priority
+        task_item.decay()
         self.overall_experience_buffer.put(task_item)
 
     def Consider(self):
@@ -71,6 +73,8 @@ class NARS:
         # get task and belief from concept
 
         # return concept to bag
+        # decay priority
+        concept_item.decay()
         self.memory.concepts_bag.put(concept_item)
 
     def process_task(self, task: Task):

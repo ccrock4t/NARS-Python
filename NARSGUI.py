@@ -71,6 +71,7 @@ def execute_internal_gui(window):
             GlobalGUI.set_paused(True)
             index = selection[0]
             concept_term_string = event.widget.get(index)
+            concept_term_string = concept_term_string[0:concept_term_string.find(GlobalGUI.GUI_PRIORITY_SYMBOL)-1] # remove priority
             concept = Global.NARS.memory.concepts_bag.peek(hash(concept_term_string)).object
 
             # window
