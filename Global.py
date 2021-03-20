@@ -12,6 +12,7 @@ class Global:
     NARS = None  # variable to hold NARS instance
     current_cycle_number = 0  # total number of working cycles executed so far
     paused = False
+    ID_MARKER = "ID:"
 
 class GlobalGUI:
     """
@@ -33,8 +34,8 @@ class GlobalGUI:
     GUI_PRIORITY_SYMBOL = "$"
 
     # booleans
-    gui_use_internal_data = True
-    gui_use_interface = True
+    gui_use_internal_data = False
+    gui_use_interface = False
 
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
@@ -111,23 +112,17 @@ class GlobalGUI:
         """
         if GlobalGUI.gui_use_internal_data:
             string_list = listbox.get(0, tk.END)
-            msg_without_priority = msg[0:msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+            msg_id = msg[len(Global.ID_MARKER):msg.find(" ")] # assuming ID is at the beginning, get characters from ID: to first spacebar
             idx_to_remove = -1
             i = 0
-            list = []
             for row in string_list:
-                row_string_without_priority = row[0:row.find(GlobalGUI.GUI_PRIORITY_SYMBOL)]
-                list.append(row_string_without_priority)
-                if msg_without_priority == row_string_without_priority:
+                row_id = row[len(Global.ID_MARKER):row.find(" ")]
+                if msg_id == row_id:
                     idx_to_remove = i
                     break
                 i = i + 1
             if idx_to_remove == -1:
-                print("ERROR: couldn't remove " + msg)
-                print(msg_without_priority)
-                print("List:")
-                print(list)
-                return
+               assert False, "GUI Error: cannot find msg to remove: " + msg
             listbox.delete(idx_to_remove)
             if listbox is GlobalGUI.gui_experience_buffer_listbox:
                 GlobalGUI.gui_total_tasks_in_buffer = GlobalGUI.gui_total_tasks_in_buffer - 1

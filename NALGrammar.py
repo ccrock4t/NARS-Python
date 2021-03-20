@@ -7,7 +7,6 @@ from NALSyntax import *
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
 
-
 class Sentence:
     """
         sentence ::= <statement><punctuation> %<value>%G
@@ -17,10 +16,10 @@ class Sentence:
         assert_statement(statement)
         assert_punctuation(punctuation)
 
-        self.statement = statement
-        self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
-        self.punctuation = punctuation
-        self.stamp = Sentence.Stamp()
+        self.statement: Statement = statement
+        self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
+        self.punctuation: Punctuation = punctuation
+        self.stamp: Sentence.Stamp = Sentence.Stamp()
 
     def __str__(self):
         return self.get_formatted_string()
@@ -30,9 +29,9 @@ class Sentence:
         return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
 
     def get_formatted_string(self):
-        string = self.statement.get_formatted_string() + str(self.punctuation.value)
+        string = Global.ID_MARKER + str(self.stamp.id) + " "
+        string = string + self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
-        string = string + " ID: " + str(self.stamp.id)
         return string
 
     class Stamp:
@@ -121,8 +120,8 @@ class Statement:
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
-        self.copula = copula
-        self.term = StatementTerm(subject, predicate, copula)
+        self.copula: Copula = copula
+        self.term: StatementTerm = StatementTerm(subject, predicate, copula)
 
     def get_subject_term(self):
         return self.term.get_subject_term()
@@ -285,14 +284,14 @@ class CompoundTerm(Term):
         (Connector T1, T2, ..., Tn)
     """
 
-    def __init__(self, subterms, connector):
+    def __init__(self, subterms: [Term], connector):
         """
         Input:
             subterms: array of immediate subterms
 
             connector: subterm connector
         """
-        self.subterms = subterms
+        self.subterms: [Term] = subterms
         self.connector = connector  # sets are represented by the opening bracket as the connector, { or [
         self.is_set = (self.connector.value == TermConnector.IntensionalSetStart.value) or \
                       (self.connector.value == TermConnector.ExtensionalSetStart.value)
@@ -389,7 +388,7 @@ class StatementTerm(CompoundTerm):
         (P --> Q)
     """
 
-    def __init__(self, subject, predicate, copula):
+    def __init__(self, subject: Term, predicate: Term, copula: Copula):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
@@ -406,10 +405,10 @@ class StatementTerm(CompoundTerm):
         subject, predicate, connector, _ = parse_subject_predicate_copula_and_copula_index(term_string)
         return cls(subject, predicate, connector)
 
-    def get_subject_term(self):
+    def get_subject_term(self) -> Term:
         return self.subterms[0]
 
-    def get_predicate_term(self):
+    def get_predicate_term(self) -> Term:
         return self.subterms[1]
 
     def get_copula_string(self):

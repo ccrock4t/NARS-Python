@@ -106,14 +106,33 @@ class Concept:
     """
         NARS Concept
     """
+    next_concept_id = 0 #for faster accessing
 
     def __init__(self, term):
         assert_term(term)
-        self.term = term  # concept's unique ID
+        self.id = Concept.get_next_concept_id()
+        self.term = term  # concept's unique term
         self.term_links = Bag(item_type=Concept)  # Bag of related concepts (related by term)
         self.task_links = Bag(item_type=Task)  # Bag of related tasks
         self.belief_table = Table(Punctuation.Judgment)
         self.desire_table = Table(Punctuation.Goal)
+
+    def __str__(self):
+        return self.get_formatted_string()
+
+    def __eq__(self, other):
+        return self.get_formatted_string() == other.get_formatted_string()
+
+    def __hash__(self):
+        """
+            A concept is named by its term
+        """
+        return hash(self.term)
+
+    @classmethod
+    def get_next_concept_id(cls):
+        cls.next_concept_id = cls.next_concept_id + 1
+        return cls.next_concept_id - 1
 
     def set_term_link(self, concept):
         """
@@ -134,7 +153,7 @@ class Concept:
         self.term_links.take(object=concept.term)
         concept.term_links.take(object=self.term)
 
-    def set_task_link(self, task):
+    def set_task_link(self, task: Task):
         """
             Add a task link if it doesn't exist, linking this concept to a task
         """
@@ -143,7 +162,7 @@ class Concept:
             return
         self.task_links.put_new_item(task)
 
-    def remove_task_link(self, task):
+    def remove_task_link(self, task: Task):
         """
             Remove a task link
         """
@@ -152,19 +171,9 @@ class Concept:
         self.task_links.pop(task)
 
     def get_formatted_string(self):
-        return self.term.get_formatted_string()
-
-    def __str__(self):
-        return self.term.get_formatted_string()
-
-    def __eq__(self, other):
-        return self.term.get_formatted_string() == other.term.get_formatted_string()
-
-    def __hash__(self):
-        """
-            A concept is named by its term
-        """
-        return hash(str(self.term))
+        string = Global.ID_MARKER + str(self.id) + " "
+        string = string + self.term.get_formatted_string()
+        return string
 
 
 # Asserts

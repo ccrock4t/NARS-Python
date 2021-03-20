@@ -1,5 +1,6 @@
 import time
 
+import InputBuffer
 import NARSGUI
 import NARSInferenceEngine
 from NALSyntax import Punctuation
@@ -201,7 +202,8 @@ def main():
     # set globals
     Global.NARS = NARS()
     GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
-    GlobalGUI.gui_use_interface = True  # Setting this to False uses the shell as interface
+    # todo investigate why using the interface slows down the system
+    GlobalGUI.gui_use_interface = True  # Setting this to False uses the shell as interface, and results in a massive speedup
 
     # setup internal/interface GUI
     if GlobalGUI.gui_use_internal_data or GlobalGUI.gui_use_interface:
@@ -231,8 +233,10 @@ def run():
             continue
         if GlobalGUI.gui_use_interface:
             delay = GlobalGUI.gui_delay_slider.get() / 1000
-            time.sleep(delay)
+            if delay > 0:
+                time.sleep(delay)
 
+        InputBuffer.process_next_pending_sentence()
         Global.NARS.do_working_cycle()
 
 

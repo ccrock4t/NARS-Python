@@ -76,7 +76,7 @@ def bnot(arg):
 """
 
 
-def nal_revision(j1, j2):
+def nal_revision(j1: Sentence, j2: Sentence):
     """
         Revision Rule
 
@@ -271,7 +271,7 @@ def nal_contrapositive(j1, j2):
 """
 
 
-def nal_deduction(j1, j2):
+def nal_deduction(j1: Sentence, j2: Sentence):
     """
         Deduction (Strong syllogism)
 
@@ -314,7 +314,7 @@ def nal_deduction(j1, j2):
     return result
 
 
-def nal_analogy(j1, j2):
+def nal_analogy(j1: Sentence, j2: Sentence):
     """
         Analogy (Strong syllogism)
 
@@ -381,7 +381,7 @@ def nal_analogy(j1, j2):
     return result
 
 
-def nal_resemblance(j1, j2):
+def nal_resemblance(j1: Sentence, j2: Sentence):
     """
         Resemblance (Strong syllogism)
 
@@ -452,7 +452,7 @@ def nal_resemblance(j1, j2):
 """
 
 
-def nal_abduction(j1, j2):
+def nal_abduction(j1: Sentence, j2: Sentence):
     """
         Abduction (Weak syllogism)
 
@@ -498,7 +498,7 @@ def nal_abduction(j1, j2):
     return result
 
 
-def nal_induction(j1, j2):
+def nal_induction(j1: Sentence, j2: Sentence):
     """
         Induction (Weak syllogism)
 
@@ -544,7 +544,7 @@ def nal_induction(j1, j2):
     return result
 
 
-def nal_exemplification(j1, j2):
+def nal_exemplification(j1: Sentence, j2: Sentence):
     """
         Exemplification (Weak syllogism)
 
@@ -590,7 +590,7 @@ def nal_exemplification(j1, j2):
     return result
 
 
-def nal_comparison(j1, j2):
+def nal_comparison(j1: Sentence, j2: Sentence):
     """
         Comparison (Weak syllogism)
 
@@ -678,7 +678,7 @@ def getevidence_fromfreqconf(f, c):
     return wp, w, w - wp
 
 
-def gettruthvalues_from2sentences(j1, j2):
+def gettruthvalues_from2sentences(j1: Sentence, j2: Sentence):
     """
         Input:
             j1: Statement <f1, c1>
@@ -690,7 +690,7 @@ def gettruthvalues_from2sentences(j1, j2):
     return gettruthvalues_fromsentence(j1), gettruthvalues_fromsentence(j2)
 
 
-def gettruthvalues_fromsentence(j):
+def gettruthvalues_fromsentence(j: Sentence):
     """
         Input:
             j: Statement <f, c>
@@ -700,7 +700,7 @@ def gettruthvalues_fromsentence(j):
     return j.value.frequency, j.value.confidence
 
 
-def getevidence_from2sentences(j1, j2):
+def getevidence_from2sentences(j1: Sentence, j2: Sentence):
     """
         Input:
             j1: Statement <f1, c1>

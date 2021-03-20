@@ -370,7 +370,7 @@ class Task:
        NARS Task
     """
 
-    def __init__(self, sentence, is_input_task=False):
+    def __init__(self, sentence: NALGrammar.Sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
         self.creation_timestamp: int = Global.current_cycle_number  # save the task's creation time
