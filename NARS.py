@@ -3,6 +3,7 @@ import time
 import InputBuffer
 import NARSGUI
 import NARSInferenceEngine
+from NALGrammar import VariableTerm
 from NALSyntax import Punctuation
 from NARSMemory import Memory
 import threading
@@ -85,10 +86,11 @@ class NARS:
             Processes any Narsese task
         """
         assert_task(task)
-        if task.sentence.punctuation == Punctuation.Judgment:
-            self.process_judgment(task)
-        elif task.sentence.punctuation == Punctuation.Question:
+
+        if task.sentence.punctuation == Punctuation.Question or VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
             self.process_question(task)
+        elif task.sentence.punctuation == Punctuation.Judgment:
+            self.process_judgment(task)
 
     def process_judgment(self, task: Task):
         """
@@ -100,6 +102,8 @@ class NARS:
         statement_term = task.sentence.statement.term
         subject_term = statement_term.get_subject_term()
         predicate_term = statement_term.get_predicate_term()
+
+        if statement_term.contains_variable(): return #todo handle variables
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
@@ -159,6 +163,8 @@ class NARS:
 
         # get terms from sentence
         statement_term = task.sentence.statement.term
+
+        if statement_term.contains_variable(): return  # todo handle variables
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)

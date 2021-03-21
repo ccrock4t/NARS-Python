@@ -7,6 +7,7 @@ from NALSyntax import *
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
 
+
 class Sentence:
     """
         sentence ::= <statement><punctuation> %<value>%G
@@ -206,7 +207,7 @@ class Term:
             return str(self) == str(other) or str(self) == other.get_reverse_term_string()
         elif isinstance(self, StatementTerm):
             return str(self) == str(other) or self.get_reverse_term_string() == str(other)
-        elif isinstance(other, Term): # neither is a Statement term
+        elif isinstance(other, Term):  # neither is a Statement term
             return str(self) == str(other)
         return False
 
@@ -219,17 +220,21 @@ class Term:
     def calculate_syntactic_complexity():
         assert False, "Complexity not defined for Term base class"
 
+    def contains_variable(self):
+        return VariableTerm.VARIABLE_SYM in str(self) \
+                or VariableTerm.QUERY_SYM in str(self)
+
     @classmethod
     def get_term_from_string(cls, term_string):
         """
             Determine if it is an atomic term (e.g. "A") or a statement/compound term (e.g. (&&,A,B,..) or (A --> B))
-            and creates the corresponding Term.
+            or variable term and creates the corresponding Term.
 
             :param term_string - String from which to construct the term
             :returns Term constructed using the string
         """
         is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (
-                    term_string[0] == TermConnector.ExtensionalSetStart.value)
+                term_string[0] == TermConnector.ExtensionalSetStart.value)
         if term_string[0] == StatementSyntax.Start.value:
             """
                 Compound or Statement Term
@@ -246,10 +251,84 @@ class Term:
                 term = StatementTerm.from_string(term_string)
         elif is_set_term:
             term = CompoundTerm.from_string(term_string)
+        elif term_string[0] == VariableTerm.VARIABLE_SYM or term_string[0] == VariableTerm.QUERY_SYM:
+            # variable term
+            dependency_list_start_idx = term_string.find("(")
+            if dependency_list_start_idx == -1:
+                variable_name = term_string[1:]
+                dependency_list_string = ""
+            else:
+                variable_name = term_string[1:dependency_list_start_idx]
+                dependency_list_string = term_string[term_string.find("(") + 1:term_string.find(")")]
+
+            term = VariableTerm.from_string(variable_name=variable_name,
+                                            variable_type_symbol=term_string[0],
+                                            dependency_list_string=dependency_list_string)
         else:
             term = AtomicTerm(term_string)
 
         return term
+
+
+class VariableTerm(Term):
+    class Type(enum.Enum):
+        Independent = 1
+        Dependent = 2
+        Query = 3
+
+    VARIABLE_SYM = "#"
+    QUERY_SYM = "?"
+
+    def __init__(self, variable_name: str, variable_type: Type, dependency_list=None):
+        """
+
+        :param variable_string: variable name
+        :param variable_type: type of variable
+        :param dependency_list: array of independent variables this variable depends on
+        """
+        # todo parse variable terms from input strings
+        self.variable_name = variable_name
+        self.variable_type = variable_type
+        self.variable_symbol = VariableTerm.QUERY_SYM if variable_type == VariableTerm.Type.Query else VariableTerm.VARIABLE_SYM
+        self.dependency_list = dependency_list
+        super().__init__(self.get_formatted_string())
+
+    def get_formatted_string(self):
+        dependency_string = ""
+        if self.dependency_list is not None:
+            dependency_string = "("
+            for dependency in self.dependency_list:
+                dependency_string = dependency_string + str(dependency) + ","
+
+            dependency_string = dependency_string[0:-1] + ")"
+
+        return self.variable_symbol + self.variable_name + dependency_string
+
+    @classmethod
+    def from_string(cls, variable_name: str, variable_type_symbol: str, dependency_list_string: str):
+        # parse dependency list
+        dependency_list = None
+
+        if len(dependency_list_string) > 0:
+            dependency_list = []
+
+        type = None
+        if variable_type_symbol == VariableTerm.QUERY_SYM:
+            type = VariableTerm.Type.Query
+        elif variable_type_symbol == VariableTerm.VARIABLE_SYM:
+            if dependency_list is None:
+                type = VariableTerm.Type.Independent
+            else:
+                type = VariableTerm.Type.Dependent
+
+        assert type is not None, "Error: Variable type symbol invalid"
+        return cls(variable_name, type, dependency_list)
+
+    def calculate_syntactic_complexity(self):
+        if self.dependency_list is None:
+            return 1
+        else:
+            return 1 + len(self.dependency_list)
 
 
 class AtomicTerm(Term):
@@ -322,9 +401,10 @@ class CompoundTerm(Term):
             connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
             if connector is None:
                 connector = TermConnector.get_term_connector_from_string(internal_string[0])
-            print(str(len(connector.value)+1))
+            print(str(len(connector.value) + 1))
             assert (internal_string[
-                        len(connector.value)] == ','), "Connector not followed by comma in CompoundTerm string " + compound_term_string
+                        len(
+                            connector.value)] == ','), "Connector not followed by comma in CompoundTerm string " + compound_term_string
             internal_terms_string = internal_string[len(connector.value) + 1:]
         else:
             internal_terms_string = internal_string
@@ -359,7 +439,7 @@ class CompoundTerm(Term):
             the compound term. The connector adds 1 complexity,
             and the subterms syntactic complexities are summed as well.
         """
-        count = 1 # the term connector
+        count = 1  # the term connector
         for subterm in self.subterms:
             count = count + subterm.calculate_syntactic_complexity()
         return count
@@ -421,15 +501,15 @@ class StatementTerm(CompoundTerm):
         return self._get_formatted_string_from_values(self.get_subject_term(), self.get_predicate_term())
 
     def _get_formatted_string_from_values(self, subject_term, predicate_term):
-        return StatementSyntax.Start.value +\
-               subject_term.get_formatted_string() +\
+        return StatementSyntax.Start.value + \
+               subject_term.get_formatted_string() + \
                " " + self.get_copula_string() + " " + \
                predicate_term.get_formatted_string() \
                + StatementSyntax.End.value
 
     def get_reverse_term_string(self):
         if not Copula.is_symmetric(self.connector):
-            #no such thing as a reverse term for non-symmetric statements
+            # no such thing as a reverse term for non-symmetric statements
             return None
         return self.equivalent_term_string
 
@@ -451,6 +531,7 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
 
     return Term.get_term_from_string(subject_str), Term.get_term_from_string(predicate_str), copula, copula_idx
 
+
 def get_top_level_copula(string):
     """
         Searches for top-level copula in the string.
@@ -471,6 +552,7 @@ def get_top_level_copula(string):
             copula, copula_idx = Copula.get_copula_from_string(string[i:i + 3]), i
 
     return copula, copula_idx
+
 
 def assert_term(t):
     assert (isinstance(t, Term)), str(t) + " must be a Term"

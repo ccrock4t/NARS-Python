@@ -13,7 +13,7 @@ from NARSDataStructures import assert_task, Task
 def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given Task and belief.
-        The resultant sentence's evidential base is appropriately merged from its parents.
+        The resultant sentence's evidential base is merged from its parents.
         Also marks the Task t1 as having interacted with belief j2.
 
         :param t1: Task containing sentence j1
@@ -28,7 +28,11 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     assert_sentence(j2)
 
     """
+    ===============================================
+    ===============================================
         Pre-Processing
+    ===============================================
+    ===============================================
     """
     derived_tasks = []
     j1 = t1.sentence
@@ -42,9 +46,8 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     j1_copula = j1.statement.copula
     j2_copula = j2.statement.copula
 
-
+    # need to check check for tautology if 1 of the copulas is not symmetric
     if not Copula.is_symmetric(j1_copula) or not Copula.is_symmetric(j2_copula):
-        # need to check check for tautology if 1 of the copulas is not symmetric
         if (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) \
                 or (j1_subject_term == j2_subject_term and j2_predicate_term == j2_predicate_term):
             # S-->P, P-->S
@@ -54,23 +57,26 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
     is_question_task = isinstance(t1, Question)
 
     """
-        Identify and perform proper Inference
+    ===============================================
+    ===============================================
+        First-order and Higher-Order Syllogistic Rules
+    ===============================================
+    ===============================================
     """
 
     if j1_term == j2_term:
+        # Revision
+
         # j1=S-->P, j2=S-->P
         # or j1=S<->P, j2=S<->P
         # or j1=S<->P, j2=P<->S
-
-        # Revision
         if is_question_task: return # can't do revision with questions
 
         derived_sentence = nal_revision(j1, j2)  # S-->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
         derived_tasks.append(derived_task)
 
-
-    if j1_copula == Copula.Inheritance and j2_copula == Copula.Inheritance:
+    if not Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
         if j1_subject_term == j2_predicate_term:
             # j1=M-->P, j2=S-->M
             # or j1=S-->M, j2=M-->P
@@ -139,21 +145,21 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
             derived_tasks.append(derived_task)
         else:
             assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
-    elif j1_copula == Copula.Inheritance and j2_copula == Copula.Similarity:
+    elif not Copula.is_symmetric(j1_copula) and Copula.is_symmetric(j2_copula):
         # j1=M-->P or P-->M
         # j2=S<->M or M<->S
         # analogy
         derived_sentence = nal_analogy(j1, j2)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Analogy")
         derived_tasks.append(derived_task)
-    elif j1_copula == Copula.Similarity and j2_copula == Copula.Inheritance:
+    elif Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
         # j1=M<->P or P<->M
         # j2=S-->M or M-->S
         # inverse analogy
         derived_sentence = nal_analogy(j2, j1)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Inverse Analogy")
         derived_tasks.append(derived_task)
-    elif j1_copula == Copula.Similarity and j2_copula == Copula.Similarity:
+    elif Copula.is_symmetric(j1_copula) and Copula.is_symmetric(j2_copula):
         # j1=M<->P or P<->M
         # j2=S<->M or M<->S
         # resemblance
@@ -161,12 +167,16 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Resemblance")
         derived_tasks.append(derived_task)
 
+    """
+    ===============================================
+    ===============================================
+        Post-Processing
+    ===============================================
+    ===============================================
+    """
     # mark task as interacted with belief
     t1.interacted_beliefs.append(j2)  # mark task t1 as interacted with belief j2
 
-    """
-        Post-processing
-    """
     conversion_tasks_to_append = []
     for task in derived_tasks:
         # change the punctuation to questions if necessary
@@ -178,7 +188,7 @@ def perform_inference(t1: Task, j2: Sentence) -> [Task]:
             derived_sentence = nal_conversion(task.sentence)
             if is_question_task:
                 derived_sentence.punctuation = Question
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, task.sentence, None, "Conversion")
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1=task.sentence, j2=None, inference_rule="Conversion")
             conversion_tasks_to_append.append(derived_task)
 
     for conversion_task in conversion_tasks_to_append:

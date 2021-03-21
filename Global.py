@@ -4,8 +4,8 @@
 """
 import tkinter as tk
 
-class Global:
 
+class Global:
     """
         NARS vars
     """
@@ -14,23 +14,22 @@ class Global:
     paused = False
     ID_MARKER = "ID:"
 
+
 class GlobalGUI:
     """
         GUI vars and functions
     """
     # Interface vars
     gui_output_textbox = None  # primary output gui
-    gui_delay_slider = None # delay slider
+    gui_delay_slider = None  # delay slider
     gui_total_cycles_lbl = None
     play_pause_button = None
 
     # Internal Data vars
-    gui_experience_buffer_listbox = None # output for tasks in experience buffer
-    gui_concept_bag_listbox = None # output for concepts in memory bag
+    gui_experience_buffer_listbox = None  # output for tasks in experience buffer
+    gui_concept_bag_listbox = None  # output for concepts in memory bag
     gui_buffer_output_label = None
     gui_concepts_output_label = None
-    gui_total_tasks_in_buffer = 0
-    gui_total_concepts_in_memory = 0
     GUI_PRIORITY_SYMBOL = "$"
 
     # booleans
@@ -40,79 +39,60 @@ class GlobalGUI:
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
         """
-            Print a message to an output GUI box or the shell
-        """
-        if Global.NARS is None: return
-
-        if data_structure is Global.NARS.overall_experience_buffer:
-            listbox = GlobalGUI.gui_experience_buffer_listbox
-            GlobalGUI._print_to_output(msg, listbox)
-        elif data_structure is Global.NARS.memory.concepts_bag:
-            listbox = GlobalGUI.gui_concept_bag_listbox
-            GlobalGUI._print_to_output(msg, listbox)
-        elif data_structure is None:
-            GlobalGUI._print_to_output(msg, None)
-
-    @classmethod
-    def remove_from_output(cls, msg, data_structure=None):
-        """
-            Remove a message from a data structure's output GUI box
-        """
-        if Global.NARS is None: return
-
-        if data_structure is Global.NARS.overall_experience_buffer:
-            listbox = GlobalGUI.gui_experience_buffer_listbox
-            GlobalGUI._remove_from_output(msg, listbox)
-        elif data_structure is Global.NARS.memory.concepts_bag:
-            listbox = GlobalGUI.gui_concept_bag_listbox
-            GlobalGUI._remove_from_output(msg, listbox)
-
-
-    @classmethod
-    def _print_to_output(cls, msg, listbox=None):
-        """
             Print a message to an output GUI box
 
             Should only called by output thread
         """
-        if listbox is None: # interface output
+
+        listbox = None
+        if data_structure is Global.NARS.overall_experience_buffer:
+            listbox = GlobalGUI.gui_experience_buffer_listbox
+        elif data_structure is Global.NARS.memory.concepts_bag:
+            listbox = GlobalGUI.gui_concept_bag_listbox
+        elif data_structure is None:  # interface output
             if cls.gui_use_interface:
                 cls.gui_output_textbox.insert(tk.END, msg + "\n")
             else:
                 print(msg)
-            return
+
+        if listbox is None: return
 
         # internal data output
         # insert item sorted by priority
         if GlobalGUI.gui_use_internal_data:
-            string_list = listbox.get(0, tk.END) # get all items in the listbox
-            msg_priority = msg[msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL)+1:msg.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
-            idx_to_insert = tk.END # by default insert at the end
+            string_list = listbox.get(0, tk.END)  # get all items in the listbox
+            msg_priority = msg[msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL) + 1:msg.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+            idx_to_insert = tk.END  # by default insert at the end
             i = 0
             for row in string_list:
-                row_priority = row[row.find(GlobalGUI.GUI_PRIORITY_SYMBOL)+1:row.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+                row_priority = row[row.find(GlobalGUI.GUI_PRIORITY_SYMBOL) + 1:row.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
                 if float(msg_priority) >= float(row_priority):
                     idx_to_insert = i
                     break
                 i = i + 1
             listbox.insert(idx_to_insert, msg)
-            if listbox is GlobalGUI.gui_experience_buffer_listbox:
-                GlobalGUI.gui_total_tasks_in_buffer = GlobalGUI.gui_total_tasks_in_buffer + 1
-                GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(GlobalGUI.gui_total_tasks_in_buffer))
-            elif listbox is GlobalGUI.gui_concept_bag_listbox:
-                GlobalGUI.gui_total_concepts_in_memory = GlobalGUI.gui_total_concepts_in_memory + 1
-                GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(GlobalGUI.gui_total_concepts_in_memory))
+            if data_structure is Global.NARS.overall_experience_buffer:
+                GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
+            elif data_structure is Global.NARS.memory.concepts_bag:
+                GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)))
 
     @classmethod
-    def _remove_from_output(cls, msg, listbox=None):
+    def remove_from_output(cls, msg, data_structure=None):
         """
             Remove a message from an output GUI box
 
             Should only be called by output thread
         """
+        if Global.NARS is None: return
+        if data_structure is Global.NARS.overall_experience_buffer:
+            listbox = GlobalGUI.gui_experience_buffer_listbox
+        elif data_structure is Global.NARS.memory.concepts_bag:
+            listbox = GlobalGUI.gui_concept_bag_listbox
+
         if GlobalGUI.gui_use_internal_data:
             string_list = listbox.get(0, tk.END)
-            msg_id = msg[len(Global.ID_MARKER):msg.find(" ")] # assuming ID is at the beginning, get characters from ID: to first spacebar
+            msg_id = msg[len(Global.ID_MARKER):msg.find(
+                " ")]  # assuming ID is at the beginning, get characters from ID: to first spacebar
             idx_to_remove = -1
             i = 0
             for row in string_list:
@@ -122,14 +102,13 @@ class GlobalGUI:
                     break
                 i = i + 1
             if idx_to_remove == -1:
-               assert False, "GUI Error: cannot find msg to remove: " + msg
+                assert False, "GUI Error: cannot find msg to remove: " + msg
             listbox.delete(idx_to_remove)
-            if listbox is GlobalGUI.gui_experience_buffer_listbox:
-                GlobalGUI.gui_total_tasks_in_buffer = GlobalGUI.gui_total_tasks_in_buffer - 1
-                GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(GlobalGUI.gui_total_tasks_in_buffer))
-            elif listbox is GlobalGUI.gui_concept_bag_listbox:
-                GlobalGUI.gui_total_concepts_in_memory = GlobalGUI.gui_total_concepts_in_memory - 1
-                GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(GlobalGUI.gui_total_concepts_in_memory))
+
+            if data_structure is Global.NARS.overall_experience_buffer:
+                GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
+            elif data_structure is Global.NARS.memory.concepts_bag:
+                GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)))
 
     @classmethod
     def set_paused(cls, paused):

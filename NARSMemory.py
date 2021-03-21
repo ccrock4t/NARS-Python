@@ -48,6 +48,7 @@ class Memory:
               :param term: The term naming the concept to peek
               :return Concept named by the term
           """
+        if isinstance(term, VariableTerm): return None
         concept_item = self.concepts_bag.peek(hash(term))
         if concept_item is not None: return concept_item.object  # return if got concept
         # concept not found

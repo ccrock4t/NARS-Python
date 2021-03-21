@@ -8,7 +8,7 @@ from NARSDataStructures import Task
 """
     Author: Christian Hahm
     Created: October 9, 2020
-    Purpose: Parses an input string and converts it into a Narsese Task which is fed into NARS
+    Purpose: Parses an input string and converts it into a Narsese Task which is fed into NARS' task buffer
 """
 
 input_queue = queue.Queue()
@@ -34,8 +34,7 @@ def add_input(input_string: str):
 
 def process_next_pending_sentence():
     """
-    Processes the next pending sentence if it exists
-    :return:
+        Processes the next pending sentence from input buffer if one exists
     """
     if input_queue.qsize() > 0:
         sentence = input_queue.get()

@@ -39,6 +39,9 @@ class Bag:
     def __contains__(self, object):
         return (hash(object) in self.item_lookup_table)
 
+    def __len__(self):
+        return self.count
+
     def put_new_item(self, object):
         """
             Insert a new object in the bag - it will be wrapped in an item
