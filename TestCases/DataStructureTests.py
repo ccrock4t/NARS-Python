@@ -44,7 +44,7 @@ def test_table_removemin():
 
 def test_concept_termlinking():
     """
-        Test if term links can be added and removed properly
+        Test if term links can be added and removed properly from a concept
     """
     testnars = NARS.NARS()
     statement_concept = testnars.memory.peek_concept(Term.get_term_from_string("(A-->B)"))

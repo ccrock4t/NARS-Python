@@ -75,23 +75,27 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
         derived_tasks.append(derived_task)
 
     if not Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
-        if j1_subject_term == j2_predicate_term:
+        if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
             """
             # j1=M-->P, j2=S-->M
-            # or j1=S-->M, j2=M-->P
+            # or j1=M-->S, j2=P-->M
+            # OR
+            # j1=S-->M, j2=M-->P
+            # or j1=P-->M, j2=M-->S
             """
-            if j1.statement.get_predicate_term() == j2.statement.get_subject_term():
+            if j1_predicate_term == j2_subject_term:
                 # j1=S-->M, j2=M-->P
+                # or j1=P-->M, j2=M-->S
                 j1, j2 = j2, j1  # swap sentences
             # deduction
-            derived_sentence = nal_deduction(j1, j2)  # S --> P
+            derived_sentence = nal_deduction(j1, j2)  # S-->P or P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Deduction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Exemplification
             """
-            derived_sentence = nal_exemplification(j2, j1)  # P-->S
+            derived_sentence = nal_exemplification(j2, j1)  # P-->S or S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Exemplification")
             derived_tasks.append(derived_task)
@@ -103,6 +107,8 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
             # j1=M-->P, j2=M-->S
             # Induction
             """
+            print("j1" + str(j1))
+            print("j2" + str(j2))
             print('Induction')
             derived_sentence = nal_induction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Induction")
@@ -140,23 +146,6 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
             # comparison
             derived_sentence = nal_comparison(j1, j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
-            derived_tasks.append(derived_task)
-        elif j1_predicate_term == j2_subject_term:
-            """
-            # j1=P-->M, j2=M-->S
-            # Exemplification
-            """
-            derived_sentence = nal_exemplification(j1, j2)  # S-->P
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
-                                                               inference_rule="Exemplification")
-            derived_tasks.append(derived_task)
-
-            """
-            # Swapped Deduction
-            """
-            derived_sentence = nal_deduction(j2, j1)  # P-->S
-            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
-                                                               inference_rule="Swapped Deduction")
             derived_tasks.append(derived_task)
         else:
             assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
@@ -234,10 +223,14 @@ def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence
         derived_sentence.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
 
     derived_task = Task(derived_sentence)
-    #if GlobalGUI.gui_use_interface:
-        #j1string = j1.get_formatted_string()
-        #j2string = "None" if j2 is None else j2.get_formatted_string()
-        #print(inference_rule + " derived new Task: " + str(
-        #    derived_task) + " from " + j1string + " and " + j2string)
-        #print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
+
+
+    # print info
+    j1string = j1.get_formatted_string()
+    j2string = "None" if j2 is None else j2.get_formatted_string()
+    print(inference_rule + " derived new Task: " + str(
+       derived_task) + " from " + j1string + " and " + j2string)
+    print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
+
+
     return derived_task

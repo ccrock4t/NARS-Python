@@ -42,13 +42,16 @@ class Memory:
     def peek_concept(self, term: Term):
         """
               Peek the concept from memory using its term,
-              and create it if it doesn't exist.
+              AND create it if it doesn't exist.
               Also recursively creates all sub-term concepts if they do not exist.
+
+              If it's an `open` variable term, the concept is not created, though if it has sub-terms
+               those concepts will be created.
 
               :param term: The term naming the concept to peek
               :return Concept named by the term
           """
-        if isinstance(term, VariableTerm): return None
+        if isinstance(term, VariableTerm): return None #todo created concepts for closed variable terms
         concept_item = self.concepts_bag.peek(hash(term))
         if concept_item is not None: return concept_item.object  # return if got concept
         # concept not found
@@ -57,8 +60,9 @@ class Memory:
             concept_item = self.concepts_bag.peek(hash(term.get_reverse_term_string()))
             if concept_item is not None: return concept_item.object  # return if got concept
 
-        # it must be created, and potentially its sub-concepts
-        concept = self.conceptualize_term(term)
+        # it must be created unless it contains a Variable Term, and potentially its sub-concepts
+        if not term.contains_variable():
+            concept = self.conceptualize_term(term)
         if isinstance(term, NALGrammar.CompoundTerm):
             for subterm in term.subterms:
                 # get/create subterm concepts

@@ -35,6 +35,11 @@ class Sentence:
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
 
+    def get_formatted_string_no_id(self):
+        string = self.statement.get_formatted_string() + str(self.punctuation.value)
+        if self.value is not None: string = string + " " + self.value.get_formatted_string()
+        return string
+
     class Stamp:
         """
             (id, tcr, toc, C, E) ∈ N×N×N×N×P(N)
@@ -401,7 +406,7 @@ class CompoundTerm(Term):
 
             compound_term_string - a string representing a compound term
         """
-        print("compound str " + compound_term_string)
+
         compound_term_string = compound_term_string.replace(" ","")
         subterms = []
         internal_string = compound_term_string[1:-1] # no parentheses () or set brackets [], {}
@@ -530,15 +535,15 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
 
         Returns: top-level subject term, predicate term, copula, copula index
     """
+    statement_string = statement_string.replace(" ","")
 
     # get copula
     copula, copula_idx = get_top_level_copula(statement_string)
     assert (copula is not None), "Copula not found. Exiting.."
 
-    statement_string = statement_string.replace(" ","")
     subject_str = statement_string[1:copula_idx] # get subject string
     predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
-    print(subject_str)
+
     return Term.get_term_from_string(subject_str), Term.get_term_from_string(predicate_str), copula, copula_idx
 
 

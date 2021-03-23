@@ -50,7 +50,8 @@ class GlobalGUI:
             listbox = GlobalGUI.gui_experience_buffer_listbox
         elif data_structure is Global.NARS.memory.concepts_bag:
             listbox = GlobalGUI.gui_concept_bag_listbox
-        elif data_structure is None:  # interface output
+        elif data_structure is None:
+            # output to interface or shell
             if cls.gui_use_interface:
                 cls.gui_output_textbox.insert(tk.END, msg + "\n")
             else:

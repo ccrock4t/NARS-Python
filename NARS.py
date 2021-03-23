@@ -26,6 +26,7 @@ class NARS:
     def __init__(self):
         self.overall_experience_buffer = Bag(item_type=Task)
         self.memory = Memory()
+        Global.NARS = self
 
     def do_working_cycle(self):
         """
@@ -34,6 +35,8 @@ class NARS:
         """
         if GlobalGUI.gui_use_interface:
             GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
+
+        InputBuffer.process_next_pending_sentence()
 
         # working cycle
         rand = random.random()
@@ -45,6 +48,14 @@ class NARS:
             self.Consider()
 
         Global.current_cycle_number = Global.current_cycle_number + 1
+
+    def do_working_cycles(self, cycles: int):
+        """
+            Performs an arbitrary number of working cycles.
+        """
+        for i in range(cycles):
+            self.do_working_cycle()
+
 
     def Observe(self):
         """
@@ -103,7 +114,7 @@ class NARS:
         subject_term = statement_term.get_subject_term()
         predicate_term = statement_term.get_predicate_term()
 
-        if statement_term.contains_variable(): return #todo handle variables
+        #if statement_term.contains_variable(): return #todo handlep variables
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
@@ -247,7 +258,6 @@ def run():
             if delay > 0:
                 time.sleep(delay)
 
-        InputBuffer.process_next_pending_sentence()
         Global.NARS.do_working_cycle()
 
 
