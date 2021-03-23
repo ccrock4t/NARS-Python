@@ -13,7 +13,7 @@ from NARSDataStructures import Task
 
 input_queue = queue.Queue()
 
-def add_input(input_string: str):
+def add_input_string(input_string: str):
     try:
         if input_string == "count":
             GlobalGUI.print_to_output(
@@ -30,6 +30,9 @@ def add_input(input_string: str):
     except AssertionError as msg:
         GlobalGUI.print_to_output("INPUT REJECTED: " + str(msg))
         return
+
+def add_input_sentence(sentence: Sentence):
+    input_queue.put(item=sentence)
 
 
 def process_next_pending_sentence():
@@ -50,9 +53,9 @@ def process_sentence(sentence: Sentence):
 
 def parse_sentence(sentence_string: str):
     """
-    Parameter: sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
+        :param sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
 
-    Returns: Sentence parsed from sentence_string
+        :returns Sentence parsed from sentence_string
     """
     # Find statement start and statement end
     start_idx = sentence_string.find(StatementSyntax.Start.value)

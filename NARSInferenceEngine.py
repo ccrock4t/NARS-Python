@@ -83,10 +83,12 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
             # j1=S-->M, j2=M-->P
             # or j1=P-->M, j2=M-->S
             """
-            if j1_predicate_term == j2_subject_term:
+            swapped = False
+            if j1_subject_term != j2_predicate_term:
                 # j1=S-->M, j2=M-->P
                 # or j1=P-->M, j2=M-->S
                 j1, j2 = j2, j1  # swap sentences
+                swapped = True
             # deduction
             derived_sentence = nal_deduction(j1, j2)  # S-->P or P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Deduction")
@@ -100,8 +102,9 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
                                                                inference_rule="Swapped Exemplification")
             derived_tasks.append(derived_task)
 
-            if j1_predicate_term == j2_subject_term:
+            if swapped:
                 j1, j2 = j2, j1  # restore sentences
+                swapped = False
         elif j1_subject_term == j2_subject_term:
             """
             # j1=M-->P, j2=M-->S

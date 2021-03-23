@@ -1,5 +1,8 @@
-- Handle Variables
-- Handle Goals
+- Handling Variables (NAL-6)
+- Events (NAL-7)
+- Goals (NAL-8)
+- Operations (NAL-8)
+- Self-monitoring and self-control (NAL-9)
 
 - Inference
 	- Structural Inference
