@@ -1,0 +1,11 @@
+- Handle Variables
+- Handle Goals
+
+- Inference
+	- Structural Inference
+	- Immediate Inference
+	- Composition Rules
+	- Decomposition Rules
+	- Conditional Syllogism
+	- One-premise Inference
+	- Temporal Inference

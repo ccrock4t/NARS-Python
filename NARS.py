@@ -222,7 +222,7 @@ def main():
         Creates threads, populates globals, and runs the NARS.
     """
     # set globals
-    Global.NARS = NARS()
+    NARS()
     GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     # todo investigate why using the interface slows down the system
     GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface, and results in a massive speedup

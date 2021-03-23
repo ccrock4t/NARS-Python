@@ -226,11 +226,11 @@ def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence
 
 
     # print info
-    j1string = j1.get_formatted_string()
-    j2string = "None" if j2 is None else j2.get_formatted_string()
-    print(inference_rule + " derived new Task: " + str(
-       derived_task) + " from " + j1string + " and " + j2string)
-    print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
+    # j1string = j1.get_formatted_string()
+    # j2string = "None" if j2 is None else j2.get_formatted_string()
+    # print(inference_rule + " derived new Task: " + str(
+    #    derived_task) + " from " + j1string + " and " + j2string)
+    # print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
 
 
     return derived_task
