@@ -93,18 +93,18 @@ def first_order_deduction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = InputBuffer.parse_sentence("(S-->M). %1.0;0.9%")
-    j2 = InputBuffer.parse_sentence("(M-->P). %1.0;0.9%")
+    j1 = Sentence.parse_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = Sentence.parse_sentence_from_string("(M-->P). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(InputBuffer.parse_sentence("(S-->P)?"))
+    input_question_q.put(Sentence.parse_sentence_from_string("(S-->P)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
     process.join()
 
     success_criteria = []
-    success_criteria.append(InputBuffer.parse_sentence("(S-->P). %1.0;0.81%").get_formatted_string_no_id())
+    success_criteria.append(Sentence.parse_sentence_from_string("(S-->P). %1.0;0.81%").get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -122,12 +122,12 @@ def first_order_induction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = InputBuffer.parse_sentence("(M-->S). %1.0;0.9%")
-    j2 = InputBuffer.parse_sentence("(M-->P). %1.0;0.9%")
+    j1 = Sentence.parse_sentence_from_string("(M-->S). %1.0;0.9%")
+    j2 = Sentence.parse_sentence_from_string("(M-->P). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(InputBuffer.parse_sentence("(S-->P)?"))
-    input_question_q.put(InputBuffer.parse_sentence("(P-->S)?"))
+    input_question_q.put(Sentence.parse_sentence_from_string("(S-->P)?"))
+    input_question_q.put(Sentence.parse_sentence_from_string("(P-->S)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
@@ -153,12 +153,12 @@ def first_order_abduction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = InputBuffer.parse_sentence("(S-->M). %1.0;0.9%")
-    j2 = InputBuffer.parse_sentence("(P-->M). %1.0;0.9%")
+    j1 = Sentence.parse_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = Sentence.parse_sentence_from_string("(P-->M). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(InputBuffer.parse_sentence("(S-->P)?"))
-    input_question_q.put(InputBuffer.parse_sentence("(P-->S)?"))
+    input_question_q.put(Sentence.parse_sentence_from_string("(S-->P)?"))
+    input_question_q.put(Sentence.parse_sentence_from_string("(P-->S)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()

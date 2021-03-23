@@ -28,6 +28,21 @@ class NARS:
         self.memory = Memory()
         Global.NARS = self
 
+    def run(self):
+        """
+            Infinite loop of working cycles
+        """
+        while True:
+            # global parameters
+            if Global.paused:
+                continue
+            if GlobalGUI.gui_use_interface:
+                delay = GlobalGUI.gui_delay_slider.get() / 1000
+                if delay > 0:
+                    time.sleep(delay)
+
+            self.do_working_cycle()
+
     def do_working_cycle(self):
         """
             Performs 1 working cycle.
@@ -222,7 +237,6 @@ def main():
         Creates threads, populates globals, and runs the NARS.
     """
     # set globals
-    NARS()
     GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     # todo investigate why using the interface slows down the system
     GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface, and results in a massive speedup
@@ -241,24 +255,11 @@ def main():
 
     time.sleep(1.00) # give threads time to setup
 
-    # Finally, start NARS in the shell
-    run()
+    # Finally, create the NARS
+    NARS()
+    # and run it in the shell
+    Global.NARS.run()
 
-
-def run():
-    """
-        Infinite loop of working cycles
-    """
-    while True:
-        # global parameters
-        if Global.paused:
-            continue
-        if GlobalGUI.gui_use_interface:
-            delay = GlobalGUI.gui_delay_slider.get() / 1000
-            if delay > 0:
-                time.sleep(delay)
-
-        Global.NARS.do_working_cycle()
 
 
 if __name__ == "__main__":

@@ -40,6 +40,66 @@ class Sentence:
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
 
+    @classmethod
+    def parse_sentence_from_string(cls, sentence_string: str):
+        """
+            :param sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
+
+            :returns Sentence parsed from sentence_string
+        """
+        # Find statement start and statement end
+        start_idx = sentence_string.find(StatementSyntax.Start.value)
+        assert (start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " not found."
+
+        end_idx = sentence_string.rfind(StatementSyntax.End.value)
+        assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " not found."
+
+        # Find sentence punctuation
+        punctuation_idx = end_idx + 1
+        assert (punctuation_idx < len(sentence_string)), "No punctuation found."
+        punctuation_str = sentence_string[punctuation_idx]
+        punctuation = Punctuation.get_punctuation(punctuation_str)
+        assert (punctuation is not None), punctuation_str + " is not punctuation."
+
+        # todo add support for goals
+        assert (
+                    punctuation == Punctuation.Judgment or punctuation == Punctuation.Question), " Currently only accepting Judgments and Questions."
+
+        # Find statement copula, subject string, and predicate string
+        subject, predicate, copula, copula_idx = parse_subject_predicate_copula_and_copula_index(
+            sentence_string[start_idx:end_idx + 1])
+
+        statement = Statement(subject, predicate, copula)
+
+        # Find Tense, if it exists
+        tense = None
+        for t in Tense:
+            tense_idx = sentence_string.find(t.value)
+            if tense_idx != -1:  # found a tense
+                tense = Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
+
+        # Find Truth Value, if it exists
+        start_truth_val_idx = sentence_string.find(StatementSyntax.TruthValMarker.value)
+        middle_truth_val_idx = sentence_string.find(StatementSyntax.TruthValDivider.value)
+        end_truth_val_idx = sentence_string.rfind(StatementSyntax.TruthValMarker.value)
+
+        no_truth_value_found = start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx
+        if no_truth_value_found:
+            # No truth value, use default truth value
+            truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE, tense)
+        else:
+            # Parse truth value from string
+            freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
+            conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
+            truth_value = TruthValue(freq, conf, tense)
+
+        if punctuation == Punctuation.Judgment:
+            sentence = Judgment(statement, truth_value)
+        elif punctuation == Punctuation.Question:
+            sentence = Question(statement)
+
+        return sentence
+
     class Stamp:
         """
             (id, tcr, toc, C, E) ∈ N×N×N×N×P(N)
