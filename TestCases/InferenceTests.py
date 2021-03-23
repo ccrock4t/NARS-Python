@@ -51,33 +51,14 @@ def nars_process(input_judgment_q, input_question_q, output_q):
 
     sys.stdout = sys.__stdout__
 
-
-def first_order_deduction():
+def check_success(output_q: StdoutQueue, success_criteria: [str]):
     """
-        Test first-order deduction:
-        j1: (S-->M). %1.0;0.9%
-        j2: (M-->P). %1.0;0.9%
 
-        :- (S-->P). %1.0;0.81%
+    :param output_q: Multi-process queue that holds the NARS' output
+    :param success_criteria: array of strings that must be present in the output in order to be considered success
+    :return: (True, None) if output passed all success_criteria
+            (False, failed_criteria) if output failed a criterion
     """
-    input_judgment_q = StdoutQueue()
-    input_question_q = StdoutQueue()
-    output_q = StdoutQueue()
-
-    j1 = InputBuffer.parse_sentence("(S-->M). %1.0;0.9%")
-    j2 = InputBuffer.parse_sentence("(M-->P). %1.0;0.9%")
-    input_judgment_q.put(j1)
-    input_judgment_q.put(j2)
-    input_question_q.put(InputBuffer.parse_sentence("(S-->P)?"))
-
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
-    process.start()
-    process.join()
-
-
-    success_criteria = []
-    success_criteria.append(InputBuffer.parse_sentence("(S-->P). %1.0;0.81%").get_formatted_string_no_id())
-
     output = []
     while output_q.qsize() > 0:  # read and store result in log file
         output.append(output_q.get())
@@ -94,6 +75,39 @@ def first_order_deduction():
             failed_criterion = criterion
             break
 
+    return success, failed_criterion
+
+def initialize_multiprocess_queues():
+    input_judgment_q = StdoutQueue()
+    input_question_q = StdoutQueue()
+    output_q = StdoutQueue()
+    return input_judgment_q, input_question_q, output_q
+
+def first_order_deduction():
+    """
+        Test first-order deduction:
+        j1: (S-->M). %1.0;0.9%
+        j2: (M-->P). %1.0;0.9%
+
+        :- (S-->P). %1.0;0.81%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = InputBuffer.parse_sentence("(S-->M). %1.0;0.9%")
+    j2 = InputBuffer.parse_sentence("(M-->P). %1.0;0.9%")
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(InputBuffer.parse_sentence("(S-->P)?"))
+
+    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(InputBuffer.parse_sentence("(S-->P). %1.0;0.81%").get_formatted_string_no_id())
+
+    success, failed_criterion = check_success(output_q, success_criteria)
+
     assert success,"TEST FAILURE: First-order Deduction test failed: " + failed_criterion
 
 def first_order_induction():
@@ -106,9 +120,7 @@ def first_order_induction():
            and
            (P-->S). %1.0;0.45%
     """
-    input_judgment_q = StdoutQueue()
-    input_question_q = StdoutQueue()
-    output_q = StdoutQueue()
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = InputBuffer.parse_sentence("(M-->S). %1.0;0.9%")
     j2 = InputBuffer.parse_sentence("(M-->P). %1.0;0.9%")
@@ -125,21 +137,7 @@ def first_order_induction():
     success_criteria.append(nal_induction(j1,j2).get_formatted_string_no_id())
     success_criteria.append(nal_induction(j2,j1).get_formatted_string_no_id())
 
-    output = []
-    while output_q.qsize() > 0:  # read and store result in log file
-         output.append(output_q.get())
-
-    success = True
-    failed_criterion = ""
-    for criterion in success_criteria:
-        success = False
-        for line in output:
-            if criterion in line:
-                success = True
-                break
-        if not success:
-            failed_criterion = criterion
-            break
+    success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: First-order Induction test failed: " + failed_criterion
 
@@ -153,9 +151,7 @@ def first_order_abduction():
            and
            (P-->S). %1.0;0.45%
     """
-    input_judgment_q = StdoutQueue()
-    input_question_q = StdoutQueue()
-    output_q = StdoutQueue()
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = InputBuffer.parse_sentence("(S-->M). %1.0;0.9%")
     j2 = InputBuffer.parse_sentence("(P-->M). %1.0;0.9%")
@@ -172,21 +168,7 @@ def first_order_abduction():
     success_criteria.append(nal_abduction(j1,j2).get_formatted_string_no_id())
     success_criteria.append(nal_abduction(j2,j1).get_formatted_string_no_id())
 
-    output = []
-    while output_q.qsize() > 0:  # read and store result in log file
-        output.append(output_q.get())
-
-    success = True
-    failed_criterion = ""
-    for criterion in success_criteria:
-        success = False
-        for line in output:
-            if criterion in line:
-                success = True
-                break
-        if not success:
-            failed_criterion = criterion
-            break
+    success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: First-order Abduction test failed: " + failed_criterion
 
