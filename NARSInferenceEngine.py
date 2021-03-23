@@ -1,7 +1,7 @@
 """
     Author: Christian Hahm
     Created: March 8, 2021
-    Purpose: Identifies and performs inference on a task and belief.
+    Purpose: Identifies and performs inference on 2 related sentences
 """
 from Global import GlobalGUI
 from NALGrammar import assert_sentence, Sentence, Copula, Question, Punctuation
@@ -12,7 +12,7 @@ from NARSDataStructures import assert_task, Task
 
 def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
     """
-        Derives a new task by performing the appropriate inference rules on the given Task and belief.
+        Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
 
         :param t1: Task containing sentence j1
@@ -196,8 +196,8 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
     ===============================================
     ===============================================
     """
-    # mark task as interacted with belief
-    j1.stamp.interacted_sentences.append(j2)  # mark task t1 as interacted with belief j2
+    # mark task as interacted with sentnece
+    j1.stamp.mutually_add_to_interacted_sentences(j2)
 
     conversion_tasks_to_append = []
     for derived_task in derived_tasks:

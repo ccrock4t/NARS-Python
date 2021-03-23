@@ -172,7 +172,7 @@ class Concept:
         self.task_links.pop(task)
 
     def get_formatted_string(self):
-        string = Global.ID_MARKER + str(self.id) + " "
+        string = Global.ID_MARKER + str(self.id) + Global.ID_END_MARKER
         string = string + self.term.get_formatted_string()
         return string
 

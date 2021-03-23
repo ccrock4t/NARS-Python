@@ -1,3 +1,4 @@
+import Config
 from Global import Global
 from NALSyntax import *
 
@@ -12,7 +13,6 @@ class Sentence:
     """
         sentence ::= <statement><punctuation> %<value>%G
     """
-
     def __init__(self, statement, value, punctuation):
         assert_statement(statement)
         assert_punctuation(punctuation)
@@ -30,7 +30,7 @@ class Sentence:
         return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
 
     def get_formatted_string(self):
-        string = Global.ID_MARKER + str(self.stamp.id) + " "
+        string = Global.ID_MARKER + str(self.stamp.id) + Global.ID_END_MARKER
         string = string + self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
@@ -54,6 +54,15 @@ class Sentence:
             self.evidential_base = self.EvidentialBase(self.id)
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
+        def mutually_add_to_interacted_sentences(self, sentence):
+            self.interacted_sentences.append(sentence)
+            if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+                self.interacted_sentences.pop(0)
+
+            sentence.stamp.interacted_sentences.append(sentence)
+            if len(sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+                sentence.stamp.interacted_sentences.pop(0)
+
         @classmethod
         def get_next_stamp_id(cls):
             cls.next_stamp_id = cls.next_stamp_id + 1
@@ -63,19 +72,21 @@ class Sentence:
             """
                 Stores history of how the sentence was derived
             """
-
             def __init__(self, id):
                 self.base = []  # array of integer IDs
                 self.base.append(id)  # append this sentence's
-                # todo MAX_EVIDENTIAL_BASE_LENGTH
 
             def merge_evidential_base_into_self(self, other_base):
                 """
                     Merge other evidential base into self.
                     This function assumes the base to merge does not have evidential overlap with this base
+                    #todo figure out good way to store evidential bases such that older evidence is purged on overflow
                 """
                 for id in other_base.base:
                     self.base.append(id)
+
+                while len(self.base) > Config.MAX_EVIDENTIAL_BASE_LENGTH:
+                    self.base.pop(0)
 
             def has_evidential_overlap(self, other_base):
                 """
@@ -234,14 +245,12 @@ class Term:
             :param term_string - String from which to construct the term
             :returns Term constructed using the string
         """
-        is_set_term = (term_string[0] == TermConnector.IntensionalSetStart.value) or (
-                term_string[0] == TermConnector.ExtensionalSetStart.value)
+        is_set_term = TermConnector.is_set_bracket_start(term_string[0])
         if term_string[0] == StatementSyntax.Start.value:
             """
                 Compound or Statement Term
             """
-            assert (term_string[len(
-                term_string) - 1] == StatementSyntax.End.value), "Compound/Statement term must have ending parenthesis"
+            assert (term_string[-1] == StatementSyntax.End.value), "Compound/Statement term must have ending parenthesis: " + term_string
 
             copula, copula_idx = get_top_level_copula(term_string)
             if copula is None:
@@ -392,8 +401,10 @@ class CompoundTerm(Term):
 
             compound_term_string - a string representing a compound term
         """
+        print("compound str " + compound_term_string)
+        compound_term_string = compound_term_string.replace(" ","")
         subterms = []
-        internal_string = compound_term_string[1:-1]
+        internal_string = compound_term_string[1:-1] # no parentheses () or set brackets [], {}
 
         # check for intensional/extensional set [a,b], {a,b}
         connector = TermConnector.get_term_connector_from_string(compound_term_string[0])
@@ -402,33 +413,31 @@ class CompoundTerm(Term):
             connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
             if connector is None:
                 connector = TermConnector.get_term_connector_from_string(internal_string[0])
-            print(str(len(connector.value) + 1))
             assert (internal_string[
                         len(
                             connector.value)] == ','), "Connector not followed by comma in CompoundTerm string " + compound_term_string
-            internal_terms_string = internal_string[len(connector.value) + 1:]
+            internal_string = internal_string[len(connector.value) + 1:]
         else:
-            internal_terms_string = internal_string
+            # intensional/extensional set [a,b], {a,b}
+            internal_string = internal_string
 
         assert (connector is not None), "Connector could not be parsed from CompoundTerm string."
 
         depth = 0
         subterm_string = ""
-        for i, c in enumerate(internal_terms_string):
-            if c == StatementSyntax.Start.value:
+        for i, c in enumerate(internal_string):
+            if c == StatementSyntax.Start.value or TermConnector.is_set_bracket_start(c):
                 depth = depth + 1
-            elif c == StatementSyntax.End.value:
+            elif c == StatementSyntax.End.value or TermConnector.is_set_bracket_end(c):
                 depth = depth - 1
 
             if c == "," and depth == 0:
-                subterm_string = subterm_string.strip()
                 subterm = Term.get_term_from_string(subterm_string)
                 subterms.append(subterm)
                 subterm_string = ""
             else:
                 subterm_string = subterm_string + c
 
-        subterm_string = subterm_string.strip()
         subterm = Term.get_term_from_string(subterm_string)
         subterms.append(subterm)
 
@@ -526,10 +535,10 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
     copula, copula_idx = get_top_level_copula(statement_string)
     assert (copula is not None), "Copula not found. Exiting.."
 
-    subject_str = statement_string[1:copula_idx].strip()  # get subject string
-    predicate_str = statement_string[
-                    copula_idx + len(copula.value):len(statement_string) - 1].strip()  # get predicate string
-
+    statement_string = statement_string.replace(" ","")
+    subject_str = statement_string[1:copula_idx] # get subject string
+    predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
+    print(subject_str)
     return Term.get_term_from_string(subject_str), Term.get_term_from_string(predicate_str), copula, copula_idx
 
 

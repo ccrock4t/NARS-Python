@@ -227,8 +227,7 @@ class Bag:
 
         def __init__(self, object):
             self.object = object
-            # todo implement priority
-            self.budget = Bag.Item.Budget(priority=0.9, durability=0.9, quality=0.9)
+            self.budget = Bag.Item.Budget(priority=0.9)
             self.current_bucket_number = self.get_target_bucket_number()
 
         def __str__(self):
@@ -252,26 +251,14 @@ class Bag:
                 self.budget.priority = self.budget.priority * Config.BAG_PRIORITY_DECAY_MULTIPLIER
 
         class Budget:
-            def __init__(self, priority=0.0, durability=0.0, quality=0.0):
+            def __init__(self, priority=0.0):
                 self.priority = priority
-                self.durability = durability
-                self.quality = quality
 
             def increase_priority(self, v):
                 self.durability = min(1.0, NALInferenceRules.bor(self.priority, v))
 
             def decrease_priority(self, v):
                 self.durability = NALInferenceRules.band(self.priority, v)
-
-            def increase_durability(self, v):
-                new_durability = NALInferenceRules.bor(self.durability, v)
-                if new_durability >= 1.0:
-                    new_durability = 1.0 - Config.TRUTH_EPSILON
-                self.durability = new_durability
-
-            def decrease_durability(self, v):
-                self.durability = NALInferenceRules.band(self.durability, v)
-
 
 class Buffer:
     """

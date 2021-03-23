@@ -13,6 +13,7 @@ class Global:
     current_cycle_number = 0  # total number of working cycles executed so far
     paused = False
     ID_MARKER = "ID:"
+    ID_END_MARKER = ": "
 
 
 class GlobalGUI:
@@ -91,12 +92,11 @@ class GlobalGUI:
 
         if GlobalGUI.gui_use_internal_data:
             string_list = listbox.get(0, tk.END)
-            msg_id = msg[len(Global.ID_MARKER):msg.find(
-                " ")]  # assuming ID is at the beginning, get characters from ID: to first spacebar
+            msg_id = msg[len(Global.ID_MARKER):msg.rfind(Global.ID_END_MARKER)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
             idx_to_remove = -1
             i = 0
             for row in string_list:
-                row_id = row[len(Global.ID_MARKER):row.find(" ")]
+                row_id = row[len(Global.ID_MARKER):row.rfind(Global.ID_END_MARKER)]
                 if msg_id == row_id:
                     idx_to_remove = i
                     break

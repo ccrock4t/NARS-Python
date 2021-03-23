@@ -25,8 +25,9 @@ TABLE_CAPACITY = 30
 """
     Others
 """
-TRUTH_EPSILON = 0.01 # minimum size that truth-value can be incremented/
+TRUTH_EPSILON = 0.01 # minimum size that truth-value can be incremented/decremented
 MAX_EVIDENTIAL_BASE_LENGTH = 20000 # maximum IDs to store documenting evidential base
+MAX_INTERACTED_SENTENCES_LENGTH = 20000
 
 """
     Default Input Task Values

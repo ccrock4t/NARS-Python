@@ -92,6 +92,25 @@ class TermConnector(enum.Enum):
         if start_connector == TermConnector.IntensionalSetStart: return TermConnector.IntensionalSetEnd
         return None
 
+    @classmethod
+    def is_set_bracket_start(cls, bracket):
+        """
+        Test if a character is a starting bracket for a set
+        :param bracket:
+        :return:
+        """
+        return (bracket == TermConnector.IntensionalSetStart.value) or (
+                bracket == TermConnector.ExtensionalSetStart.value)
+
+    @classmethod
+    def is_set_bracket_end(cls, bracket):
+        """
+        Test if a character is an ending bracket for a set
+        :param bracket:
+        :return:
+        """
+        return (bracket == TermConnector.IntensionalSetEnd.value) or (
+                bracket == TermConnector.ExtensionalSetEnd.value)
 
 class Copula(enum.Enum):
     # Primary copula
