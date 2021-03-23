@@ -379,10 +379,9 @@ class Task:
         self.creation_timestamp: int = Global.current_cycle_number  # save the task's creation time
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
-        self.interacted_beliefs = []  # list of beliefs this task has already interacted with
 
         #only used for question tasks
-        self.needs_answer_output: bool = True
+        self.needs_to_be_answered_in_output: bool = True
 
     def __hash__(self):
         return self.sentence.stamp.id

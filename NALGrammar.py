@@ -52,6 +52,7 @@ class Sentence:
             self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
             self.syntactic_complexity = -1  # todo, number of subterms
             self.evidential_base = self.EvidentialBase(self.id)
+            self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
         @classmethod
         def get_next_stamp_id(cls):

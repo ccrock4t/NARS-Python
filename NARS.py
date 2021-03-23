@@ -117,17 +117,18 @@ class NARS:
         subject_concept.set_task_link(task)
         predicate_concept.set_task_link(task)
 
+        j1 = task.sentence
+
         if task.needs_initial_processing:
             """
                 Initial Processing
                 
                 Revise this judgment with the most confident belief, then insert it into the belief table
             """
-            belief = statement_concept.belief_table.peek()  # get most confident related_belief of the same content
-            if (belief is not None) and (not task.sentence.has_evidential_overlap(belief)) and (
-                    belief not in task.interacted_beliefs):
+            j2 = statement_concept.belief_table.peek()  # get most confident related_belief of the same content
+            if (j2 is not None) and (not j1.has_evidential_overlap(j2)) and (j2 not in j1.stamp.interacted_sentences):
                 # perform revision on the belief
-                derived_tasks = NARSInferenceEngine.perform_inference(task, belief)
+                derived_tasks = NARSInferenceEngine.do_inference(task.sentence, j2)
                 if len(derived_tasks) > 0:
                     derived_task = derived_tasks[0]  # only 1 derived task in Revision
                     self.overall_experience_buffer.put_new_item(derived_task)
@@ -144,20 +145,22 @@ class NARS:
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
             if related_concept is None: return  # no related concepts!
 
-            related_belief = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+            j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
 
             # can't process if no related belief, they have evidential overlap,
             # or they have already interacted previously
-            if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (
-                    related_belief in task.interacted_beliefs): return
+            if (j2 is None) or (j1.has_evidential_overlap(j2)) or (j2 in j1.stamp.interacted_sentences): return
 
-            derived_tasks = NARSInferenceEngine.perform_inference(task, related_belief)
+            derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
             for derived_task in derived_tasks:
                 self.overall_experience_buffer.put_new_item(derived_task)
 
     def process_question(self, task):
         """
             Process a Narsese question task
+
+            Get the best answer to the question if it's known and perform inference with it;
+            otherwise, use backward inference to derive new questions that could lead to an answer.
         """
         assert_task(task)
 
@@ -169,34 +172,36 @@ class NARS:
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
 
-        """
-            Get and print the best answer to the question by peeking the most confident belief in
-            the Question's Concept's Belief Table.
-        """
         # get the best answer from concept belief table
         best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
+        j1 = None
         if best_answer is not None:
+            #
             # Answer the question
-            if task.is_from_input and task.needs_answer_output:
+            #
+            if task.is_from_input and task.needs_to_be_answered_in_output:
                 GlobalGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
-                task.needs_answer_output = False
+                task.needs_to_be_answered_in_output = False
 
-            # initial processing complete
-            task.needs_initial_processing = False
-        else: # no answer
-            related_concept = self.memory.get_semantically_related_concept(statement_concept)
-            if related_concept is None: return  # no related concepts!
+            # do inference between answer and a related belief
+            j1 = best_answer
+        else:
+            # do inference between question and a related belief
+            j1 = task.sentence
 
-            related_belief = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+        # get a related concept
+        related_concept = self.memory.get_semantically_related_concept(statement_concept)
+        j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+        if related_concept is None: return  # no related concepts!
 
-            # can't process if no related belief, they have evidential overlap,
-            # or they have already interacted previously
-            if (related_belief is None) or (task.sentence.has_evidential_overlap(related_belief)) or (
-                    related_belief in task.interacted_beliefs): return
+        # can't process if no related belief, they have evidential overlap,
+        # or they have already interacted previously
+        if (j2 is None) or (j1.has_evidential_overlap(j2)) or (j2 in j1.stamp.interacted_sentences): return
 
-            derived_tasks = NARSInferenceEngine.perform_inference(task, related_belief)
-            for derived_task in derived_tasks:
-                self.overall_experience_buffer.put_new_item(derived_task)
+        derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
+        # add all derived tasks to the buffer
+        for derived_task in derived_tasks:
+            self.overall_experience_buffer.put_new_item(derived_task)
 
 
 
