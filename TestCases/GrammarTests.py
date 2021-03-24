@@ -32,12 +32,13 @@ def calculate_syntactic_complexity_test():
     assert singleton_set_internal_compound_term.calculate_syntactic_complexity() == singleton_set_internal_compound_term_complexity
     assert statement_term.calculate_syntactic_complexity() == statement_term_complexity
 
-
-
-if __name__ == "__main__":
+def main():
     """
         Term Tests
     """
     calculate_syntactic_complexity_test()
 
-    print("All tests successfully passed.")
+    print("All Grammar Tests successfully passed.")
+
+if __name__ == "__main__":
+    main()

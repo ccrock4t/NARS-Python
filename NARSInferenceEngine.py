@@ -45,12 +45,18 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
     j2_copula = j2.statement.copula
 
     # need to check check for tautology if 1 of the copulas is not symmetric
-    if not Copula.is_symmetric(j1_copula) or not Copula.is_symmetric(j2_copula):
-        if (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) \
-                or (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term):
-            # S-->P, P-->S
-            # or S-->P, P<->S
-            return derived_tasks  # don't do inference, it will result in tautology
+    # Catches (S-->P,P<->S) and (S-->P, P-->S) and (P-->S,S<->P) and (P-->S, S-->P)
+    tautology = (not Copula.is_symmetric(j1_copula) or not Copula.is_symmetric(j2_copula)) and \
+                (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) #
+
+    # Catches (S-->P,S<->P) and (S<->P,S-->P)
+    tautology = tautology or \
+                ((not Copula.is_symmetric(j1_copula) and Copula.is_symmetric(j2_copula)) or \
+                (Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula))) and \
+                (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term)
+
+    if tautology:
+        return derived_tasks  # don't do inference, it will result in tautology
 
     is_question = isinstance(j1, Question) or isinstance(j2, Question)
 
@@ -73,8 +79,7 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
         derived_sentence = nal_revision(j1, j2)  # S-->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
         derived_tasks.append(derived_task)
-
-    if not Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
+    elif not Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
         if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
             """
             # j1=M-->P, j2=S-->M
@@ -110,9 +115,6 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
             # j1=M-->P, j2=M-->S
             # Induction
             """
-            print("j1" + str(j1))
-            print("j2" + str(j2))
-            print('Induction')
             derived_sentence = nal_induction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Induction")
             derived_tasks.append(derived_task)
@@ -220,20 +222,6 @@ def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence
 
     :return: Task for derived_sentence
     """
-    # merge in the parent sentence's evidential bases
-    derived_sentence.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    if j2 is not None:
-        derived_sentence.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
-
+    #print(inference_rule + " Derived Task: " + str(derived_sentence) + " using j1: " + str(j1) + " j2: " + str(j2))
     derived_task = Task(derived_sentence)
-
-
-    # print info
-    # j1string = j1.get_formatted_string()
-    # j2string = "None" if j2 is None else j2.get_formatted_string()
-    # print(inference_rule + " derived new Task: " + str(
-    #    derived_task) + " from " + j1string + " and " + j2string)
-    # print("Derived with evidential base " + str(derived_sentence.stamp.evidential_base.base))
-
-
     return derived_task

@@ -41,7 +41,7 @@ class Sentence:
         return string
 
     @classmethod
-    def parse_sentence_from_string(cls, sentence_string: str):
+    def new_sentence_from_string(cls, sentence_string: str):
         """
             :param sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
 

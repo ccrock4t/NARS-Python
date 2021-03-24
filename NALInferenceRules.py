@@ -9,6 +9,8 @@ from NALGrammar import *
     Author: Christian Hahm
     Created: October 8, 2020
     Purpose: Defines the NAL inference rules
+            Assumes the given sentences do not have evidential overlap.
+            Does combine evidential bases in the Resultant Sentence.
 """
 
 """
@@ -112,6 +114,10 @@ def nal_revision(j1: Sentence, j2: Sentence):
     resultStatement = Statement(j1.statement.get_subject_term(), j1.statement.get_predicate_term(), j1.statement.copula)
     result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
 
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+
     return result
 
 
@@ -212,6 +218,7 @@ def nal_negation(j):
          Returns:
     """
     assert_sentence(j)
+    #todo return new Sentence
     j.value.frequency = 1 - j.value.frequency
     return j
 
@@ -250,6 +257,9 @@ def nal_conversion(j):
         punctuation = Punctuation.Question
 
     result = Sentence(resultStatement, resulttruth, punctuation)
+
+    # merge in the parent sentence's evidential base
+    result.stamp.evidential_base.merge_evidential_base_into_self(j.stamp.evidential_base)
 
     return result
 
@@ -310,6 +320,10 @@ def nal_deduction(j1: Sentence, j2: Sentence):
         punctuation = Punctuation.Question
 
     result = Sentence(resultStatement, resulttruth, punctuation)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
 
     return result
 
@@ -378,6 +392,10 @@ def nal_analogy(j1: Sentence, j2: Sentence):
 
     result = Sentence(resultStatement, resulttruth, punctuation)
 
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+
     return result
 
 
@@ -442,6 +460,10 @@ def nal_resemblance(j1: Sentence, j2: Sentence):
 
     result = Sentence(resultStatement, resulttruth, punctuation)
 
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+
     return result
 
 
@@ -495,6 +517,10 @@ def nal_abduction(j1: Sentence, j2: Sentence):
 
     result = Sentence(resultStatement, resulttruth, punctuation)
 
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+
     return result
 
 
@@ -541,6 +567,10 @@ def nal_induction(j1: Sentence, j2: Sentence):
 
     result = Sentence(resultStatement, resulttruth, punctuation)
 
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+
     return result
 
 
@@ -586,6 +616,10 @@ def nal_exemplification(j1: Sentence, j2: Sentence):
         punctuation = Punctuation.Question
 
     result = Sentence(resultStatement, resulttruth, punctuation)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
 
     return result
 
@@ -639,6 +673,10 @@ def nal_comparison(j1: Sentence, j2: Sentence):
         punctuation = Punctuation.Question
 
     result = Sentence(resultStatement, resulttruth, punctuation)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
+    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
 
     return result
 

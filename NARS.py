@@ -116,34 +116,23 @@ class NARS:
         if task.sentence.punctuation == Punctuation.Question or VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
             self.process_question(task)
         elif task.sentence.punctuation == Punctuation.Judgment:
-            self.process_judgment(task)
+            self.process_judgment_task(task)
 
-    def process_judgment(self, task: Task):
+    def process_judgment_task(self, task: Task):
         """
-            Processes a Narsese judgment task
+            Processes a Narsese Judgment Task
+
+            :param Judgment Task to process
         """
         assert_task(task)
 
+        j1 = task.sentence
+
         # get terms from sentence
-        statement_term = task.sentence.statement.term
-        subject_term = statement_term.get_subject_term()
-        predicate_term = statement_term.get_predicate_term()
-
-        #if statement_term.contains_variable(): return #todo handlep variables
-
+        statement_term = j1.statement.term
+        #if statement_term.contains_variable(): return #todo handle variables
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
-
-        # get subject-predicate concepts
-        subject_concept = self.memory.peek_concept(subject_term)
-        predicate_concept = self.memory.peek_concept(predicate_term)
-
-        # set task links if they don't exist
-        statement_concept.set_task_link(task)
-        subject_concept.set_task_link(task)
-        predicate_concept.set_task_link(task)
-
-        j1 = task.sentence
 
         if task.needs_initial_processing:
             """
@@ -151,16 +140,10 @@ class NARS:
                 
                 Revise this judgment with the most confident belief, then insert it into the belief table
             """
-            j2 = statement_concept.belief_table.peek()  # get most confident related_belief of the same content
-            if (j2 is not None) and (not j1.has_evidential_overlap(j2)) and (j2 not in j1.stamp.interacted_sentences):
-                # perform revision on the belief
-                derived_tasks = NARSInferenceEngine.do_inference(task.sentence, j2)
-                if len(derived_tasks) > 0:
-                    derived_task = derived_tasks[0]  # only 1 derived task in Revision
-                    self.overall_experience_buffer.put_new_item(derived_task)
-
+            # revise the judgment
+            self.process_judgment_sentence(j1, statement_concept)
             # add the judgment itself into concept's belief table
-            statement_concept.belief_table.insert(task.sentence)
+            statement_concept.belief_table.insert(j1)
             task.needs_initial_processing = False
         else:
             """
@@ -168,18 +151,34 @@ class NARS:
                 
                 Do local/forward inference on a related belief
             """
+            self.process_judgment_sentence(j1)
+
+
+    def process_judgment_sentence(self, j1, related_concept=None):
+        """
+            Processes a Judgment Sentence with a related belief.
+
+            :param j1 - judgment sentence to process
+            :param related_concept - (Optional) concept to process the judgment with
+        """
+        statement_term = j1.statement.term
+        #if statement_term.contains_variable(): return #todo handle variables
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
+        statement_concept = self.memory.peek_concept(statement_term)
+
+        if related_concept is None: # get a related concept
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
             if related_concept is None: return  # no related concepts!
 
-            j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+        j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
 
-            # can't process if no related belief, they have evidential overlap,
-            # or they have already interacted previously
-            if (j2 is None) or (j1.has_evidential_overlap(j2)) or (j2 in j1.stamp.interacted_sentences): return
+        # can't process if no related belief, they have evidential overlap,
+        # or they have already interacted previously
+        if (j2 is None) or (j1.has_evidential_overlap(j2)) or (j2 in j1.stamp.interacted_sentences): return
 
-            derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
-            for derived_task in derived_tasks:
-                self.overall_experience_buffer.put_new_item(derived_task)
+        derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
+        for derived_task in derived_tasks:
+            self.overall_experience_buffer.put_new_item(derived_task)
 
     def process_question(self, task):
         """

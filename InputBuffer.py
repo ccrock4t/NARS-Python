@@ -25,7 +25,7 @@ def add_input_string(input_string: str):
             GlobalGUI.print_to_output("Current cycle: " + str(Global.current_cycle_number))
             return
         else:
-            sentence = Sentence.parse_sentence_from_string(input_string)
+            sentence = Sentence.new_sentence_from_string(input_string)
             input_queue.put(item=sentence)
     except AssertionError as msg:
         GlobalGUI.print_to_output("INPUT REJECTED: " + str(msg))

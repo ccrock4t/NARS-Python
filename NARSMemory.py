@@ -158,23 +158,6 @@ class Concept:
         self.term_links.take(object=concept.term)
         concept.term_links.take(object=self.term)
 
-    def set_task_link(self, task: Task):
-        """
-            Add a task link if it doesn't exist, linking this concept to a task
-        """
-        assert_task(task)
-        if task in self.task_links:
-            return
-        self.task_links.put_new_item(task)
-
-    def remove_task_link(self, task: Task):
-        """
-            Remove a task link
-        """
-        assert_task(task)
-        assert (task in self.task_links), task + "must be in task links."
-        self.task_links.pop(task)
-
     def get_formatted_string(self):
         string = Global.ID_MARKER + str(self.id) + Global.ID_END_MARKER
         string = string + self.term.get_formatted_string()

@@ -9,17 +9,19 @@ from multiprocessing import Process
 from multiprocessing.queues import Queue
 
 from NALGrammar import Term, TruthValue, Sentence, Statement
-from NALInferenceRules import nal_abduction, nal_induction
+from NALInferenceRules import nal_abduction, nal_induction, nal_deduction, nal_revision
 from NALSyntax import Punctuation
 
 """
     Author: Christian Hahm
     Created: March 23, 2021
     Purpose: Unit Testing for NARS inference.
-    Tests the overall NARS ability to perform inference, not simply the inference engine.
-    This is not an exact science, since whether or not the tests pass depends not only the system's
-    capability to do inference, but also whether its control mechanism selects the proper objects for inference.
+        Tests the NARS' overall ability to perform inference, not simply the inference engine.
+        This is not an exact science, since whether or not the tests pass depends not only the system's
+        capability to do inference, but also whether its control mechanism selects the proper objects for inference.
 """
+
+
 # This is a Queue that behaves like stdout
 class StdoutQueue(Queue):
     def __init__(self,*args,**kwargs):
@@ -83,6 +85,35 @@ def initialize_multiprocess_queues():
     output_q = StdoutQueue()
     return input_judgment_q, input_question_q, output_q
 
+
+def revision():
+    """
+        Test first-order deduction:
+        j1: (S-->P). %1.0;0.9%
+        j2: (S-->P). %1.0;0.9%
+
+        :- (S-->P). %1.0;0.81%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    j2 = Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
+
+    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(nal_revision(j1,j2).get_formatted_string_no_id())
+
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Revision test failed: " + failed_criterion
+
+
 def first_order_deduction():
     """
         Test first-order deduction:
@@ -93,18 +124,18 @@ def first_order_deduction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.parse_sentence_from_string("(S-->M). %1.0;0.9%")
-    j2 = Sentence.parse_sentence_from_string("(M-->P). %1.0;0.9%")
+    j1 = Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    j2 = Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.parse_sentence_from_string("(S-->P)?"))
+    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
     process.join()
 
     success_criteria = []
-    success_criteria.append(Sentence.parse_sentence_from_string("(S-->P). %1.0;0.81%").get_formatted_string_no_id())
+    success_criteria.append(nal_deduction(j1,j2).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -122,12 +153,12 @@ def first_order_induction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.parse_sentence_from_string("(M-->S). %1.0;0.9%")
-    j2 = Sentence.parse_sentence_from_string("(M-->P). %1.0;0.9%")
+    j1 = Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
+    j2 = Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.parse_sentence_from_string("(S-->P)?"))
-    input_question_q.put(Sentence.parse_sentence_from_string("(P-->S)?"))
+    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(Sentence.new_sentence_from_string("(P-->S)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
@@ -153,12 +184,12 @@ def first_order_abduction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.parse_sentence_from_string("(S-->M). %1.0;0.9%")
-    j2 = Sentence.parse_sentence_from_string("(P-->M). %1.0;0.9%")
+    j1 = Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.parse_sentence_from_string("(S-->P)?"))
-    input_question_q.put(Sentence.parse_sentence_from_string("(P-->S)?"))
+    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(Sentence.new_sentence_from_string("(P-->S)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
@@ -172,8 +203,9 @@ def first_order_abduction():
 
     assert success,"TEST FAILURE: First-order Abduction test failed: " + failed_criterion
 
+def main():
+    revision()
 
-if __name__ == "__main__":
     """
         First-Order syllogism tests
     """
@@ -181,4 +213,7 @@ if __name__ == "__main__":
     first_order_induction()
     first_order_abduction()
 
-    print("All tests successfully passed.")
+    print("All Inference Tests successfully passed.")
+
+if __name__ == "__main__":
+    main()

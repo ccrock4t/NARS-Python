@@ -80,8 +80,7 @@ def test_bag_overflow():
     assert (items_added > NARS.Config.BAG_CAPACITY), "TEST FAILURE: For this test, add more items than the capacity"
     assert (testbag.count == NARS.Config.BAG_CAPACITY), "TEST FAILURE: Bag did not maintain capacity on overflow"
 
-
-if __name__ == "__main__":
+def main():
     """
         Table Tests
     """
@@ -98,4 +97,7 @@ if __name__ == "__main__":
     """
     test_bag_overflow()
 
-    print("All tests successfully passed.")
+    print("All Data Structure Tests successfully passed.")
+
+if __name__ == "__main__":
+    main()
