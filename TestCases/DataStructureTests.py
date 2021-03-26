@@ -1,8 +1,7 @@
 import NARSDataStructures
-from NALGrammar import *
-from NALSyntax import Punctuation
+import NALGrammar
+import NALSyntax
 import NARS
-from NARSMemory import Concept
 
 """
     Author: Christian Hahm
@@ -18,8 +17,9 @@ def test_table_removemax():
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(confidences)
     for c in confidences:
-        sentence = Judgment(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
-                            TruthValue(0.9, c))
+        sentence = NALGrammar.Judgment(
+            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.TruthValue(0.9, c))
         heap.insert(sentence)
     heapmax = heap.extract_max().value.confidence
     assert(heapmax == maximum), "TEST FAILURE: Heap did not properly retrieve maximum value"
@@ -34,8 +34,9 @@ def test_table_removemin():
     minimum = min(confidences)
     for c in confidences:
         #make sentence <a --> b>. %0.9;c%
-        sentence = Judgment(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
-                            TruthValue(0.9, c))
+        sentence = NALGrammar.Judgment(
+            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.TruthValue(0.9, c))
         heap.insert(sentence)
 
     heapmin = heap.extract_min().value.confidence
@@ -47,13 +48,13 @@ def test_concept_termlinking():
         Test if term links can be added and removed properly from a concept
     """
     testnars = NARS.NARS()
-    statement_concept = testnars.memory.peek_concept(Term.get_term_from_string("(A-->B)"))
-    conceptA = testnars.memory.peek_concept(Term.get_term_from_string("A"))
-    conceptB = testnars.memory.peek_concept(Term.get_term_from_string("B"))
+    statement_concept = testnars.memory.peek_concept(NALGrammar.Term.get_term_from_string("(A-->B)"))
+    conceptA = testnars.memory.peek_concept(NALGrammar.Term.get_term_from_string("A"))
+    conceptB = testnars.memory.peek_concept(NALGrammar.Term.get_term_from_string("B"))
 
     assert (statement_concept.term_links.count == 2), "TEST FAILURE: Concept " + str(statement_concept) + " does not have 2 termlinks"
-    assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink"
-    assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptB) + " does not have 1 termlink"
+    assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink. Has: " + str(conceptA.term_links.count)
+    assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptB) + " does not have 1 termlink. Has: " + str(conceptB.term_links.count)
 
     statement_concept.remove_term_link(conceptA) # remove concept A's termlink
 

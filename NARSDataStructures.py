@@ -1,9 +1,10 @@
-from depq import DEPQ
+import depq
 import Config
 import random
-from Global import GlobalGUI, Global
-import NALInferenceRules
+import Global
 import NALGrammar
+import NALSyntax
+import NARSMemory
 
 """
     Author: Christian Hahm
@@ -21,6 +22,7 @@ class Bag:
         An array of buckets, where each bucket holds items of a certain priority
         (e.g. 100 buckets, bucket 1 - hold items with 0.01 priority,  bucket 50 - hold items with 0.50 priority)
     """
+    next_item_id = 0
     def __init__(self, item_type):
         self.item_type = item_type  # the class of the objects  this bag stores (be wrapped in Item)
 
@@ -37,18 +39,21 @@ class Bag:
             self.buckets[i] = []
 
     def __contains__(self, object):
-        return (hash(object) in self.item_lookup_table)
+        return (hash(object) in self.item_lookup_table or str(object) in self.item_lookup_table)
 
     def __len__(self):
         return self.count
 
+    def __iter__(self):
+        return iter(self.item_lookup_table.values())
+
     def put_new_item(self, object):
         """
             Insert a new object in the bag - it will be wrapped in an item
-            The object/item can be accessed by object's key, which is the hash of its string representation.
+            The object/item can be accessed by object's key, which is the object's hash
         """
         assert (isinstance(object, self.item_type)), "object must be of type " + str(self.item_type)
-        item = Bag.Item(object)
+        item = Bag.Item(object,self)
         self.put(item)
 
     def put(self, item):
@@ -58,18 +63,17 @@ class Bag:
         assert (isinstance(item, Bag.Item)), "item must be of type " + str(Bag.Item)
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        key = hash(item.object)
-        if key not in self.item_lookup_table:
+        if item.key not in self.item_lookup_table:
             # put item into lookup table and bucket
-            self.item_lookup_table[key] = item
+            self.item_lookup_table[item.key] = item
             self.buckets[item.get_target_bucket_number()].append(item)
 
             # increase Bag count
             self.count = self.count + 1
 
             # Print to internal data GUI
-            if GlobalGUI.gui_use_internal_data:
-                GlobalGUI.print_to_output(msg=str(item), data_structure=self)
+            if Global.GlobalGUI.gui_use_internal_data:
+                Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self)
 
             # remove lowest priority item if over capacity
             if self.count > self.capacity:
@@ -93,9 +97,9 @@ class Bag:
                 item = self.item_lookup_table[key]
         return item
 
-    def take(self, object=None):
+    def take(self, key=None):
         """
-            Remove an item from the bag, either probabilistically or from its object
+            Remove an item from the bag, either probabilistically or from its key
 
             Input:
                 object - if object is not passed, probabilistically removes it's corresponding item from the bag
@@ -104,9 +108,9 @@ class Bag:
         if self.count == 0:
             return None  # no items
 
-        if object is None:
+        if key is None:
             return self._take_item_probabilistically()
-        return self._take_item_by_key(hash(object))
+        return self._take_item_by_key(key)
 
     def _take_item_by_key(self, key):
         assert (key in self.item_lookup_table), "Given key does not exist in this bag"
@@ -115,8 +119,8 @@ class Bag:
         self.count = self.count - 1  # decrement bag count
 
         # GUI
-        if GlobalGUI.gui_use_internal_data:
-            GlobalGUI.remove_from_output(str(item), data_structure=self)
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -128,13 +132,13 @@ class Bag:
         _, randidx = self._peek_item_probabilistically()
         item = self.buckets[self.current_bucket_number].pop(randidx)
         # remove item reference from lookup table
-        self.item_lookup_table.pop(hash(item.object))
+        self.item_lookup_table.pop(item.key)
         self.count = self.count - 1  # decrement bag count
 
         # update GUI
         # GUI
-        if GlobalGUI.gui_use_internal_data:
-            GlobalGUI.remove_from_output(str(item), data_structure=self)
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -155,15 +159,15 @@ class Bag:
         # remove the item
         item = self.buckets[self.current_bucket_number].pop(randidx)
         # remove item reference from lookup table
-        self.item_lookup_table.pop(hash(item.object))
+        self.item_lookup_table.pop(item.key)
         self.count = self.count - 1  # decrement bag count
 
         # restore original index
         self.current_bucket_number = oldidx
 
         # update GUI
-        if GlobalGUI.gui_use_internal_data:
-            GlobalGUI.remove_from_output(str(item), data_structure=self)
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -215,6 +219,10 @@ class Bag:
         """
         self.current_bucket_number = (self.current_bucket_number % self.number_of_buckets) + 1
 
+    def get_next_item_id(self):
+        self.next_item_id = self.next_item_id + 1
+        return self.next_item_id - 1
+
     class Item:
         """
             Item in a bag. Wraps the objects stored in this bag
@@ -222,10 +230,14 @@ class Bag:
             Consists of:
                 object (e.g. Concept, Task, etc.)
 
-                budget ($priority;durability;quality$)
+                budget ($priority$)
         """
+        def __init__(self, object, containing_bag):
+            """
 
-        def __init__(self, object):
+            :param object: object to wrap in the item
+            :param containing_bag: the Bag instance that will contain this item
+            """
             self.object = object
             if isinstance(object, Task) and isinstance(object.sentence, NALGrammar.Judgment):
                     priority = object.sentence.value.confidence
@@ -233,9 +245,16 @@ class Bag:
                 priority = 0.99
             self.budget = Bag.Item.Budget(priority=priority)
             self.current_bucket_number = self.get_target_bucket_number()
+            self.id = containing_bag.get_next_item_id()
+            if isinstance(object, NARSMemory.Concept):
+                # a concept is named by its term
+                self.key = str(object.term)
+            else:
+                self.key = self.id
 
         def __str__(self):
-            return str(self.object) + " " + GlobalGUI.GUI_PRIORITY_SYMBOL + "{:.2f}".format(self.budget.priority) + GlobalGUI.GUI_PRIORITY_SYMBOL
+            return Global.Global.ID_MARKER + str(self.id) + Global.Global.ID_END_MARKER + str(self.object) + " " + Global.GlobalGUI.GUI_PRIORITY_SYMBOL + "{:.2f}".format(self.budget.priority) + Global.GlobalGUI.GUI_PRIORITY_SYMBOL
+
 
         def get_target_bucket_number(self):
             """
@@ -276,9 +295,9 @@ class Table:
         It purges lowest-confidence items when it overflows.
     """
 
-    def __init__(self, punctuation=NALGrammar.Punctuation.Judgment, maxsize=Config.TABLE_CAPACITY):
+    def __init__(self, punctuation=NALSyntax.Punctuation.Judgment, maxsize=Config.TABLE_CAPACITY):
         self.punctuation = punctuation
-        self.depq = DEPQ(iterable=None, maxlen=None)  # maxheap depq
+        self.depq = depq.DEPQ(iterable=None, maxlen=None)  # maxheap depq
         self.maxsize = maxsize
 
     def insert(self, sentence):
@@ -359,21 +378,18 @@ class Task:
        NARS Task
     """
 
-    def __init__(self, sentence: NALGrammar.Sentence, is_input_task=False):
+    def __init__(self, sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
-        self.creation_timestamp: int = Global.current_cycle_number  # save the task's creation time
+        self.creation_timestamp: int = Global.Global.current_cycle_number  # save the task's creation time
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
-
         #only used for question tasks
         self.needs_to_be_answered_in_output: bool = True
 
-    def __hash__(self):
-        return self.sentence.stamp.id
-
     def __str__(self):
-        return self.sentence.get_formatted_string()
+        return self.sentence.get_formatted_string_no_id()
+
 
 
 # Asserts

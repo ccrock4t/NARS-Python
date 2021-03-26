@@ -3,14 +3,13 @@
     Created: March 8, 2021
     Purpose: Identifies and performs inference on 2 related sentences
 """
-from Global import GlobalGUI
-from NALGrammar import assert_sentence, Sentence, Copula, Question, Punctuation
-from NALInferenceRules import nal_deduction, nal_revision, nal_induction, nal_abduction, nal_comparison, nal_analogy, \
-    nal_exemplification, nal_resemblance, nal_conversion
-from NARSDataStructures import assert_task, Task
+import NALGrammar
+import NALInferenceRules
+import NARSDataStructures
+import NALSyntax
 
 
-def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
+def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
@@ -23,8 +22,8 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
 
         :returns An array of the derived Tasks, or None if the inputs have evidential overlap
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
 
     """
     ===============================================
@@ -46,19 +45,19 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
 
     # need to check check for tautology if 1 of the copulas is not symmetric
     # Catches (S-->P,P<->S) and (S-->P, P-->S) and (P-->S,S<->P) and (P-->S, S-->P)
-    tautology = (not Copula.is_symmetric(j1_copula) or not Copula.is_symmetric(j2_copula)) and \
+    tautology = (not NALSyntax.Copula.is_symmetric(j1_copula) or not NALSyntax.Copula.is_symmetric(j2_copula)) and \
                 (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) #
 
     # Catches (S-->P,S<->P) and (S<->P,S-->P)
     tautology = tautology or \
-                ((not Copula.is_symmetric(j1_copula) and Copula.is_symmetric(j2_copula)) or \
-                (Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula))) and \
+                ((not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula)) or \
+                 (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula))) and \
                 (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term)
 
     if tautology:
         return derived_tasks  # don't do inference, it will result in tautology
 
-    is_question = isinstance(j1, Question) or isinstance(j2, Question)
+    is_question = isinstance(j1, NALGrammar.Question) or isinstance(j2, NALGrammar.Question)
 
     """
     ===============================================
@@ -76,10 +75,10 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
         """
         if is_question: return # can't do revision with questions
 
-        derived_sentence = nal_revision(j1, j2)  # S-->P
+        derived_sentence = NALInferenceRules.nal_revision(j1, j2)  # S-->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
         derived_tasks.append(derived_task)
-    elif not Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
+    elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
         if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
             """
             # j1=M-->P, j2=S-->M
@@ -95,14 +94,14 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
                 j1, j2 = j2, j1  # swap sentences
                 swapped = True
             # deduction
-            derived_sentence = nal_deduction(j1, j2)  # S-->P or P-->S
+            derived_sentence = NALInferenceRules.nal_deduction(j1, j2)  # S-->P or P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Deduction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Exemplification
             """
-            derived_sentence = nal_exemplification(j2, j1)  # P-->S or S-->P
+            derived_sentence = NALInferenceRules.nal_exemplification(j2, j1)  # P-->S or S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Exemplification")
             derived_tasks.append(derived_task)
@@ -115,20 +114,20 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
             # j1=M-->P, j2=M-->S
             # Induction
             """
-            derived_sentence = nal_induction(j1, j2)  # S-->P
+            derived_sentence = NALInferenceRules.nal_induction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Induction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Induction
             """
-            derived_sentence = nal_induction(j2, j1)  # P-->S
+            derived_sentence = NALInferenceRules.nal_induction(j2, j1)  # P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Induction")
             derived_tasks.append(derived_task)
 
             # comparison
-            derived_sentence = nal_comparison(j1, j2)  # S<->P
+            derived_sentence = NALInferenceRules.nal_comparison(j1, j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
             derived_tasks.append(derived_task)
         elif j1_predicate_term == j2_predicate_term:
@@ -136,50 +135,50 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
             # j1=P-->M, j2=S-->M
             # Abduction
             """
-            derived_sentence = nal_abduction(j1, j2)  # S-->P
+            derived_sentence = NALInferenceRules.nal_abduction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Abduction
             """
-            derived_sentence = nal_abduction(j2, j1)  # P-->S
+            derived_sentence = NALInferenceRules.nal_abduction(j2, j1)  # P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Abduction")
             derived_tasks.append(derived_task)
 
             # comparison
-            derived_sentence = nal_comparison(j1, j2)  # S<->P
+            derived_sentence = NALInferenceRules.nal_comparison(j1, j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
             derived_tasks.append(derived_task)
         else:
             assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
-    elif not Copula.is_symmetric(j1_copula) and Copula.is_symmetric(j2_copula):
+    elif not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
         """
         # j1=M-->P or P-->M
         # j2=S<->M or M<->S
         # Analogy
         """
 
-        derived_sentence = nal_analogy(j1, j2)  # S-->P or P-->S
+        derived_sentence = NALInferenceRules.nal_analogy(j1, j2)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Analogy")
         derived_tasks.append(derived_task)
-    elif Copula.is_symmetric(j1_copula) and not Copula.is_symmetric(j2_copula):
+    elif NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
         """
         # j1=M<->P or P<->M
         # j2=S-->M or M-->S
         # Swapped Analogy
         """
-        derived_sentence = nal_analogy(j2, j1)  # S-->P or P-->S
+        derived_sentence = NALInferenceRules.nal_analogy(j2, j1)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Swapped Analogy")
         derived_tasks.append(derived_task)
-    elif Copula.is_symmetric(j1_copula) and Copula.is_symmetric(j2_copula):
+    elif NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
         """
         # j1=M<->P or P<->M
         # j2=S<->M or M<->S
         # Resemblance
         """
-        derived_sentence = nal_resemblance(j1, j2)  # S<->P
+        derived_sentence = NALInferenceRules.nal_resemblance(j1, j2)  # S<->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Resemblance")
         derived_tasks.append(derived_task)
 
@@ -198,8 +197,8 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
         """
             # apply the Conversion rule on all inheritance statements
         """
-        if derived_task.sentence.statement.copula == Copula.Inheritance:
-            derived_sentence = nal_conversion(derived_task.sentence)
+        if derived_task.sentence.statement.copula == NALSyntax.Copula.Inheritance:
+            derived_sentence = NALInferenceRules.nal_conversion(derived_task.sentence)
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1=derived_task.sentence, j2=None, inference_rule="Conversion")
             conversion_tasks_to_append.append(derived_task)
 
@@ -209,7 +208,7 @@ def do_inference(j1: Sentence, j2: Sentence) -> [Task]:
     return derived_tasks
 
 
-def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence, j2: Sentence,
+def make_new_task_from_derived_sentence(derived_sentence: NALGrammar.Sentence, j1: NALGrammar.Sentence, j2: NALGrammar.Sentence,
                                         inference_rule="Inference"):
     """
             Makes a new task from a derived sentence.
@@ -223,5 +222,5 @@ def make_new_task_from_derived_sentence(derived_sentence: Sentence, j1: Sentence
     :return: Task for derived_sentence
     """
     #print(inference_rule + " Derived Task: " + str(derived_sentence) + " using j1: " + str(j1) + " j2: " + str(j2))
-    derived_task = Task(derived_sentence)
+    derived_task = NARSDataStructures.Task(derived_sentence)
     return derived_task

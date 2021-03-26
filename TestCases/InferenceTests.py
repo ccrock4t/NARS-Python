@@ -1,16 +1,12 @@
 import multiprocessing
-import os
 import sys
 import threading
 
 import InputBuffer
 import NARS
-from multiprocessing import Process
 from multiprocessing.queues import Queue
-
-from NALGrammar import Term, TruthValue, Sentence, Statement
-from NALInferenceRules import nal_abduction, nal_induction, nal_deduction, nal_revision
-from NALSyntax import Punctuation
+import NALGrammar
+import NALInferenceRules
 
 """
     Author: Christian Hahm
@@ -96,18 +92,18 @@ def revision():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
-    j2 = Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
     process.join()
 
     success_criteria = []
-    success_criteria.append(nal_revision(j1,j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.nal_revision(j1, j2).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -124,18 +120,18 @@ def first_order_deduction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
-    j2 = Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
     process.join()
 
     success_criteria = []
-    success_criteria.append(nal_deduction(j1,j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.nal_deduction(j1, j2).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -153,20 +149,20 @@ def first_order_induction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
-    j2 = Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
-    input_question_q.put(Sentence.new_sentence_from_string("(P-->S)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(P-->S)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
     process.join()
 
     success_criteria = []
-    success_criteria.append(nal_induction(j1,j2).get_formatted_string_no_id())
-    success_criteria.append(nal_induction(j2,j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.nal_induction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.nal_induction(j2, j1).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -184,20 +180,20 @@ def first_order_abduction():
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
-    j1 = Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
-    j2 = Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(Sentence.new_sentence_from_string("(S-->P)?"))
-    input_question_q.put(Sentence.new_sentence_from_string("(P-->S)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(P-->S)?"))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
     process.join()
 
     success_criteria = []
-    success_criteria.append(nal_abduction(j1,j2).get_formatted_string_no_id())
-    success_criteria.append(nal_abduction(j2,j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.nal_abduction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.nal_abduction(j2, j1).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 

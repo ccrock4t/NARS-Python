@@ -1,8 +1,7 @@
-from random import random
-
+import random
 import NALGrammar
-from NALGrammar import *
-from NARSDataStructures import Bag, assert_task, Table, Task
+import NALSyntax
+import NARSDataStructures
 
 """
     Author: Christian Hahm
@@ -15,9 +14,10 @@ class Memory:
     """
         NARS Memory
     """
+    next_stamp_id = 0
 
     def __init__(self):
-        self.concepts_bag = Bag(item_type=Concept)
+        self.concepts_bag = NARSDataStructures.Bag(item_type=Concept)
 
     def get_number_of_concepts(self):
         """
@@ -25,21 +25,21 @@ class Memory:
         """
         return self.concepts_bag.count
 
-    def conceptualize_term(self, term: Term):
+    def conceptualize_term(self, term):
         """
             Create a new concept from a term and add it to the bag
 
             :param term: The term naming the concept to create
             :returns New Concept created from the term
         """
-        assert_term(term)
-        assert (self.concepts_bag.peek(hash(term)) is None), "Cannot create new concept. Concept already exists."
+        NALGrammar.assert_term(term)
+        assert (self.concepts_bag.peek(term) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         concept = Concept(term)
         self.concepts_bag.put_new_item(concept)
         return concept
 
-    def peek_concept(self, term: Term):
+    def peek_concept(self, term):
         """
               Peek the concept from memory using its term,
               AND create it if it doesn't exist.
@@ -51,18 +51,21 @@ class Memory:
               :param term: The term naming the concept to peek
               :return Concept named by the term
           """
-        if isinstance(term, VariableTerm): return None #todo created concepts for closed variable terms
-        concept_item = self.concepts_bag.peek(hash(term))
-        if concept_item is not None: return concept_item.object  # return if got concept
+        if isinstance(term, NALGrammar.VariableTerm): return None #todo created concepts for closed variable terms
+        concept_item = self.concepts_bag.peek(str(term)) # peek from bag by converting term to key
+        if concept_item is not None:
+            return concept_item.object  # return if got concept
+
         # concept not found
-        if isinstance(term, StatementTerm) and term.connector == Copula.Similarity:
+        if isinstance(term, NALGrammar.StatementTerm) and term.connector == NALSyntax.Copula.Similarity:
             #if its a similarity statement term S<->P, check for equivalent Concept P<->S
-            concept_item = self.concepts_bag.peek(hash(term.get_reverse_term_string()))
+            concept_item = self.concepts_bag.peek(term.get_reverse_term_string())
             if concept_item is not None: return concept_item.object  # return if got concept
 
         # it must be created unless it contains a Variable Term, and potentially its sub-concepts
         if not term.contains_variable():
             concept = self.conceptualize_term(term)
+
         if isinstance(term, NALGrammar.CompoundTerm):
             for subterm in term.subterms:
                 # get/create subterm concepts
@@ -83,44 +86,46 @@ class Memory:
         """
         related_concept = None
 
-        if isinstance(concept.term, StatementTerm):
+        if isinstance(concept.term, NALGrammar.StatementTerm):
             subject_term = concept.term.get_subject_term()
             predicate_term = concept.term.get_predicate_term()
 
-            related_concept_from_subject = self.peek_concept(subject_term).term_links.peek().object
-            related_concept_from_predicate = self.peek_concept(predicate_term).term_links.peek().object
+            related_concept_item_from_subject = self.peek_concept(subject_term).term_links.peek()
+            related_concept_item_from_predicate = self.peek_concept(predicate_term).term_links.peek()
 
-            if related_concept_from_subject is not None and related_concept_from_predicate is None and related_concept_from_subject is not concept:  # none from subject
-                related_concept = related_concept_from_subject
-            elif related_concept_from_subject is None and related_concept_from_predicate is not None and related_concept_from_predicate is not concept:  # none from predicate
-                related_concept = related_concept_from_predicate
-            elif related_concept_from_subject is not None and related_concept_from_predicate is not None:  # one from both
-                rand = random()
+            if related_concept_item_from_subject is not None and related_concept_item_from_predicate is None and related_concept_item_from_subject is not concept:  # none from subject
+                related_concept = related_concept_item_from_subject.object
+            elif related_concept_item_from_subject is None and related_concept_item_from_predicate is not None and related_concept_item_from_predicate is not concept:  # none from predicate
+                related_concept = related_concept_item_from_predicate.object
+            elif related_concept_item_from_subject is not None and related_concept_item_from_predicate is not None:  # one from both
+                rand = random.random()
                 if rand < 0.5:
-                    related_concept = related_concept_from_subject
+                    related_concept = related_concept_item_from_subject.object
                 elif rand >= 0.5:
-                    related_concept = related_concept_from_predicate
+                    related_concept = related_concept_item_from_predicate.object
 
         return related_concept
 
     def forget(self, term):
-        assert_term(term)
+        #todo
+        NALGrammar.assert_term(term)
+
+    @classmethod
+    def get_next_stamp_id(cls):
+        cls.next_stamp_id = cls.next_stamp_id + 1
+        return cls.next_stamp_id - 1
 
 
 class Concept:
     """
         NARS Concept
     """
-    next_concept_id = 0 #for faster accessing
-
     def __init__(self, term):
-        assert_term(term)
-        self.id = Concept.get_next_concept_id()
+        NALGrammar.assert_term(term)
         self.term = term  # concept's unique term
-        self.term_links = Bag(item_type=Concept)  # Bag of related concepts (related by term)
-        self.task_links = Bag(item_type=Task)  # Bag of related tasks
-        self.belief_table = Table(Punctuation.Judgment)
-        self.desire_table = Table(Punctuation.Goal)
+        self.term_links = NARSDataStructures.Bag(item_type=Concept)  # Bag of related concepts (related by term)
+        self.belief_table = NARSDataStructures.Table(NALSyntax.Punctuation.Judgment)
+        self.desire_table = NARSDataStructures.Table(NALSyntax.Punctuation.Goal)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -130,14 +135,9 @@ class Concept:
 
     def __hash__(self):
         """
-            A concept is named by its term
+            Warning -- hash will return a different number between different python sessions
         """
-        return hash(self.term)
-
-    @classmethod
-    def get_next_concept_id(cls):
-        cls.next_concept_id = cls.next_concept_id + 1
-        return cls.next_concept_id - 1
+        return hash(str(self))
 
     def set_term_link(self, concept):
         """
@@ -155,13 +155,11 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept.term in self.term_links), concept.term + "must be in term links."
-        self.term_links.take(object=concept.term)
-        concept.term_links.take(object=self.term)
+        self.term_links.take(key=str(concept.term))
+        concept.term_links.take(key=str(self.term))
 
     def get_formatted_string(self):
-        string = Global.ID_MARKER + str(self.id) + Global.ID_END_MARKER
-        string = string + self.term.get_formatted_string()
-        return string
+        return self.term.get_formatted_string()
 
 
 # Asserts

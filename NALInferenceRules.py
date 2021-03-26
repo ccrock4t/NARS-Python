@@ -1,5 +1,6 @@
 import Config
-from NALGrammar import *
+import NALGrammar
+import NALSyntax
 
 """
 ==== ==== ==== ==== ==== ====
@@ -78,7 +79,7 @@ def bnot(arg):
 """
 
 
-def nal_revision(j1: Sentence, j2: Sentence):
+def nal_revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Revision Rule
 
@@ -94,8 +95,8 @@ def nal_revision(j1: Sentence, j2: Sentence):
         Returns:
           :- Sentence (Statement <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     assert (
                 j1.statement.term.get_formatted_string() == j2.statement.term.get_formatted_string() or j1.statement.term.get_formatted_string() == j2.statement.term.get_reverse_term_string()), "Cannot revise sentences for 2 different statements"
 
@@ -109,10 +110,10 @@ def nal_revision(j1: Sentence, j2: Sentence):
     f3, c3 = getfreqconf_fromevidence(wp3, w3)
 
     # Create the resultant sentence
-    result_truth = TruthValue(f3, c3)
+    result_truth = NALGrammar.TruthValue(f3, c3)
 
-    result_statement = Statement(j1.statement.get_subject_term(), j1.statement.get_predicate_term(), j1.statement.copula)
-    result = Judgment(result_statement, result_truth)
+    result_statement = NALGrammar.Statement(j1.statement.get_subject_term(), j1.statement.get_predicate_term(), j1.statement.copula)
+    result = NALGrammar.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -121,7 +122,7 @@ def nal_revision(j1: Sentence, j2: Sentence):
     return result
 
 
-def nal_choice(j1, j2):
+def nal_choice(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
          Choice Rule
 
@@ -139,8 +140,8 @@ def nal_choice(j1, j2):
          Returns:
            j1 or j2, depending on which is better according to the choice rule
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     # Subject Predicate
     subjpred1 = j1.subject_predicate
     subjpred2 = j2.subject_predicate
@@ -217,14 +218,14 @@ def nal_negation(j):
 
          Returns:
     """
-    assert_sentence(j)
+    NALGrammar.assert_sentence(j)
     #todo return new Sentence
     j.value.frequency = 1 - j.value.frequency
     return j
 
 
 
-def nal_conversion(j):
+def nal_conversion(j: NALGrammar.Sentence):
     """
         Conversion Rule
 
@@ -239,20 +240,20 @@ def nal_conversion(j):
         Returns:
             :- Sentence (P --> S <f2, c2>)
     """
-    assert_sentence(j)
+    NALGrammar.assert_sentence(j)
     # Statement
-    result_statement = Statement(j.statement.get_predicate_term(),
-                                j.statement.get_subject_term(), Copula.Inheritance)
+    result_statement = NALGrammar.Statement(j.statement.get_predicate_term(),
+                                j.statement.get_subject_term(), NALSyntax.Copula.Inheritance)
 
-    if j.punctuation == Punctuation.Judgment:
+    if j.punctuation == NALSyntax.Punctuation.Judgment:
         # compute values of combined evidence
         wp = band(j.value.frequency, j.value.confidence)
         w = wp
         f2, c2 = getfreqconf_fromevidence(wp, w)
-        result_truth = TruthValue(f2, c2)
-        result = Judgment(result_statement, result_truth)
-    elif j.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentence's evidential base
     result.stamp.evidential_base.merge_evidential_base_into_self(j.stamp.evidential_base)
@@ -277,7 +278,7 @@ def nal_contrapositive(j1, j2):
 """
 
 
-def nal_deduction(j1: Sentence, j2: Sentence):
+def nal_deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Deduction (Strong syllogism)
 
@@ -295,24 +296,24 @@ def nal_deduction(j1: Sentence, j2: Sentence):
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     # Statement
-    result_statement = Statement(j2.statement.get_subject_term(),
-                                j1.statement.get_predicate_term(), Copula.Inheritance)
+    result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+                                j1.statement.get_predicate_term(), NALSyntax.Copula.Inheritance)
 
 
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
         # compute values of combined evidence
         f3 = band(f1, f2)
         c3 = band(f1, f2, c1, c2)
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -321,7 +322,7 @@ def nal_deduction(j1: Sentence, j2: Sentence):
     return result
 
 
-def nal_analogy(j1: Sentence, j2: Sentence):
+def nal_analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Analogy (Strong syllogism)
 
@@ -346,41 +347,41 @@ def nal_analogy(j1: Sentence, j2: Sentence):
             :- Sentence (P --> S <f3, c3>)
 
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         #j1=M-->P, j2=S<->M
-        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
-                                    Copula.Inheritance) # S-->P
+        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
+                                    NALSyntax.Copula.Inheritance) # S-->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M-->P, j2=M<->S
-        result_statement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
-                                    Copula.Inheritance) # S-->P
+        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
+                                    NALSyntax.Copula.Inheritance) # S-->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1=P-->M, j2=S<->M
-        result_statement = Statement(j1.statement.get_subject_term(), j2.statement.get_subject_term(),
-                                    Copula.Inheritance) # P-->S
+        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(), j2.statement.get_subject_term(),
+                                    NALSyntax.Copula.Inheritance) # P-->S
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P-->M, j2=M<->S
-        result_statement = Statement(j1.statement.get_subject_term(), j2.statement.get_predicate_term(),
-                                    Copula.Inheritance) # P-->S
+        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(), j2.statement.get_predicate_term(),
+                                    NALSyntax.Copula.Inheritance) # P-->S
     else:
         assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     result = None
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
         # compute values of combined evidence
         f3 = band(f1, f2)
         c3 = band(f2, c1, c2)
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -389,7 +390,7 @@ def nal_analogy(j1: Sentence, j2: Sentence):
     return result
 
 
-def nal_resemblance(j1: Sentence, j2: Sentence):
+def nal_resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Resemblance (Strong syllogism)
 
@@ -411,40 +412,40 @@ def nal_resemblance(j1: Sentence, j2: Sentence):
         Returns:
             :- Sentence (S <-> P <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         # j1=M<->P, j2=S<->M
-        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
-                                    Copula.Inheritance)  # S<->P
+        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
+                                    NALSyntax.Copula.Inheritance)  # S<->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M<->P, j2=M<->S
-        result_statement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
-                                    Copula.Inheritance)  # S<->P
+        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
+                                    NALSyntax.Copula.Inheritance)  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1=P<->M, j2=S<->M
-        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(),
-                                    Copula.Inheritance)  # S<->P
+        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(),
+                                    NALSyntax.Copula.Inheritance)  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P<->M, j2=M<->S
-        result_statement = Statement(j2.statement.get_predicate_term(), j2.statement.get_subject_term(),
-                                    Copula.Inheritance)  # S<->P
+        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j2.statement.get_subject_term(),
+                                    NALSyntax.Copula.Inheritance)  # S<->P
     else:
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
         f3 = band(f1, f2)
         c3 = band(bor(f1, f2), c1, c2)
 
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -460,7 +461,7 @@ def nal_resemblance(j1: Sentence, j2: Sentence):
 """
 
 
-def nal_abduction(j1: Sentence, j2: Sentence):
+def nal_abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Abduction (Weak syllogism)
 
@@ -480,13 +481,13 @@ def nal_abduction(j1: Sentence, j2: Sentence):
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
 
     # Statement
-    result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Inheritance)
+    result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), NALSyntax.Copula.Inheritance)
 
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
@@ -494,10 +495,10 @@ def nal_abduction(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = band(f1, c1, c2)
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -506,7 +507,7 @@ def nal_abduction(j1: Sentence, j2: Sentence):
     return result
 
 
-def nal_induction(j1: Sentence, j2: Sentence):
+def nal_induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Induction (Weak syllogism)
 
@@ -526,13 +527,13 @@ def nal_induction(j1: Sentence, j2: Sentence):
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     # Statement
-    result_statement = Statement(j2.statement.get_predicate_term(),
-                                j1.statement.get_predicate_term(), Copula.Inheritance)
+    result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+                                j1.statement.get_predicate_term(), NALSyntax.Copula.Inheritance)
 
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
@@ -540,10 +541,10 @@ def nal_induction(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = band(f2, c1, c2)
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -552,7 +553,7 @@ def nal_induction(j1: Sentence, j2: Sentence):
     return result
 
 
-def nal_exemplification(j1: Sentence, j2: Sentence):
+def nal_exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Exemplification (Weak syllogism)
 
@@ -572,13 +573,13 @@ def nal_exemplification(j1: Sentence, j2: Sentence):
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     # Statement
-    result_statement = Statement(j2.statement.get_predicate_term(),
-                                j1.statement.get_subject_term(), Copula.Inheritance)
+    result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+                                j1.statement.get_subject_term(), NALSyntax.Copula.Inheritance)
 
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
@@ -586,10 +587,10 @@ def nal_exemplification(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = wp
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
     result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
@@ -597,7 +598,7 @@ def nal_exemplification(j1: Sentence, j2: Sentence):
     return result
 
 
-def nal_comparison(j1: Sentence, j2: Sentence):
+def nal_comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Comparison (Weak syllogism)
 
@@ -619,18 +620,18 @@ def nal_comparison(j1: Sentence, j2: Sentence):
         Returns:
             :- Sentence (S <-> P <f3, c3>)
     """
-    assert_sentence(j1)
-    assert_sentence(j2)
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        result_statement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(), Copula.Similarity)
+        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(), NALSyntax.Copula.Similarity)
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Similarity)
+        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), NALSyntax.Copula.Similarity)
     else:
         assert(False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
@@ -638,10 +639,10 @@ def nal_comparison(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = band(bor(f1, f2), c1, c2)
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        result_truth = TruthValue(f3, c3)
-        result = Judgment(result_statement, result_truth)
-    elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        result = Question(result_statement)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -685,7 +686,7 @@ def getevidence_fromfreqconf(f, c):
     return wp, w, w - wp
 
 
-def gettruthvalues_from2sentences(j1: Sentence, j2: Sentence):
+def gettruthvalues_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Input:
             j1: Statement <f1, c1>
@@ -697,7 +698,7 @@ def gettruthvalues_from2sentences(j1: Sentence, j2: Sentence):
     return gettruthvalues_fromsentence(j1), gettruthvalues_fromsentence(j2)
 
 
-def gettruthvalues_fromsentence(j: Sentence):
+def gettruthvalues_fromsentence(j: NALGrammar.Sentence):
     """
         Input:
             j: Statement <f, c>
@@ -707,7 +708,7 @@ def gettruthvalues_fromsentence(j: Sentence):
     return j.value.frequency, j.value.confidence
 
 
-def getevidence_from2sentences(j1: Sentence, j2: Sentence):
+def getevidence_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Input:
             j1: Statement <f1, c1>

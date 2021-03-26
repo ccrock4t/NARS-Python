@@ -1,8 +1,8 @@
 import NARSDataStructures
-from NALGrammar import *
-from NALSyntax import Punctuation
+import NALGrammar
+import NALSyntax
 import NARS
-from NARSMemory import Concept
+import NARSMemory
 
 """
     Author: Christian Hahm
@@ -11,19 +11,19 @@ from NARSMemory import Concept
 """
 
 def calculate_syntactic_complexity_test():
-    atomic_term = Term.get_term_from_string("A")
+    atomic_term = NALGrammar.Term.get_term_from_string("A")
     atomic_term_complexity = 1
 
-    singleton_set_compound_term = Term.get_term_from_string("[A]")
+    singleton_set_compound_term = NALGrammar.Term.get_term_from_string("[A]")
     singleton_set_compound_term_complexity = 2
 
-    extensional_set_compound_term = Term.get_term_from_string("{A,B}")
+    extensional_set_compound_term = NALGrammar.Term.get_term_from_string("{A,B}")
     extensional_set_compound_term_complexity = 3
 
-    singleton_set_internal_compound_term = Term.get_term_from_string("[(*,A,B)]")
+    singleton_set_internal_compound_term = NALGrammar.Term.get_term_from_string("[(*,A,B)]")
     singleton_set_internal_compound_term_complexity = 4
 
-    statement_term = Term.get_term_from_string("(A-->B)")
+    statement_term = NALGrammar.Term.get_term_from_string("(A-->B)")
     statement_term_complexity = 3
 
     assert atomic_term.calculate_syntactic_complexity() == atomic_term_complexity

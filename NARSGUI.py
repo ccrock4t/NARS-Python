@@ -1,5 +1,5 @@
+import Global
 import InputBuffer
-from Global import GlobalGUI, Global
 import tkinter as tk
 
 """
@@ -10,20 +10,20 @@ def execute_gui():
     """
         Setup and run 2 windows on a single thread
     """
-    if GlobalGUI.gui_use_interface:
+    if Global.GlobalGUI.gui_use_interface:
         # launch internal data GUI
         window = tk.Tk()
         window.title("NARS in Python - Interface")
         window.geometry('750x500')
         execute_interface_gui(window)
 
-        if GlobalGUI.gui_use_internal_data:
+        if Global.GlobalGUI.gui_use_internal_data:
             # launch GUI
             toplevel = tk.Toplevel()
             toplevel.title("NARS in Python - Internal Data")
             toplevel.geometry('650x500')
             execute_internal_gui(toplevel)
-    elif GlobalGUI.gui_use_internal_data:
+    elif Global.GlobalGUI.gui_use_internal_data:
         # launch GUI
         window = tk.Tk()
         window.title("NARS in Python - Internal Data")
@@ -40,24 +40,24 @@ def execute_internal_gui(window):
     output_width = 50
 
     # Task Buffer Output
-    GlobalGUI.gui_buffer_output_label = tk.Label(window, text="Task Buffer: 0")
-    GlobalGUI.gui_buffer_output_label.grid(row=0, column=0, sticky='w')
+    Global.GlobalGUI.gui_buffer_output_label = tk.Label(window, text="Task Buffer: 0")
+    Global.GlobalGUI.gui_buffer_output_label.grid(row=0, column=0, sticky='w')
 
     buffer_scrollbar = tk.Scrollbar(window)
     buffer_scrollbar.grid(row=1, column=2, sticky='ns')
-    GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
-                                                         yscrollcommand=buffer_scrollbar.set)
-    GlobalGUI.gui_experience_buffer_listbox.grid(row=1, column=0, columnspan=2)
+    Global.GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
+                                                                yscrollcommand=buffer_scrollbar.set)
+    Global.GlobalGUI.gui_experience_buffer_listbox.grid(row=1, column=0, columnspan=2)
 
     # Memory Output
-    GlobalGUI.gui_concepts_output_label = tk.Label(window, text="Concepts: 0")
-    GlobalGUI.gui_concepts_output_label.grid(row=0, column=3, sticky='w')
+    Global.GlobalGUI.gui_concepts_output_label = tk.Label(window, text="Concepts: 0")
+    Global.GlobalGUI.gui_concepts_output_label.grid(row=0, column=3, sticky='w')
 
     concept_bag_scrollbar = tk.Scrollbar(window)
     concept_bag_scrollbar.grid(row=1, column=5, sticky='ns')
-    GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
-                                                   yscrollcommand=concept_bag_scrollbar.set)
-    GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
+    Global.GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
+                                                          yscrollcommand=concept_bag_scrollbar.set)
+    Global.GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
 
     def concept_click_callback(event):
         """
@@ -68,11 +68,12 @@ def execute_internal_gui(window):
         """
         selection = event.widget.curselection()
         if selection:
-            GlobalGUI.set_paused(True)
+            Global.GlobalGUI.set_paused(True)
             index = selection[0]
             concept_term_string = event.widget.get(index)
-            concept_term_string = concept_term_string[concept_term_string.rfind(Global.ID_END_MARKER) + 2:concept_term_string.find(GlobalGUI.GUI_PRIORITY_SYMBOL) - 1] # remove priority
-            concept = Global.NARS.memory.concepts_bag.peek(hash(concept_term_string)).object
+            concept_term_string = concept_term_string[concept_term_string.rfind(Global.Global.ID_END_MARKER) + 2:concept_term_string.find(Global.GlobalGUI.GUI_PRIORITY_SYMBOL) - 1] # remove priority
+            key = concept_term_string
+            concept = Global.Global.NARS.memory.concepts_bag.peek(key).object
 
             # window
             concept_info_toplevel = tk.Toplevel()
@@ -104,7 +105,7 @@ def execute_internal_gui(window):
 
             concept_info_toplevel.grab_set() # lock the other windows until this window is exited
 
-    GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", concept_click_callback)
+    Global.GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", concept_click_callback)
 
 
 def execute_interface_gui(window):
@@ -122,12 +123,12 @@ def execute_interface_gui(window):
     output_scrollbar = tk.Scrollbar(window)
     output_scrollbar.grid(row=1, column=3, rowspan=output_height, sticky='ns')
 
-    GlobalGUI.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
-    GlobalGUI.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
+    Global.GlobalGUI.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
+    Global.GlobalGUI.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
 
     # row 2
-    GlobalGUI.gui_total_cycles_lbl = tk.Label(window, text="Cycle #0")
-    GlobalGUI.gui_total_cycles_lbl.grid(row=2, column=4, columnspan=2, sticky='n')
+    Global.GlobalGUI.gui_total_cycles_lbl = tk.Label(window, text="Cycle #0")
+    Global.GlobalGUI.gui_total_cycles_lbl.grid(row=2, column=4, columnspan=2, sticky='n')
 
     speed_slider_lbl = tk.Label(window, text="Cycle Delay in millisec: ")
     speed_slider_lbl.grid(row=2, column=4, columnspan=2, sticky='s')
@@ -135,15 +136,15 @@ def execute_interface_gui(window):
     # row 3
     def toggle_pause(event=None):
         # put input into NARS input buffer
-        GlobalGUI.set_paused(not Global.paused)
+        Global.GlobalGUI.set_paused(not Global.Global.paused)
 
-    GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
-    GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
+    Global.GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
+    Global.GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
 
     max_delay = 1000  # in milliseconds
-    GlobalGUI.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
-    GlobalGUI.gui_delay_slider.grid(row=3, column=5, sticky='ns')
-    GlobalGUI.gui_delay_slider.set(max_delay)
+    Global.GlobalGUI.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
+    Global.GlobalGUI.gui_delay_slider.grid(row=3, column=5, sticky='ns')
+    Global.GlobalGUI.gui_delay_slider.set(max_delay)
 
     # input GUI
     def input_clicked(event=None):

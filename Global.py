@@ -41,8 +41,6 @@ class GlobalGUI:
     def print_to_output(cls, msg, data_structure=None):
         """
             Print a message to an output GUI box
-
-            Should only called by output thread
         """
 
         listbox = None
@@ -82,8 +80,6 @@ class GlobalGUI:
     def remove_from_output(cls, msg, data_structure=None):
         """
             Remove a message from an output GUI box
-
-            Should only be called by output thread
         """
         if Global.NARS is None: return
         if data_structure is Global.NARS.overall_experience_buffer:
@@ -110,6 +106,12 @@ class GlobalGUI:
                 GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
             elif data_structure is Global.NARS.memory.concepts_bag:
                 GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)))
+
+    @classmethod
+    def clear_output_gui(cls, data_structure=None):
+        if data_structure is Global.NARS.memory.concepts_bag:
+            listbox = GlobalGUI.gui_concept_bag_listbox
+            listbox.delete(0, tk.END)
 
     @classmethod
     def set_paused(cls, paused):

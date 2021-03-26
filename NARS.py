@@ -1,15 +1,18 @@
+import pickle
+import random
 import time
 
+import Config
 import InputBuffer
 import NARSGUI
 import NARSInferenceEngine
-from NALGrammar import VariableTerm
-from NALSyntax import Punctuation
-from NARSMemory import Memory
+import NALGrammar
+import NALSyntax
+import NARSMemory
 import threading
 
-from NARSDataStructures import *
-from Global import GlobalGUI, Global
+import NARSDataStructures
+import Global
 
 """
     Author: Christian Hahm
@@ -24,9 +27,36 @@ class NARS:
     """
 
     def __init__(self):
-        self.overall_experience_buffer = Bag(item_type=Task)
-        self.memory = Memory()
-        Global.NARS = self
+        self.overall_experience_buffer = NARSDataStructures.Bag(item_type=NARSDataStructures.Task)
+        self.memory = NARSMemory.Memory()
+        Global.Global.NARS = self
+
+    def save_memory_to_disk(self, filename="memory.nars"):
+        """
+            Save the NARS Memory instance to disk
+        """
+        with open(filename, "wb") as f:
+            Global.GlobalGUI.print_to_output("SAVING SYSTEM MEMORY TO FILE: " + filename)
+            pickle.dump(self.memory, f, pickle.HIGHEST_PROTOCOL)
+            Global.GlobalGUI.print_to_output("SAVE MEMORY SUCCESS")
+
+    def load_memory_from_disk(self, filename="memory.nars"):
+        """
+            Load a NARS Memory instance from disk.
+            This will override the NARS current memory
+        """
+
+        with open(filename, "rb") as f:
+            Global.GlobalGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
+            self.memory = pickle.load(f)
+            # Print memory contents to internal data GUI
+            if Global.GlobalGUI.gui_use_internal_data:
+                Global.GlobalGUI.clear_output_gui(data_structure=self.memory.concepts_bag)
+                for item in self.memory.concepts_bag:
+                    if item not in self.memory.concepts_bag:
+                        Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
+
+            Global.GlobalGUI.print_to_output("LOAD MEMORY SUCCESS")
 
     def run(self):
         """
@@ -34,10 +64,10 @@ class NARS:
         """
         while True:
             # global parameters
-            if Global.paused:
+            if Global.Global.paused:
                 continue
-            if GlobalGUI.gui_use_interface:
-                delay = GlobalGUI.gui_delay_slider.get() / 1000
+            if Global.GlobalGUI.gui_use_interface:
+                delay = Global.GlobalGUI.gui_delay_slider.get() / 1000
                 if delay > 0:
                     time.sleep(delay)
 
@@ -48,8 +78,8 @@ class NARS:
             Performs 1 working cycle.
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
-        if GlobalGUI.gui_use_interface:
-            GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.current_cycle_number))
+        if Global.GlobalGUI.gui_use_interface:
+            Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.Global.current_cycle_number))
 
         InputBuffer.process_next_pending_sentence()
 
@@ -62,7 +92,7 @@ class NARS:
             # CONSIDER
             self.Consider()
 
-        Global.current_cycle_number = Global.current_cycle_number + 1
+        Global.current_cycle_number = Global.Global.current_cycle_number + 1
 
     def do_working_cycles(self, cycles: int):
         """
@@ -107,24 +137,24 @@ class NARS:
         # return concept to bag
         self.memory.concepts_bag.put(concept_item)
 
-    def process_task(self, task: Task):
+    def process_task(self, task: NARSDataStructures.Task):
         """
             Processes any Narsese task
         """
-        assert_task(task)
+        NARSDataStructures.assert_task(task)
 
-        if task.sentence.punctuation == Punctuation.Question or VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
+        if task.sentence.punctuation == NALSyntax.Punctuation.Question or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
             self.process_question(task)
-        elif task.sentence.punctuation == Punctuation.Judgment:
+        elif task.sentence.punctuation == NALSyntax.Punctuation.Judgment:
             self.process_judgment_task(task)
 
-    def process_judgment_task(self, task: Task):
+    def process_judgment_task(self, task: NARSDataStructures.Task):
         """
             Processes a Narsese Judgment Task
 
             :param Judgment Task to process
         """
-        assert_task(task)
+        NARSDataStructures.assert_task(task)
 
         j1 = task.sentence
 
@@ -187,7 +217,7 @@ class NARS:
             Get the best answer to the question if it's known and perform inference with it;
             otherwise, use backward inference to derive new questions that could lead to an answer.
         """
-        assert_task(task)
+        NARSDataStructures.assert_task(task)
 
         # get terms from sentence
         statement_term = task.sentence.statement.term
@@ -205,7 +235,7 @@ class NARS:
             # Answer the question
             #
             if task.is_from_input and task.needs_to_be_answered_in_output:
-                GlobalGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
+                Global.GlobalGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
                 task.needs_to_be_answered_in_output = False
 
             # do inference between answer and a related belief
@@ -236,28 +266,28 @@ def main():
         Creates threads, populates globals, and runs the NARS.
     """
     # set globals
-    GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
+    Global.GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     # todo investigate why using the interface slows down the system
-    GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface, and results in a massive speedup
+    Global.GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface, and results in a massive speedup
 
     # setup internal/interface GUI
-    if GlobalGUI.gui_use_internal_data or GlobalGUI.gui_use_interface:
+    if Global.GlobalGUI.gui_use_internal_data or Global.GlobalGUI.gui_use_interface:
         GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread")
         GUI_thread.daemon = True
         GUI_thread.start()
 
-    if not GlobalGUI.gui_use_interface:
+    if not Global.GlobalGUI.gui_use_interface:
         # launch shell input thread
         shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread")
         shell_input_thread.daemon = True
         shell_input_thread.start()
 
-    time.sleep(1.00) # give threads time to setup
+    time.sleep(0.5) # give threads time to setup
 
     # Finally, create the NARS
     NARS()
     # and run it in the shell
-    Global.NARS.run()
+    Global.Global.NARS.run()
 
 
 

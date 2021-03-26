@@ -1,6 +1,9 @@
+import enum
+
 import Config
-from Global import Global
-from NALSyntax import *
+import Global
+import NALSyntax
+import NARSMemory
 
 """
     Author: Christian Hahm
@@ -19,7 +22,7 @@ class Sentence:
 
         self.statement: Statement = statement
         self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
-        self.punctuation: Punctuation = punctuation
+        self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp: Sentence.Stamp = Sentence.Stamp()
 
     def __str__(self):
@@ -30,7 +33,7 @@ class Sentence:
         return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
 
     def get_formatted_string(self):
-        string = Global.ID_MARKER + str(self.stamp.id) + Global.ID_END_MARKER
+        string = Global.Global.ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER
         string = string + self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
@@ -48,22 +51,22 @@ class Sentence:
             :returns Sentence parsed from sentence_string
         """
         # Find statement start and statement end
-        start_idx = sentence_string.find(StatementSyntax.Start.value)
-        assert (start_idx != -1), "Statement start character " + StatementSyntax.Start.value + " not found."
+        start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
+        assert (start_idx != -1), "Statement start character " + NALSyntax.StatementSyntax.Start.value + " not found."
 
-        end_idx = sentence_string.rfind(StatementSyntax.End.value)
-        assert (end_idx != -1), "Statement end character " + StatementSyntax.End.value + " not found."
+        end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
+        assert (end_idx != -1), "Statement end character " + NALSyntax.StatementSyntax.End.value + " not found."
 
         # Find sentence punctuation
         punctuation_idx = end_idx + 1
         assert (punctuation_idx < len(sentence_string)), "No punctuation found."
         punctuation_str = sentence_string[punctuation_idx]
-        punctuation = Punctuation.get_punctuation(punctuation_str)
+        punctuation = NALSyntax.Punctuation.get_punctuation(punctuation_str)
         assert (punctuation is not None), punctuation_str + " is not punctuation."
 
         # todo add support for goals
         assert (
-                    punctuation == Punctuation.Judgment or punctuation == Punctuation.Question), " Currently only accepting Judgments and Questions."
+                    punctuation == NALSyntax.Punctuation.Judgment or punctuation == NALSyntax.Punctuation.Question), " Currently only accepting Judgments and Questions."
 
         # Find statement copula, subject string, and predicate string
         subject, predicate, copula, copula_idx = parse_subject_predicate_copula_and_copula_index(
@@ -73,15 +76,15 @@ class Sentence:
 
         # Find Tense, if it exists
         tense = None
-        for t in Tense:
+        for t in NALSyntax.Tense:
             tense_idx = sentence_string.find(t.value)
             if tense_idx != -1:  # found a tense
-                tense = Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
+                tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
 
         # Find Truth Value, if it exists
-        start_truth_val_idx = sentence_string.find(StatementSyntax.TruthValMarker.value)
-        middle_truth_val_idx = sentence_string.find(StatementSyntax.TruthValDivider.value)
-        end_truth_val_idx = sentence_string.rfind(StatementSyntax.TruthValMarker.value)
+        start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value)
+        middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value)
+        end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value)
 
         no_truth_value_found = start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx
         if no_truth_value_found:
@@ -93,9 +96,9 @@ class Sentence:
             conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
             truth_value = TruthValue(freq, conf, tense)
 
-        if punctuation == Punctuation.Judgment:
+        if punctuation == NALSyntax.Punctuation.Judgment:
             sentence = Judgment(statement, truth_value)
-        elif punctuation == Punctuation.Question:
+        elif punctuation == NALSyntax.Punctuation.Question:
             sentence = Question(statement)
 
         return sentence
@@ -109,11 +112,9 @@ class Sentence:
             'Ca' syntactic complexity (the number of subterms in the associated term)
             'E' an evidential set.
         """
-        next_stamp_id = 0
-
         def __init__(self):
-            self.id = self.get_next_stamp_id()
-            self.creation_time = Global.current_cycle_number  # when was this stamp created (in inference cycles)?
+            self.id = NARSMemory.Memory.get_next_stamp_id()
+            self.creation_time = Global.Global.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
             self.evidential_base = self.EvidentialBase(self.id)
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
@@ -126,11 +127,6 @@ class Sentence:
             other_sentence.stamp.interacted_sentences.append(other_sentence)
             if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
                 other_sentence.stamp.interacted_sentences.pop(0)
-
-        @classmethod
-        def get_next_stamp_id(cls):
-            cls.next_stamp_id = cls.next_stamp_id + 1
-            return cls.next_stamp_id - 1
 
         class EvidentialBase:
             """
@@ -169,7 +165,7 @@ class Judgment(Sentence):
     def __init__(self, statement, value):
         assert_statement(statement)
         assert_truth_value(value)
-        super().__init__(statement, value, Punctuation.Judgment)
+        super().__init__(statement, value, NALSyntax.Punctuation.Judgment)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -182,7 +178,7 @@ class Question(Sentence):
 
     def __init__(self, statement):
         assert_statement(statement)
-        super().__init__(statement, None, Punctuation.Question)
+        super().__init__(statement, None, NALSyntax.Punctuation.Question)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -197,7 +193,7 @@ class Statement:
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
-        self.copula: Copula = copula
+        self.copula: NALSyntax.Copula = copula
         self.term: StatementTerm = StatementTerm(subject, predicate, copula)
 
     def get_subject_term(self):
@@ -233,11 +229,11 @@ class DesireValue(EvidentialValue):
         super().__init__(frequency=frequency, confidence=confidence)
 
     def get_formatted_string(self):
-        return str(StatementSyntax.TruthValMarker.value) \
+        return str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \
-               + str(StatementSyntax.TruthValDivider.value) \
+               + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + "{:.2f}".format(self.confidence) \
-               + str(StatementSyntax.TruthValMarker.value)
+               + str(NALSyntax.StatementSyntax.TruthValMarker.value)
 
 
 class TruthValue(EvidentialValue):
@@ -255,11 +251,11 @@ class TruthValue(EvidentialValue):
         if self.tense is not None:
             tense = self.tense.value + " "
         return tense \
-               + str(StatementSyntax.TruthValMarker.value) \
+               + str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \
-               + str(StatementSyntax.TruthValDivider.value) \
+               + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + "{:.2f}".format(self.confidence) \
-               + str(StatementSyntax.TruthValMarker.value)
+               + str(NALSyntax.StatementSyntax.TruthValMarker.value)
 
 
 class Term:
@@ -293,7 +289,7 @@ class Term:
     def __str__(self):
         return self.get_formatted_string()
 
-    def calculate_syntactic_complexity():
+    def calculate_syntactic_complexity(self):
         assert False, "Complexity not defined for Term base class"
 
     def contains_variable(self):
@@ -309,12 +305,12 @@ class Term:
             :param term_string - String from which to construct the term
             :returns Term constructed using the string
         """
-        is_set_term = TermConnector.is_set_bracket_start(term_string[0])
-        if term_string[0] == StatementSyntax.Start.value:
+        is_set_term = NALSyntax.TermConnector.is_set_bracket_start(term_string[0])
+        if term_string[0] == NALSyntax.StatementSyntax.Start.value:
             """
                 Compound or Statement Term
             """
-            assert (term_string[-1] == StatementSyntax.End.value), "Compound/Statement term must have ending parenthesis: " + term_string
+            assert (term_string[-1] == NALSyntax.StatementSyntax.End.value), "Compound/Statement term must have ending parenthesis: " + term_string
 
             copula, copula_idx = get_top_level_copula(term_string)
             if copula is None:
@@ -423,7 +419,7 @@ class AtomicTerm(Term):
     @classmethod
     def is_valid_term(cls, term_string):
         for char in term_string:
-            if char not in valid_term_chars: return False
+            if char not in NALSyntax.valid_term_chars: return False
         return True
 
     def calculate_syntactic_complexity(self):
@@ -446,8 +442,8 @@ class CompoundTerm(Term):
         """
         self.subterms: [Term] = subterms
         self.connector = connector  # sets are represented by the opening bracket as the connector, { or [
-        self.is_set = (self.connector.value == TermConnector.IntensionalSetStart.value) or \
-                      (self.connector.value == TermConnector.ExtensionalSetStart.value)
+        self.is_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value) or \
+                      (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
         super().__init__(self.get_formatted_string())
 
     @classmethod
@@ -471,12 +467,12 @@ class CompoundTerm(Term):
         internal_string = compound_term_string[1:-1] # no parentheses () or set brackets [], {}
 
         # check for intensional/extensional set [a,b], {a,b}
-        connector = TermConnector.get_term_connector_from_string(compound_term_string[0])
+        connector = NALSyntax.TermConnector.get_term_connector_from_string(compound_term_string[0])
         if connector is None:
             # otherwise check for regular Term/Statement connectors
-            connector = StatementConnector.get_statement_connector_from_string(internal_string[0:2])
+            connector = NALSyntax.StatementConnector.get_statement_connector_from_string(internal_string[0:2])
             if connector is None:
-                connector = TermConnector.get_term_connector_from_string(internal_string[0])
+                connector = NALSyntax.TermConnector.get_term_connector_from_string(internal_string[0])
             assert (internal_string[
                         len(
                             connector.value)] == ','), "Connector not followed by comma in CompoundTerm string " + compound_term_string
@@ -490,9 +486,9 @@ class CompoundTerm(Term):
         depth = 0
         subterm_string = ""
         for i, c in enumerate(internal_string):
-            if c == StatementSyntax.Start.value or TermConnector.is_set_bracket_start(c):
+            if c == NALSyntax.StatementSyntax.Start.value or NALSyntax.TermConnector.is_set_bracket_start(c):
                 depth = depth + 1
-            elif c == StatementSyntax.End.value or TermConnector.is_set_bracket_end(c):
+            elif c == NALSyntax.StatementSyntax.End.value or NALSyntax.TermConnector.is_set_bracket_end(c):
                 depth = depth - 1
 
             if c == "," and depth == 0:
@@ -530,7 +526,7 @@ class CompoundTerm(Term):
         string = string[:-1]
 
         if self.is_set:
-            return string + TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
+            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
         else:
             return "(" + string + ")"
 
@@ -542,12 +538,12 @@ class StatementTerm(CompoundTerm):
         (P --> Q)
     """
 
-    def __init__(self, subject: Term, predicate: Term, copula: Copula):
+    def __init__(self, subject: Term, predicate: Term, copula):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
         super().__init__([subject, predicate], copula)
-        if copula == Copula.Similarity:
+        if copula == NALSyntax.Copula.Similarity:
             self.equivalent_term_string = self._get_formatted_string_from_values(predicate, subject)
 
     @classmethod
@@ -575,14 +571,14 @@ class StatementTerm(CompoundTerm):
         return self._get_formatted_string_from_values(self.get_subject_term(), self.get_predicate_term())
 
     def _get_formatted_string_from_values(self, subject_term, predicate_term):
-        return StatementSyntax.Start.value + \
+        return NALSyntax.StatementSyntax.Start.value + \
                subject_term.get_formatted_string() + \
                " " + self.get_copula_string() + " " + \
                predicate_term.get_formatted_string() \
-               + StatementSyntax.End.value
+               + NALSyntax.StatementSyntax.End.value
 
     def get_reverse_term_string(self):
-        if not Copula.is_symmetric(self.connector):
+        if not NALSyntax.Copula.is_symmetric(self.connector):
             # no such thing as a reverse term for non-symmetric statements
             return None
         return self.equivalent_term_string
@@ -618,12 +614,12 @@ def get_top_level_copula(string):
 
     depth = 0
     for i, v in enumerate(string):
-        if v == StatementSyntax.Start.value:
+        if v == NALSyntax.StatementSyntax.Start.value:
             depth = depth + 1
-        elif v == StatementSyntax.End.value:
+        elif v == NALSyntax.StatementSyntax.End.value:
             depth = depth - 1
-        elif depth == 1 and i + 3 <= len(string) and Copula.is_string_a_copula(string[i:i + 3]):
-            copula, copula_idx = Copula.get_copula_from_string(string[i:i + 3]), i
+        elif depth == 1 and i + 3 <= len(string) and NALSyntax.Copula.is_string_a_copula(string[i:i + 3]):
+            copula, copula_idx = NALSyntax.Copula.get_copula_from_string(string[i:i + 3]), i
 
     return copula, copula_idx
 
@@ -649,8 +645,8 @@ def assert_truth_value(j):
 
 
 def assert_punctuation(j):
-    assert (isinstance(j, Punctuation)), str(j) + " must be a Punctuation"
+    assert (isinstance(j, NALSyntax.Punctuation)), str(j) + " must be a Punctuation"
 
 
 def assert_copula(j):
-    assert (isinstance(j, Copula)), str(j) + " must be a Copula"
+    assert (isinstance(j, NALSyntax.Copula)), str(j) + " must be a Copula"
