@@ -115,18 +115,17 @@ class Sentence:
             self.id = self.get_next_stamp_id()
             self.creation_time = Global.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
-            self.syntactic_complexity = -1  # todo, number of subterms
             self.evidential_base = self.EvidentialBase(self.id)
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
-        def mutually_add_to_interacted_sentences(self, sentence):
-            self.interacted_sentences.append(sentence)
+        def mutually_add_to_interacted_sentences(self, other_sentence):
+            self.interacted_sentences.append(other_sentence)
             if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
                 self.interacted_sentences.pop(0)
 
-            sentence.stamp.interacted_sentences.append(sentence)
-            if len(sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-                sentence.stamp.interacted_sentences.pop(0)
+            other_sentence.stamp.interacted_sentences.append(other_sentence)
+            if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+                other_sentence.stamp.interacted_sentences.pop(0)
 
         @classmethod
         def get_next_stamp_id(cls):

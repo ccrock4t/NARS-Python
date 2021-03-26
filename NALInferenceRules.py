@@ -109,10 +109,10 @@ def nal_revision(j1: Sentence, j2: Sentence):
     f3, c3 = getfreqconf_fromevidence(wp3, w3)
 
     # Create the resultant sentence
-    resulttruth = TruthValue(f3, c3)
+    result_truth = TruthValue(f3, c3)
 
-    resultStatement = Statement(j1.statement.get_subject_term(), j1.statement.get_predicate_term(), j1.statement.copula)
-    result = Sentence(resultStatement, resulttruth, Punctuation.Judgment)
+    result_statement = Statement(j1.statement.get_subject_term(), j1.statement.get_predicate_term(), j1.statement.copula)
+    result = Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -241,22 +241,18 @@ def nal_conversion(j):
     """
     assert_sentence(j)
     # Statement
-    resultStatement = Statement(j.statement.get_predicate_term(),
+    result_statement = Statement(j.statement.get_predicate_term(),
                                 j.statement.get_subject_term(), Copula.Inheritance)
 
-    punctuation = None
-    resulttruth = None
     if j.punctuation == Punctuation.Judgment:
         # compute values of combined evidence
         wp = band(j.value.frequency, j.value.confidence)
         w = wp
         f2, c2 = getfreqconf_fromevidence(wp, w)
-        resulttruth = TruthValue(f2, c2)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f2, c2)
+        result = Judgment(result_statement, result_truth)
     elif j.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentence's evidential base
     result.stamp.evidential_base.merge_evidential_base_into_self(j.stamp.evidential_base)
@@ -302,11 +298,10 @@ def nal_deduction(j1: Sentence, j2: Sentence):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.get_subject_term(),
+    result_statement = Statement(j2.statement.get_subject_term(),
                                 j1.statement.get_predicate_term(), Copula.Inheritance)
 
-    punctuation = None
-    resulttruth = None
+
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -314,12 +309,10 @@ def nal_deduction(j1: Sentence, j2: Sentence):
         # compute values of combined evidence
         f3 = band(f1, f2)
         c3 = band(f1, f2, c1, c2)
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -359,25 +352,24 @@ def nal_analogy(j1: Sentence, j2: Sentence):
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         #j1=M-->P, j2=S<->M
-        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
+        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
                                     Copula.Inheritance) # S-->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M-->P, j2=M<->S
-        resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
+        result_statement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
                                     Copula.Inheritance) # S-->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1=P-->M, j2=S<->M
-        resultStatement = Statement(j1.statement.get_subject_term(), j2.statement.get_subject_term(),
+        result_statement = Statement(j1.statement.get_subject_term(), j2.statement.get_subject_term(),
                                     Copula.Inheritance) # P-->S
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P-->M, j2=M<->S
-        resultStatement = Statement(j1.statement.get_subject_term(), j2.statement.get_predicate_term(),
+        result_statement = Statement(j1.statement.get_subject_term(), j2.statement.get_predicate_term(),
                                     Copula.Inheritance) # P-->S
     else:
         assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    punctuation = None
-    resulttruth = None
+    result = None
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -385,12 +377,10 @@ def nal_analogy(j1: Sentence, j2: Sentence):
         # compute values of combined evidence
         f3 = band(f1, f2)
         c3 = band(f2, c1, c2)
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -426,26 +416,24 @@ def nal_resemblance(j1: Sentence, j2: Sentence):
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         # j1=M<->P, j2=S<->M
-        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
+        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
                                     Copula.Inheritance)  # S<->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M<->P, j2=M<->S
-        resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
+        result_statement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
                                     Copula.Inheritance)  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1=P<->M, j2=S<->M
-        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(),
+        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(),
                                     Copula.Inheritance)  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P<->M, j2=M<->S
-        resultStatement = Statement(j2.statement.get_predicate_term(), j2.statement.get_subject_term(),
+        result_statement = Statement(j2.statement.get_predicate_term(), j2.statement.get_subject_term(),
                                     Copula.Inheritance)  # S<->P
     else:
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    punctuation = None
-    resulttruth = None
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -453,12 +441,10 @@ def nal_resemblance(j1: Sentence, j2: Sentence):
         f3 = band(f1, f2)
         c3 = band(bor(f1, f2), c1, c2)
 
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -498,10 +484,8 @@ def nal_abduction(j1: Sentence, j2: Sentence):
     assert_sentence(j2)
 
     # Statement
-    resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Inheritance)
+    result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Inheritance)
 
-    punctuation = None
-    resulttruth = None
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -510,12 +494,10 @@ def nal_abduction(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = band(f1, c1, c2)
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -547,11 +529,9 @@ def nal_induction(j1: Sentence, j2: Sentence):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.get_predicate_term(),
+    result_statement = Statement(j2.statement.get_predicate_term(),
                                 j1.statement.get_predicate_term(), Copula.Inheritance)
 
-    punctuation = None
-    resulttruth = None
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -560,12 +540,10 @@ def nal_induction(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = band(f2, c1, c2)
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
@@ -597,11 +575,9 @@ def nal_exemplification(j1: Sentence, j2: Sentence):
     assert_sentence(j1)
     assert_sentence(j2)
     # Statement
-    resultStatement = Statement(j2.statement.get_predicate_term(),
+    result_statement = Statement(j2.statement.get_predicate_term(),
                                 j1.statement.get_subject_term(), Copula.Inheritance)
 
-    punctuation = None
-    resulttruth = None
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -610,13 +586,10 @@ def nal_exemplification(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = wp
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
-
+        result = Question(result_statement)
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
     result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
@@ -651,14 +624,12 @@ def nal_comparison(j1: Sentence, j2: Sentence):
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        resultStatement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(), Copula.Similarity)
+        result_statement = Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(), Copula.Similarity)
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        resultStatement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Similarity)
+        result_statement = Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), Copula.Similarity)
     else:
         assert(False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    punctuation = None
-    resulttruth = None
     if j1.punctuation == Punctuation.Judgment and j2.punctuation == Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
@@ -667,12 +638,10 @@ def nal_comparison(j1: Sentence, j2: Sentence):
         wp = band(f1, f2, c1, c2)
         w = band(bor(f1, f2), c1, c2)
         f3, c3 = getfreqconf_fromevidence(wp, w)
-        resulttruth = TruthValue(f3, c3)
-        punctuation = Punctuation.Judgment
+        result_truth = TruthValue(f3, c3)
+        result = Judgment(result_statement, result_truth)
     elif j1.punctuation == Punctuation.Question or j2.punctuation == Punctuation.Question:
-        punctuation = Punctuation.Question
-
-    result = Sentence(resultStatement, resulttruth, punctuation)
+        result = Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)

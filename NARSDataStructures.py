@@ -227,7 +227,11 @@ class Bag:
 
         def __init__(self, object):
             self.object = object
-            self.budget = Bag.Item.Budget(priority=0.9)
+            if isinstance(object, Task) and isinstance(object.sentence, NALGrammar.Judgment):
+                    priority = object.sentence.value.confidence
+            else:
+                priority = 0.99
+            self.budget = Bag.Item.Budget(priority=priority)
             self.current_bucket_number = self.get_target_bucket_number()
 
         def __str__(self):
@@ -247,18 +251,13 @@ class Bag:
             """
                 Decay this item's priority
             """
-            if self.budget.priority > 0.05:
-                self.budget.priority = self.budget.priority * Config.BAG_PRIORITY_DECAY_MULTIPLIER
+            new_priority = self.budget.priority * Config.BAG_PRIORITY_DECAY_MULTIPLIER
+            if new_priority >= 0.01:
+                self.budget.priority = new_priority
 
         class Budget:
-            def __init__(self, priority=0.0):
+            def __init__(self, priority):
                 self.priority = priority
-
-            def increase_priority(self, v):
-                self.durability = min(1.0, NALInferenceRules.bor(self.priority, v))
-
-            def decrease_priority(self, v):
-                self.durability = NALInferenceRules.band(self.priority, v)
 
 class Buffer:
     """

@@ -18,8 +18,8 @@ def test_table_removemax():
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(confidences)
     for c in confidences:
-        sentence = Sentence(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
-                            TruthValue(0.9, c), Punctuation.Judgment)
+        sentence = Judgment(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
+                            TruthValue(0.9, c))
         heap.insert(sentence)
     heapmax = heap.extract_max().value.confidence
     assert(heapmax == maximum), "TEST FAILURE: Heap did not properly retrieve maximum value"
@@ -34,8 +34,8 @@ def test_table_removemin():
     minimum = min(confidences)
     for c in confidences:
         #make sentence <a --> b>. %0.9;c%
-        sentence = Sentence(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
-                            TruthValue(0.9, c), Punctuation.Judgment)
+        sentence = Judgment(Statement(Term.get_term_from_string("a"), Term.get_term_from_string("b"), Copula.Inheritance),
+                            TruthValue(0.9, c))
         heap.insert(sentence)
 
     heapmin = heap.extract_min().value.confidence
