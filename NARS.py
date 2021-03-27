@@ -160,10 +160,12 @@ class NARS:
 
         # get terms from sentence
         statement_term = j1.statement.term
-        #if statement_term.contains_variable(): return #todo handle variables
+
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
 
+        if statement_term.contains_variable(): return #todo handle variables
+        
         if task.needs_initial_processing:
             """
                 Initial Processing
@@ -192,9 +194,10 @@ class NARS:
             :param related_concept - (Optional) concept to process the judgment with
         """
         statement_term = j1.statement.term
-        #if statement_term.contains_variable(): return #todo handle variables
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
+
+        if statement_term.contains_variable(): return #todo handle variables
 
         if related_concept is None: # get a related concept
             related_concept = self.memory.get_semantically_related_concept(statement_concept)

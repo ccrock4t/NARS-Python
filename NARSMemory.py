@@ -63,6 +63,7 @@ class Memory:
             if concept_item is not None: return concept_item.object  # return if got concept
 
         # it must be created unless it contains a Variable Term, and potentially its sub-concepts
+        concept = None
         if not term.contains_variable():
             concept = self.conceptualize_term(term)
 
@@ -71,7 +72,8 @@ class Memory:
                 # get/create subterm concepts
                 subconcept = self.peek_concept(subterm)
 
-                if isinstance(term, NALGrammar.StatementTerm):
+                if concept is not None and isinstance(term, NALGrammar.StatementTerm):
+                    print(subconcept)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)
 
