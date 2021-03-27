@@ -33,7 +33,7 @@ class Sentence:
         return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
 
     def get_formatted_string(self):
-        string = Global.Global.ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER
+        string = Global.Global.SENTENCE_ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER
         string = string + self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string

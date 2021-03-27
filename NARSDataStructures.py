@@ -253,7 +253,7 @@ class Bag:
                 self.key = self.id
 
         def __str__(self):
-            return Global.Global.ID_MARKER + str(self.id) + Global.Global.ID_END_MARKER + str(self.object) + " " + Global.GlobalGUI.GUI_PRIORITY_SYMBOL + "{:.2f}".format(self.budget.priority) + Global.GlobalGUI.GUI_PRIORITY_SYMBOL
+            return Global.Global.BAG_ITEM_ID_MARKER + str(self.id) + Global.Global.ID_END_MARKER + str(self.object) + " " + Global.GlobalGUI.GUI_PRIORITY_SYMBOL + "{:.2f}".format(self.budget.priority) + Global.GlobalGUI.GUI_PRIORITY_SYMBOL
 
 
         def get_target_bucket_number(self):
