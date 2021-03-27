@@ -32,7 +32,7 @@ class GlobalGUI:
     gui_concept_bag_listbox = None  # output for concepts in memory bag
     gui_buffer_output_label = None
     gui_concepts_output_label = None
-    GUI_PRIORITY_SYMBOL = "$"
+    GUI_BUDGET_SYMBOL = "$"
 
     # booleans
     gui_use_internal_data = False
@@ -62,11 +62,11 @@ class GlobalGUI:
         # insert item sorted by priority
         if GlobalGUI.gui_use_internal_data:
             string_list = listbox.get(0, tk.END)  # get all items in the listbox
-            msg_priority = msg[msg.find(GlobalGUI.GUI_PRIORITY_SYMBOL) + 1:msg.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+            msg_priority = msg[msg.find(GlobalGUI.GUI_BUDGET_SYMBOL) + 1:msg.rfind(GlobalGUI.GUI_BUDGET_SYMBOL)]
             idx_to_insert = tk.END  # by default insert at the end
             i = 0
             for row in string_list:
-                row_priority = row[row.find(GlobalGUI.GUI_PRIORITY_SYMBOL) + 1:row.rfind(GlobalGUI.GUI_PRIORITY_SYMBOL)]
+                row_priority = row[row.find(GlobalGUI.GUI_BUDGET_SYMBOL) + 1:row.rfind(GlobalGUI.GUI_BUDGET_SYMBOL)]
                 if float(msg_priority) >= float(row_priority):
                     idx_to_insert = i
                     break

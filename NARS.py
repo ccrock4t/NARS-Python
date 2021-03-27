@@ -92,7 +92,7 @@ class NARS:
             # CONSIDER
             self.Consider()
 
-        Global.current_cycle_number = Global.Global.current_cycle_number + 1
+        Global.Global.current_cycle_number = Global.Global.current_cycle_number + 1
 
     def do_working_cycles(self, cycles: int):
         """

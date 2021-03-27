@@ -2,6 +2,9 @@ import Global
 import InputBuffer
 import tkinter as tk
 
+import NARSDataStructures
+import NARSMemory
+
 """
     GUI code (excluding GUI Globals)
 """
@@ -36,8 +39,8 @@ def execute_internal_gui(window):
     """
         Setup the internal GUI window, displaying the system's buffers and memory
     """
-    output_height = 30
-    output_width = 50
+    listbox_height = 30
+    listbox_width = 50
 
     # Task Buffer Output
     Global.GlobalGUI.gui_buffer_output_label = tk.Label(window, text="Task Buffer: 0")
@@ -45,7 +48,7 @@ def execute_internal_gui(window):
 
     buffer_scrollbar = tk.Scrollbar(window)
     buffer_scrollbar.grid(row=1, column=2, sticky='ns')
-    Global.GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
+    Global.GlobalGUI.gui_experience_buffer_listbox = tk.Listbox(window, height=listbox_height, width=listbox_width, font=('', 8),
                                                                 yscrollcommand=buffer_scrollbar.set)
     Global.GlobalGUI.gui_experience_buffer_listbox.grid(row=1, column=0, columnspan=2)
 
@@ -55,57 +58,95 @@ def execute_internal_gui(window):
 
     concept_bag_scrollbar = tk.Scrollbar(window)
     concept_bag_scrollbar.grid(row=1, column=5, sticky='ns')
-    Global.GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=output_height, width=output_width, font=('', 8),
+    Global.GlobalGUI.gui_concept_bag_listbox = tk.Listbox(window, height=listbox_height, width=listbox_width, font=('', 8),
                                                           yscrollcommand=concept_bag_scrollbar.set)
     Global.GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
 
-    def concept_click_callback(event):
+    def listbox_item_click_callback(event):
         """
             Presents a window describing the concept's internal data.
             Locks the interface until the window is closed.
 
-            This function is called when the user clicks on a Concept.
+            This function is called when the user clicks on an item in the internal data.
         """
         selection = event.widget.curselection()
         if selection:
             Global.GlobalGUI.set_paused(True)
             index = selection[0]
-            concept_term_string = event.widget.get(index)
-            concept_term_string = concept_term_string[concept_term_string.rfind(Global.Global.ID_END_MARKER) + 2:concept_term_string.find(Global.GlobalGUI.GUI_PRIORITY_SYMBOL) - 1] # remove priority
-            key = concept_term_string
-            concept = Global.Global.NARS.memory.concepts_bag.peek(key).object
+            item_string = event.widget.get(index)
+
+            key = None
+            data_structure = None
+
+            if event.widget is Global.GlobalGUI.gui_concept_bag_listbox:
+                key = item_string[item_string.rfind(Global.Global.ID_END_MARKER) + 2:item_string.find(Global.GlobalGUI.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
+                data_structure = Global.Global.NARS.memory.concepts_bag
+            elif event.widget is Global.GlobalGUI.gui_experience_buffer_listbox:
+                key = item_string[item_string.find(Global.Global.BAG_ITEM_ID_MARKER)+len(Global.Global.BAG_ITEM_ID_MARKER):item_string.rfind(Global.Global.ID_END_MARKER)]
+                data_structure = Global.Global.NARS.overall_experience_buffer
+
+            assert key is not None, "Couldn't get key from item click callback"
+
+            object = data_structure.peek(key).object
 
             # window
-            concept_info_toplevel = tk.Toplevel()
-            concept_info_toplevel.title("Concept Internal Data: " + concept_term_string)
-            concept_info_toplevel.geometry('550x500')
+            item_info_window = tk.Toplevel()
+            item_info_window.title(type(object).__name__ + " Internal Data: " + item_string)
+            item_info_window.geometry('600x500')
 
-            # info
-            label = tk.Label(concept_info_toplevel, text="CONCEPT NAME: " + concept_term_string)
-            label.grid(row=0,column=0)
+            object_listbox_width = 40
+            object_listbox_height = 20
 
-            label = tk.Label(concept_info_toplevel, text="Number of Term Links: " + str(concept.term_links.count))
-            label.grid(row=1, column=0)
+            if isinstance(object, NARSMemory.Concept):
+                # info
+                label = tk.Label(item_info_window, text=type(object).__name__ + " NAME: " + str(object))
+                label.grid(row=0, column=0)
 
-            label = tk.Label(concept_info_toplevel, text="Beliefs")
-            label.grid(row=2, column=1)
+                label = tk.Label(item_info_window, text="Number of Term Links: " + str(object.term_links.count))
+                label.grid(row=1, column=0)
 
-            belief_listbox = tk.Listbox(concept_info_toplevel, height=20, width=30, font=('', 8))
-            belief_listbox.grid(row=3,column=1)
-            for belief in concept.belief_table.depq:
-                belief_listbox.insert(tk.END,str(belief[0]))
+                label = tk.Label(item_info_window, text="Beliefs", font=('bold'))
+                label.grid(row=3, column=0)
 
-            label = tk.Label(concept_info_toplevel, text="Desires")
-            label.grid(row=2, column=2)
+                belief_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
+                belief_listbox.grid(row=4,column=0)
+                for belief in object.belief_table.depq:
+                    belief_listbox.insert(tk.END,str(belief[0]))
 
-            desire_listbox = tk.Listbox(concept_info_toplevel, height=20, width=30, font=('', 8))
-            desire_listbox.grid(row=3,column=2)
-            for desire in concept.desire_table.depq:
-                desire_listbox.insert(tk.END,str(desire[0]))
+                label = tk.Label(item_info_window, text="Desires", font=('bold'))
+                label.grid(row=3, column=1)
 
-            concept_info_toplevel.grab_set() # lock the other windows until this window is exited
+                desire_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
+                desire_listbox.grid(row=4,column=1)
+                for desire in object.desire_table.depq:
+                    desire_listbox.insert(tk.END,str(desire[0]))
+            elif isinstance(object, NARSDataStructures.Task):
+                # info
+                label = tk.Label(item_info_window, text=type(object).__name__ + " Name: " + object.sentence.get_formatted_string())
+                label.grid(row=0, column=0)
 
-    Global.GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", concept_click_callback)
+                #label
+                label = tk.Label(item_info_window, text="Sentence Evidential Base", font=('bold'))
+                label.grid(row=2, column=0)
+
+                evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
+                evidential_base_listbox.grid(row=3,column=0)
+                for sentence in object.sentence.stamp.evidential_base:
+                    evidential_base_listbox.insert(tk.END,sentence.get_formatted_string())
+
+                label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
+                label.grid(row=2, column=1)
+
+                interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
+                interacted_sentences_listbox.grid(row=3,column=1)
+                for sentence in object.sentence.stamp.interacted_sentences:
+                    interacted_sentences_listbox.insert(tk.END,sentence.get_formatted_string())
+
+            item_info_window.grab_set() # lock the other windows until this window is exited
+
+    # define callbacks when clicking items in any box
+    Global.GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", listbox_item_click_callback)
+    Global.GlobalGUI.gui_experience_buffer_listbox.bind("<<ListboxSelect>>", listbox_item_click_callback)
 
 
 def execute_interface_gui(window):
@@ -135,7 +176,9 @@ def execute_interface_gui(window):
 
     # row 3
     def toggle_pause(event=None):
-        # put input into NARS input buffer
+        """
+            Toggle the global paused parameter
+        """
         Global.GlobalGUI.set_paused(not Global.Global.paused)
 
     Global.GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
@@ -148,6 +191,9 @@ def execute_interface_gui(window):
 
     # input GUI
     def input_clicked(event=None):
+        """
+            Callback when clicking button to send input
+        """
         # put input into NARS input buffer
         userinput = input_field.get()
         InputBuffer.add_input_string(userinput)
@@ -162,8 +208,8 @@ def execute_interface_gui(window):
     input_field.grid(column=1, row=4)
     input_field.focus()
 
-    window.bind('<Return>', func=input_clicked)
-    send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)
+    window.bind('<Return>', func=input_clicked) # send input when pressing 'enter'
+    send_input_btn = tk.Button(window, text="Send input.", command=input_clicked) # send input when click button
     send_input_btn.grid(column=2, row=4)
 
     window.focus()

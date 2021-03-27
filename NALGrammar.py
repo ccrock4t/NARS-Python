@@ -16,6 +16,7 @@ class Sentence:
     """
         sentence ::= <statement><punctuation> %<value>%G
     """
+
     def __init__(self, statement, value, punctuation):
         assert_statement(statement)
         assert_punctuation(punctuation)
@@ -23,10 +24,13 @@ class Sentence:
         self.statement: Statement = statement
         self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
         self.punctuation: NALSyntax.Punctuation = punctuation
-        self.stamp: Sentence.Stamp = Sentence.Stamp()
+        self.stamp: Sentence.Stamp = Sentence.Stamp(self)
 
     def __str__(self):
         return self.get_formatted_string()
+
+    def __hash__(self):
+        return self.stamp.id
 
     def has_evidential_overlap(self, sentence):
         assert_sentence(sentence)
@@ -112,11 +116,12 @@ class Sentence:
             'Ca' syntactic complexity (the number of subterms in the associated term)
             'E' an evidential set.
         """
-        def __init__(self):
+        def __init__(self, self_sentence):
             self.id = NARSMemory.Memory.get_next_stamp_id()
             self.creation_time = Global.Global.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
-            self.evidential_base = self.EvidentialBase(self.id)
+            self.sentence = self_sentence
+            self.evidential_base = self.EvidentialBase(self.sentence)
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
         def mutually_add_to_interacted_sentences(self, other_sentence):
@@ -124,7 +129,7 @@ class Sentence:
             if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
                 self.interacted_sentences.pop(0)
 
-            other_sentence.stamp.interacted_sentences.append(other_sentence)
+            other_sentence.stamp.interacted_sentences.append(self.sentence)
             if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
                 other_sentence.stamp.interacted_sentences.pop(0)
 
@@ -132,9 +137,12 @@ class Sentence:
             """
                 Stores history of how the sentence was derived
             """
-            def __init__(self, id):
-                self.base = []  # array of integer IDs
-                self.base.append(id)  # append this sentence's
+            def __init__(self, self_sentence):
+                self.base = []  # array of sentences
+                self.base.append(self_sentence)  # append this sentence
+
+            def __iter__(self):
+                return iter(self.base)
 
             def merge_evidential_base_into_self(self, other_base):
                 """
@@ -142,8 +150,8 @@ class Sentence:
                     This function assumes the base to merge does not have evidential overlap with this base
                     #todo figure out good way to store evidential bases such that older evidence is purged on overflow
                 """
-                for id in other_base.base:
-                    self.base.append(id)
+                for sentence in other_base.base:
+                    self.base.append(sentence)
 
                 while len(self.base) > Config.MAX_EVIDENTIAL_BASE_LENGTH:
                     self.base.pop(0)
@@ -216,6 +224,9 @@ class EvidentialValue:
         assert (isinstance(confidence, float)), "confidence must be a float"
         self.frequency = frequency
         self.confidence = confidence
+
+    def get_formatted_string(self):
+        assert False, "Formatted string not defined for Evidential Value base class"
 
 
 class DesireValue(EvidentialValue):

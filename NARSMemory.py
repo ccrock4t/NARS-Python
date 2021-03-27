@@ -73,7 +73,6 @@ class Memory:
                 subconcept = self.peek_concept(subterm)
 
                 if concept is not None and isinstance(term, NALGrammar.StatementTerm):
-                    print(subconcept)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)
 

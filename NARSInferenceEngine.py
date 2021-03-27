@@ -189,7 +189,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
     ===============================================
     ===============================================
     """
-    # mark task as interacted with sentnece
+    # mark sentences as interacted with each other
     j1.stamp.mutually_add_to_interacted_sentences(j2)
 
     conversion_tasks_to_append = []
