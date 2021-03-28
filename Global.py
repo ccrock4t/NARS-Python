@@ -11,10 +11,21 @@ class Global:
     """
     NARS = None  # variable to hold NARS instance
     current_cycle_number = 0  # total number of working cycles executed so far
-    paused = False
+    paused = True
     BAG_ITEM_ID_MARKER = "ItemID:" # there are Sentence IDs and Bag Item IDs
     SENTENCE_ID_MARKER = "SentenceID:"
     ID_END_MARKER = ": "
+
+    @classmethod
+    def set_paused(cls, paused):
+        """
+            Sets the Global paused parameter and changes the GUI button
+        """
+        Global.paused = paused
+        if Global.paused:
+            GlobalGUI.play_pause_button.config(text="PLAY")
+        else:
+            GlobalGUI.play_pause_button.config(text="PAUSE")
 
 
 class GlobalGUI:
@@ -114,13 +125,3 @@ class GlobalGUI:
             listbox = GlobalGUI.gui_concept_bag_listbox
             listbox.delete(0, tk.END)
 
-    @classmethod
-    def set_paused(cls, paused):
-        """
-            Sets the Global paused parameter and changes the GUI button
-        """
-        Global.paused = paused
-        if Global.paused:
-            GlobalGUI.play_pause_button.config(text="PLAY")
-        else:
-            GlobalGUI.play_pause_button.config(text="PAUSE")

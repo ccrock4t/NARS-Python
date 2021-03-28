@@ -115,7 +115,7 @@ def execute_internal_gui(window):
         """
         selection = event.widget.curselection()
         if selection:
-            Global.GlobalGUI.set_paused(True)
+            Global.Global.set_paused(True)
             index = selection[0]
             item_string = event.widget.get(index)
 
@@ -228,9 +228,10 @@ def execute_interface_gui(window):
         """
             Toggle the global paused parameter
         """
-        Global.GlobalGUI.set_paused(not Global.Global.paused)
+        Global.Global.set_paused(not Global.Global.paused)
 
-    Global.GlobalGUI.play_pause_button = tk.Button(window, text="PAUSE", command=toggle_pause)
+    Global.GlobalGUI.play_pause_button = tk.Button(window, text="", command=toggle_pause)
+    Global.Global.set_paused(Global.Global.paused)
     Global.GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
 
     max_delay = 1000  # in milliseconds

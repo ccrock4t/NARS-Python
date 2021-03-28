@@ -45,7 +45,7 @@ class NARS:
             Load a NARS Memory instance from disk.
             This will override the NARS current memory
         """
-
+        assert(Global.Global.current_cycle_number == 0),"ERROR: Don't load memory after working cycle #0"
         with open(filename, "rb") as f:
             Global.GlobalGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
             self.memory = pickle.load(f)
@@ -136,7 +136,7 @@ class NARS:
             self.process_judgment_sentence(sentence)
 
         # decay priority
-        concept_item.decay() 
+        concept_item.decay()
 
         # return concept to bag
         self.memory.concepts_bag.put(concept_item)
