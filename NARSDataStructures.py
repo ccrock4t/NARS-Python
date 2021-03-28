@@ -240,8 +240,13 @@ class Bag:
             """
             self.object = object
             self.id = containing_bag.get_next_item_id()
-            if isinstance(object, Task) and isinstance(object.sentence, NALGrammar.Judgment):
-                priority = object.sentence.value.confidence
+            priority = None
+            quality = None
+            if isinstance(object, Task):
+                if isinstance(object.sentence, NALGrammar.Judgment):
+                    priority = object.sentence.value.confidence
+                else: # question or goal, give high priority
+                    priority = 0.99
                 quality = 0.01
                 self.key = str(self.id)
             elif isinstance(object, NARSMemory.Concept):
@@ -249,7 +254,13 @@ class Bag:
                 quality = 0.50
                 self.key = str(object.term)
 
-            self.budget = Bag.Item.Budget(priority=priority,quality=quality)
+            if priority is not None:
+                self.budget = Bag.Item.Budget(priority=priority, quality=quality)
+            else:
+                #print("Don't know how to handle unknown item added to bag. Using default budget")
+                self.key = str(object)
+                self.budget = Bag.Item.Budget()
+
             self.current_bucket_number = self.get_target_bucket_number()
 
         def __str__(self):

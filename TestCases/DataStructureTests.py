@@ -72,10 +72,10 @@ def test_bag_overflow():
     """
         Test if bag stays within capacity when it overflows.
     """
-    testbag = NARSDataStructures.Bag(item_type=str)
+    testbag = NARSDataStructures.Bag(item_type=NALGrammar.Sentence)
     items_added = 0
     for i in range(0, NARS.Config.BAG_CAPACITY + 5):
-        testbag.put_new_item(str(i))
+        testbag.put_new_item(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
         items_added = items_added + 1
 
     assert (items_added > NARS.Config.BAG_CAPACITY), "TEST FAILURE: For this test, add more items than the capacity"
