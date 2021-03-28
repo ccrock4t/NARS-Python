@@ -111,10 +111,10 @@ class Memory:
         #todo
         NALGrammar.assert_term(term)
 
-    @classmethod
-    def get_next_stamp_id(cls):
-        cls.next_stamp_id = cls.next_stamp_id + 1
-        return cls.next_stamp_id - 1
+
+    def get_next_stamp_id(self):
+        self.next_stamp_id = self.next_stamp_id + 1
+        return self.next_stamp_id - 1
 
 
 class Concept:

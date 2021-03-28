@@ -85,6 +85,7 @@ def main():
     """
         Table Tests
     """
+    NARS.NARS()
     test_table_removemax()
     test_table_removemin()
 

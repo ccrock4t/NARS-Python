@@ -129,10 +129,14 @@ class NARS:
         if concept_item is None:
             return  # nothing to ponder
 
-        # get task and belief from concept
+        sentence = concept_item.object
+
+        if isinstance(sentence, NALGrammar.Judgment):
+            # process the judgment
+            self.process_judgment_sentence(sentence)
 
         # decay priority
-        concept_item.decay()
+        concept_item.decay() 
 
         # return concept to bag
         self.memory.concepts_bag.put(concept_item)

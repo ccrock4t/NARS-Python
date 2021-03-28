@@ -14,7 +14,8 @@ import NALInferenceRules
     Purpose: Unit Testing for NARS inference.
         Tests the NARS' overall ability to perform inference, not simply the inference engine.
         This is not an exact science, since whether or not the tests pass depends not only the system's
-        capability to do inference, but also whether its control mechanism selects the proper objects for inference.
+        capability to do inference, but also whether its control mechanism selects the proper objects for inference
+        within the allowed number of inference cycles.
 """
 
 

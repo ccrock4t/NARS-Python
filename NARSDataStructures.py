@@ -239,19 +239,18 @@ class Bag:
             :param containing_bag: the Bag instance that will contain this item
             """
             self.object = object
-            if isinstance(object, Task) and isinstance(object.sentence, NALGrammar.Judgment):
-                    priority = object.sentence.value.confidence
-            else:
-                priority = 0.99
-            self.budget = Bag.Item.Budget(priority=priority)
-            self.current_bucket_number = self.get_target_bucket_number()
             self.id = containing_bag.get_next_item_id()
-            if isinstance(object, NARSMemory.Concept):
-                # a concept is named by its term
+            if isinstance(object, Task) and isinstance(object.sentence, NALGrammar.Judgment):
+                priority = object.sentence.value.confidence
+                quality = 0.01
+                self.key = str(self.id)
+            elif isinstance(object, NARSMemory.Concept):
+                priority = 0.99
+                quality = 0.50
                 self.key = str(object.term)
-            else:
-                self.key = str(self.id)
-                self.key = str(self.id)
+
+            self.budget = Bag.Item.Budget(priority=priority,quality=quality)
+            self.current_bucket_number = self.get_target_bucket_number()
 
         def __str__(self):
             return Global.Global.BAG_ITEM_ID_MARKER + str(self.id) + Global.Global.ID_END_MARKER + str(self.object) + " " + Global.GlobalGUI.GUI_BUDGET_SYMBOL + "{:.2f}".format(self.budget.priority) + Global.GlobalGUI.GUI_BUDGET_SYMBOL
@@ -272,12 +271,18 @@ class Bag:
                 Decay this item's priority
             """
             new_priority = self.budget.priority * Config.BAG_PRIORITY_DECAY_MULTIPLIER
-            if new_priority >= 0.01:
+            if new_priority >= self.budget.quality:
                 self.budget.priority = new_priority
 
         class Budget:
-            def __init__(self, priority):
+            """
+                Budget deciding the proportion of the system's time-space resources to allocate to a Bag Item.
+                Priority determines how likely an item is to be selected,
+                Quality defines the Item's base priority (its lowest possible priority)
+            """
+            def __init__(self, priority=0.99, quality=0.01):
                 self.priority = priority
+                self.quality = quality
 
 class Buffer:
     """
@@ -300,6 +305,9 @@ class Table:
         self.punctuation = punctuation
         self.depq = depq.DEPQ(iterable=None, maxlen=None)  # maxheap depq
         self.maxsize = maxsize
+
+    def __iter__(self):
+        return iter(self.depq)
 
     def insert(self, sentence):
         """

@@ -62,7 +62,51 @@ def execute_internal_gui(window):
                                                           yscrollcommand=concept_bag_scrollbar.set)
     Global.GlobalGUI.gui_concept_bag_listbox.grid(row=1, column=3, columnspan=2)
 
-    def listbox_item_click_callback(event):
+    def listbox_sentence_item_click_callback(event, iterable_with_sentences):
+        selection = event.widget.curselection()
+        if selection:
+            index = selection[0]
+            sentence_string = event.widget.get(index)
+            needs_indexing = isinstance(iterable_with_sentences, NARSDataStructures.Table)
+            for sentence_from_iterable in iterable_with_sentences:
+                if needs_indexing:
+                    sentence_from_iterable = sentence_from_iterable[0]
+                if str(sentence_from_iterable) == sentence_string: # found clicked sentence
+                    # window
+                    item_info_window = tk.Toplevel()
+                    item_info_window.title("Sentence Internal Data: " + str(sentence_from_iterable))
+                    item_info_window.geometry('600x500')
+                    item_info_window.grab_set()  # lock the other windows until this window is exited
+
+                    object_listbox_width = 40
+                    object_listbox_height = 20
+
+                    label = tk.Label(item_info_window, text="Sentence: " + str(sentence_from_iterable))
+                    label.grid(row=0, column=0)
+
+                    # Evidential base listbox
+                    label = tk.Label(item_info_window, text="Sentence Evidential Base", font=('bold'))
+                    label.grid(row=2, column=0)
+
+                    evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
+                                                         width=object_listbox_width, font=('', 8))
+                    evidential_base_listbox.grid(row=3, column=0)
+                    for sentence in sentence_from_iterable.stamp.evidential_base:
+                        evidential_base_listbox.insert(tk.END, str(sentence))
+                    evidential_base_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,sentence_from_iterable.stamp.evidential_base))
+
+                    # Interacted sentences listbox
+                    label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
+                    label.grid(row=2, column=1)
+
+                    interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
+                                                              width=object_listbox_width, font=('', 8))
+                    interacted_sentences_listbox.grid(row=3, column=1)
+                    for sentence in sentence_from_iterable.stamp.interacted_sentences:
+                        interacted_sentences_listbox.insert(tk.END, str(sentence))
+                    interacted_sentences_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,sentence_from_iterable.stamp.interacted_sentences))
+
+    def listbox_datastructure_item_click_callback(event):
         """
             Presents a window describing the concept's internal data.
             Locks the interface until the window is closed.
@@ -93,14 +137,16 @@ def execute_internal_gui(window):
             item_info_window = tk.Toplevel()
             item_info_window.title(type(object).__name__ + " Internal Data: " + item_string)
             item_info_window.geometry('600x500')
+            item_info_window.grab_set()  # lock the other windows until this window is exited
+
+            # info
+            label = tk.Label(item_info_window, text=type(object).__name__ + " Name: " + str(object))
+            label.grid(row=0, column=0)
 
             object_listbox_width = 40
             object_listbox_height = 20
 
             if isinstance(object, NARSMemory.Concept):
-                # info
-                label = tk.Label(item_info_window, text=type(object).__name__ + " NAME: " + str(object))
-                label.grid(row=0, column=0)
 
                 label = tk.Label(item_info_window, text="Number of Term Links: " + str(object.term_links.count))
                 label.grid(row=1, column=0)
@@ -108,45 +154,48 @@ def execute_internal_gui(window):
                 label = tk.Label(item_info_window, text="Beliefs", font=('bold'))
                 label.grid(row=3, column=0)
 
+                # beliefs table listbox
                 belief_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
                 belief_listbox.grid(row=4,column=0)
-                for belief in object.belief_table.depq:
+                for belief in object.belief_table:
                     belief_listbox.insert(tk.END,str(belief[0]))
+                belief_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.belief_table)) # define callback
 
+                # desires table listbox
                 label = tk.Label(item_info_window, text="Desires", font=('bold'))
                 label.grid(row=3, column=1)
 
                 desire_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
                 desire_listbox.grid(row=4,column=1)
-                for desire in object.desire_table.depq:
+                for desire in object.desire_table:
                     desire_listbox.insert(tk.END,str(desire[0]))
-            elif isinstance(object, NARSDataStructures.Task):
-                # info
-                label = tk.Label(item_info_window, text=type(object).__name__ + " Name: " + object.sentence.get_formatted_string())
-                label.grid(row=0, column=0)
+                desire_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.desire_table)) # define callback
 
-                #label
+            elif isinstance(object, NARSDataStructures.Task):
+                # Evidential base listbox
                 label = tk.Label(item_info_window, text="Sentence Evidential Base", font=('bold'))
                 label.grid(row=2, column=0)
 
                 evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
                 evidential_base_listbox.grid(row=3,column=0)
                 for sentence in object.sentence.stamp.evidential_base:
-                    evidential_base_listbox.insert(tk.END,sentence.get_formatted_string())
+                    evidential_base_listbox.insert(tk.END,str(sentence))
+                evidential_base_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.sentence.stamp.evidential_base))
 
+                # Interacted sentences listbox
                 label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
                 label.grid(row=2, column=1)
 
                 interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
                 interacted_sentences_listbox.grid(row=3,column=1)
                 for sentence in object.sentence.stamp.interacted_sentences:
-                    interacted_sentences_listbox.insert(tk.END,sentence.get_formatted_string())
+                    interacted_sentences_listbox.insert(tk.END,str(sentence))
+                interacted_sentences_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.sentence.stamp.interacted_sentences))
 
-            item_info_window.grab_set() # lock the other windows until this window is exited
 
     # define callbacks when clicking items in any box
-    Global.GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", listbox_item_click_callback)
-    Global.GlobalGUI.gui_experience_buffer_listbox.bind("<<ListboxSelect>>", listbox_item_click_callback)
+    Global.GlobalGUI.gui_concept_bag_listbox.bind("<<ListboxSelect>>", listbox_datastructure_item_click_callback)
+    Global.GlobalGUI.gui_experience_buffer_listbox.bind("<<ListboxSelect>>", listbox_datastructure_item_click_callback)
 
 
 def execute_interface_gui(window):
