@@ -288,6 +288,10 @@ def main():
         shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread")
         shell_input_thread.daemon = True
         shell_input_thread.start()
+        Global.Global.paused = False
+    else: # using interface
+        Global.Global.paused = True
+
 
     time.sleep(0.5) # give threads time to setup
 
