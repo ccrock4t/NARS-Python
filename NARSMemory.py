@@ -18,6 +18,7 @@ class Memory:
 
     def __init__(self):
         self.concepts_bag = NARSDataStructures.Bag(item_type=Concept)
+        self.current_cycle_number = 0
 
     def get_number_of_concepts(self):
         """

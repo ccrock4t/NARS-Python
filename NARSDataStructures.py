@@ -401,7 +401,7 @@ class Task:
     def __init__(self, sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
-        self.creation_timestamp: int = Global.Global.current_cycle_number  # save the task's creation time
+        self.creation_timestamp: int = Global.Global.NARS.memory.current_cycle_number  # save the task's creation time
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
         #only used for question tasks

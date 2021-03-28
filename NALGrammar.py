@@ -118,7 +118,7 @@ class Sentence:
         """
         def __init__(self, self_sentence):
             self.id = Global.Global.NARS.memory.get_next_stamp_id()
-            self.creation_time = Global.Global.current_cycle_number  # when was this stamp created (in inference cycles)?
+            self.creation_time = Global.Global.NARS.memory.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
             self.sentence = self_sentence
             self.evidential_base = self.EvidentialBase(self.sentence)

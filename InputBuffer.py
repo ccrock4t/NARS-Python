@@ -22,7 +22,7 @@ def add_input_string(input_string: str):
                 "Buffer count (tasks in buffer): " + str(Global.Global.NARS.overall_experience_buffer.count))
             return
         elif input_string == "cycle":
-            Global.GlobalGUI.print_to_output("Current cycle: " + str(Global.Global.current_cycle_number))
+            Global.GlobalGUI.print_to_output("Current cycle: " + str(Global.Global.NARS.memory.current_cycle_number))
             return
         elif input_string == "save":
             Global.Global.NARS.save_memory_to_disk()

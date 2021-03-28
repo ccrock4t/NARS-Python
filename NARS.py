@@ -25,7 +25,6 @@ class NARS:
     """
        NARS Class
     """
-
     def __init__(self):
         self.overall_experience_buffer = NARSDataStructures.Bag(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
@@ -45,7 +44,6 @@ class NARS:
             Load a NARS Memory instance from disk.
             This will override the NARS current memory
         """
-        assert(Global.Global.current_cycle_number == 0),"ERROR: Don't load memory after working cycle #0"
         with open(filename, "rb") as f:
             Global.GlobalGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
             self.memory = pickle.load(f)
@@ -56,6 +54,9 @@ class NARS:
                     if item not in self.memory.concepts_bag:
                         Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
+            if Global.GlobalGUI.gui_use_interface:
+                Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
+                
             Global.GlobalGUI.print_to_output("LOAD MEMORY SUCCESS")
 
     def run(self):
@@ -79,7 +80,7 @@ class NARS:
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
         if Global.GlobalGUI.gui_use_interface:
-            Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(Global.Global.current_cycle_number))
+            Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
 
         InputBuffer.process_next_pending_sentence()
 
@@ -92,7 +93,7 @@ class NARS:
             # CONSIDER
             self.Consider()
 
-        Global.Global.current_cycle_number = Global.Global.current_cycle_number + 1
+        self.memory.current_cycle_number = self.memory.current_cycle_number + 1
 
     def do_working_cycles(self, cycles: int):
         """
