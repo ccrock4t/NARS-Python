@@ -275,7 +275,7 @@ def main():
     # set globals
     Global.GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     # todo investigate why using the interface slows down the system
-    Global.GlobalGUI.gui_use_interface = False # Setting this to False uses the shell as interface, and results in a massive speedup
+    Global.GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface, and results in a massive speedup
 
     # setup internal/interface GUI
     if Global.GlobalGUI.gui_use_internal_data or Global.GlobalGUI.gui_use_interface:
