@@ -243,7 +243,7 @@ def nal_conversion(j: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j)
     # Statement
     result_statement = NALGrammar.Statement(j.statement.get_predicate_term(),
-                                j.statement.get_subject_term(), NALSyntax.Copula.Inheritance)
+                                j.statement.get_subject_term(), j.statement.copula)
 
     if j.punctuation == NALSyntax.Punctuation.Judgment:
         # compute values of combined evidence
@@ -298,9 +298,10 @@ def nal_deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
+
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
-                                j1.statement.get_predicate_term(), NALSyntax.Copula.Inheritance)
+                                j1.statement.get_predicate_term(), j1.statement.copula)
 
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
@@ -354,19 +355,19 @@ def nal_analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         #j1=M-->P, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
-                                    NALSyntax.Copula.Inheritance) # S-->P
+                                    j1.statement.copula) # S-->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M-->P, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
-                                    NALSyntax.Copula.Inheritance) # S-->P
+                                    j1.statement.copula) # S-->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1=P-->M, j2=S<->M
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(), j2.statement.get_subject_term(),
-                                    NALSyntax.Copula.Inheritance) # P-->S
+                                    j1.statement.copula) # P-->S
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P-->M, j2=M<->S
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(), j2.statement.get_predicate_term(),
-                                    NALSyntax.Copula.Inheritance) # P-->S
+                                    j1.statement.copula) # P-->S
     else:
         assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
@@ -418,19 +419,19 @@ def nal_resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         # j1=M<->P, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_predicate_term(),
-                                    NALSyntax.Copula.Inheritance)  # S<->P
+                                    j1.statement.copula)  # S<->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M<->P, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j1.statement.get_predicate_term(),
-                                    NALSyntax.Copula.Inheritance)  # S<->P
+                                    j1.statement.copula)  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1=P<->M, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(),
-                                    NALSyntax.Copula.Inheritance)  # S<->P
+                                    j1.statement.copula)  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P<->M, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(), j2.statement.get_subject_term(),
-                                    NALSyntax.Copula.Inheritance)  # S<->P
+                                    j1.statement.copula)  # S<->P
     else:
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
@@ -485,7 +486,7 @@ def nal_abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j2)
 
     # Statement
-    result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), NALSyntax.Copula.Inheritance)
+    result_statement = NALGrammar.Statement(j2.statement.get_subject_term(), j1.statement.get_subject_term(), j1.statement.copula)
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
@@ -531,7 +532,7 @@ def nal_induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j2)
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
-                                j1.statement.get_predicate_term(), NALSyntax.Copula.Inheritance)
+                                j1.statement.get_predicate_term(), j1.statement.copula)
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
@@ -577,7 +578,7 @@ def nal_exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j2)
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
-                                j1.statement.get_subject_term(), NALSyntax.Copula.Inheritance)
+                                j1.statement.get_subject_term(), j1.statement.copula)
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value

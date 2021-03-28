@@ -54,8 +54,12 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
                  (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula))) and \
                 (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term)
 
-    if tautology:
-        return derived_tasks  # don't do inference, it will result in tautology
+    # check if copula are the same
+    different_copulas = (j1_copula != j2_copula)
+
+    if tautology or different_copulas:
+        # can't do inference
+        return derived_tasks
 
     is_question = isinstance(j1, NALGrammar.Question) or isinstance(j2, NALGrammar.Question)
 
