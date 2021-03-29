@@ -116,8 +116,8 @@ def nal_revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     result = NALGrammar.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -256,7 +256,7 @@ def nal_conversion(j: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentence's evidential base
-    result.stamp.evidential_base.merge_evidential_base_into_self(j.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
 
     return result
 
@@ -317,8 +317,8 @@ def nal_deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -385,8 +385,8 @@ def nal_analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -449,8 +449,8 @@ def nal_resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -502,8 +502,8 @@ def nal_abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -548,8 +548,8 @@ def nal_induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -593,8 +593,8 @@ def nal_exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 
@@ -646,8 +646,8 @@ def nal_comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_evidential_base_into_self(j1.stamp.evidential_base)
-    result.stamp.evidential_base.merge_evidential_base_into_self(j2.stamp.evidential_base)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
 

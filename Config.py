@@ -18,6 +18,12 @@ BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 a
 BAG_PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
 
 """
+    Buffers
+"""
+BUFFER_CAPACITY = 30
+BUFFER_PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
+
+"""
     Tables
 """
 TABLE_CAPACITY = 30

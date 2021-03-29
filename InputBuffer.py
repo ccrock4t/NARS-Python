@@ -43,9 +43,9 @@ def process_next_pending_sentence():
     """
         Processes the next pending sentence from input buffer if one exists
     """
-    if input_queue.qsize() > 0:
-        sentence = input_queue.get()
-        process_sentence(sentence)
+    if input_queue.qsize() == 0: return # no inputs
+    sentence = input_queue.get()
+    process_sentence(sentence)
 
 
 def process_sentence(sentence: NALGrammar.Sentence):

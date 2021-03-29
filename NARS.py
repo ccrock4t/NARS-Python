@@ -44,20 +44,24 @@ class NARS:
             Load a NARS Memory instance from disk.
             This will override the NARS current memory
         """
-        with open(filename, "rb") as f:
-            Global.GlobalGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
-            self.memory = pickle.load(f)
-            # Print memory contents to internal data GUI
-            if Global.GlobalGUI.gui_use_internal_data:
-                Global.GlobalGUI.clear_output_gui(data_structure=self.memory.concepts_bag)
-                for item in self.memory.concepts_bag:
-                    if item not in self.memory.concepts_bag:
-                        Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
+        try:
+            with open(filename, "rb") as f:
+                Global.GlobalGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
+                # load memory from file
+                self.memory = pickle.load(f)
+                # Print memory contents to internal data GUI
+                if Global.GlobalGUI.gui_use_internal_data:
+                    Global.GlobalGUI.clear_output_gui(data_structure=self.memory.concepts_bag)
+                    for item in self.memory.concepts_bag:
+                        if item not in self.memory.concepts_bag:
+                            Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
-            if Global.GlobalGUI.gui_use_interface:
-                Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
-                
-            Global.GlobalGUI.print_to_output("LOAD MEMORY SUCCESS")
+                if Global.GlobalGUI.gui_use_interface:
+                    Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
+
+                Global.GlobalGUI.print_to_output("LOAD MEMORY SUCCESS")
+        except:
+            Global.GlobalGUI.print_to_output("LOAD MEMORY FAIL")
 
     def run(self):
         """
@@ -210,9 +214,8 @@ class NARS:
 
         j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
 
-        # can't process if no related belief, they have evidential overlap,
-        # or they have already interacted previously
-        if (j2 is None) or (j1.has_evidential_overlap(j2)) or (j2 in j1.stamp.interacted_sentences): return
+        # done if can't interact
+        if not NALGrammar.Sentence.may_interact(j1,j2): return
 
         derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
         for derived_task in derived_tasks:
@@ -257,14 +260,14 @@ class NARS:
         j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
         if related_concept is None: return  # no related concepts!
 
-        # can't process if no related belief, they have evidential overlap,
-        # or they have already interacted previously
-        if (j2 is None) or (j1.has_evidential_overlap(j2)) or (j2 in j1.stamp.interacted_sentences): return
+        # done if can't interact
+        if not NALGrammar.Sentence.may_interact(j1,j2): return
 
         derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
         # add all derived tasks to the buffer
         for derived_task in derived_tasks:
             self.overall_experience_buffer.put_new_item(derived_task)
+
 
 
 

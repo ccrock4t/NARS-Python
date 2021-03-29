@@ -1,9 +1,7 @@
 import enum
-
 import Config
 import Global
 import NALSyntax
-import NARSMemory
 
 """
     Author: Christian Hahm
@@ -30,11 +28,12 @@ class Sentence:
         return self.get_formatted_string()
 
     def __hash__(self):
-        return self.stamp.id
+        """
+            A Sentence is identified by its ID
 
-    def has_evidential_overlap(self, sentence):
-        assert_sentence(sentence)
-        return self.stamp.evidential_base.has_evidential_overlap(sentence.stamp.evidential_base)
+            :return: Sentence ID
+        """
+        return self.stamp.id
 
     def get_formatted_string(self):
         string = Global.Global.SENTENCE_ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER
@@ -107,6 +106,15 @@ class Sentence:
 
         return sentence
 
+    @classmethod
+    def may_interact(cls,j1,j2):
+        if j1 is None or j2 is None: return False
+        if j1.stamp.id == j2.stamp.id: return False
+        if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually
+        if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
+        if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
+        return True
+
     class Stamp:
         """
             (id, tcr, toc, C, E) ∈ N×N×N×N×P(N)
@@ -121,7 +129,7 @@ class Sentence:
             self.creation_time = Global.Global.NARS.memory.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
             self.sentence = self_sentence
-            self.evidential_base = self.EvidentialBase(self.sentence)
+            self.evidential_base = self.EvidentialBase()
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
         def mutually_add_to_interacted_sentences(self, other_sentence):
@@ -137,20 +145,23 @@ class Sentence:
             """
                 Stores history of how the sentence was derived
             """
-            def __init__(self, self_sentence):
+            def __init__(self):
                 self.base = []  # array of sentences
-                self.base.append(self_sentence)  # append this sentence
 
             def __iter__(self):
                 return iter(self.base)
 
-            def merge_evidential_base_into_self(self, other_base):
+            def __contains__(self, object):
+                return object in self.base
+
+            def merge_sentence_evidential_base_into_self(self, sentence):
                 """
-                    Merge other evidential base into self.
+                    Merge a Sentence's evidential base into self, including the Sentence itself.
                     This function assumes the base to merge does not have evidential overlap with this base
                     #todo figure out good way to store evidential bases such that older evidence is purged on overflow
                 """
-                for sentence in other_base.base:
+                self.base.append(sentence)
+                for sentence in sentence.stamp.evidential_base:
                     self.base.append(sentence)
 
                 while len(self.base) > Config.MAX_EVIDENTIAL_BASE_LENGTH:

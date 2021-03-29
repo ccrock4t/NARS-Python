@@ -225,6 +225,6 @@ def make_new_task_from_derived_sentence(derived_sentence: NALGrammar.Sentence, j
 
     :return: Task for derived_sentence
     """
-    #print(inference_rule + " Derived Task: " + str(derived_sentence) + " using j1: " + str(j1) + " j2: " + str(j2))
+    print(inference_rule + " Derived Task: " + str(derived_sentence) + " using j1: " + str(j1) + " j2: " + str(j2))
     derived_task = NARSDataStructures.Task(derived_sentence)
     return derived_task

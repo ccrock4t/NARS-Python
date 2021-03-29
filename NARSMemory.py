@@ -84,7 +84,9 @@ class Memory:
             Get a belief (named by a Statement Term) that is semantically related to the given concept by a term.
             This can return a belief from the input concept, which can be used in Revision.
 
-            Returns None if couldn't find such a belief
+            :param concept - Statement-Term Concept for which to find a semantically related Statement-Term concept
+
+            :return Statement-Term Concept semantically related to param: `concept`; None if couldn't find any such belief
         """
         related_concept = None
 
@@ -113,7 +115,10 @@ class Memory:
         NALGrammar.assert_term(term)
 
 
-    def get_next_stamp_id(self):
+    def get_next_stamp_id(self) -> int:
+        """
+            :return: next available Stamp ID
+        """
         self.next_stamp_id = self.next_stamp_id + 1
         return self.next_stamp_id - 1
 
@@ -135,15 +140,11 @@ class Concept:
     def __eq__(self, other):
         return self.get_formatted_string() == other.get_formatted_string()
 
-    def __hash__(self):
-        """
-            Warning -- hash will return a different number between different python sessions
-        """
-        return hash(str(self))
-
     def set_term_link(self, concept):
         """
-            Set a bidirectional term link between 2 concepts. Does nothing if the link already exists
+            Set a bidirectional term link between 2 concepts, by placing the concept into
+            the term links bag.
+            Does nothing if the link already exists
         """
         assert_concept(concept)
         if concept in self.term_links: return  # already linked
@@ -156,11 +157,14 @@ class Concept:
             todo: use this somewhere
         """
         assert_concept(concept)
-        assert (concept.term in self.term_links), concept.term + "must be in term links."
-        self.term_links.take(key=str(concept.term))
-        concept.term_links.take(key=str(self.term))
+        assert (concept in self.term_links), concept + "must be in term links."
+        self.term_links.take(key=NARSDataStructures.Item_Container.Item.get_key_from_object(concept))
+        concept.term_links.take(key=NARSDataStructures.Item_Container.Item.get_key_from_object(self))
 
     def get_formatted_string(self):
+        """
+            A concept is named by its term
+        """
         return self.term.get_formatted_string()
 
 
