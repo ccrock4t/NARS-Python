@@ -26,7 +26,7 @@ class NARS:
        NARS Class
     """
     def __init__(self):
-        self.overall_experience_buffer = NARSDataStructures.Bag(item_type=NARSDataStructures.Task)
+        self.overall_experience_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
         Global.Global.NARS = self
 
@@ -212,7 +212,7 @@ class NARS:
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
             if related_concept is None: return  # no related concepts!
 
-        j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+        j2 = related_concept.belief_table.peek_max()  # get most confident related_belief of related concept
 
         # done if can't interact
         if not NALGrammar.Sentence.may_interact(j1,j2): return
@@ -239,7 +239,7 @@ class NARS:
         statement_concept = self.memory.peek_concept(statement_term)
 
         # get the best answer from concept belief table
-        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek()
+        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek_max()
         j1 = None
         if best_answer is not None:
             #
@@ -257,7 +257,7 @@ class NARS:
 
         # get a related concept
         related_concept = self.memory.get_semantically_related_concept(statement_concept)
-        j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+        j2 = related_concept.belief_table.peek_max()  # get most confident related_belief of related concept
         if related_concept is None: return  # no related concepts!
 
         # done if can't interact

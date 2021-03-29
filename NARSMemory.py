@@ -158,8 +158,8 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.term_links), concept + "must be in term links."
-        self.term_links.take(key=NARSDataStructures.Item_Container.Item.get_key_from_object(concept))
-        concept.term_links.take(key=NARSDataStructures.Item_Container.Item.get_key_from_object(self))
+        self.term_links.take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
+        concept.term_links.take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
 
     def get_formatted_string(self):
         """

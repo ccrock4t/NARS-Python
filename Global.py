@@ -77,7 +77,7 @@ class GlobalGUI:
             i = 0
             for row in string_list:
                 row_priority = row[row.find(GlobalGUI.GUI_BUDGET_SYMBOL) + 1:row.rfind(GlobalGUI.GUI_BUDGET_SYMBOL)]
-                if float(msg_priority) >= float(row_priority):
+                if float(msg_priority) > float(row_priority):
                     idx_to_insert = i
                     break
                 i = i + 1

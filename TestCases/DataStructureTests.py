@@ -77,6 +77,8 @@ def test_bag_overflow():
     for i in range(0, NARS.Config.BAG_CAPACITY + 5):
         testbag.put_new_item(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
         items_added = items_added + 1
+        if items_added <= NARS.Config.BAG_CAPACITY:
+            assert len(testbag) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"
 
     assert (items_added > NARS.Config.BAG_CAPACITY), "TEST FAILURE: For this test, add more items than the capacity"
     assert (testbag.count == NARS.Config.BAG_CAPACITY), "TEST FAILURE: Bag did not maintain capacity on overflow"

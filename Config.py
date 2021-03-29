@@ -8,7 +8,7 @@
 """
 k = 1 # evidential horizon
 t = 0.25 # decision rule (goal decision-making) threshold
-MINDFULNESS = 0.5 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
+MINDFULNESS = 0.75 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
 
 """
     Bags
@@ -20,8 +20,8 @@ BAG_PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority dur
 """
     Buffers
 """
-BUFFER_CAPACITY = 30
-BUFFER_PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
+BUFFER_CAPACITY = 60
+BUFFER_PRIORITY_DECAY_MULTIPLIER = 0.99 # value in [0,1] multiplied w/ priority during priority decay
 
 """
     Tables

@@ -12,18 +12,17 @@ import NARSMemory
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
 
-class Item_Container:
+class ItemContainer:
     """
         Base Class for data structures which contain "Items", as defined in this class.
 
         Examples of Item Containers include Bag and Buffer.
     """
-    def __init__(self, item_type, capacity):
+    def __init__(self, item_type, decay_multiplier):
         self.item_type = item_type  # the class of the objects this Container stores (be wrapped in Item)
-        self.capacity = capacity
         self.item_lookup_table = dict()  # for accessing Item by key
-        self.count = 0  # number of Items stored in the Container
         self.next_item_id = 0
+        self.decay_multiplier = decay_multiplier
 
     def __contains__(self, object):
         """
@@ -34,10 +33,7 @@ class Item_Container:
         :return: True if the item is in the Bag;
                     False otherwise
         """
-        return Item_Container.Item.get_key_from_object(object) in self.item_lookup_table
-
-    def __len__(self):
-        return self.count
+        return ItemContainer.Item.get_key_from_object(object) in self.item_lookup_table
 
     def __iter__(self):
         return iter(self.item_lookup_table.values())
@@ -50,14 +46,34 @@ class Item_Container:
             :param object - new object to wrap in an Item and place in the bag
         """
         assert (isinstance(object, self.item_type)), "object must be of type " + str(self.item_type)
-        item = Item_Container.Item(object,self)
+        item = ItemContainer.Item(object, self)
         self.put(item)
 
-    def put(self,item):
-        assert False,"ERROR: put() not defined for Item Container base class"
+    def put_into_lookup_table(self, item):
+        """
+            Puts item into lookup table and GUI
+        :param item:
+        """
+        if item.key in self.item_lookup_table: return  # item already exists
 
-    def peek(self,key):
-        assert False,"ERROR: peek() not defined for Item Container base class"
+        # put item into lookup table
+        self.item_lookup_table[item.key] = item
+
+        # Print to internal data GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self)
+
+    def take_from_lookup_table(self, key):
+        item = self.item_lookup_table.pop(key)  # remove item reference from lookup table
+
+        # Print to internal data GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(msg=str(item), data_structure=self)
+
+        return item
+
+    def _take_smallest_priority_item(self):
+        assert False,"Take smallest priority item not defined for generic Item Container!"
 
     def get_next_item_id(self) -> int:
         self.next_item_id = self.next_item_id + 1
@@ -77,32 +93,30 @@ class Item_Container:
 
                 budget ($priority$)
         """
-        def __init__(self, object, containing_bag):
+        def __init__(self, object, container):
             """
             :param object: object to wrap in the item
-            :param containing_bag: the Bag instance that will contain this item
+            :param container: the Item Container instance that will contain this item
             """
             self.object = object
-            self.id = containing_bag.get_next_item_id()
+            self.container = container
+            self.id = container.get_next_item_id()
             priority = None
             quality = None
             if isinstance(object, Task):
-                if isinstance(object.sentence, NALGrammar.Judgment):
-                    priority = object.sentence.value.confidence
-                else: # question or goal, give high priority
-                    priority = 0.99
-                quality = 0.01
+                priority = 0.990
+                quality = 0.010
             elif isinstance(object, NARSMemory.Concept):
-                priority = 0.99
-                quality = 0.50
+                priority = 0.990
+                quality = 0.500
 
             if priority is not None:
-                self.key = Item_Container.Item.get_key_from_object(object)
-                self.budget = Item_Container.Item.Budget(priority=priority, quality=quality)
+                self.key = ItemContainer.Item.get_key_from_object(object)
+                self.budget = ItemContainer.Item.Budget(priority=priority, quality=quality)
             else:
                 #print("Don't know how to handle unknown item added to bag. Using default budget")
                 self.key = str(object)
-                self.budget = Item_Container.Item.Budget()
+                self.budget = ItemContainer.Item.Budget()
 
             self.current_bucket_number = self.get_target_bucket_number()
 
@@ -125,13 +139,13 @@ class Item_Container:
                    + str(self.object) \
                    + " " \
                    + Global.GlobalGUI.GUI_BUDGET_SYMBOL \
-                   + "{:.2f}".format(self.budget.priority) \
+                   + "{:.3f}".format(self.budget.priority) \
                    + Global.GlobalGUI.GUI_BUDGET_SYMBOL
 
 
         def get_target_bucket_number(self):
             """
-                Returns: The bucket number this item belongs in according to its priority.
+                Returns: The Bag bucket number this item belongs in according to its priority.
 
                 It is calculated as this item's priority [0,1] converted to a corresponding probability
                 based on Bag granularity
@@ -143,9 +157,9 @@ class Item_Container:
             """
                 Decay this item's priority
             """
-            new_priority = self.budget.priority * Config.BAG_PRIORITY_DECAY_MULTIPLIER
+            new_priority = self.budget.priority * self.container.decay_multiplier
             if new_priority < self.budget.quality: return # priority can't go below quality
-            self.budget.priority = new_priority
+            self.budget.priority = round(new_priority, 3)
 
         class Budget:
             """
@@ -157,7 +171,7 @@ class Item_Container:
                 self.priority = priority
                 self.quality = quality
 
-class Bag(Item_Container):
+class Bag(ItemContainer):
     """
         Probabilistic priority-queue
 
@@ -171,12 +185,17 @@ class Bag(Item_Container):
         self.number_of_buckets = Config.BAG_NUMBER_OF_BUCKETS  # number of buckets in the bag (the bag's granularity)
         self.buckets = dict()  # for accessing items by priority
         self.current_bucket_number = 0  # keeps track of the Bag's current bucket number
+        self.count = 0
+        self.capacity = Config.BAG_CAPACITY
 
         # initialize buckets
         for i in range(1, self.number_of_buckets + 1):
             self.buckets[i] = []
 
-        super().__init__(item_type=item_type,capacity=Config.BAG_CAPACITY)
+        super().__init__(item_type=item_type, decay_multiplier=Config.BAG_PRIORITY_DECAY_MULTIPLIER)
+
+    def __len__(self):
+        return self.count
 
     def put(self, item):
         """
@@ -184,24 +203,20 @@ class Bag(Item_Container):
 
             :param Bag Item to place into the Bag
         """
-        assert (isinstance(item, Item_Container.Item)), "item must be of type " + str(Item_Container.Item)
+        assert (isinstance(item, ItemContainer.Item)), "item must be of type " + str(ItemContainer.Item)
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
         if item.key in self.item_lookup_table: return # item already exists
-
-        # put item into lookup table and bucket
-        self.item_lookup_table[item.key] = item
+        # put item into bucket
         self.buckets[item.get_target_bucket_number()].append(item)
 
         # increase Bag count
         self.count = self.count + 1
 
-        # Print to internal data GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self)
+        super().put_into_lookup_table(item=item)
 
         # remove lowest priority item if over capacity
-        if self.count > self.capacity:
+        if len(self) > self.capacity:
             smallest_item = self._take_smallest_priority_item()
             # update GUI
             if Global.GlobalGUI.gui_use_internal_data:
@@ -220,7 +235,7 @@ class Bag(Item_Container):
         if key is None:
             item, _ = self._peek_item_probabilistically()
         else:
-            item = self.peek_using_key(key=key)
+            item = super().peek_using_key(key=key)
         return item
 
     def take(self, key=None):
@@ -237,7 +252,7 @@ class Bag(Item_Container):
         if key is None:
             item = self._take_item_probabilistically()
         else:
-            item = self._take_item_by_key(key)
+            item = self.take_from_lookup_table(key)
 
         # update GUI
         if Global.GlobalGUI.gui_use_internal_data:
@@ -245,14 +260,15 @@ class Bag(Item_Container):
 
         return item
 
-    def _take_item_by_key(self, key):
+    def take_from_lookup_table(self, key):
         """
         :param key: key of the item to remove
         :return: the removed item
         """
         assert (key in self.item_lookup_table), "Given key does not exist in this bag"
-        item = self.item_lookup_table.pop(key)  # remove item reference from lookup table
+        item = super().take_from_lookup_table(key=key)
         self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
+
         self.count = self.count - 1  # decrement bag count
 
         return item
@@ -288,10 +304,12 @@ class Bag(Item_Container):
         # peek a random item from the bucket
         _, randidx = self._peek_random_item_from_current_bucket()
 
-        # remove the item
+        # remove the item from the bucket
         item = self.buckets[self.current_bucket_number].pop(randidx)
+
         # remove item reference from lookup table
-        self.item_lookup_table.pop(item.key)
+        super().take_from_lookup_table(key=item.key)
+
         self.count = self.count - 1  # decrement bag count
 
         # restore original index
@@ -348,83 +366,45 @@ class Bag(Item_Container):
         """
         self.current_bucket_number = (self.current_bucket_number % self.number_of_buckets) + 1
 
-
-class Buffer(Item_Container):
-    """
-        Priority-Queue
-    """
-
-    def __init__(self,item_type):
-        super().__init__(item_type=item_type, capacity=Config.BUFFER_CAPACITY)
-
-
-class Table:
-    """
-        NARS Table, stored within Concepts.
-        Tables store Narsese sentences using a double ended priority queue, sorted by confidence
-        It purges lowest-confidence items when it overflows.
-    """
-
-    def __init__(self, punctuation=NALSyntax.Punctuation.Judgment, maxsize=Config.TABLE_CAPACITY):
-        self.punctuation = punctuation
+class Depq():
+    def __init__(self, maxlength):
+        self.maxlength = maxlength
         self.depq = depq.DEPQ(iterable=None, maxlen=None)  # maxheap depq
-        self.maxsize = maxsize
 
     def __iter__(self):
         return iter(self.depq)
 
-    def insert(self, sentence: NALGrammar.Sentence):
-        """
-            Insert a Sentence into the depq, sorted by confidence.
-        """
-        assert (
-                sentence.punctuation == self.punctuation), "Cannot insert sentence into a Table of different punctuation"
-        self.depq.insert(sentence, sentence.value.confidence)
-        if (len(self.depq) > self.maxsize):
-            self.extract_min()
+    def __len__(self):
+        return len(self.depq)
 
-    def take(self):
-        """
-            Remove and return the sentence in the table with the highest confidence
-
-            Returns None if depq is empty
-        """
-        if len(self.depq) == 0: return None
-        return self.extract_max()
-
-    def peek(self):
-        """
-            Peek sentence with highest confidence from the depq
-            O(1)
-
-            Returns None if depq is empty
-        """
-        if len(self.depq) == 0: return None
-        return self.peek_max()
+    def insert_object(self, object, priority):
+        self.depq.insert(object, priority)
 
     def extract_max(self):
         """
-            Extract sentence with highest confidence from the depq
+            Extract object with highest priority from the depq
             O(1)
 
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
-        return self.depq.popfirst()[0]
+        max = self.depq.popfirst()[0]
+        return max
 
     def extract_min(self):
         """
-            Extract sentence with lowest confidence from the depq
+            Extract object with lowest priority from the depq
             O(1)
 
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
-        return self.depq.poplast()[0]
+        min = self.depq.poplast()[0]
+        return min
 
     def peek_max(self):
         """
-            Peek sentence with highest confidence from the depq
+            Peek object with highest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -434,7 +414,7 @@ class Table:
 
     def peek_min(self):
         """
-            Peek sentence with lowest confidence from the depq
+            Peek object with lowest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -442,8 +422,63 @@ class Table:
         if len(self.depq) == 0: return None
         return self.depq.last()
 
-    def __len__(self):
-        return len(self.depq)
+class Buffer(ItemContainer, Depq):
+    """
+        Priority-Queue
+    """
+    def __init__(self,item_type):
+        ItemContainer.__init__(self, item_type=item_type, decay_multiplier=Config.BUFFER_PRIORITY_DECAY_MULTIPLIER) # Item Container
+        Depq.__init__(self,maxlength=Config.BUFFER_CAPACITY) #Depq
+
+    def put(self, item: ItemContainer.Item):
+        """
+            Insert an Item into the depq, sorted by priority.
+        """
+        Depq.insert_object(self,item, item.budget.priority) # Depq
+        ItemContainer.put_into_lookup_table(self, item)  # Item Container
+
+        if len(self) > self.maxlength:
+            min_item = self.extract_min()
+            # update GUI
+            if Global.GlobalGUI.gui_use_internal_data:
+                Global.GlobalGUI.remove_from_output(str(min_item), data_structure=self)
+
+    def take(self):
+        max_item = Depq.extract_max(self)
+        ItemContainer.take_from_lookup_table(self, max_item.key)
+        return max_item
+
+    def peek(self, key):
+        """
+            Peek object with highest priority from the depq
+            O(1)
+
+            Returns None if depq is empty
+        """
+        if len(self) == 0: return None
+        if key is None:
+            return Depq.peek_max(self)
+        else:
+            return ItemContainer.peek_using_key(self, key=key)
+
+
+class Table(Depq):
+    """
+        NARS Table, stored within Concepts.
+        Tables store Narsese sentences using a double ended priority queue, sorted by confidence
+        It purges lowest-confidence items when it overflows.
+    """
+
+    def __init__(self, punctuation=NALSyntax.Punctuation.Judgment):
+        self.punctuation = punctuation
+        super().__init__(maxlength=Config.TABLE_CAPACITY)
+
+    def insert(self, sentence: NALGrammar.Sentence):
+        """
+            Insert a Sentence into the depq, sorted by confidence.
+        """
+        assert (sentence.punctuation == self.punctuation), "Cannot insert sentence into a Table of different punctuation"
+        super().insert_object(sentence, sentence.value.confidence)
 
 
 class Task:
