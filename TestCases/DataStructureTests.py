@@ -2,6 +2,7 @@ import NARSDataStructures
 import NALGrammar
 import NALSyntax
 import NARS
+import NARSMemory
 
 """
     Author: Christian Hahm
@@ -13,23 +14,23 @@ def test_table_removemax():
     """
         Test if the Table can successfully remove its maximum value
     """
-    heap = NARSDataStructures.Table()
+    table = NARSDataStructures.Table()
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(confidences)
     for c in confidences:
         sentence = NALGrammar.Judgment(
             NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
-        heap.insert(sentence)
-    heapmax = heap.extract_max().value.confidence
-    assert(heapmax == maximum), "TEST FAILURE: Heap did not properly retrieve maximum value"
+        table.insert(sentence)
+    tablemax = table.extract_max().value.confidence
+    assert(tablemax == maximum), "TEST FAILURE: Table did not properly retrieve maximum value"
 
 
 def test_table_removemin():
     """
         Test if the Table can successfully remove its minimum value
     """
-    heap = NARSDataStructures.Table()
+    table = NARSDataStructures.Table()
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     minimum = min(confidences)
     for c in confidences:
@@ -37,20 +38,58 @@ def test_table_removemin():
         sentence = NALGrammar.Judgment(
             NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
-        heap.insert(sentence)
+        table.insert(sentence)
 
-    heapmin = heap.extract_min().value.confidence
-    assert (heapmin == minimum), "TEST FAILURE: Heap did not properly retrieve minimum value"
+    tablemin = table.extract_min().value.confidence
+    assert (tablemin == minimum), "TEST FAILURE: Table did not properly retrieve minimum value"
+
+def test_buffer_removemax():
+    """
+        Test if the Table can successfully remove its maximum value
+    """
+    buffer = NARSDataStructures.Buffer(NARSDataStructures.ItemContainer.Item)
+    priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
+    maximum = max(priorities)
+    for p in priorities:
+        sentence = NALGrammar.Judgment(
+            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.TruthValue(0.9, 0.9))
+        item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
+        item.budget.priority = p
+        buffer.put(item)
+    buffermax = buffer.extract_max().budget.priority
+    assert(buffermax == maximum), "TEST FAILURE: Buffer did not properly retrieve maximum value"
+
+
+def test_buffer_removemin():
+    """
+        Test if the Table can successfully remove its minimum value
+    """
+    buffer = NARSDataStructures.Buffer(NARSDataStructures.ItemContainer.Item)
+    priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
+    minimum = min(priorities)
+    for p in priorities:
+        #make sentence <a --> b>. %0.9;c%
+        sentence = NALGrammar.Judgment(
+            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.TruthValue(0.9, 0.9))
+        item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
+        item.budget.priority = p
+        buffer.put(item)
+
+    buffermin = buffer.extract_min().budget.priority
+    assert (buffermin == minimum), "TEST FAILURE: Buffer did not properly retrieve minimum value"
+
 
 
 def test_concept_termlinking():
     """
         Test if term links can be added and removed properly from a concept
     """
-    testnars = NARS.NARS()
-    statement_concept = testnars.memory.peek_concept(NALGrammar.Term.get_term_from_string("(A-->B)"))
-    conceptA = testnars.memory.peek_concept(NALGrammar.Term.get_term_from_string("A"))
-    conceptB = testnars.memory.peek_concept(NALGrammar.Term.get_term_from_string("B"))
+    memory = NARSMemory.Memory()
+    statement_concept = memory.peek_concept(NALGrammar.Term.get_term_from_string("(A-->B)"))
+    conceptA = memory.peek_concept(NALGrammar.Term.get_term_from_string("A"))
+    conceptB = memory.peek_concept(NALGrammar.Term.get_term_from_string("B"))
 
     assert (statement_concept.term_links.count == 2), "TEST FAILURE: Concept " + str(statement_concept) + " does not have 2 termlinks"
     assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink. Has: " + str(conceptA.term_links.count)
@@ -68,7 +107,7 @@ def test_concept_termlinking():
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept does not have 1 termlink"
 
 
-def test_bag_overflow():
+def test_bag_overflow_purge():
     """
         Test if bag stays within capacity when it overflows.
     """
@@ -85,6 +124,12 @@ def test_bag_overflow():
 
 def main():
     """
+        Concept Tests
+    """
+    test_concept_termlinking()
+
+
+    """
         Table Tests
     """
     NARS.NARS()
@@ -92,14 +137,15 @@ def main():
     test_table_removemin()
 
     """
-        Concept Tests
+     Buffer Tests
     """
-    test_concept_termlinking()
+    test_buffer_removemax()
+    test_buffer_removemin()
 
     """
         Bag Tests
     """
-    test_bag_overflow()
+    test_bag_overflow_purge()
 
     print("All Data Structure Tests successfully passed.")
 

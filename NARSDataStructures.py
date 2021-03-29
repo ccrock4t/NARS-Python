@@ -46,7 +46,7 @@ class ItemContainer:
             :param object - new object to wrap in an Item and place in the bag
         """
         assert (isinstance(object, self.item_type)), "object must be of type " + str(self.item_type)
-        item = ItemContainer.Item(object, self)
+        item = ItemContainer.Item(object, self.get_next_item_id(), self.decay_multiplier)
         self.put(item)
 
     def put_into_lookup_table(self, item):
@@ -93,14 +93,14 @@ class ItemContainer:
 
                 budget ($priority$)
         """
-        def __init__(self, object, container):
+        def __init__(self, object, id, decay_multiplier):
             """
             :param object: object to wrap in the item
             :param container: the Item Container instance that will contain this item
             """
             self.object = object
-            self.container = container
-            self.id = container.get_next_item_id()
+            self.id = id
+            self.decay_multiplier = decay_multiplier
             priority = None
             quality = None
             if isinstance(object, Task):
@@ -157,7 +157,7 @@ class ItemContainer:
             """
                 Decay this item's priority
             """
-            new_priority = self.budget.priority * self.container.decay_multiplier
+            new_priority = self.budget.priority * self.decay_multiplier
             if new_priority < self.budget.quality: return # priority can't go below quality
             self.budget.priority = round(new_priority, 3)
 
