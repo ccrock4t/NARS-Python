@@ -10,6 +10,7 @@ GUI screenshots:
 
 ![interface](https://user-images.githubusercontent.com/15344554/111057942-138e9800-8459-11eb-9643-26ff883322e0.PNG)
 
-![internal_data](https://user-images.githubusercontent.com/15344554/112359432-a1fbe880-8ca7-11eb-9864-82fd85fb4480.png)
+![internal_data](https://user-images.githubusercontent.com/15344554/112788467-f517c780-9028-11eb-8b24-385c06ab5422.png)
+
 
 
