@@ -173,6 +173,10 @@ def execute_internal_gui(window):
 
             elif isinstance(object, NARSDataStructures.Task):
                 # Evidential base listbox
+                label = tk.Label(item_info_window, text="Sentence: " + str(object.sentence))
+                label.grid(row=1, column=0)
+
+                # Evidential base listbox
                 label = tk.Label(item_info_window, text="Sentence Evidential Base", font=('bold'))
                 label.grid(row=2, column=0)
 

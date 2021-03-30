@@ -448,6 +448,10 @@ class Buffer(ItemContainer, Depq):
         Depq.insert_object(self,item, item.budget.priority) # Depq
         ItemContainer.put_into_lookup_table(self, item)  # Item Container
 
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.print_to_output(str(item), data_structure=self)
+
         if len(self) > self.maxlength:
             min_item = self.extract_min()
             # update GUI
@@ -455,10 +459,19 @@ class Buffer(ItemContainer, Depq):
                 Global.GlobalGUI.remove_from_output(str(min_item), data_structure=self)
 
     def take(self):
+        """
+            Take the max item from the Buffer
+            :return:
+        """
         if len(self) == 0: return None
-        max_item = Depq.extract_max(self)
-        ItemContainer.take_from_lookup_dict(self, max_item.key)
-        return max_item
+        item = Depq.extract_max(self)
+        ItemContainer.take_from_lookup_dict(self, item.key)
+
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
+
+        return item
 
     def peek(self, key):
         """

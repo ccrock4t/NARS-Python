@@ -28,6 +28,8 @@ def add_input_string(input_string: str):
             Global.Global.NARS.save_memory_to_disk()
         elif input_string == "load":
             Global.Global.NARS.load_memory_from_disk()
+        elif input_string == "load_input":
+            load_input()
         else:
             sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
             input_queue.put(item=sentence)
@@ -36,12 +38,16 @@ def add_input_string(input_string: str):
         return
 
 def add_input_sentence(sentence: NALGrammar.Sentence):
+    """
+        Pend a sentence to be processed.
+        :param sentence:
+    """
     input_queue.put(item=sentence)
 
 
 def process_next_pending_sentence():
     """
-        Processes the next pending sentence from input buffer if one exists
+        Processes the next pending sentence from the input buffer if one exists
     """
     if input_queue.qsize() == 0: return # no inputs
     sentence = input_queue.get()
@@ -49,7 +55,24 @@ def process_next_pending_sentence():
 
 
 def process_sentence(sentence: NALGrammar.Sentence):
+    """
+        Given a Sentence, ingest it into NARS' experience buffer
+        :param sentence:
+    """
     Global.GlobalGUI.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Task(sentence, is_input_task=True)
     Global.Global.NARS.overall_experience_buffer.put_new_item(task)
+
+def load_input(filename="input.nal"):
+    """
+        Load NAL input from a file
+    """
+    try:
+        with open(filename, "r") as f:
+            Global.GlobalGUI.print_to_output("LOADING INPUT FILE: " + filename)
+            for line in f.readlines():
+                add_input_string(line)
+            Global.GlobalGUI.print_to_output("LOAD INPUT SUCCESS")
+    except:
+        Global.GlobalGUI.print_to_output("LOAD INPUT FAIL")

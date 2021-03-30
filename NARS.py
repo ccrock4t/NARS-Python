@@ -119,11 +119,12 @@ class NARS:
         # process task
         self.process_task(task_item.object)
 
-        # decay priority
-        #task_item.decay()
+        if isinstance(task_item.object.sentence, NALGrammar.Question):
+            # decay priority
+            task_item.decay()
 
-        # return task to buffer
-        #self.overall_experience_buffer.put(task_item)
+            # return task to buffer
+            self.overall_experience_buffer.put(task_item)
 
     def Consider(self):
         """
