@@ -90,7 +90,7 @@ class NARS:
 
         # working cycle
         rand = random.random()
-        if rand < Config.MINDFULNESS:
+        if rand < Config.MINDFULNESS and len(self.overall_experience_buffer) > 0:
             # OBSERVE
             self.Observe()
         else:
@@ -120,21 +120,21 @@ class NARS:
         self.process_task(task_item.object)
 
         # decay priority
-        task_item.decay()
+        #task_item.decay()
 
         # return task to buffer
-        self.overall_experience_buffer.put(task_item)
+        #self.overall_experience_buffer.put(task_item)
 
     def Consider(self):
         """
             Process a task from a known concept
         """
-        concept_item = self.memory.concepts_bag.take()
+        concept_item = self.memory.concepts_bag.temporary_take()
 
         if concept_item is None:
             return  # nothing to ponder
 
-        sentence = concept_item.object
+        sentence = concept_item.object.belief_table.peek_max()
 
         if isinstance(sentence, NALGrammar.Judgment):
             # process the judgment
@@ -294,7 +294,6 @@ def main():
         shell_input_thread.start()
 
     Global.Global.paused = Global.GlobalGUI.gui_use_interface
-
 
     time.sleep(0.5) # give threads time to setup
 

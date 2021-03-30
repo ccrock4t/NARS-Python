@@ -230,9 +230,9 @@ def execute_interface_gui(window):
         """
         Global.Global.set_paused(not Global.Global.paused)
 
-    Global.GlobalGUI.play_pause_button = tk.Button(window, text="", command=toggle_pause)
+    Global.GlobalGUI.gui_play_pause_button = tk.Button(window, text="", command=toggle_pause)
     Global.Global.set_paused(Global.Global.paused)
-    Global.GlobalGUI.play_pause_button.grid(row=3, column=4, sticky='s')
+    Global.GlobalGUI.gui_play_pause_button.grid(row=3, column=4, sticky='s')
 
     max_delay = 1000  # in milliseconds
     Global.GlobalGUI.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)

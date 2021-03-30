@@ -22,9 +22,9 @@ class Global:
         """
         Global.paused = paused
         if Global.paused:
-            GlobalGUI.play_pause_button.config(text="PLAY")
+            GlobalGUI.gui_play_pause_button.config(text="PLAY")
         else:
-            GlobalGUI.play_pause_button.config(text="PAUSE")
+            GlobalGUI.gui_play_pause_button.config(text="PAUSE")
 
 
 class GlobalGUI:
@@ -35,7 +35,7 @@ class GlobalGUI:
     gui_output_textbox = None  # primary output gui
     gui_delay_slider = None  # delay slider
     gui_total_cycles_lbl = None
-    play_pause_button = None
+    gui_play_pause_button = None
 
     # Internal Data vars
     gui_experience_buffer_listbox = None  # output for tasks in experience buffer

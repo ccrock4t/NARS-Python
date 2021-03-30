@@ -108,6 +108,16 @@ class Sentence:
 
     @classmethod
     def may_interact(cls,j1,j2):
+        """
+            2 Sentences may interact if:
+                #1. Neither is "None"
+                #2. They are not the same Sentence
+                #3. They have not interacted
+                #4. The
+        :param j1:
+        :param j2:
+        :return:
+        """
         if j1 is None or j2 is None: return False
         if j1.stamp.id == j2.stamp.id: return False
         if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually

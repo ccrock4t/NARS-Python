@@ -20,7 +20,7 @@ class ItemContainer:
     """
     def __init__(self, item_type, decay_multiplier):
         self.item_type = item_type  # the class of the objects this Container stores (be wrapped in Item)
-        self.item_lookup_table = dict()  # for accessing Item by key
+        self.item_lookup_dict = dict()  # for accessing Item by key
         self.next_item_id = 0
         self.decay_multiplier = decay_multiplier
 
@@ -33,10 +33,10 @@ class ItemContainer:
         :return: True if the item is in the Bag;
                     False otherwise
         """
-        return ItemContainer.Item.get_key_from_object(object) in self.item_lookup_table
+        return ItemContainer.Item.get_key_from_object(object) in self.item_lookup_dict
 
     def __iter__(self):
-        return iter(self.item_lookup_table.values())
+        return iter(self.item_lookup_dict.values())
 
     def put_new_item(self, object):
         """
@@ -54,22 +54,12 @@ class ItemContainer:
             Puts item into lookup table and GUI
         :param item:
         """
-        if item.key in self.item_lookup_table: return  # item already exists
-
         # put item into lookup table
-        self.item_lookup_table[item.key] = item
+        self.item_lookup_dict[item.key] = item
 
-        # Print to internal data GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self)
 
-    def take_from_lookup_table(self, key):
-        item = self.item_lookup_table.pop(key)  # remove item reference from lookup table
-
-        # Print to internal data GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.remove_from_output(msg=str(item), data_structure=self)
-
+    def take_from_lookup_dict(self, key):
+        item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
         return item
 
     def _take_smallest_priority_item(self):
@@ -81,8 +71,8 @@ class ItemContainer:
 
     def peek_using_key(self,key=None):
         assert key is not None, "Key cannot be none when peeking with a key!"
-        if key not in self.item_lookup_table: return None
-        return self.item_lookup_table[key]
+        if key not in self.item_lookup_dict: return None
+        return self.item_lookup_dict[key]
 
     class Item:
         """
@@ -199,14 +189,15 @@ class Bag(ItemContainer):
 
     def put(self, item):
         """
-            Place an item in the bag
+            Place an Item back into the bag after it was temporarily removed.
 
             :param Bag Item to place into the Bag
         """
         assert (isinstance(item, ItemContainer.Item)), "item must be of type " + str(ItemContainer.Item)
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        if item.key in self.item_lookup_table: return # item already exists
+        ItemContainer.put_into_lookup_table(self, item)  # Item Container
+
         # put item into bucket
         self.buckets[item.get_target_bucket_number()].append(item)
 
@@ -214,6 +205,10 @@ class Bag(ItemContainer):
         self.count = self.count + 1
 
         super().put_into_lookup_table(item=item)
+
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.print_to_output(str(item), data_structure=self)
 
         # remove lowest priority item if over capacity
         if len(self) > self.capacity:
@@ -238,9 +233,10 @@ class Bag(ItemContainer):
             item = super().peek_using_key(key=key)
         return item
 
-    def take(self, key=None):
+    def temporary_take(self, key=None):
         """
             Remove an item from the bag, either probabilistically or from its key
+            Does NOT remove the item from the Item Lookup Dict
 
             :param object - if object is not passed, probabilistically removes it's corresponding item from the bag
                         if object is passed, the item is not removed from the bag
@@ -250,9 +246,25 @@ class Bag(ItemContainer):
         if self.count == 0: return None  # no items
 
         if key is None:
-            item = self._take_item_probabilistically()
+            item = self._temporary_take_probabilistically()
         else:
-            item = self.take_from_lookup_table(key)
+            item = self._temporary_take_using_key(key)
+
+        return item
+
+    def _temporary_take_using_key(self, key):
+        """
+        Take an item from the bag using the key
+        Does NOT remove the item from the Item Lookup Dict
+
+        :param key: key of the item to remove from the Bag
+        :return: the item which was removed from the bucket
+        """
+        assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
+
+        item = super().peek_using_key(key=key)
+        self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
+        self.count = self.count - 1  # decrement bag count
 
         # update GUI
         if Global.GlobalGUI.gui_use_internal_data:
@@ -260,37 +272,27 @@ class Bag(ItemContainer):
 
         return item
 
-    def take_from_lookup_table(self, key):
+    def _temporary_take_probabilistically(self):
         """
-        :param key: key of the item to remove
-        :return: the removed item
-        """
-        assert (key in self.item_lookup_table), "Given key does not exist in this bag"
-        item = super().take_from_lookup_table(key=key)
-        self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
+            Probabilistically peeks a priority bucket, then removes the item.
+            Does NOT remove the item from the Item Lookup Dict
 
-        self.count = self.count - 1  # decrement bag count
-
-        return item
-
-    def _take_item_probabilistically(self):
-        """
-            Probabilistically peeks a priority bucket, then peeks an item from that bucket.
-            The peeked item is removed from the bag.
-
-            :returns item probabilistically taken out of the Bag
+            :returns item probabilistically taken from the Bag
         """
         _, randidx = self._peek_item_probabilistically()
         item = self.buckets[self.current_bucket_number].pop(randidx)
-        # remove item reference from lookup table
-        self.item_lookup_table.pop(item.key)
         self.count = self.count - 1  # decrement bag count
+
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
     def _take_smallest_priority_item(self):
         """
             Selects the lowest priority bucket, and removes an item from it.
+            Also removes the item from the Item Lookup Dict
 
             :returns the lowest priority item taken from the Bag
         """
@@ -308,12 +310,16 @@ class Bag(ItemContainer):
         item = self.buckets[self.current_bucket_number].pop(randidx)
 
         # remove item reference from lookup table
-        super().take_from_lookup_table(key=item.key)
+        super().take_from_lookup_dict(key=item.key)
 
         self.count = self.count - 1  # decrement bag count
 
         # restore original index
         self.current_bucket_number = oldidx
+
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -321,7 +327,7 @@ class Bag(ItemContainer):
         """
             Probabilistically selects a priority value / bucket, then peeks an item from that bucket.
 
-            :returns item, index of item in current bucket
+            :returns (item, index of item in the current bucket)
         """
 
         # probabilistically select a priority bucket
@@ -388,6 +394,8 @@ class Depq():
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
+        # if isinstance(self,Table):
+        #     print('extract')
         max = self.depq.popfirst()[0]
         return max
 
@@ -399,6 +407,8 @@ class Depq():
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
+        #if isinstance(self,Table):
+            #print('extract')
         min = self.depq.poplast()[0]
         return min
 
@@ -410,7 +420,8 @@ class Depq():
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
-        return self.depq.first()
+        i = self.depq.first()
+        return i
 
     def peek_min(self):
         """
@@ -444,8 +455,9 @@ class Buffer(ItemContainer, Depq):
                 Global.GlobalGUI.remove_from_output(str(min_item), data_structure=self)
 
     def take(self):
+        if len(self) == 0: return None
         max_item = Depq.extract_max(self)
-        ItemContainer.take_from_lookup_table(self, max_item.key)
+        ItemContainer.take_from_lookup_dict(self, max_item.key)
         return max_item
 
     def peek(self, key):

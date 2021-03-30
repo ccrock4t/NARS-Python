@@ -46,7 +46,7 @@ def nars_process(input_judgment_q, input_question_q, output_q):
         InputBuffer.add_input_sentence(input_question_q.get())
 
     # process questions
-    testnars.do_working_cycles(100)
+    testnars.do_working_cycles(50)
 
     sys.stdout = sys.__stdout__
 
@@ -95,9 +95,10 @@ def revision():
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
     j2 = NALGrammar.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    q = "(S-->P)?"
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
@@ -123,9 +124,10 @@ def first_order_deduction():
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
     j2 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    q = "(S-->P)?"
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
@@ -152,10 +154,12 @@ def first_order_induction():
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
     j2 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    q1 = "(S-->P)?"
+    q2 = "(P-->S)?"
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
-    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(P-->S)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()
@@ -183,10 +187,12 @@ def first_order_abduction():
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
     j2 = NALGrammar.Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
+    q1 = "(S-->P)?"
+    q2 = "(P-->S)?"
     input_judgment_q.put(j1)
     input_judgment_q.put(j2)
-    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(S-->P)?"))
-    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string("(P-->S)?"))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
 
     process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
     process.start()

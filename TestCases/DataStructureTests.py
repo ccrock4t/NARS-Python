@@ -101,7 +101,7 @@ def test_concept_termlinking():
     assert (conceptA.term_links.count == 0), "TEST FAILURE: Concept " + str(conceptA) + " does not have 0 termlinks"
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptB) + " does not have 1 termlink"
 
-    take = statement_concept.term_links.take().object # take out the only remaining concept (concept B)
+    take = statement_concept.term_links.temporary_take().object # take out the only remaining concept (concept B)
 
     assert (take == conceptB), "TEST FAILURE: Removed concept was not Concept 'B'"
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept does not have 1 termlink"
