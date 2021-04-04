@@ -18,6 +18,7 @@ class Tense(enum.Enum):
     Future = ":/:"
     Past = ":\:"
     Present = ":|:"
+    Eternal = None
 
     @classmethod
     def get_tense_from_string(cls, value):

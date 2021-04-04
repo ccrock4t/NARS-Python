@@ -12,7 +12,7 @@ import NALSyntax
 
 class Sentence:
     """
-        sentence ::= <statement><punctuation> %<value>%G
+        sentence ::= <statement><punctuation> <tense> %<value>%
     """
 
     def __init__(self, statement, value, punctuation):
@@ -38,6 +38,7 @@ class Sentence:
     def get_formatted_string(self):
         string = Global.Global.SENTENCE_ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER
         string = string + self.statement.get_formatted_string() + str(self.punctuation.value)
+        if self.stamp.get_tense() != NALSyntax.Tense.Eternal: string = string + " " + self.stamp.get_tense().value
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
 
@@ -77,13 +78,6 @@ class Sentence:
 
         statement = Statement(subject, predicate, copula)
 
-        # Find Tense, if it exists
-        tense = None
-        for t in NALSyntax.Tense:
-            tense_idx = sentence_string.find(t.value)
-            if tense_idx != -1:  # found a tense
-                tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
-
         # Find Truth Value, if it exists
         start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value)
         middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value)
@@ -92,17 +86,33 @@ class Sentence:
         no_truth_value_found = start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx
         if no_truth_value_found:
             # No truth value, use default truth value
-            truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE, tense)
+            truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE)
         else:
             # Parse truth value from string
             freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
             conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
-            truth_value = TruthValue(freq, conf, tense)
+            truth_value = TruthValue(freq, conf)
 
         if punctuation == NALSyntax.Punctuation.Judgment:
             sentence = Judgment(statement, truth_value)
         elif punctuation == NALSyntax.Punctuation.Question:
             sentence = Question(statement)
+        else:
+            assert False,"Error: No Punctuation!"
+
+        # Find Tense, if it exists
+        # otherwise mark it as eternal
+        tense = NALSyntax.Tense.Eternal
+        for t in NALSyntax.Tense:
+            if t != NALSyntax.Tense.Eternal:
+                tense_idx = sentence_string.find(t.value)
+                if tense_idx != -1:  # found a tense
+                    tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
+                    break
+
+        if tense == NALSyntax.Tense.Present:
+            #Mark present tense event as happening right now!
+            sentence.stamp.occurrence_time = Global.Global.NARS.memory.current_cycle_number
 
         return sentence
 
@@ -116,7 +126,7 @@ class Sentence:
                 #4. The
         :param j1:
         :param j2:
-        :return:
+        :return: Are the sentence allowed to interact for inference
         """
         if j1 is None or j2 is None: return False
         if j1.stamp.id == j2.stamp.id: return False
@@ -127,20 +137,27 @@ class Sentence:
 
     class Stamp:
         """
-            (id, tcr, toc, C, E) ∈ N×N×N×N×P(N)
-            where 'id' represents a unique ID
-            'tcr' a creation time (in inferencecycles)
-            'toc' an occurrence time (in inference cycles)
-            'Ca' syntactic complexity (the number of subterms in the associated term)
-            'E' an evidential set.
+            Defines the metadata of a sentence, including
+            when it was created, its occurrence time (when is its truth value valid),
+            evidential base, etc.
         """
-        def __init__(self, self_sentence):
+        def __init__(self, self_sentence, occurrence_time=None):
             self.id = Global.Global.NARS.memory.get_next_stamp_id()
             self.creation_time = Global.Global.NARS.memory.current_cycle_number  # when was this stamp created (in inference cycles)?
-            self.occurrence_time = -1  # todo, estimate of when did this event occur (in inference cycles)
+            self.occurrence_time = occurrence_time
             self.sentence = self_sentence
             self.evidential_base = self.EvidentialBase()
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
+
+        def get_tense(self):
+            if self.occurrence_time is None:
+                return NALSyntax.Tense.Eternal
+            if self.occurrence_time < Global.Global.NARS.memory.current_cycle_number:
+                return NALSyntax.Tense.Past
+            elif self.occurrence_time == Global.Global.NARS.memory.current_cycle_number:
+                return NALSyntax.Tense.Present
+            elif self.occurrence_time > Global.Global.NARS.memory.current_cycle_number:
+                return NALSyntax.Tense.Future
 
         def mutually_add_to_interacted_sentences(self, other_sentence):
             self.interacted_sentences.append(other_sentence)
@@ -270,20 +287,15 @@ class DesireValue(EvidentialValue):
 
 class TruthValue(EvidentialValue):
     """
-        <frequency, confidence> <tense> <timestamp>
+        <frequency, confidence>
         Describing the evidential basis for the associated statement to be true
     """
 
-    def __init__(self, frequency, confidence, tense=None):
-        self.tense = tense
+    def __init__(self, frequency, confidence):
         super().__init__(frequency=frequency, confidence=confidence)
 
     def get_formatted_string(self):
-        tense = ""
-        if self.tense is not None:
-            tense = self.tense.value + " "
-        return tense \
-               + str(NALSyntax.StatementSyntax.TruthValMarker.value) \
+        return str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + "{:.2f}".format(self.confidence) \

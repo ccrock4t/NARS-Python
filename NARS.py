@@ -202,12 +202,15 @@ class NARS:
 
             :param j1 - judgment sentence to process
             :param related_concept - (Optional) concept to process the judgment with
+
+            #todo handle variables
+            #todo handle tenses
         """
         statement_term = j1.statement.term
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
 
-        if statement_term.contains_variable(): return #todo handle variables
+        if statement_term.contains_variable(): return
 
         if related_concept is None: # get a related concept
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
@@ -228,6 +231,9 @@ class NARS:
 
             Get the best answer to the question if it's known and perform inference with it;
             otherwise, use backward inference to derive new questions that could lead to an answer.
+
+            #todo handle variables
+            #todo handle tenses
         """
         NARSDataStructures.assert_task(task)
 

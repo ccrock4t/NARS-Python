@@ -81,27 +81,47 @@ def execute_internal_gui(window):
                     object_listbox_width = 40
                     object_listbox_height = 20
 
-                    label = tk.Label(item_info_window, text="Sentence: " + str(sentence_from_iterable))
+                    label = tk.Label(item_info_window, text="Sentence: ")
                     label.grid(row=0, column=0)
+
+                    label = tk.Label(item_info_window, text=sentence_from_iterable.get_formatted_string_no_id())
+                    label.grid(row=0, column=1)
+
+                    label = tk.Label(item_info_window, text="Sentence ID: ")
+                    label.grid(row=1, column=0)
+
+                    label = tk.Label(item_info_window, text=str(sentence_from_iterable.stamp.id))
+                    label.grid(row=1, column=1)
+
+                    label = tk.Label(item_info_window, text="Occurence Time: ")
+                    label.grid(row=2, column=0)
+
+                    oc_time = sentence_from_iterable.stamp.occurrence_time
+
+                    label = tk.Label(item_info_window, text=str("Eternal" if oc_time is None else oc_time))
+                    label.grid(row=2, column=1)
+
+                    label = tk.Label(item_info_window, text="")
+                    label.grid(row=3, column=1)
 
                     # Evidential base listbox
                     label = tk.Label(item_info_window, text="Sentence Evidential Base", font=('bold'))
-                    label.grid(row=2, column=0)
+                    label.grid(row=4, column=0,columnspan=2)
 
                     evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
                                                          width=object_listbox_width, font=('', 8))
-                    evidential_base_listbox.grid(row=3, column=0)
+                    evidential_base_listbox.grid(row=5, column=0,columnspan=2)
                     for sentence in sentence_from_iterable.stamp.evidential_base:
                         evidential_base_listbox.insert(tk.END, str(sentence))
                     evidential_base_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,sentence_from_iterable.stamp.evidential_base))
 
                     # Interacted sentences listbox
                     label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
-                    label.grid(row=2, column=1)
+                    label.grid(row=4, column=2,columnspan=2)
 
                     interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
                                                               width=object_listbox_width, font=('', 8))
-                    interacted_sentences_listbox.grid(row=3, column=1)
+                    interacted_sentences_listbox.grid(row=5, column=2,columnspan=2)
                     for sentence in sentence_from_iterable.stamp.interacted_sentences:
                         interacted_sentences_listbox.insert(tk.END, str(sentence))
                     interacted_sentences_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,sentence_from_iterable.stamp.interacted_sentences))
@@ -140,58 +160,78 @@ def execute_internal_gui(window):
             item_info_window.grab_set()  # lock the other windows until this window is exited
 
             # info
-            label = tk.Label(item_info_window, text=type(object).__name__ + " Name: " + str(object))
+            label = tk.Label(item_info_window, text=type(object).__name__ + " Name: ")
             label.grid(row=0, column=0)
+
+            label = tk.Label(item_info_window, text=str(object))
+            label.grid(row=0, column=1)
 
             object_listbox_width = 40
             object_listbox_height = 20
 
             if isinstance(object, NARSMemory.Concept):
 
-                label = tk.Label(item_info_window, text="Number of Term Links: " + str(object.term_links.count))
+                label = tk.Label(item_info_window, text="Number of Term Links: ",justify=tk.LEFT)
                 label.grid(row=1, column=0)
 
+                label = tk.Label(item_info_window, text=str(object.term_links.count),justify=tk.LEFT)
+                label.grid(row=1, column=1)
+
+                label = tk.Label(item_info_window, text="",justify=tk.LEFT)
+                label.grid(row=2, column=0)
+
                 label = tk.Label(item_info_window, text="Beliefs", font=('bold'))
-                label.grid(row=3, column=0)
+                label.grid(row=4, column=0,columnspan=2)
 
                 # beliefs table listbox
                 belief_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
-                belief_listbox.grid(row=4,column=0)
+                belief_listbox.grid(row=5,column=0,columnspan=2)
                 for belief in object.belief_table:
                     belief_listbox.insert(tk.END,str(belief[0]))
                 belief_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.belief_table)) # define callback
 
                 # desires table listbox
                 label = tk.Label(item_info_window, text="Desires", font=('bold'))
-                label.grid(row=3, column=1)
+                label.grid(row=4, column=2,columnspan=2)
 
                 desire_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
-                desire_listbox.grid(row=4,column=1)
+                desire_listbox.grid(row=5,column=2,columnspan=2)
                 for desire in object.desire_table:
                     desire_listbox.insert(tk.END,str(desire[0]))
                 desire_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.desire_table)) # define callback
 
             elif isinstance(object, NARSDataStructures.Task):
                 # Evidential base listbox
-                label = tk.Label(item_info_window, text="Sentence: " + str(object.sentence))
+
+                label = tk.Label(item_info_window, text="Sentence: ",justify=tk.LEFT)
                 label.grid(row=1, column=0)
+
+                labelClickable = tk.Listbox(item_info_window, height=1)
+                labelClickable.insert(tk.END, str(object.sentence))
+                labelClickable.grid(row=1, column=1)
+                labelClickable.bind("<<ListboxSelect>>",
+                                                  lambda event: listbox_sentence_item_click_callback(event,
+                                                                                                     [object.sentence]))
+
+                label = tk.Label(item_info_window, text="",justify=tk.LEFT)
+                label.grid(row=2, column=0)
 
                 # Evidential base listbox
                 label = tk.Label(item_info_window, text="Sentence Evidential Base", font=('bold'))
-                label.grid(row=2, column=0)
+                label.grid(row=3, column=0,columnspan=2)
 
                 evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
-                evidential_base_listbox.grid(row=3,column=0)
+                evidential_base_listbox.grid(row=4,column=0,columnspan=2)
                 for sentence in object.sentence.stamp.evidential_base:
                     evidential_base_listbox.insert(tk.END,str(sentence))
                 evidential_base_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.sentence.stamp.evidential_base))
 
                 # Interacted sentences listbox
                 label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
-                label.grid(row=2, column=1)
+                label.grid(row=3, column=2,columnspan=2)
 
                 interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
-                interacted_sentences_listbox.grid(row=3,column=1)
+                interacted_sentences_listbox.grid(row=4,column=2,columnspan=2)
                 for sentence in object.sentence.stamp.interacted_sentences:
                     interacted_sentences_listbox.insert(tk.END,str(sentence))
                 interacted_sentences_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.sentence.stamp.interacted_sentences))

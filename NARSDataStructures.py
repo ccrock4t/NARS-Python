@@ -40,7 +40,7 @@ class ItemContainer:
 
     def put_new_item(self, object):
         """
-            Insert a new object in the bag - it will be wrapped in an item
+            Put a new object in the bag - it will be wrapped in an item
             The object/item can be accessed by object's key, which is the object's hash
 
             :param object - new object to wrap in an Item and place in the bag
@@ -436,6 +436,60 @@ class Depq():
 class Buffer(ItemContainer, Depq):
     """
         Priority-Queue
+    """
+    def __init__(self,item_type):
+        ItemContainer.__init__(self, item_type=item_type, decay_multiplier=Config.BUFFER_PRIORITY_DECAY_MULTIPLIER) # Item Container
+        Depq.__init__(self,maxlength=Config.BUFFER_CAPACITY) #Depq
+
+    def put(self, item: ItemContainer.Item):
+        """
+            Insert an Item into the depq, sorted by priority.
+        """
+        Depq.insert_object(self,item, item.budget.priority) # Depq
+        ItemContainer.put_into_lookup_table(self, item)  # Item Container
+
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.print_to_output(str(item), data_structure=self)
+
+        if len(self) > self.maxlength:
+            min_item = self.extract_min()
+            # update GUI
+            if Global.GlobalGUI.gui_use_internal_data:
+                Global.GlobalGUI.remove_from_output(str(min_item), data_structure=self)
+
+    def take(self):
+        """
+            Take the max item from the Buffer
+            :return:
+        """
+        if len(self) == 0: return None
+        item = Depq.extract_max(self)
+        ItemContainer.take_from_lookup_dict(self, item.key)
+
+        # update GUI
+        if Global.GlobalGUI.gui_use_internal_data:
+            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
+
+        return item
+
+    def peek(self, key):
+        """
+            Peek object with highest priority from the depq
+            O(1)
+
+            Returns None if depq is empty
+        """
+        if len(self) == 0: return None
+        if key is None:
+            return Depq.peek_max(self)
+        else:
+            return ItemContainer.peek_using_key(self, key=key)
+
+class EventBuffer(Buffer):
+    """
+        #todo
+        Priority Queue and Fifo
     """
     def __init__(self,item_type):
         ItemContainer.__init__(self, item_type=item_type, decay_multiplier=Config.BUFFER_PRIORITY_DECAY_MULTIPLIER) # Item Container
