@@ -62,7 +62,7 @@ def process_sentence(sentence: NALGrammar.Sentence):
     Global.GlobalGUI.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Task(sentence, is_input_task=True)
-    Global.Global.NARS.overall_experience_buffer.put_new_item(task)
+    Global.Global.NARS.overall_experience_buffer.put(task)
 
 def load_input(filename="input.nal"):
     """

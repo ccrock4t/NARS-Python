@@ -185,7 +185,7 @@ class NARS:
             # revise the judgment
             self.process_judgment_sentence(j1, statement_concept)
             # add the judgment itself into concept's belief table
-            statement_concept.belief_table.insert(j1)
+            statement_concept.belief_table.put(j1)
             task.needs_initial_processing = False
         else:
             """
@@ -223,7 +223,7 @@ class NARS:
 
         derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
         for derived_task in derived_tasks:
-            self.overall_experience_buffer.put_new_item(derived_task)
+            self.overall_experience_buffer.put(derived_task)
 
     def process_question(self, task):
         """
@@ -273,7 +273,7 @@ class NARS:
         derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
         # add all derived tasks to the buffer
         for derived_task in derived_tasks:
-            self.overall_experience_buffer.put_new_item(derived_task)
+            self.overall_experience_buffer.put(derived_task)
 
 
 

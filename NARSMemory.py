@@ -1,4 +1,6 @@
 import random
+
+import Config
 import NALGrammar
 import NALSyntax
 import NARSDataStructures
@@ -17,7 +19,7 @@ class Memory:
     next_stamp_id = 0
 
     def __init__(self):
-        self.concepts_bag = NARSDataStructures.Bag(item_type=Concept)
+        self.concepts_bag = NARSDataStructures.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
         self.current_cycle_number = 0
 
     def get_number_of_concepts(self):
@@ -37,7 +39,7 @@ class Memory:
         assert (self.concepts_bag.peek(term) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         concept = Concept(term)
-        self.concepts_bag.put_new_item(concept)
+        self.concepts_bag.put(concept)
         return concept
 
     def peek_concept(self, term):
@@ -148,8 +150,8 @@ class Concept:
         """
         assert_concept(concept)
         if concept in self.term_links: return  # already linked
-        self.term_links.put_new_item(concept)
-        concept.term_links.put_new_item(self)
+        self.term_links.put(concept)
+        concept.term_links.put(self)
 
     def remove_term_link(self, concept):
         """

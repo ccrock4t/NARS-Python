@@ -36,14 +36,13 @@ class Sentence:
         return self.stamp.id
 
     def get_formatted_string(self):
-        string = Global.Global.SENTENCE_ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER
-        string = string + self.statement.get_formatted_string() + str(self.punctuation.value)
-        if self.stamp.get_tense() != NALSyntax.Tense.Eternal: string = string + " " + self.stamp.get_tense().value
-        if self.value is not None: string = string + " " + self.value.get_formatted_string()
+        string = self.get_formatted_string_no_id()
+        string = Global.Global.SENTENCE_ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER + string
         return string
 
     def get_formatted_string_no_id(self):
         string = self.statement.get_formatted_string() + str(self.punctuation.value)
+        if self.stamp.get_tense() != NALSyntax.Tense.Eternal: string = string + " " + self.stamp.get_tense().value
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
 

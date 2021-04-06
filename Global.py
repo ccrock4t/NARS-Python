@@ -87,6 +87,8 @@ class GlobalGUI:
             elif data_structure is Global.NARS.memory.concepts_bag:
                 GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)))
 
+        cls.update_datastructure_labels(data_structure)
+
     @classmethod
     def remove_from_output(cls, msg, data_structure=None):
         """
@@ -113,10 +115,14 @@ class GlobalGUI:
                 assert False, "GUI Error: cannot find msg to remove: " + msg
             listbox.delete(idx_to_remove)
 
-            if data_structure is Global.NARS.overall_experience_buffer:
-                GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
-            elif data_structure is Global.NARS.memory.concepts_bag:
-                GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)))
+        cls.update_datastructure_labels(data_structure)
+
+    @classmethod
+    def update_datastructure_labels(cls,data_structure):
+        if data_structure is Global.NARS.overall_experience_buffer:
+            GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
+        elif data_structure is Global.NARS.memory.concepts_bag:
+            GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)) + " / " + str(data_structure.max_capacity))
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):
