@@ -262,8 +262,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         """
             # apply the Conversion rule on all inheritance statements
         """
-        if derived_task.sentence.statement.copula == NALSyntax.Copula.Inheritance and\
-                derived_task.sentence.value.frequency != 0:
+        if derived_task.sentence.statement.copula == NALSyntax.Copula.Inheritance:
             derived_sentence = NALInferenceRules.Conversion(derived_task.sentence)
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1=derived_task.sentence, j2=None, inference_rule="Conversion")
             conversion_tasks_to_append.append(derived_task)

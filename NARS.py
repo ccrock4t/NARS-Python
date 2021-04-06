@@ -287,8 +287,6 @@ class NARS:
             self.overall_experience_buffer.put(derived_task)
 
 
-
-
 def main():
     """
         This is where the program starts

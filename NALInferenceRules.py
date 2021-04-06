@@ -107,7 +107,7 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     wp3 = wp1 + wp2
     wn3 = wn1 + wn2
     w3 = wp3 + wn3
-    f3, c3 = getfreqconf_fromevidence(wp3, w3)
+    f3, c3 = get_truthvalue_from_evidence(wp3, w3)
 
     # Create the resultant sentence
     result_truth = NALGrammar.TruthValue(f3, c3)
@@ -252,9 +252,8 @@ def Conversion(j: NALGrammar.Sentence):
         # compute values of combined evidence
         wp = band(j.value.frequency, j.value.confidence)
         w = wp
-        if w == 0:
-            print(str(j))
-        f2, c2 = getfreqconf_fromevidence(wp, w)
+        f2,c2 = get_truthvalue_from_evidence(wp,w)
+
         result_truth = NALGrammar.TruthValue(f2, c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j.punctuation == NALSyntax.Punctuation.Question:
@@ -512,7 +511,7 @@ def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # compute values of combined evidence
         wp = band(f1, f2, c1, c2)
         w = band(f1, c1, c2)
-        f3, c3 = getfreqconf_fromevidence(wp, w)
+        f3, c3 = get_truthvalue_from_evidence(wp, w)
         result_truth = NALGrammar.TruthValue(f3, c3)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -558,7 +557,7 @@ def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # compute values of combined evidence
         wp = band(f1, f2, c1, c2)
         w = band(f2, c1, c2)
-        f3, c3 = getfreqconf_fromevidence(wp, w)
+        f3, c3 = get_truthvalue_from_evidence(wp, w)
         result_truth = NALGrammar.TruthValue(f3, c3)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -604,7 +603,7 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # compute values of combined evidence
         wp = band(f1, f2, c1, c2)
         w = wp
-        f3, c3 = getfreqconf_fromevidence(wp, w)
+        f3,c3 = get_truthvalue_from_evidence(wp,w)
         result_truth = NALGrammar.TruthValue(f3, c3)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -660,7 +659,7 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # compute values of combined evidence
         wp = band(f1, f2, c1, c2)
         w = band(bor(f1, f2), c1, c2)
-        f3, c3 = getfreqconf_fromevidence(wp, w)
+        f3, c3 = get_truthvalue_from_evidence(wp, w)
         result_truth = NALGrammar.TruthValue(f3, c3)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -915,7 +914,7 @@ def Difference(j1, j2):
 """
 
 
-def getfreqconf_fromevidence(wp, w):
+def get_truthvalue_from_evidence(wp, w):
     """
         Input:
             wp: positive evidence w+
@@ -924,12 +923,15 @@ def getfreqconf_fromevidence(wp, w):
         Returns:
             frequency, confidence
     """
-    f = wp / w
-    c = w / (w + Config.k)
+    if wp == w:
+        f = 1.0
+    else:
+        f = wp / w
+    c = get_confidence_from_evidence(w)
     return f, c
 
 
-def getevidence_fromfreqconf(f, c):
+def get_evidence_fromfreqconf(f, c):
     """
         Input:
             f: frequency
@@ -942,6 +944,14 @@ def getevidence_fromfreqconf(f, c):
     w = Config.k * c / (1 - c)
     return wp, w, w - wp
 
+def get_confidence_from_evidence(w):
+    """
+        Input:
+            w: Total evidence
+        Returns:
+            confidence
+    """
+    return w / (w + Config.k)
 
 def gettruthvalues_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
@@ -975,4 +985,4 @@ def getevidence_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence)
             w1+, w1, w1-, w2+, w2, w2-
     """
     (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-    return getevidence_fromfreqconf(f1, c1), getevidence_fromfreqconf(f2, c2)
+    return get_evidence_fromfreqconf(f1, c1), get_evidence_fromfreqconf(f2, c2)

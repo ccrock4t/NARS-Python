@@ -139,7 +139,7 @@ class Concept:
         NALGrammar.assert_term(term)
         self.term = term  # concept's unique term
         self.term_links = NARSDataStructures.Bag(item_type=Concept)  # Bag of related concepts (related by term)
-        self.belief_table = NARSDataStructures.Bag(NALGrammar.Sentence) #Table(NALSyntax.Punctuation.Judgment)
+        self.belief_table = NARSDataStructures.Table(NALSyntax.Punctuation.Judgment) # todo maybe use Bag(NALGrammar.Sentence)
         self.desire_table = NARSDataStructures.Table(NALSyntax.Punctuation.Goal)
 
     def __str__(self):
