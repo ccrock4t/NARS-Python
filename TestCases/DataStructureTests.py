@@ -19,7 +19,7 @@ def test_table_removemax():
     maximum = max(confidences)
     for c in confidences:
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
         table.put(sentence)
     tablemax = table.extract_max().value.confidence
@@ -36,7 +36,7 @@ def test_table_removemin():
     for c in confidences:
         #make sentence <a --> b>. %0.9;c%
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
         table.put(sentence)
 
@@ -52,7 +52,7 @@ def test_buffer_removemax():
     maximum = max(priorities)
     for p in priorities:
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
         item.budget.priority = p
@@ -71,7 +71,7 @@ def test_buffer_removemin():
     for p in priorities:
         #make sentence <a --> b>. %0.9;c%
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.get_term_from_string("a"), NALGrammar.Term.get_term_from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
         item.budget.priority = p
@@ -87,9 +87,9 @@ def test_concept_termlinking():
         Test if term links can be added and removed properly from a concept
     """
     memory = NARSMemory.Memory()
-    statement_concept = memory.peek_concept(NALGrammar.Term.get_term_from_string("(A-->B)"))
-    conceptA = memory.peek_concept(NALGrammar.Term.get_term_from_string("A"))
-    conceptB = memory.peek_concept(NALGrammar.Term.get_term_from_string("B"))
+    statement_concept = memory.peek_concept(NALGrammar.Term.from_string("(A-->B)"))
+    conceptA = memory.peek_concept(NALGrammar.Term.from_string("A"))
+    conceptB = memory.peek_concept(NALGrammar.Term.from_string("B"))
 
     assert (statement_concept.term_links.count == 2), "TEST FAILURE: Concept " + str(statement_concept) + " does not have 2 termlinks"
     assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink. Has: " + str(conceptA.term_links.count)

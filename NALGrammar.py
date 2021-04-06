@@ -340,7 +340,7 @@ class Term:
                 or VariableTerm.QUERY_SYM in str(self)
 
     @classmethod
-    def get_term_from_string(cls, term_string):
+    def from_string(cls, term_string):
         """
             Determine if it is an atomic term (e.g. "A") or a statement/compound term (e.g. (&&,A,B,..) or (A --> B))
             or variable term and creates the corresponding Term.
@@ -489,10 +489,33 @@ class CompoundTerm(Term):
             # order doesn't matter, alphabetize so the system can recognize the same term
             subterms.sort(key=lambda t:str(t))
 
+        is_extensional_set = (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
+        is_intensional_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
+
+        self.is_set = is_extensional_set or is_intensional_set
+
+        if self.is_set and len(subterms) > 1:
+            # multi_component_set
+            # decompose it into an intersection singleton sets
+            # #todo handle multi-component sets better
+            new_subterms = []
+
+            for subterm in subterms:
+                new_subterm = CompoundTerm.from_string(self.connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value)
+                new_subterms.append(new_subterm)
+
+            subterms = new_subterms
+
+            # set new term connector
+            if is_extensional_set:
+                self.connector = NALSyntax.TermConnector.IntensionalIntersection
+            elif is_intensional_set:
+                self.connector = NALSyntax.TermConnector.ExtensionalIntersection
+
+            self.is_set = False
+
         self.subterms: [Term] = subterms
 
-        self.is_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value) or \
-                      (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
         super().__init__(self.get_formatted_string())
 
     @classmethod
@@ -541,13 +564,13 @@ class CompoundTerm(Term):
                 depth = depth - 1
 
             if c == "," and depth == 0:
-                subterm = Term.get_term_from_string(subterm_string)
+                subterm = Term.from_string(subterm_string)
                 subterms.append(subterm)
                 subterm_string = ""
             else:
                 subterm_string = subterm_string + c
 
-        subterm = Term.get_term_from_string(subterm_string)
+        subterm = Term.from_string(subterm_string)
         subterms.append(subterm)
 
         return subterms, connector
@@ -648,7 +671,7 @@ def parse_subject_predicate_copula_and_copula_index(statement_string):
     subject_str = statement_string[1:copula_idx] # get subject string
     predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
 
-    return Term.get_term_from_string(subject_str), Term.get_term_from_string(predicate_str), copula, copula_idx
+    return Term.from_string(subject_str), Term.from_string(predicate_str), copula, copula_idx
 
 
 def get_top_level_copula(string):

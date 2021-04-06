@@ -138,15 +138,17 @@ class NARS:
 
         if isinstance(concept_item.object.term, NALGrammar.StatementTerm):
             # Concept is S --> P
-            sentence = concept_item.object.belief_table.peek()
+            concept_to_peek = concept_item.object
         else:
             # Concept is S or P
             related_concept = self.memory.get_semantically_related_concept(concept_item.object)
-            sentence = related_concept.belief_table.peek()
+            concept_to_peek = related_concept
 
-        if sentence is not None:
-            # process the judgment
-            self.process_judgment_sentence(sentence)
+        if concept_to_peek is not None:
+            sentence = concept_to_peek.belief_table.peek()
+            if sentence is not None:
+                # process the judgment
+                self.process_judgment_sentence(sentence)
 
         # decay priority
         concept_item.decay()
