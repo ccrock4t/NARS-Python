@@ -79,7 +79,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         """
         if is_question: return # can't do revision with questions
 
-        derived_sentence = NALInferenceRules.nal_revision(j1, j2)  # S-->P
+        derived_sentence = NALInferenceRules.Revision(j1, j2)  # S-->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")
         derived_tasks.append(derived_task)
     elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
@@ -98,14 +98,14 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
                 j1, j2 = j2, j1  # swap sentences
                 swapped = True
             # deduction
-            derived_sentence = NALInferenceRules.nal_deduction(j1, j2)  # S-->P or P-->S
+            derived_sentence = NALInferenceRules.Deduction(j1, j2)  # S-->P or P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Deduction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Exemplification
             """
-            derived_sentence = NALInferenceRules.nal_exemplification(j2, j1)  # P-->S or S-->P
+            derived_sentence = NALInferenceRules.Exemplification(j2, j1)  # P-->S or S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Exemplification")
             derived_tasks.append(derived_task)
@@ -118,42 +118,102 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
             # j1=M-->P, j2=M-->S
             # Induction
             """
-            derived_sentence = NALInferenceRules.nal_induction(j1, j2)  # S-->P
+            derived_sentence = NALInferenceRules.Induction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Induction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Induction
             """
-            derived_sentence = NALInferenceRules.nal_induction(j2, j1)  # P-->S
+            derived_sentence = NALInferenceRules.Induction(j2, j1)  # P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Induction")
             derived_tasks.append(derived_task)
 
-            # comparison
-            derived_sentence = NALInferenceRules.nal_comparison(j1, j2)  # S<->P
+            """
+            # Comparison
+            """
+            derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
+            derived_tasks.append(derived_task)
+
+            """
+            # Intensional Intersection
+            """
+            derived_sentence = NALInferenceRules.IntensionalIntersection(j1, j2)  # M --> (S | P)
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
+            derived_tasks.append(derived_task)
+
+            """
+            # Extensional Intersection
+            """
+            derived_sentence = NALInferenceRules.ExtensionalIntersection(j1, j2)  # M --> (S & P)
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
+            derived_tasks.append(derived_task)
+
+            """
+            # Extensional Difference
+            """
+            derived_sentence = NALInferenceRules.Difference(j1, j2)  # M --> (S - P)
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
+            derived_tasks.append(derived_task)
+
+            """
+            # Swapped Extensional Difference
+            """
+            derived_sentence = NALInferenceRules.Difference(j2, j1)  # M --> (S - P)
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
             derived_tasks.append(derived_task)
         elif j1_predicate_term == j2_predicate_term:
             """
             # j1=P-->M, j2=S-->M
             # Abduction
             """
-            derived_sentence = NALInferenceRules.nal_abduction(j1, j2)  # S-->P
+            derived_sentence = NALInferenceRules.Abduction(j1, j2)  # S-->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Abduction")
             derived_tasks.append(derived_task)
 
             """
             # Swapped Abduction
             """
-            derived_sentence = NALInferenceRules.nal_abduction(j2, j1)  # P-->S
+            derived_sentence = NALInferenceRules.Abduction(j2, j1)  # P-->S
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2,
                                                                inference_rule="Swapped Abduction")
             derived_tasks.append(derived_task)
 
-            # comparison
-            derived_sentence = NALInferenceRules.nal_comparison(j1, j2)  # S<->P
+            """
+            # Comparison
+            """
+            derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Comparison")
+            derived_tasks.append(derived_task)
+
+            """
+            # Intensional Intersection
+            """
+            derived_sentence = NALInferenceRules.IntensionalIntersection(j1, j2)  # (S | P) --> M
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
+            derived_tasks.append(derived_task)
+
+            """
+            # Extensional Intersection
+            """
+            derived_sentence = NALInferenceRules.ExtensionalIntersection(j1, j2)  # (S & P) --> M
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
+            derived_tasks.append(derived_task)
+
+            """
+            # Intensional Difference
+            """
+            derived_sentence = NALInferenceRules.Difference(j1, j2)  # (S ~ P) --> M
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
+            derived_tasks.append(derived_task)
+
+            """
+            # Swapped Intensional Difference
+            """
+            derived_sentence = NALInferenceRules.Difference(j2, j1)  # (S ~ P) --> M
+            derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Intersection")
             derived_tasks.append(derived_task)
         else:
             assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
@@ -164,7 +224,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         # Analogy
         """
 
-        derived_sentence = NALInferenceRules.nal_analogy(j1, j2)  # S-->P or P-->S
+        derived_sentence = NALInferenceRules.Analogy(j1, j2)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Analogy")
         derived_tasks.append(derived_task)
     elif NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
@@ -173,7 +233,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         # j2=S-->M or M-->S
         # Swapped Analogy
         """
-        derived_sentence = NALInferenceRules.nal_analogy(j2, j1)  # S-->P or P-->S
+        derived_sentence = NALInferenceRules.Analogy(j2, j1)  # S-->P or P-->S
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Swapped Analogy")
         derived_tasks.append(derived_task)
     elif NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
@@ -182,7 +242,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         # j2=S<->M or M<->S
         # Resemblance
         """
-        derived_sentence = NALInferenceRules.nal_resemblance(j1, j2)  # S<->P
+        derived_sentence = NALInferenceRules.Resemblance(j1, j2)  # S<->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Resemblance")
         derived_tasks.append(derived_task)
 
@@ -201,8 +261,9 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         """
             # apply the Conversion rule on all inheritance statements
         """
-        if derived_task.sentence.statement.copula == NALSyntax.Copula.Inheritance:
-            derived_sentence = NALInferenceRules.nal_conversion(derived_task.sentence)
+        if derived_task.sentence.statement.copula == NALSyntax.Copula.Inheritance and\
+                derived_task.sentence.value.frequency != 0:
+            derived_sentence = NALInferenceRules.Conversion(derived_task.sentence)
             derived_task = make_new_task_from_derived_sentence(derived_sentence, j1=derived_task.sentence, j2=None, inference_rule="Conversion")
             conversion_tasks_to_append.append(derived_task)
 

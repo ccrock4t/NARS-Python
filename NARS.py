@@ -214,7 +214,9 @@ class NARS:
 
         if related_concept is None: # get a related concept
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
-            if related_concept is None: return  # no related concepts!
+            if related_concept is None:
+                print("none!")
+                return  # no related concepts!
 
         j2 = related_concept.belief_table.peek_max()  # get most confident related_belief of related concept
 

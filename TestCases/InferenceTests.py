@@ -105,7 +105,7 @@ def revision():
     process.join()
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.nal_revision(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Revision(j1, j2).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -134,7 +134,7 @@ def first_order_deduction():
     process.join()
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.nal_deduction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Deduction(j1, j2).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -166,8 +166,8 @@ def first_order_induction():
     process.join()
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.nal_induction(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.nal_induction(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Induction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Induction(j2, j1).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -199,8 +199,8 @@ def first_order_abduction():
     process.join()
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.nal_abduction(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.nal_abduction(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Abduction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Abduction(j2, j1).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 

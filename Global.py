@@ -122,7 +122,7 @@ class GlobalGUI:
         if data_structure is Global.NARS.overall_experience_buffer:
             GlobalGUI.gui_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
         elif data_structure is Global.NARS.memory.concepts_bag:
-            GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)) + " / " + str(data_structure.max_capacity))
+            GlobalGUI.gui_concepts_output_label.config(text="Concepts: " + str(len(data_structure)) + " / " + str(data_structure.capacity))
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):

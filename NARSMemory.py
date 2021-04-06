@@ -99,11 +99,14 @@ class Memory:
             related_concept_item_from_subject = self.peek_concept(subject_term).term_links.peek()
             related_concept_item_from_predicate = self.peek_concept(predicate_term).term_links.peek()
 
-            if related_concept_item_from_subject is not None and related_concept_item_from_predicate is None and related_concept_item_from_subject is not concept:  # none from subject
+            if related_concept_item_from_subject is not None and \
+                    related_concept_item_from_predicate is None: # none from predicate
                 related_concept = related_concept_item_from_subject.object
-            elif related_concept_item_from_subject is None and related_concept_item_from_predicate is not None and related_concept_item_from_predicate is not concept:  # none from predicate
+            elif related_concept_item_from_subject is None \
+                    and related_concept_item_from_predicate is not None: # none from subject
                 related_concept = related_concept_item_from_predicate.object
-            elif related_concept_item_from_subject is not None and related_concept_item_from_predicate is not None:  # one from both
+            elif related_concept_item_from_subject is not None \
+                    and related_concept_item_from_predicate is not None:  # one from both
                 rand = random.random()
                 if rand < 0.5:
                     related_concept = related_concept_item_from_subject.object
