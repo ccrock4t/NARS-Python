@@ -151,7 +151,7 @@ def execute_internal_gui(window):
 
             assert key is not None, "Couldn't get key from item click callback"
 
-            object = data_structure.peek(key).object
+            object = data_structure.peek(key)
 
             # window
             item_info_window = tk.Toplevel()
@@ -187,7 +187,11 @@ def execute_internal_gui(window):
                 belief_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width, font=('', 8))
                 belief_listbox.grid(row=5,column=0,columnspan=2)
                 for belief in object.belief_table:
-                    belief_listbox.insert(tk.END,str(belief[0]))
+                    if isinstance(object.belief_table, NARSDataStructures.Bag):
+                        belief_listbox.insert(tk.END,str(belief.object))
+                    elif isinstance(object.belief_table, NARSDataStructures.Table):
+                        belief_listbox.insert(tk.END, str(belief[0]))
+
                 belief_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,object.belief_table)) # define callback
 
                 # desires table listbox

@@ -1,4 +1,5 @@
 import pickle
+import queue
 import random
 import time
 
@@ -119,25 +120,31 @@ class NARS:
         # process task
         self.process_task(task_item.object)
 
-        if isinstance(task_item.object.sentence, NALGrammar.Question):
+        if isinstance(task_item.object.sentence, NALGrammar.Question) and task_item.object.needs_to_be_answered_in_output:
             # decay priority
-            task_item.decay()
+            task_item.budget.priority = 0.99
 
             # return task to buffer
             self.overall_experience_buffer.put(task_item)
 
     def Consider(self):
         """
-            Process a task from a known concept
+            Process a belief from a concept in memory
         """
         concept_item = self.memory.concepts_bag.temporary_take()
 
         if concept_item is None:
             return  # nothing to ponder
 
-        sentence = concept_item.object.belief_table.peek_max()
+        if isinstance(concept_item.object.term, NALGrammar.StatementTerm):
+            # Concept is S --> P
+            sentence = concept_item.object.belief_table.peek()
+        else:
+            # Concept is S or P
+            related_concept = self.memory.get_semantically_related_concept(concept_item.object)
+            sentence = related_concept.belief_table.peek()
 
-        if isinstance(sentence, NALGrammar.Judgment):
+        if sentence is not None:
             # process the judgment
             self.process_judgment_sentence(sentence)
 
@@ -218,7 +225,7 @@ class NARS:
                 print("none!")
                 return  # no related concepts!
 
-        j2 = related_concept.belief_table.peek_max()  # get most confident related_belief of related concept
+        j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
 
         # done if can't interact
         if not NALGrammar.Sentence.may_interact(j1,j2): return

@@ -483,8 +483,14 @@ class CompoundTerm(Term):
 
             connector: subterm connector
         """
-        self.subterms: [Term] = subterms
         self.connector = connector  # sets are represented by the opening bracket as the connector, { or [
+
+        if isinstance(self.connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.connector):
+            # order doesn't matter, alphabetize so the system can recognize the same term
+            subterms.sort(key=lambda t:str(t))
+
+        self.subterms: [Term] = subterms
+
         self.is_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value) or \
                       (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
         super().__init__(self.get_formatted_string())

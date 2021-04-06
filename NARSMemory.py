@@ -55,15 +55,15 @@ class Memory:
               :return Concept named by the term
           """
         if isinstance(term, NALGrammar.VariableTerm): return None #todo created concepts for closed variable terms
-        concept_item = self.concepts_bag.peek(str(term)) # peek from bag by converting term to key
-        if concept_item is not None:
-            return concept_item.object  # return if got concept
+        concept = self.concepts_bag.peek(str(term)) # peek from bag by converting term to key
+        if concept is not None:
+            return concept  # return if got concept
 
         # concept not found
         if isinstance(term, NALGrammar.StatementTerm) and term.connector == NALSyntax.Copula.Similarity:
             #if its a similarity statement term S<->P, check for equivalent Concept P<->S
-            concept_item = self.concepts_bag.peek(term.get_reverse_term_string())
-            if concept_item is not None: return concept_item.object  # return if got concept
+            concept = self.concepts_bag.peek(term.get_reverse_term_string())
+            if concept is not None: return concept  # return if got concept
 
         # it must be created unless it contains a Variable Term, and potentially its sub-concepts
         concept = None
@@ -83,7 +83,7 @@ class Memory:
 
     def get_semantically_related_concept(self, concept):
         """
-            Get a belief (named by a Statement Term) that is semantically related to the given concept by a term.
+            Get a concept (named by a Statement Term) that is semantically related to the given concept by a term.
             This can return a belief from the input concept, which can be used in Revision.
 
             :param concept - Statement-Term Concept for which to find a semantically related Statement-Term concept
@@ -96,22 +96,25 @@ class Memory:
             subject_term = concept.term.get_subject_term()
             predicate_term = concept.term.get_predicate_term()
 
-            related_concept_item_from_subject = self.peek_concept(subject_term).term_links.peek()
-            related_concept_item_from_predicate = self.peek_concept(predicate_term).term_links.peek()
+            concept_related_to_subject = self.peek_concept(subject_term).term_links.peek()
+            concept_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
 
-            if related_concept_item_from_subject is not None and \
-                    related_concept_item_from_predicate is None: # none from predicate
-                related_concept = related_concept_item_from_subject.object
-            elif related_concept_item_from_subject is None \
-                    and related_concept_item_from_predicate is not None: # none from subject
-                related_concept = related_concept_item_from_predicate.object
-            elif related_concept_item_from_subject is not None \
-                    and related_concept_item_from_predicate is not None:  # one from both
+            if concept_related_to_subject is not None and \
+                    concept_related_to_predicate is None: # none from predicate
+                related_concept = concept_related_to_subject
+            elif concept_related_to_subject is None \
+                    and concept_related_to_predicate is not None: # none from subject
+                related_concept = concept_related_to_predicate
+            elif concept_related_to_subject is not None \
+                    and concept_related_to_predicate is not None:  # one from both
                 rand = random.random()
                 if rand < 0.5:
-                    related_concept = related_concept_item_from_subject.object
+                    related_concept = concept_related_to_subject
                 elif rand >= 0.5:
-                    related_concept = related_concept_item_from_predicate.object
+                    related_concept = concept_related_to_predicate
+        else:
+            # Non-statement concept
+            related_concept = self.peek_concept(concept.term).term_links.peek()
 
         return related_concept
 
@@ -136,7 +139,7 @@ class Concept:
         NALGrammar.assert_term(term)
         self.term = term  # concept's unique term
         self.term_links = NARSDataStructures.Bag(item_type=Concept)  # Bag of related concepts (related by term)
-        self.belief_table = NARSDataStructures.Table(NALSyntax.Punctuation.Judgment)
+        self.belief_table = NARSDataStructures.Bag(NALGrammar.Sentence) #Table(NALSyntax.Punctuation.Judgment)
         self.desire_table = NARSDataStructures.Table(NALSyntax.Punctuation.Goal)
 
     def __str__(self):

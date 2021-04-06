@@ -54,7 +54,7 @@ class ItemContainer:
         item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
         return item
 
-    def _take_smallest_priority_item(self):
+    def _take_min(self):
         assert False,"Take smallest priority item not defined for generic Item Container!"
 
     def get_next_item_id(self) -> int:
@@ -86,17 +86,19 @@ class ItemContainer:
             priority = None
             quality = None
             if isinstance(object, Task):
-                priority = 0.990
+                priority = 0.950
                 quality = 0.010
             elif isinstance(object, NARSMemory.Concept):
-                priority = 0.990
+                priority = 0.950
+                quality = 0.500
+            elif isinstance(object, NALGrammar.Sentence):
+                priority = object.value.confidence
                 quality = 0.500
 
             if priority is not None:
                 self.key = ItemContainer.Item.get_key_from_object(object)
                 self.budget = ItemContainer.Item.Budget(priority=priority, quality=quality)
             else:
-                #print("Don't know how to handle unknown item added to bag. Using default budget")
                 self.key = str(object)
                 self.budget = ItemContainer.Item.Budget()
 
@@ -113,6 +115,8 @@ class ItemContainer:
                 key = str(object.sentence.stamp.id)
             elif isinstance(object, NARSMemory.Concept):
                 key = str(object.term)
+            elif isinstance(object, NALGrammar.Sentence):
+                key = str(object.stamp.id)
             return key
 
         def __str__(self):
@@ -170,13 +174,16 @@ class Bag(ItemContainer):
         self.count = 0
 
         # initialize buckets
-        for i in range(1, self.number_of_buckets + 1):
+        for i in range(0, self.number_of_buckets):
             self.buckets[i] = []
 
         super().__init__(item_type=item_type, decay_multiplier=Config.BAG_PRIORITY_DECAY_MULTIPLIER,capacity=capacity)
 
     def __len__(self):
         return self.count
+
+    def __iter__(self):
+        return iter(list(self.item_lookup_dict.values()).__reversed__())
 
     def put(self, item):
         """
@@ -205,26 +212,42 @@ class Bag(ItemContainer):
 
         # remove lowest priority item if over capacity
         if len(self) > self.capacity:
-            smallest_item = self._take_smallest_priority_item()
+            smallest_item = self._take_min()
             # update GUI
             if Global.GlobalGUI.gui_use_internal_data:
                 Global.GlobalGUI.remove_from_output(str(smallest_item), data_structure=self)
 
     def peek(self, key=None):
         """
-            Peek an item from the bag using its key.
+            Peek an object from the bag using its key.
             If key is None, peeks probabilistically
 
             :returns An item peeked from the Bag; None if item could not be taken from the Bag
         """
         if self.count == 0: return None  # no items
 
-        item = None
         if key is None:
             item, _ = self._peek_item_probabilistically()
         else:
             item = super().peek_using_key(key=key)
-        return item
+
+        object = None
+        if item is not None: object = item.object
+
+        return object
+
+    def peek_max(self):
+        """
+            Peek an object in the highest priority bucket
+
+            Returns None if Bag is empty
+        """
+        if self.count == 0: return None
+        self._move_to_max_nonempty_bucket()
+        item, _ = self._peek_random_item_from_current_bucket()
+        object = None
+        if item is not None: object = item.object
+        return object
 
     def temporary_take(self, key=None):
         """
@@ -274,6 +297,7 @@ class Bag(ItemContainer):
 
             :returns item probabilistically taken from the Bag
         """
+        if self.count == 0: return None
         _, randidx = self._peek_item_probabilistically()
         item = self.buckets[self.current_bucket_number].pop(randidx)
         self.count = self.count - 1  # decrement bag count
@@ -284,7 +308,7 @@ class Bag(ItemContainer):
 
         return item
 
-    def _take_smallest_priority_item(self):
+    def _take_min(self):
         """
             Selects the lowest priority bucket, and removes an item from it.
             Also removes the item from the Item Lookup Dict
@@ -294,9 +318,7 @@ class Bag(ItemContainer):
         # store old index so we can restore it
         oldidx = self.current_bucket_number
 
-        # move to lowest non-empty priority bucket
-        self.current_bucket_number = 0
-        self._move_to_next_nonempty_bucket()
+        self._move_to_min_nonempty_bucket()
 
         # peek a random item from the bucket
         _, randidx = self._peek_random_item_from_current_bucket()
@@ -324,7 +346,7 @@ class Bag(ItemContainer):
 
             :returns (item, index of item in the current bucket)
         """
-
+        if self.count == 0: return None, None
         # probabilistically select a priority bucket
         self._move_to_next_nonempty_bucket()  # try next non-empty bucket
         rnd = random.random()  # randomly generated number in [0.0, 1.0)
@@ -357,15 +379,43 @@ class Bag(ItemContainer):
         """
             Select the next non-empty bucket after the currently selected bucket
         """
-        self._move_to_next_bucket()
+        assert self.count > 0, "Cannot select non-empty bucket in empty Bag"
+        self._move_upward_to_next_bucket()
         while len(self.buckets[self.current_bucket_number]) == 0:
-            self._move_to_next_bucket()
+            self._move_upward_to_next_bucket()
 
-    def _move_to_next_bucket(self):
+    def _move_to_max_nonempty_bucket(self):
         """
-            Select the next bucket after the currently selected bucket
+            Select the highest value non-empty bucket
+
         """
-        self.current_bucket_number = (self.current_bucket_number % self.number_of_buckets) + 1
+        assert self.count > 0,"Cannot select non-empty bucket in empty Bag"
+        self.current_bucket_number = self.number_of_buckets - 1
+        self._move_downward_to_next_bucket()
+        while len(self.buckets[self.current_bucket_number]) == 0:
+            self._move_downward_to_next_bucket()
+
+    def _move_to_min_nonempty_bucket(self):
+        """
+            Select the highest value non-empty bucket
+
+        """
+        assert self.count > 0,"Cannot select non-empty bucket in empty Bag"
+        # move to lowest non-empty priority bucket
+        self.current_bucket_number = 0
+        self._move_to_next_nonempty_bucket()
+
+    def _move_downward_to_next_bucket(self):
+        """
+            Select the next bucket below the currently selected bucket
+        """
+        self.current_bucket_number = (self.current_bucket_number - 1) % self.number_of_buckets
+
+    def _move_upward_to_next_bucket(self):
+        """
+            Select the next bucket above the currently selected bucket
+        """
+        self.current_bucket_number = (self.current_bucket_number + 1) % self.number_of_buckets
 
 class Depq():
     def __init__(self, capacity):
@@ -389,8 +439,6 @@ class Depq():
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
-        # if isinstance(self,Table):
-        #     print('extract')
         max = self.depq.popfirst()[0]
         return max
 
@@ -406,6 +454,15 @@ class Depq():
             #print('extract')
         min = self.depq.poplast()[0]
         return min
+
+    def peek(self):
+        """
+            Peek object with highest priority from the depq
+            O(1)
+
+            Returns None if depq is empty
+        """
+        return self.peek_max()
 
     def peek_max(self):
         """
@@ -443,12 +500,11 @@ class Buffer(ItemContainer, Depq):
         """
         if not isinstance(item,ItemContainer.Item):
             item = ItemContainer.Item(item, self.get_next_item_id(), self.decay_multiplier)
-            ItemContainer.put_into_lookup_table(self, item)  # Item Container
 
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
         Depq.insert_object(self,item, item.budget.priority) # Depq
-        ItemContainer.put_into_lookup_table(self, item)  # Item Container
+        self.put_into_lookup_table(item)  # Item Container
 
         # update GUI
         if Global.GlobalGUI.gui_use_internal_data:
@@ -467,7 +523,7 @@ class Buffer(ItemContainer, Depq):
         """
         if len(self) == 0: return None
         item = Depq.extract_max(self)
-        ItemContainer.take_from_lookup_dict(self, item.key)
+        self.take_from_lookup_dict(item.key)
 
         # update GUI
         if Global.GlobalGUI.gui_use_internal_data:

@@ -7,6 +7,7 @@ import NARS
 from multiprocessing.queues import Queue
 import NALGrammar
 import NALInferenceRules
+from Global import Global
 
 """
     Author: Christian Hahm
@@ -30,23 +31,23 @@ class StdoutQueue(Queue):
     def flush(self):
         sys.__stdout__.flush()
 
-def nars_process(input_judgment_q, input_question_q, output_q):
-    testnars = NARS.NARS()
-    sys.stdout = output_q
+def run_test(input_judgment_q, input_question_q, output_q, debug=False):
+    if not debug:
+        sys.stdout = output_q
 
     # feed in judgments
     while input_judgment_q.qsize() > 0:
         InputBuffer.add_input_sentence(input_judgment_q.get())
 
     # process judgments
-    testnars.do_working_cycles(50)
+    Global.NARS.do_working_cycles(50)
 
     # feed in questions
     while input_question_q.qsize() > 0:
         InputBuffer.add_input_sentence(input_question_q.get())
 
     # process questions
-    testnars.do_working_cycles(50)
+    Global.NARS.do_working_cycles(50)
 
     sys.stdout = sys.__stdout__
 
@@ -91,6 +92,7 @@ def revision():
 
         :- (S-->P). %1.0;0.81%
     """
+    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
@@ -100,7 +102,7 @@ def revision():
     input_judgment_q.put(j2)
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q))
 
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
     process.start()
     process.join()
 
@@ -120,6 +122,7 @@ def first_order_deduction():
 
         :- (S-->P). %1.0;0.81%
     """
+    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
@@ -129,7 +132,7 @@ def first_order_deduction():
     input_judgment_q.put(j2)
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q))
 
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
     process.start()
     process.join()
 
@@ -149,6 +152,7 @@ def first_order_induction():
         :- (S-->P). %1.0;0.45%
         :- (P-->S). %1.0;0.45%
     """
+    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
@@ -160,7 +164,7 @@ def first_order_induction():
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
 
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
     process.start()
     process.join()
 
@@ -181,6 +185,7 @@ def first_order_abduction():
         :- (S-->P). %1.0;0.45%
         :- (P-->S). %1.0;0.45%
     """
+    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
@@ -192,7 +197,7 @@ def first_order_abduction():
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
 
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
     process.start()
     process.join()
 
@@ -204,9 +209,9 @@ def first_order_abduction():
 
     assert success,"TEST FAILURE: First-order Abduction test failed: " + failed_criterion
 
-def extensional_composition():
+def intensional_composition():
     """
-        Test Extensional Composition rules:
+        Test Intensional Composition rules:
         j1: (M --> S). %1.0;0.9%
         j2: (M --> P). %1.0;0.9%
 
@@ -215,12 +220,13 @@ def extensional_composition():
         :- (M --> (S - P)).
         :- (M --> (P - S)).
     """
+    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M --> S). %1.0;0.9%")
     j2 = NALGrammar.Sentence.new_sentence_from_string("(M --> P). %1.0;0.9%")
     q1 = "(M --> (|,S,P))?"
-    q2 = "(M --> (&,S, P))?"
+    q2 = "(M --> (&,S,P))?"
     q3 = "(M --> (-,S,P))?"
     q4 = "(M --> (-,P,S))?"
     input_judgment_q.put(j1)
@@ -230,7 +236,7 @@ def extensional_composition():
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q3))
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q4))
 
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
     process.start()
     process.join()
 
@@ -242,11 +248,11 @@ def extensional_composition():
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
-    assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion
+    assert success,"TEST FAILURE: Intensional Composition test failed: " + failed_criterion
 
-def intensional_composition():
+def extensional_composition():
     """
-        Test Intensional Composition rules:
+        Test Extensional Composition rules:
         j1: (S-->M). %1.0;0.9%
         j2: (P-->M). %1.0;0.9%
 
@@ -255,6 +261,7 @@ def intensional_composition():
         :- ((S ~ P) --> M).
         :- ((P ~ S) --> M).
     """
+    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
@@ -271,7 +278,7 @@ def intensional_composition():
     input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q4))
 
 
-    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
     process.start()
     process.join()
 
@@ -282,7 +289,7 @@ def intensional_composition():
     success_criteria.append(NALInferenceRules.Difference(j2, j1).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
-    assert success,"TEST FAILURE: Intensional Composition test failed: " + failed_criterion
+    assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion
 
 def main():
     revision()

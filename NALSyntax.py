@@ -38,19 +38,24 @@ class StatementConnector(enum.Enum):
     ParallelConjunction = "&|"
 
     @classmethod
-    def is_string_a_statement_connector(cls, value):
-        return value in cls._value2member_map_
+    def is_string_a_statement_connector(cls, string):
+        return string in cls._value2member_map_
 
     @classmethod
-    def get_statement_connector_from_string(cls, value):
-        if not StatementConnector.is_string_a_statement_connector(value):
+    def get_statement_connector_from_string(cls, string):
+        if not StatementConnector.is_string_a_statement_connector(string):
             return None
 
         for connector in cls:
-            if value == connector.value:
+            if string == connector.value:
                 return connector
 
         return None
+
+    @classmethod
+    def is_order_invariant(cls, connector):
+        #todo
+        return False
 
 
 class TermConnector(enum.Enum):
@@ -88,10 +93,19 @@ class TermConnector(enum.Enum):
         return None
 
     @classmethod
+    def is_order_invariant(cls, connector):
+        return connector is cls.ExtensionalIntersection or \
+               connector is cls.IntensionalIntersection or \
+                connector is cls.ExtensionalSetStart or \
+                connector is cls.IntensionalSetStart
+
+
+    @classmethod
     def get_set_end_connector_from_set_start_connector(cls, start_connector):
         if start_connector == TermConnector.ExtensionalSetStart: return TermConnector.ExtensionalSetEnd
         if start_connector == TermConnector.IntensionalSetStart: return TermConnector.IntensionalSetEnd
         return None
+
 
     @classmethod
     def is_set_bracket_start(cls, bracket):
@@ -112,6 +126,7 @@ class TermConnector(enum.Enum):
         """
         return (bracket == TermConnector.IntensionalSetEnd.value) or (
                 bracket == TermConnector.ExtensionalSetEnd.value)
+
 
 class Copula(enum.Enum):
     # Primary copula

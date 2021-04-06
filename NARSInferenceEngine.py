@@ -258,6 +258,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
 
     conversion_tasks_to_append = []
     for derived_task in derived_tasks:
+        if isinstance(derived_task.sentence, NALGrammar.Question): continue
         """
             # apply the Conversion rule on all inheritance statements
         """
