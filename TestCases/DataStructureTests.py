@@ -132,7 +132,7 @@ def main():
     """
         Table Tests
     """
-    NARS.NARS()
+    NARS.NARS() # need it for Stamp IDs
     test_table_removemax()
     test_table_removemin()
 

@@ -28,7 +28,7 @@ class NARS:
     def __init__(self):
         self.overall_experience_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
-        Global.Global.NARS = self
+        Global.Global.NARS = self # there can only be one NARS running
 
     def save_memory_to_disk(self, filename="memory.nars"):
         """

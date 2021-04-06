@@ -147,8 +147,7 @@ def first_order_induction():
         j2: (M-->P). %1.0;0.9%
 
         :- (S-->P). %1.0;0.45%
-           and
-           (P-->S). %1.0;0.45%
+        :- (P-->S). %1.0;0.45%
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
@@ -180,8 +179,7 @@ def first_order_abduction():
         j2: (P-->M). %1.0;0.9%
 
         :- (S-->P). %1.0;0.45%
-           and
-           (P-->S). %1.0;0.45%
+        :- (P-->S). %1.0;0.45%
     """
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
@@ -206,6 +204,86 @@ def first_order_abduction():
 
     assert success,"TEST FAILURE: First-order Abduction test failed: " + failed_criterion
 
+def extensional_composition():
+    """
+        Test Extensional Composition rules:
+        j1: (M --> S). %1.0;0.9%
+        j2: (M --> P). %1.0;0.9%
+
+        :- (M --> (S | P)).
+        :- (M --> (S & P)).
+        :- (M --> (S - P)).
+        :- (M --> (P - S)).
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(M --> S). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(M --> P). %1.0;0.9%")
+    q1 = "(M --> (|,S,P))?"
+    q2 = "(M --> (&,S, P))?"
+    q3 = "(M --> (-,S,P))?"
+    q4 = "(M --> (-,P,S))?"
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q3))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q4))
+
+    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.ExtensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.IntensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Difference(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Difference(j2, j1).get_formatted_string_no_id())
+
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion
+
+def intensional_composition():
+    """
+        Test Intensional Composition rules:
+        j1: (S-->M). %1.0;0.9%
+        j2: (P-->M). %1.0;0.9%
+
+        :- ((S | P) --> M).
+        :- ((S & P) --> M).
+        :- ((S ~ P) --> M).
+        :- ((P ~ S) --> M).
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
+    q1 = "((|,S,P) --> M)?"
+    q2 = "((&,S,P) --> M)?"
+    q3 = "((~,S,P) --> M)?"
+    q4 = "((~,P,S) --> M)?"
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q3))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q4))
+
+
+    process = threading.Thread(target=nars_process, args=(input_judgment_q,input_question_q,output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.ExtensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.IntensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Difference(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Difference(j2, j1).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Intensional Composition test failed: " + failed_criterion
+
 def main():
     revision()
 
@@ -215,6 +293,12 @@ def main():
     first_order_deduction()
     first_order_induction()
     first_order_abduction()
+
+    """
+        Composition
+    """
+    extensional_composition()
+    intensional_composition()
 
     print("All Inference Tests successfully passed.")
 
