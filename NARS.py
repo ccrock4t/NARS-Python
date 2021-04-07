@@ -295,23 +295,27 @@ def main():
     # set globals
     Global.GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     # todo investigate why using the interface slows down the system
-    Global.GlobalGUI.gui_use_interface = True # Setting this to False uses the shell as interface, and results in a massive speedup
+    Global.GlobalGUI.gui_use_interface = False # Setting this to False uses the shell as interface, and results in a massive speedup
 
     # setup internal/interface GUI
     if Global.GlobalGUI.gui_use_internal_data or Global.GlobalGUI.gui_use_interface:
-        GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread")
+        GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread", daemon=True)
         GUI_thread.daemon = True
         GUI_thread.start()
+        while not Global.Global.gui_thread_ready:
+            print('Waiting for GUI thread...')
+            time.sleep(1.0)
 
     if not Global.GlobalGUI.gui_use_interface:
         # launch shell input thread
-        shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread")
+        shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread", daemon=True)
         shell_input_thread.daemon = True
         shell_input_thread.start()
+        while not Global.Global.input_thread_ready:
+            print('Waiting for input thread...')
+            time.sleep(1.0)
 
     Global.Global.paused = Global.GlobalGUI.gui_use_interface
-
-    time.sleep(0.5) # give threads time to setup
 
     # Finally, create the NARS
     NARS()

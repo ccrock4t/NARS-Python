@@ -33,6 +33,7 @@ def execute_gui():
         window.geometry('650x500')
         execute_internal_gui(window)
 
+    Global.Global.gui_thread_ready = True
     window.mainloop()
 
 def execute_internal_gui(window):
@@ -313,6 +314,7 @@ def execute_interface_gui(window):
     window.focus()
 
 def get_user_input():
+    Global.Global.input_thread_ready = True
     userinput = ""
     while userinput != "exit":
         userinput = input("")

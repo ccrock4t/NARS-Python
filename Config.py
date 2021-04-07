@@ -14,7 +14,7 @@ MEMORY_CONCEPT_CAPACITY = 50000 # how many concepts can this NARS have?
 """
     Bags
 """
-BAG_DEFAULT_CAPACITY = 60 # default for how many items can fit in a bag
+BAG_DEFAULT_CAPACITY = 5000 # default for how many items can fit in a bag
 BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 allows 100 probability values in [0%, 100%)
 BAG_PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
 

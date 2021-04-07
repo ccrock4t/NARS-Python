@@ -15,11 +15,18 @@ class Global:
     SENTENCE_ID_MARKER = "SentenceID:"
     ID_END_MARKER = ": "
 
+    # thread ready boolean
+    gui_thread_ready = False
+    input_thread_ready = False
+
     @classmethod
     def set_paused(cls, paused):
         """
             Sets the Global paused parameter and changes the GUI button
+
+            Does nothing if GUI is not enabled
         """
+        if not Global.GlobalGUI.gui_use_interface: return
         Global.paused = paused
         if Global.paused:
             GlobalGUI.gui_play_pause_button.config(text="PLAY")

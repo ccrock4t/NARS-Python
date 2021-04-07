@@ -1,4 +1,4 @@
-
+import time
 
 import NALGrammar
 import Global
@@ -31,8 +31,11 @@ def add_input_string(input_string: str):
         elif input_string == "load_input":
             load_input()
         else:
+            while Global.Global.NARS is None:
+                print("Waiting for NARS to start up...")
+                time.sleep(1.0)
             sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
-            input_queue.put(item=sentence)
+            add_input_sentence(sentence)
     except AssertionError as msg:
         Global.GlobalGUI.print_to_output("INPUT REJECTED: " + str(msg))
         return
