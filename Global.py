@@ -26,7 +26,7 @@ class Global:
 
             Does nothing if GUI is not enabled
         """
-        if not Global.GlobalGUI.gui_use_interface: return
+        if not GlobalGUI.gui_use_interface: return
         Global.paused = paused
         if Global.paused:
             GlobalGUI.gui_play_pause_button.config(text="PLAY")

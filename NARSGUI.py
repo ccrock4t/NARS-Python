@@ -13,6 +13,7 @@ def execute_gui():
     """
         Setup and run 2 windows on a single thread
     """
+    internal_data_dimensions = "1000x500"
     if Global.GlobalGUI.gui_use_interface:
         # launch internal data GUI
         window = tk.Tk()
@@ -24,13 +25,13 @@ def execute_gui():
             # launch GUI
             toplevel = tk.Toplevel()
             toplevel.title("NARS in Python - Internal Data")
-            toplevel.geometry('650x500')
+            toplevel.geometry(internal_data_dimensions)
             execute_internal_gui(toplevel)
     elif Global.GlobalGUI.gui_use_internal_data:
         # launch GUI
         window = tk.Tk()
         window.title("NARS in Python - Internal Data")
-        window.geometry('650x500')
+        window.geometry(internal_data_dimensions)
         execute_internal_gui(window)
 
     Global.Global.gui_thread_ready = True
@@ -41,7 +42,7 @@ def execute_internal_gui(window):
         Setup the internal GUI window, displaying the system's buffers and memory
     """
     listbox_height = 30
-    listbox_width = 50
+    listbox_width = 80
 
     # Task Buffer Output
     Global.GlobalGUI.gui_buffer_output_label = tk.Label(window, text="Task Buffer: 0")
