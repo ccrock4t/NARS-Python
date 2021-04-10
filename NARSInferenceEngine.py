@@ -77,7 +77,7 @@ def do_inference(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataS
         # j1=S-->P, j2=S-->P
         # or j1=S<->P, j2=S<->P or P<->S
         """
-        if is_question: return # can't do revision with questions
+        if is_question: return derived_tasks # can't do revision with questions
 
         derived_sentence = NALInferenceRules.Revision(j1, j2)  # S-->P
         derived_task = make_new_task_from_derived_sentence(derived_sentence, j1, j2, inference_rule="Revision")

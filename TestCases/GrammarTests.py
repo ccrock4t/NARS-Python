@@ -18,7 +18,8 @@ def calculate_syntactic_complexity_test():
     singleton_set_compound_term_complexity = 2
 
     extensional_set_compound_term = NALGrammar.Term.from_string("{A,B}")
-    extensional_set_compound_term_complexity = 3
+    # becomes an intensional intersection of sets, (|,{A},{B})
+    extensional_set_compound_term_complexity = 5
 
     singleton_set_internal_compound_term = NALGrammar.Term.from_string("[(*,A,B)]")
     singleton_set_internal_compound_term_complexity = 4

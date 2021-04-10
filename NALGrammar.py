@@ -111,7 +111,7 @@ class Sentence:
 
         if tense == NALSyntax.Tense.Present:
             #Mark present tense event as happening right now!
-            sentence.stamp.occurrence_time = Global.Global.NARS.memory.current_cycle_number
+            sentence.stamp.occurrence_time = Global.NARS.memory.current_cycle_number
 
         return sentence
 
@@ -151,11 +151,13 @@ class Sentence:
         def get_tense(self):
             if self.occurrence_time is None:
                 return NALSyntax.Tense.Eternal
-            if self.occurrence_time < Global.Global.NARS.memory.current_cycle_number:
+
+            current_cycle = Global.Global.NARS.memory.current_cycle_number
+            if self.occurrence_time < current_cycle:
                 return NALSyntax.Tense.Past
-            elif self.occurrence_time == Global.Global.NARS.memory.current_cycle_number:
+            elif self.occurrence_time == current_cycle:
                 return NALSyntax.Tense.Present
-            elif self.occurrence_time > Global.Global.NARS.memory.current_cycle_number:
+            elif self.occurrence_time > current_cycle:
                 return NALSyntax.Tense.Future
 
         def mutually_add_to_interacted_sentences(self, other_sentence):
@@ -318,13 +320,7 @@ class Term:
         """
             Terms are equal if their strings are the same
         """
-        if isinstance(other, StatementTerm):
-            return str(self) == str(other) or str(self) == other.get_reverse_term_string()
-        elif isinstance(self, StatementTerm):
-            return str(self) == str(other) or self.get_reverse_term_string() == str(other)
-        elif isinstance(other, Term):  # neither is a Statement term
-            return str(self) == str(other)
-        return False
+        return str(self) == str(other)
 
     def __hash__(self):
         return hash(str(self))
@@ -485,7 +481,8 @@ class CompoundTerm(Term):
         """
         self.connector = connector  # sets are represented by the opening bracket as the connector, { or [
 
-        if isinstance(self.connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.connector):
+        if isinstance(self.connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.connector)\
+                or isinstance(self.connector, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(self.connector):
             # order doesn't matter, alphabetize so the system can recognize the same term
             subterms.sort(key=lambda t:str(t))
 
@@ -614,7 +611,7 @@ class StatementTerm(CompoundTerm):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
-        super().__init__([subject, predicate], copula)
+        CompoundTerm.__init__(self,[subject, predicate], copula)
         if copula == NALSyntax.Copula.Similarity:
             self.equivalent_term_string = self._get_formatted_string_from_values(predicate, subject)
 

@@ -1,3 +1,4 @@
+import Global
 import NARSDataStructures
 import NALGrammar
 import NALSyntax
@@ -22,7 +23,7 @@ def test_table_removemax():
             NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
         table.put(sentence)
-    tablemax = table.extract_max().value.confidence
+    tablemax = table._extract_max().value.confidence
     assert(tablemax == maximum), "TEST FAILURE: Table did not properly retrieve maximum value"
 
 
@@ -40,7 +41,7 @@ def test_table_removemin():
             NALGrammar.TruthValue(0.9, c))
         table.put(sentence)
 
-    tablemin = table.extract_min().value.confidence
+    tablemin = table._extract_min().value.confidence
     assert (tablemin == minimum), "TEST FAILURE: Table did not properly retrieve minimum value"
 
 def test_buffer_removemax():
@@ -57,7 +58,7 @@ def test_buffer_removemax():
         item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
         item.budget.priority = p
         buffer.put(item)
-    buffermax = buffer.extract_max().budget.priority
+    buffermax = buffer._extract_max().budget.priority
     assert(buffermax == maximum), "TEST FAILURE: Buffer did not properly retrieve maximum value"
 
 
@@ -77,7 +78,7 @@ def test_buffer_removemin():
         item.budget.priority = p
         buffer.put(item)
 
-    buffermin = buffer.extract_min().budget.priority
+    buffermin = buffer._extract_min().budget.priority
     assert (buffermin == minimum), "TEST FAILURE: Buffer did not properly retrieve minimum value"
 
 
@@ -101,7 +102,7 @@ def test_concept_termlinking():
     assert (conceptA.term_links.count == 0), "TEST FAILURE: Concept " + str(conceptA) + " does not have 0 termlinks"
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptB) + " does not have 1 termlink"
 
-    take = statement_concept.term_links.temporary_take().object # take out the only remaining concept (concept B)
+    take = statement_concept.term_links.take().object # take out the only remaining concept (concept B)
 
     assert (take == conceptB), "TEST FAILURE: Removed concept was not Concept 'B'"
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept does not have 1 termlink"
@@ -114,7 +115,7 @@ def test_bag_overflow_purge():
     testbag = NARSDataStructures.Bag(item_type=NALGrammar.Sentence)
     items_added = 0
     for i in range(0, NARS.Config.BAG_DEFAULT_CAPACITY + 5):
-        testbag.put(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
+        testbag.put_new(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
         items_added = items_added + 1
         if items_added <= NARS.Config.BAG_DEFAULT_CAPACITY:
             assert len(testbag) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"
@@ -132,7 +133,7 @@ def main():
     """
         Table Tests
     """
-    NARS.NARS() # need it for Stamp IDs
+    Global.Global.NARS = NARS.NARS() # need it for Stamp IDs
     test_table_removemax()
     test_table_removemin()
 

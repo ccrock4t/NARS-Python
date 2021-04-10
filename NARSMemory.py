@@ -20,7 +20,11 @@ class Memory:
 
     def __init__(self):
         self.concepts_bag = NARSDataStructures.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
+        self.concept_lookup_table = dict() # use a separate lookup table since ItemContainer lookup table removes the reference on Take()
         self.current_cycle_number = 0
+
+    def __len__(self):
+        return len(self.concept_lookup_table)
 
     def get_number_of_concepts(self):
         """
@@ -38,9 +42,20 @@ class Memory:
         NALGrammar.assert_term(term)
         assert (self.concepts_bag.peek(term) is None), "Cannot create new concept. Concept already exists."
         # create new concept
-        concept = Concept(term)
-        self.concepts_bag.put(concept)
-        return concept
+        new_concept = Concept(term)
+
+        # insert new concept into memory lookup table
+        concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(new_concept)
+        self.concept_lookup_table[concept_key] = new_concept
+
+        # and into data structure
+        purged_item = self.concepts_bag.put_new(new_concept)
+
+        if purged_item is not None:
+            purged_concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(purged_item.object)
+            self.concept_lookup_table.pop(purged_concept_key)
+
+        return new_concept
 
     def peek_concept(self, term):
         """
@@ -55,17 +70,12 @@ class Memory:
               :return Concept named by the term
           """
         if isinstance(term, NALGrammar.VariableTerm): return None #todo created concepts for closed variable terms
-        concept = self.concepts_bag.peek(str(term)) # peek from bag by converting term to key
-        if concept is not None:
-            return concept  # return if got concept
+        if str(term) in self.concept_lookup_table:
+            concept = self.concept_lookup_table[str(term)]
+            return concept  # return if it already exists
 
-        # concept not found
-        if isinstance(term, NALGrammar.StatementTerm) and term.connector == NALSyntax.Copula.Similarity:
-            #if its a similarity statement term S<->P, check for equivalent Concept P<->S
-            concept = self.concepts_bag.peek(term.get_reverse_term_string())
-            if concept is not None: return concept  # return if got concept
-
-        # it must be created unless it contains a Variable Term, and potentially its sub-concepts
+        # it doesn't exist
+        # it must be created along with its sub-concepts if necessary
         concept = None
         if not term.contains_variable():
             concept = self.conceptualize_term(term)
@@ -96,25 +106,29 @@ class Memory:
             subject_term = concept.term.get_subject_term()
             predicate_term = concept.term.get_predicate_term()
 
-            concept_related_to_subject = self.peek_concept(subject_term).term_links.peek()
-            concept_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
+            concept_item_related_to_subject = self.peek_concept(subject_term).term_links.peek()
+            concept_item_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
 
-            if concept_related_to_subject is not None and \
-                    concept_related_to_predicate is None: # none from predicate
-                related_concept = concept_related_to_subject
-            elif concept_related_to_subject is None \
-                    and concept_related_to_predicate is not None: # none from subject
-                related_concept = concept_related_to_predicate
-            elif concept_related_to_subject is not None \
-                    and concept_related_to_predicate is not None:  # one from both
+            if concept_item_related_to_subject is not None and \
+                    concept_item_related_to_predicate is None: # none from predicate
+                related_concept = concept_item_related_to_subject.object
+            elif concept_item_related_to_subject is None \
+                    and concept_item_related_to_predicate is not None: # none from subject
+                related_concept = concept_item_related_to_predicate.object
+            elif concept_item_related_to_subject is not None \
+                    and concept_item_related_to_predicate is not None:  # one from both
                 rand = random.random()
                 if rand < 0.5:
-                    related_concept = concept_related_to_subject
+                    related_concept = concept_item_related_to_subject.object
                 elif rand >= 0.5:
-                    related_concept = concept_related_to_predicate
+                    related_concept = concept_item_related_to_predicate.object
         else:
             # Non-statement concept
-            related_concept = self.peek_concept(concept.term).term_links.peek()
+            related_concept_item = self.peek_concept(concept.term).term_links.peek()
+            if related_concept_item is None:
+                related_concept = None
+            else:
+                related_concept = related_concept_item.object
 
         return related_concept
 
@@ -156,8 +170,8 @@ class Concept:
         """
         assert_concept(concept)
         if concept in self.term_links: return  # already linked
-        self.term_links.put(concept)
-        concept.term_links.put(self)
+        self.term_links.put_new(concept)
+        concept.term_links.put_new(self)
 
     def remove_term_link(self, concept):
         """
@@ -166,8 +180,8 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.term_links), concept + "must be in term links."
-        self.term_links.temporary_take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
-        concept.term_links.temporary_take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
+        self.term_links.take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
+        concept.term_links.take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
 
     def get_formatted_string(self):
         """

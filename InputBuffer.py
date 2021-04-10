@@ -5,6 +5,8 @@ import Global
 import NARSDataStructures
 import queue
 
+import NARSGUI
+
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -16,13 +18,13 @@ input_queue = queue.Queue()
 def add_input_string(input_string: str):
     try:
         if input_string == "count":
-            Global.GlobalGUI.print_to_output(
+            NARSGUI.NARSGUI.print_to_output(
                 "Memory count (concepts in memory): " + str(Global.Global.NARS.memory.get_number_of_concepts()))
-            Global.GlobalGUI.print_to_output(
+            NARSGUI.NARSGUI.print_to_output(
                 "Buffer count (tasks in buffer): " + str(Global.Global.NARS.overall_experience_buffer.count))
             return
         elif input_string == "cycle":
-            Global.GlobalGUI.print_to_output("Current cycle: " + str(Global.Global.NARS.memory.current_cycle_number))
+            NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.memory.current_cycle_number))
             return
         elif input_string == "save":
             Global.Global.NARS.save_memory_to_disk()
@@ -37,7 +39,7 @@ def add_input_string(input_string: str):
             sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
             add_input_sentence(sentence)
     except AssertionError as msg:
-        Global.GlobalGUI.print_to_output("INPUT REJECTED: " + str(msg))
+        NARSGUI.NARSGUI.print_to_output("INPUT REJECTED: " + str(msg))
         return
 
 def add_input_sentence(sentence: NALGrammar.Sentence):
@@ -62,10 +64,10 @@ def process_sentence(sentence: NALGrammar.Sentence):
         Given a Sentence, ingest it into NARS' experience buffer
         :param sentence:
     """
-    Global.GlobalGUI.print_to_output("IN: " + sentence.get_formatted_string())
+    NARSGUI.NARSGUI.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Task(sentence, is_input_task=True)
-    Global.Global.NARS.overall_experience_buffer.put(task)
+    Global.Global.NARS.overall_experience_buffer.put_new(task)
 
 def load_input(filename="input.nal"):
     """
@@ -73,9 +75,9 @@ def load_input(filename="input.nal"):
     """
     try:
         with open(filename, "r") as f:
-            Global.GlobalGUI.print_to_output("LOADING INPUT FILE: " + filename)
+            NARSGUI.NARSGUI.print_to_output("LOADING INPUT FILE: " + filename)
             for line in f.readlines():
                 add_input_string(line)
-            Global.GlobalGUI.print_to_output("LOAD INPUT SUCCESS")
+            NARSGUI.NARSGUI.print_to_output("LOAD INPUT SUCCESS")
     except:
-        Global.GlobalGUI.print_to_output("LOAD INPUT FAIL")
+        NARSGUI.NARSGUI.print_to_output("LOAD INPUT FAIL")

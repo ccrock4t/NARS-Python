@@ -1,5 +1,4 @@
 import pickle
-import queue
 import random
 import time
 
@@ -10,7 +9,6 @@ import NARSInferenceEngine
 import NALGrammar
 import NALSyntax
 import NARSMemory
-import threading
 
 import NARSDataStructures
 import Global
@@ -18,7 +16,7 @@ import Global
 """
     Author: Christian Hahm
     Created: October 8, 2020
-    Purpose: Main loop and NARS definition
+    Purpose: NARS definition
 """
 
 
@@ -29,16 +27,15 @@ class NARS:
     def __init__(self):
         self.overall_experience_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
-        Global.Global.NARS = self # there can only be one NARS running
 
     def save_memory_to_disk(self, filename="memory.nars"):
         """
             Save the NARS Memory instance to disk
         """
         with open(filename, "wb") as f:
-            Global.GlobalGUI.print_to_output("SAVING SYSTEM MEMORY TO FILE: " + filename)
+            NARSGUI.NARSGUI.print_to_output("SAVING SYSTEM MEMORY TO FILE: " + filename)
             pickle.dump(self.memory, f, pickle.HIGHEST_PROTOCOL)
-            Global.GlobalGUI.print_to_output("SAVE MEMORY SUCCESS")
+            NARSGUI.NARSGUI.print_to_output("SAVE MEMORY SUCCESS")
 
     def load_memory_from_disk(self, filename="memory.nars"):
         """
@@ -47,22 +44,22 @@ class NARS:
         """
         try:
             with open(filename, "rb") as f:
-                Global.GlobalGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
+                NARSGUI.NARSGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
                 # load memory from file
                 self.memory = pickle.load(f)
                 # Print memory contents to internal data GUI
-                if Global.GlobalGUI.gui_use_internal_data:
-                    Global.GlobalGUI.clear_output_gui(data_structure=self.memory.concepts_bag)
+                if Global.Global.gui_use_internal_data:
+                    NARSGUI.NARSGUI.clear_output_gui(data_structure=self.memory.concepts_bag)
                     for item in self.memory.concepts_bag:
                         if item not in self.memory.concepts_bag:
-                            Global.GlobalGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
+                            NARSGUI.NARSGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
-                if Global.GlobalGUI.gui_use_interface:
-                    Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
+                if Global.Global.gui_use_interface:
+                    NARSGUI.NARSGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
 
-                Global.GlobalGUI.print_to_output("LOAD MEMORY SUCCESS")
+                NARSGUI.NARSGUI.print_to_output("LOAD MEMORY SUCCESS")
         except:
-            Global.GlobalGUI.print_to_output("LOAD MEMORY FAIL")
+            NARSGUI.NARSGUI.print_to_output("LOAD MEMORY FAIL")
 
     def run(self):
         """
@@ -72,8 +69,8 @@ class NARS:
             # global parameters
             if Global.Global.paused:
                 continue
-            if Global.GlobalGUI.gui_use_interface:
-                delay = Global.GlobalGUI.gui_delay_slider.get() / 1000
+            if Global.Global.gui_use_interface:
+                delay = NARSGUI.NARSGUI.gui_delay_slider.get() / 1000
                 if delay > 0:
                     time.sleep(delay)
 
@@ -84,8 +81,8 @@ class NARS:
             Performs 1 working cycle.
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
-        if Global.GlobalGUI.gui_use_interface:
-            Global.GlobalGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
+        if Global.Global.gui_use_interface:
+            NARSGUI.NARSGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
 
         InputBuffer.process_next_pending_sentence()
 
@@ -131,7 +128,7 @@ class NARS:
         """
             Process a belief from a concept in memory
         """
-        concept_item = self.memory.concepts_bag.temporary_take()
+        concept_item = self.memory.concepts_bag.take()
 
         if concept_item is None:
             return  # nothing to ponder
@@ -264,7 +261,7 @@ class NARS:
             # Answer the question
             #
             if task.is_from_input and task.needs_to_be_answered_in_output:
-                Global.GlobalGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
+                NARSGUI.NARSGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
                 task.needs_to_be_answered_in_output = False
 
             # do inference between answer and a related belief
@@ -285,44 +282,3 @@ class NARS:
         # add all derived tasks to the buffer
         for derived_task in derived_tasks:
             self.overall_experience_buffer.put(derived_task)
-
-
-def main():
-    """
-        This is where the program starts
-        Creates threads, populates globals, and runs the NARS.
-    """
-    # set globals
-    Global.GlobalGUI.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
-    # todo investigate why using the interface slows down the system
-    Global.GlobalGUI.gui_use_interface = False # Setting this to False uses the shell as interface, and results in a massive speedup
-
-    # setup internal/interface GUI
-    if Global.GlobalGUI.gui_use_internal_data or Global.GlobalGUI.gui_use_interface:
-        GUI_thread = threading.Thread(target=NARSGUI.execute_gui, name="GUI thread", daemon=True)
-        GUI_thread.daemon = True
-        GUI_thread.start()
-        while not Global.Global.gui_thread_ready:
-            print('Waiting for GUI thread...')
-            time.sleep(1.0)
-
-    if not Global.GlobalGUI.gui_use_interface:
-        # launch shell input thread
-        shell_input_thread = threading.Thread(target=NARSGUI.get_user_input, name="Shell input thread", daemon=True)
-        shell_input_thread.daemon = True
-        shell_input_thread.start()
-        while not Global.Global.input_thread_ready:
-            print('Waiting for input thread...')
-            time.sleep(1.0)
-
-    Global.Global.paused = Global.GlobalGUI.gui_use_interface
-
-    # Finally, create the NARS
-    NARS()
-    # and run it in the shell
-    Global.Global.NARS.run()
-
-
-
-if __name__ == "__main__":
-    main()

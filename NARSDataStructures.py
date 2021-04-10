@@ -4,6 +4,7 @@ import random
 import Global
 import NALGrammar
 import NALSyntax
+import NARSGUI
 import NARSMemory
 
 """
@@ -41,18 +42,37 @@ class ItemContainer:
 
 
 
-    def put_into_lookup_table(self, item):
+    def put_into_lookup_dict(self, item):
         """
             Puts item into lookup table and GUI
-        :param item:
+            :param item: put an Item into the lookup dictionary.
         """
         # put item into lookup table
         self.item_lookup_dict[item.key] = item
 
+        if Global.Global.gui_use_internal_data:
+            NARSGUI.NARSGUI.print_to_output(str(item), data_structure=self)
+
 
     def take_from_lookup_dict(self, key):
+        """
+            Removes an Item from the lookup dictionary using its key,
+            and returns the Item.
+
+        :param key: Key of the Item to remove.
+        :return: The Item that was removed.
+        """
         item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
+
+        # update GUI
+        if Global.Global.gui_use_internal_data:
+            NARSGUI.NARSGUI._remove_from_output(str(item), data_structure=self)
+
         return item
+
+    def put_new(self, object):
+        item = ItemContainer.Item(object, self.get_next_item_id(), self.decay_multiplier)
+        return self.put(item)
 
     def _take_min(self):
         assert False,"Take smallest priority item not defined for generic Item Container!"
@@ -62,6 +82,12 @@ class ItemContainer:
         return self.next_item_id - 1
 
     def peek_using_key(self,key=None):
+        """
+            Peek an Item using its key
+
+            :param key: Key of the item to peek
+            :return: Item peeked from the data structure
+        """
         assert key is not None, "Key cannot be none when peeking with a key!"
         if key not in self.item_lookup_dict: return None
         return self.item_lookup_dict[key]
@@ -124,9 +150,9 @@ class ItemContainer:
                    + str(self.id) + Global.Global.ID_END_MARKER \
                    + str(self.object) \
                    + " " \
-                   + Global.GlobalGUI.GUI_BUDGET_SYMBOL \
+                   + NARSGUI.NARSGUI.GUI_BUDGET_SYMBOL \
                    + "{:.3f}".format(self.budget.priority) \
-                   + Global.GlobalGUI.GUI_BUDGET_SYMBOL
+                   + NARSGUI.NARSGUI.GUI_BUDGET_SYMBOL
 
 
         def get_target_bucket_number(self):
@@ -177,7 +203,7 @@ class Bag(ItemContainer):
         for i in range(0, self.number_of_buckets):
             self.buckets[i] = []
 
-        super().__init__(item_type=item_type, decay_multiplier=Config.BAG_PRIORITY_DECAY_MULTIPLIER,capacity=capacity)
+        ItemContainer.__init__(self, item_type=item_type, decay_multiplier=Config.BAG_PRIORITY_DECAY_MULTIPLIER,capacity=capacity)
 
     def __len__(self):
         return self.count
@@ -191,31 +217,23 @@ class Bag(ItemContainer):
             If it's new, wraps it in the Item object and places it into the lookup table
 
             :param Bag Item to place into the Bag
-        """
-        if not isinstance(item,ItemContainer.Item):
-            item = ItemContainer.Item(item, self.get_next_item_id(), self.decay_multiplier)
-            ItemContainer.put_into_lookup_table(self, item)  # Item Container
 
+            :returns Item purged from the Bag if the inserted item causes an overflow
+        """
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
+        ItemContainer.put_into_lookup_dict(self, item)  # Item Container
         # put item into bucket
         self.buckets[item.get_target_bucket_number()].append(item)
 
         # increase Bag count
         self.count = self.count + 1
 
-        super().put_into_lookup_table(item=item)
-
-        # update GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.print_to_output(str(item), data_structure=self)
-
         # remove lowest priority item if over capacity
+        purged_item = None
         if len(self) > self.capacity:
-            smallest_item = self._take_min()
-            # update GUI
-            if Global.GlobalGUI.gui_use_internal_data:
-                Global.GlobalGUI.remove_from_output(str(smallest_item), data_structure=self)
+            purged_item = self._take_min()
+        return purged_item
 
     def peek(self, key=None):
         """
@@ -229,12 +247,9 @@ class Bag(ItemContainer):
         if key is None:
             item, _ = self._peek_item_probabilistically()
         else:
-            item = super().peek_using_key(key=key)
+            item = ItemContainer.peek_using_key(self,key=key)
 
-        object = None
-        if item is not None: object = item.object
-
-        return object
+        return item
 
     def peek_max(self):
         """
@@ -245,11 +260,9 @@ class Bag(ItemContainer):
         if self.count == 0: return None
         self._move_to_max_nonempty_bucket()
         item, _ = self._peek_random_item_from_current_bucket()
-        object = None
-        if item is not None: object = item.object
-        return object
+        return item
 
-    def temporary_take(self, key=None):
+    def take(self, key=None):
         """
             Remove an item from the bag either probabilistically or from its key
 
@@ -264,36 +277,32 @@ class Bag(ItemContainer):
         if self.count == 0: return None  # no items
 
         if key is None:
-            item = self._temporary_take_probabilistically()
+            item = self._take_probabilistically()
         else:
-            item = self._temporary_take_using_key(key)
+            item = self._take_using_key(key)
 
         return item
 
-    def _temporary_take_using_key(self, key):
+    def _take_using_key(self, key):
         """
         Take an item from the bag using the key
-        Does NOT remove the item from the Item Lookup Dict
 
         :param key: key of the item to remove from the Bag
         :return: the item which was removed from the bucket
         """
         assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
 
-        item = super().peek_using_key(key=key)
+        item = ItemContainer.peek_using_key(self, key=key)
         self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
         self.count = self.count - 1  # decrement bag count
 
-        # update GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
+        ItemContainer.take_from_lookup_dict(self,key)
 
         return item
 
-    def _temporary_take_probabilistically(self):
+    def _take_probabilistically(self):
         """
-            Probabilistically peeks a priority bucket, then removes the item.
-            Does NOT remove the item from the Item Lookup Dict
+            Probabilistically removes an item from the bag.
 
             :returns item probabilistically taken from the Bag
         """
@@ -302,9 +311,7 @@ class Bag(ItemContainer):
         item = self.buckets[self.current_bucket_number].pop(randidx)
         self.count = self.count - 1  # decrement bag count
 
-        # update GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
+        ItemContainer.take_from_lookup_dict(self,item.key)
 
         return item
 
@@ -326,17 +333,13 @@ class Bag(ItemContainer):
         # remove the item from the bucket
         item = self.buckets[self.current_bucket_number].pop(randidx)
 
-        # remove item reference from lookup table
-        super().take_from_lookup_dict(key=item.key)
-
         self.count = self.count - 1  # decrement bag count
+
+        # remove item reference from lookup table
+        ItemContainer.take_from_lookup_dict(self,key=item.key)
 
         # restore original index
         self.current_bucket_number = oldidx
-
-        # update GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -431,9 +434,9 @@ class Depq():
     def insert_object(self, object, priority):
         self.depq.insert(object, priority)
 
-    def extract_max(self):
+    def _extract_max(self):
         """
-            Extract object with highest priority from the depq
+            Extract Item with highest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -442,22 +445,20 @@ class Depq():
         max = self.depq.popfirst()[0]
         return max
 
-    def extract_min(self):
+    def _extract_min(self):
         """
-            Extract object with lowest priority from the depq
+            Extract Item with lowest priority from the depq
             O(1)
 
             Returns None if depq is empty
         """
         if len(self.depq) == 0: return None
-        #if isinstance(self,Table):
-            #print('extract')
         min = self.depq.poplast()[0]
         return min
 
     def peek(self):
         """
-            Peek object with highest priority from the depq
+            Peek Item with highest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -466,7 +467,7 @@ class Depq():
 
     def peek_max(self):
         """
-            Peek object with highest priority from the depq
+            Peek Item with highest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -477,7 +478,7 @@ class Depq():
 
     def peek_min(self):
         """
-            Peek object with lowest priority from the depq
+            Peek Item with lowest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -496,7 +497,9 @@ class Buffer(ItemContainer, Depq):
 
     def put(self, item):
         """
-            Insert an Item into the depq, sorted by priority.
+            Insert an Item into the Buffr, sorted by priority.
+
+            :returns Item that was purged if the inserted item caused an overflow
         """
         if not isinstance(item,ItemContainer.Item):
             item = ItemContainer.Item(item, self.get_next_item_id(), self.decay_multiplier)
@@ -504,17 +507,14 @@ class Buffer(ItemContainer, Depq):
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
         Depq.insert_object(self,item, item.budget.priority) # Depq
-        self.put_into_lookup_table(item)  # Item Container
+        ItemContainer.put_into_lookup_dict(self,item)  # Item Container
 
-        # update GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.print_to_output(str(item), data_structure=self)
-
+        purged_item = None
         if len(self) > self.capacity:
-            min_item = self.extract_min()
-            # update GUI
-            if Global.GlobalGUI.gui_use_internal_data:
-                Global.GlobalGUI.remove_from_output(str(min_item), data_structure=self)
+            purged_item = self._extract_min()
+            self.take_from_lookup_dict(purged_item.key)
+
+        return purged_item
 
     def take(self):
         """
@@ -522,18 +522,14 @@ class Buffer(ItemContainer, Depq):
             :return:
         """
         if len(self) == 0: return None
-        item = Depq.extract_max(self)
+        item = Depq._extract_max(self)
         self.take_from_lookup_dict(item.key)
-
-        # update GUI
-        if Global.GlobalGUI.gui_use_internal_data:
-            Global.GlobalGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
     def peek(self, key):
         """
-            Peek object with highest priority from the depq
+            Peek item with highest priority from the depq
             O(1)
 
             Returns None if depq is empty
@@ -569,7 +565,7 @@ class Table(Depq):
             Insert a Sentence into the depq, sorted by confidence.
         """
         assert (sentence.punctuation == self.punctuation), "Cannot insert sentence into a Table of different punctuation"
-        super().insert_object(sentence, sentence.value.confidence)
+        Depq.insert_object(self,sentence, sentence.value.confidence)
 
 
 class Task:

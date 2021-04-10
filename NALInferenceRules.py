@@ -98,7 +98,7 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     assert (
-                j1.statement.term.get_formatted_string() == j2.statement.term.get_formatted_string() or j1.statement.term.get_formatted_string() == j2.statement.term.get_reverse_term_string()), "Cannot revise sentences for 2 different statements"
+                j1.statement.term.get_formatted_string() == j2.statement.term.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
     # Get Truth Value
     (wp1, w1, wn1), (wp2, w2, wn2) = getevidence_from2sentences(j1, j2)

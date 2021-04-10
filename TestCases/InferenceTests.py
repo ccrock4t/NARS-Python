@@ -7,7 +7,7 @@ import NARS
 from multiprocessing.queues import Queue
 import NALGrammar
 import NALInferenceRules
-from Global import Global
+import Global
 
 """
     Author: Christian Hahm
@@ -34,20 +34,21 @@ class StdoutQueue(Queue):
 def run_test(input_judgment_q, input_question_q, output_q, debug=False):
     if not debug:
         sys.stdout = output_q
+    Global.Global.NARS = NARS.NARS()
 
     # feed in judgments
     while input_judgment_q.qsize() > 0:
         InputBuffer.add_input_sentence(input_judgment_q.get())
 
     # process judgments
-    Global.NARS.do_working_cycles(50)
+    Global.Global.NARS.do_working_cycles(50)
 
     # feed in questions
     while input_question_q.qsize() > 0:
         InputBuffer.add_input_sentence(input_question_q.get())
 
     # process questions
-    Global.NARS.do_working_cycles(50)
+    Global.Global.NARS.do_working_cycles(50)
 
     sys.stdout = sys.__stdout__
 
@@ -92,7 +93,6 @@ def revision():
 
         :- (S-->P). %1.0;0.81%
     """
-    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
@@ -122,7 +122,6 @@ def first_order_deduction():
 
         :- (S-->P). %1.0;0.81%
     """
-    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
@@ -152,7 +151,6 @@ def first_order_induction():
         :- (S-->P). %1.0;0.45%
         :- (P-->S). %1.0;0.45%
     """
-    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
@@ -185,7 +183,6 @@ def first_order_abduction():
         :- (S-->P). %1.0;0.45%
         :- (P-->S). %1.0;0.45%
     """
-    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
@@ -220,7 +217,6 @@ def intensional_composition():
         :- (M --> (S - P)).
         :- (M --> (P - S)).
     """
-    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(M --> S). %1.0;0.9%")
@@ -261,7 +257,6 @@ def extensional_composition():
         :- ((S ~ P) --> M).
         :- ((P ~ S) --> M).
     """
-    NARS.NARS()
     input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
 
     j1 = NALGrammar.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
