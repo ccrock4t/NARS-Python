@@ -24,7 +24,7 @@ def add_input_string(input_string: str):
                 "Buffer count (tasks in buffer): " + str(Global.Global.NARS.overall_experience_buffer.count))
             return
         elif input_string == "cycle":
-            NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.memory.current_cycle_number))
+            NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.NARS.memory.current_cycle_number))
             return
         elif input_string == "save":
             Global.Global.NARS.save_memory_to_disk()
@@ -54,9 +54,9 @@ def process_next_pending_sentence():
     """
         Processes the next pending sentence from the input buffer if one exists
     """
-    if input_queue.qsize() == 0: return # no inputs
-    sentence = input_queue.get()
-    process_sentence(sentence)
+    while input_queue.qsize() > 0:
+        sentence = input_queue.get()
+        process_sentence(sentence)
 
 
 def process_sentence(sentence: NALGrammar.Sentence):

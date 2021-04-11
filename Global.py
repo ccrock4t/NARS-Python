@@ -16,8 +16,8 @@ class Global:
     ID_END_MARKER = ": "
 
     # thread ready boolean
-    gui_thread_ready = False
-    input_thread_ready = False
+    thread_ready_gui = False
+    thread_ready_input = False
 
     # gui booleans
     gui_use_internal_data = False

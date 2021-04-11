@@ -2,6 +2,7 @@ import Global
 import InputBuffer
 import tkinter as tk
 
+import NALGrammar
 import NARSDataStructures
 import NARSMemory
 
@@ -30,28 +31,29 @@ class NARSGUI:
             Remove a message from an output GUI box
         """
         if Global.Global.NARS is None: return
+        if not Global.Global.gui_use_internal_data: return
+
         if data_structure is Global.Global.NARS.overall_experience_buffer:
             listbox = cls.gui_overall_experience_buffer_listbox
         elif data_structure is Global.Global.NARS.memory.concepts_bag:
             listbox = cls.gui_concept_bag_listbox
 
-        if Global.Global.gui_use_internal_data:
-            string_list = listbox.get(0, tk.END)
-            msg_id = msg[len(Global.Global.BAG_ITEM_ID_MARKER):msg.rfind(
-                Global.Global.ID_END_MARKER)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
-            idx_to_remove = -1
-            i = 0
-            for row in string_list:
-                row_id = row[len(Global.Global.BAG_ITEM_ID_MARKER):row.rfind(Global.Global.ID_END_MARKER)]
-                if msg_id == row_id:
-                    idx_to_remove = i
-                    break
-                i = i + 1
-            if idx_to_remove == -1:
-                assert False, "GUI Error: cannot find msg to remove: " + msg
-            listbox.delete(idx_to_remove)
+        string_list = listbox.get(0, tk.END)
+        msg_id = msg[len(Global.Global.BAG_ITEM_ID_MARKER):msg.rfind(
+            Global.Global.ID_END_MARKER)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
+        idx_to_remove = -1
+        i = 0
+        for row in string_list:
+            row_id = row[len(Global.Global.BAG_ITEM_ID_MARKER):row.rfind(Global.Global.ID_END_MARKER)]
+            if msg_id == row_id:
+                idx_to_remove = i
+                break
+            i = i + 1
+        if idx_to_remove == -1:
+            assert False, "GUI Error: cannot find msg to remove: " + msg
+        listbox.delete(idx_to_remove)
 
-            cls.update_datastructure_labels(data_structure)
+        cls.update_datastructure_labels(data_structure)
 
     @classmethod
     def update_datastructure_labels(cls, data_structure):
@@ -104,7 +106,7 @@ class NARSGUI:
             window.geometry(internal_data_dimensions)
             cls.execute_internal_gui(window)
 
-        Global.Global.gui_thread_ready = True
+        Global.Global.thread_ready_gui = True
         window.mainloop()
 
     @classmethod
@@ -169,7 +171,7 @@ class NARSGUI:
         output_scrollbar = tk.Scrollbar(window)
         output_scrollbar.grid(row=1, column=3, rowspan=output_height, sticky='ns')
 
-        cls.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
+        cls.gui_output_textbox = tk.Listbox(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
         cls.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
 
         # row 2
@@ -183,10 +185,16 @@ class NARSGUI:
         Global.Global.set_paused(Global.Global.paused)
         cls.gui_play_pause_button.grid(row=3, column=4, sticky='s')
 
+        def delay_slider_changed(event=None):
+            Global.Global.NARS.delay = NARSGUI.gui_delay_slider.get() / 1000
+
+
         max_delay = 1000  # in milliseconds
         cls.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
         cls.gui_delay_slider.grid(row=3, column=5, sticky='ns')
+        cls.gui_delay_slider.bind('<ButtonRelease-1>',delay_slider_changed)
         cls.gui_delay_slider.set(max_delay)
+        delay_slider_changed()
 
         # input GUI
         def input_clicked(event=None):
@@ -258,7 +266,7 @@ class NARSGUI:
 
     @classmethod
     def get_user_input(cls):
-        Global.Global.input_thread_ready = True
+        Global.Global.thread_ready_input = True
         userinput = ""
         while userinput != "exit":
             userinput = input("")
@@ -314,7 +322,11 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
                                                      width=object_listbox_width, font=('', 8))
                 evidential_base_listbox.grid(row=5, column=0, columnspan=2)
-                for sentence in sentence_from_iterable.stamp.evidential_base:
+
+                stamp = NALGrammar.Sentence.Stamp = sentence_from_iterable.stamp
+                evidential_base_iterator = iter(stamp)
+                next(evidential_base_iterator) #skip the first element, which is just the sentence's ID so already displayed
+                for sentence in evidential_base_iterator:
                     evidential_base_listbox.insert(tk.END, str(sentence))
                 evidential_base_listbox.bind("<<ListboxSelect>>",
                                              lambda event: listbox_sentence_item_click_callback(event,

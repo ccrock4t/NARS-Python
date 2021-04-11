@@ -121,8 +121,9 @@ class Sentence:
             2 Sentences may interact if:
                 #1. Neither is "None"
                 #2. They are not the same Sentence
-                #3. They have not interacted
-                #4. The
+                #3. They have not interacted previously
+                #4. One is not in the other's evidential base
+                #5. They do not have overlapping evidential base
         :param j1:
         :param j2:
         :return: Are the sentence allowed to interact for inference
@@ -145,7 +146,7 @@ class Sentence:
             self.creation_time = Global.Global.NARS.memory.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = occurrence_time
             self.sentence = self_sentence
-            self.evidential_base = self.EvidentialBase()
+            self.evidential_base = self.EvidentialBase(self.id)
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
         def get_tense(self):
@@ -173,8 +174,11 @@ class Sentence:
             """
                 Stores history of how the sentence was derived
             """
-            def __init__(self):
-                self.base = []  # array of sentences
+            def __init__(self,id):
+                """
+                :param id: Sentence ID
+                """
+                self.base = [id]  # array of sentences
 
             def __iter__(self):
                 return iter(self.base)

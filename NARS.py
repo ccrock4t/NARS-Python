@@ -27,6 +27,7 @@ class NARS:
     def __init__(self):
         self.overall_experience_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
+        self.delay = 0 # delay between cycles
 
     def save_memory_to_disk(self, filename="memory.nars"):
         """
@@ -67,12 +68,11 @@ class NARS:
         """
         while True:
             # global parameters
-            if Global.Global.paused:
-                continue
-            if Global.Global.gui_use_interface:
-                delay = NARSGUI.NARSGUI.gui_delay_slider.get() / 1000
-                if delay > 0:
-                    time.sleep(delay)
+            while Global.Global.paused:
+                time.sleep(0.2)
+
+            if self.delay > 0:
+                time.sleep(self.delay)
 
             self.do_working_cycle()
 
