@@ -10,24 +10,23 @@ k = 1 # evidential horizon
 t = 0.25 # decision rule (goal decision-making) threshold
 MINDFULNESS = 0.90 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
 MEMORY_CONCEPT_CAPACITY = 50000 # how many concepts can this NARS have?
+PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
 
 """
     Bags
 """
 BAG_DEFAULT_CAPACITY = 5000 # default for how many items can fit in a bag
 BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 allows 100 probability values in [0%, 100%)
-BAG_PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
 
 """
     Buffers
 """
-BUFFER_CAPACITY = 60
-BUFFER_PRIORITY_DECAY_MULTIPLIER = 0.99 # value in [0,1] multiplied w/ priority during priority decay
+BUFFER_DEFAULT_CAPACITY = 60
 
 """
     Tables
 """
-TABLE_CAPACITY = 30
+TABLE_DEFAULT_CAPACITY = 30
 
 """
     Others

@@ -18,7 +18,7 @@ def main():
         Creates threads, populates globals, and runs the NARS.
     """
     # set globals
-    Global.Global.gui_use_internal_data = False  # Setting this to False will prevent creation of the Internal Data GUI thread
+    Global.Global.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
     Global.Global.gui_use_interface = True # Setting this to False uses the shell as interface
 
     # First, create the NARS
@@ -46,7 +46,7 @@ def main():
             print('Waiting for input thread...')
             time.sleep(0.5)
 
-    Global.Global.paused = Global.Global.gui_use_interface
+    Global.Global.paused = Global.Global.gui_use_interface # pause if using interface
 
     # Finally, run NARS in the shell
     Global.Global.NARS.run()

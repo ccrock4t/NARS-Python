@@ -15,7 +15,7 @@ def test_table_removemax():
     """
         Test if the Table can successfully remove its maximum value
     """
-    table = NARSDataStructures.Table()
+    table = NARSDataStructures.Table(item_type=NALGrammar.Judgment)
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(confidences)
     for c in confidences:
@@ -31,7 +31,7 @@ def test_table_removemin():
     """
         Test if the Table can successfully remove its minimum value
     """
-    table = NARSDataStructures.Table()
+    table = NARSDataStructures.Table(item_type=NALGrammar.Judgment)
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     minimum = min(confidences)
     for c in confidences:
@@ -44,6 +44,22 @@ def test_table_removemin():
     tablemin = table._extract_min().value.confidence
     assert (tablemin == minimum), "TEST FAILURE: Table did not properly retrieve minimum value"
 
+def test_table_overflow_purge():
+    """
+        Test if table stays within capacity when it overflows.
+    """
+    test_data_structure = NARSDataStructures.Table(item_type=NALGrammar.Judgment)
+    items_added = 0
+    max_capacity = NARS.Config.TABLE_DEFAULT_CAPACITY
+    for i in range(0, max_capacity + 5):
+        test_data_structure.put(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
+        items_added = items_added + 1
+        if items_added <= max_capacity:
+            assert len(test_data_structure) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"
+
+    assert (items_added > max_capacity), "TEST FAILURE: For this test, add more items than the capacity"
+    assert (len(test_data_structure) == max_capacity), "TEST FAILURE: " + type(test_data_structure).__name__ + " did not maintain capacity on overflow"
+
 def test_buffer_removemax():
     """
         Test if the Table can successfully remove its maximum value
@@ -55,7 +71,7 @@ def test_buffer_removemax():
         sentence = NALGrammar.Judgment(
             NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, 0.9))
-        item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
+        item = NARSDataStructures.ItemContainer.Item(sentence,-1)
         item.budget.priority = p
         buffer.put(item)
     buffermax = buffer._extract_max().budget.priority
@@ -74,7 +90,7 @@ def test_buffer_removemin():
         sentence = NALGrammar.Judgment(
             NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, 0.9))
-        item = NARSDataStructures.ItemContainer.Item(sentence,-1,0.99)
+        item = NARSDataStructures.ItemContainer.Item(sentence,-1)
         item.budget.priority = p
         buffer.put(item)
 
@@ -112,16 +128,17 @@ def test_bag_overflow_purge():
     """
         Test if bag stays within capacity when it overflows.
     """
-    testbag = NARSDataStructures.Bag(item_type=NALGrammar.Sentence)
+    test_data_structure = NARSDataStructures.Bag(item_type=NALGrammar.Sentence)
     items_added = 0
-    for i in range(0, NARS.Config.BAG_DEFAULT_CAPACITY + 5):
-        testbag.put_new(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
+    max_capacity = NARS.Config.BAG_DEFAULT_CAPACITY
+    for i in range(0, max_capacity + 5):
+        test_data_structure.put_new(NALGrammar.Sentence.new_sentence_from_string("(a-->b)."))
         items_added = items_added + 1
-        if items_added <= NARS.Config.BAG_DEFAULT_CAPACITY:
-            assert len(testbag) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"
+        if items_added <= max_capacity:
+            assert len(test_data_structure) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"
 
-    assert (items_added > NARS.Config.BAG_DEFAULT_CAPACITY), "TEST FAILURE: For this test, add more items than the capacity"
-    assert (testbag.count == NARS.Config.BAG_DEFAULT_CAPACITY), "TEST FAILURE: Bag did not maintain capacity on overflow"
+    assert (items_added > max_capacity), "TEST FAILURE: For this test, add more items than the capacity"
+    assert (test_data_structure.count == max_capacity), "TEST FAILURE: " +  + type(test_data_structure).__name__ +  + " did not maintain capacity on overflow"
 
 def main():
     """
@@ -136,6 +153,7 @@ def main():
     Global.Global.NARS = NARS.NARS() # need it for Stamp IDs
     test_table_removemax()
     test_table_removemin()
+    test_table_overflow_purge()
 
     """
      Buffer Tests

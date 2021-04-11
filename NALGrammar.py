@@ -218,9 +218,6 @@ class Judgment(Sentence):
         assert_truth_value(value)
         super().__init__(statement, value, NALSyntax.Punctuation.Judgment)
 
-    def __str__(self):
-        return self.get_formatted_string()
-
 
 class Question(Sentence):
     """
@@ -231,8 +228,15 @@ class Question(Sentence):
         assert_statement(statement)
         super().__init__(statement, None, NALSyntax.Punctuation.Question)
 
-    def __str__(self):
-        return self.get_formatted_string()
+
+class Goal(Sentence):
+    """
+        goal ::= <statement>! %<desire-value>%
+    """
+
+    def __init__(self, statement, value):
+        assert_statement(statement)
+        super().__init__(statement, value, NALSyntax.Punctuation.Goal)
 
 
 class Statement:

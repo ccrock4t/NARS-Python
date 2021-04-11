@@ -148,7 +148,7 @@ class NARS:
                 self.process_judgment_sentence(sentence)
 
         # decay priority
-        concept_item.decay()
+        concept_item.decay(multiplier=Config.PRIORITY_DECAY_MULTIPLIER)
 
         # return concept to bag
         self.memory.concepts_bag.put(concept_item)

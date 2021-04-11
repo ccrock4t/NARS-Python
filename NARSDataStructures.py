@@ -19,11 +19,10 @@ class ItemContainer:
 
         Examples of Item Containers include Bag and Buffer.
     """
-    def __init__(self, item_type, decay_multiplier, capacity):
+    def __init__(self, item_type, capacity):
         self.item_type = item_type  # the class of the objects this Container stores (be wrapped in Item)
         self.item_lookup_dict = dict()  # for accessing Item by key
         self.next_item_id = 0
-        self.decay_multiplier = decay_multiplier
         self.capacity = capacity
 
     def __contains__(self, object):
@@ -40,9 +39,7 @@ class ItemContainer:
     def __iter__(self):
         return iter(self.item_lookup_dict.values())
 
-
-
-    def put_into_lookup_dict(self, item):
+    def _put_into_lookup_dict(self, item):
         """
             Puts item into lookup table and GUI
             :param item: put an Item into the lookup dictionary.
@@ -53,8 +50,7 @@ class ItemContainer:
         if Global.Global.gui_use_internal_data:
             NARSGUI.NARSGUI.print_to_output(str(item), data_structure=self)
 
-
-    def take_from_lookup_dict(self, key):
+    def _take_from_lookup_dict(self, key):
         """
             Removes an Item from the lookup dictionary using its key,
             and returns the Item.
@@ -71,7 +67,7 @@ class ItemContainer:
         return item
 
     def put_new(self, object):
-        item = ItemContainer.Item(object, self.get_next_item_id(), self.decay_multiplier)
+        item = ItemContainer.Item(object, self.get_next_item_id())
         return self.put(item)
 
     def _take_min(self):
@@ -101,14 +97,13 @@ class ItemContainer:
 
                 budget ($priority$)
         """
-        def __init__(self, object, id, decay_multiplier):
+        def __init__(self, object, id):
             """
             :param object: object to wrap in the item
             :param container: the Item Container instance that will contain this item
             """
             self.object = object
             self.id = id
-            self.decay_multiplier = decay_multiplier
             priority = None
             quality = None
             if isinstance(object, Task):
@@ -165,11 +160,11 @@ class ItemContainer:
             """
             return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100
 
-        def decay(self):
+        def decay(self, multiplier):
             """
                 Decay this item's priority
             """
-            new_priority = self.budget.priority * self.decay_multiplier
+            new_priority = self.budget.priority * multiplier
             if new_priority < self.budget.quality: return # priority can't go below quality
             self.budget.priority = round(new_priority, 3)
 
@@ -203,7 +198,7 @@ class Bag(ItemContainer):
         for i in range(0, self.number_of_buckets):
             self.buckets[i] = []
 
-        ItemContainer.__init__(self, item_type=item_type, decay_multiplier=Config.BAG_PRIORITY_DECAY_MULTIPLIER,capacity=capacity)
+        ItemContainer.__init__(self, item_type=item_type,capacity=capacity)
 
     def __len__(self):
         return self.count
@@ -222,7 +217,7 @@ class Bag(ItemContainer):
         """
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        ItemContainer.put_into_lookup_dict(self, item)  # Item Container
+        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
         # put item into bucket
         self.buckets[item.get_target_bucket_number()].append(item)
 
@@ -296,7 +291,7 @@ class Bag(ItemContainer):
         self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
         self.count = self.count - 1  # decrement bag count
 
-        ItemContainer.take_from_lookup_dict(self,key)
+        ItemContainer._take_from_lookup_dict(self, key)
 
         return item
 
@@ -311,7 +306,7 @@ class Bag(ItemContainer):
         item = self.buckets[self.current_bucket_number].pop(randidx)
         self.count = self.count - 1  # decrement bag count
 
-        ItemContainer.take_from_lookup_dict(self,item.key)
+        ItemContainer._take_from_lookup_dict(self, item.key)
 
         return item
 
@@ -336,7 +331,7 @@ class Bag(ItemContainer):
         self.count = self.count - 1  # decrement bag count
 
         # remove item reference from lookup table
-        ItemContainer.take_from_lookup_dict(self,key=item.key)
+        ItemContainer._take_from_lookup_dict(self, key=item.key)
 
         # restore original index
         self.current_bucket_number = oldidx
@@ -420,9 +415,11 @@ class Bag(ItemContainer):
         """
         self.current_bucket_number = (self.current_bucket_number + 1) % self.number_of_buckets
 
+class FIFO():
+    def __init__(self): pass
+
 class Depq():
-    def __init__(self, capacity):
-        self.capacity = capacity
+    def __init__(self):
         self.depq = depq.DEPQ(iterable=None, maxlen=None)  # maxheap depq
 
     def __iter__(self):
@@ -431,7 +428,7 @@ class Depq():
     def __len__(self):
         return len(self.depq)
 
-    def insert_object(self, object, priority):
+    def _insert_object(self, object, priority):
         self.depq.insert(object, priority)
 
     def _extract_max(self):
@@ -490,9 +487,10 @@ class Buffer(ItemContainer, Depq):
     """
         Priority-Queue
     """
-    def __init__(self,item_type,capacity=Config.BUFFER_CAPACITY):
-        ItemContainer.__init__(self, item_type=item_type, decay_multiplier=Config.BUFFER_PRIORITY_DECAY_MULTIPLIER,capacity=capacity) # Item Container
-        Depq.__init__(self,capacity=capacity) #Depq
+    def __init__(self, item_type, capacity=Config.BUFFER_DEFAULT_CAPACITY):
+        self.capacity=capacity
+        ItemContainer.__init__(self, item_type=item_type,capacity=capacity) # Item Container
+        Depq.__init__(self) #Depq
 
 
     def put(self, item):
@@ -502,17 +500,17 @@ class Buffer(ItemContainer, Depq):
             :returns Item that was purged if the inserted item caused an overflow
         """
         if not isinstance(item,ItemContainer.Item):
-            item = ItemContainer.Item(item, self.get_next_item_id(), self.decay_multiplier)
+            item = ItemContainer.Item(item, self.get_next_item_id())
 
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        Depq.insert_object(self,item, item.budget.priority) # Depq
-        ItemContainer.put_into_lookup_dict(self,item)  # Item Container
+        Depq._insert_object(self, item, item.budget.priority) # Depq
+        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
         purged_item = None
         if len(self) > self.capacity:
             purged_item = self._extract_min()
-            self.take_from_lookup_dict(purged_item.key)
+            self._take_from_lookup_dict(purged_item.key)
 
         return purged_item
 
@@ -523,7 +521,7 @@ class Buffer(ItemContainer, Depq):
         """
         if len(self) == 0: return None
         item = Depq._extract_max(self)
-        self.take_from_lookup_dict(item.key)
+        self._take_from_lookup_dict(item.key)
 
         return item
 
@@ -540,13 +538,13 @@ class Buffer(ItemContainer, Depq):
         else:
             return ItemContainer.peek_using_key(self, key=key)
 
-class EventBuffer(Buffer):
+class EventBuffer(ItemContainer, FIFO):
     """
-        #todo
-        Priority Queue and Fifo
+        FIFO that performs temporal composition
     """
     def __init__(self,item_type):
-        super().__init__(item_type=item_type)
+        ItemContainer.__init__(item_type=item_type)
+        FIFO.__init__()
 
 
 class Table(Depq):
@@ -556,16 +554,20 @@ class Table(Depq):
         It purges lowest-confidence items when it overflows.
     """
 
-    def __init__(self, punctuation=NALSyntax.Punctuation.Judgment):
-        self.punctuation = punctuation
-        super().__init__(capacity=Config.TABLE_CAPACITY)
+    def __init__(self, item_type=NALGrammar.Judgment, capacity=Config.TABLE_DEFAULT_CAPACITY):
+        self.item_type = item_type
+        self.capacity = capacity
+        Depq.__init__(self)
 
     def put(self, sentence: NALGrammar.Sentence):
         """
             Insert a Sentence into the depq, sorted by confidence.
         """
-        assert (sentence.punctuation == self.punctuation), "Cannot insert sentence into a Table of different punctuation"
-        Depq.insert_object(self,sentence, sentence.value.confidence)
+        assert (isinstance(sentence,self.item_type)), "Cannot insert sentence into a Table of different punctuation"
+        Depq._insert_object(self, sentence, sentence.value.confidence)
+
+        if len(self) > self.capacity:
+            Depq._extract_min(self)
 
 
 class Task:
