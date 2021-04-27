@@ -16,6 +16,7 @@ def main():
     """
         This is where the program starts
         Creates threads, populates globals, and runs the NARS.
+
     """
     # set globals
     Global.Global.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
@@ -29,18 +30,16 @@ def main():
         GUI_thread = threading.Thread(target=NARSGUI.NARSGUI.execute_gui,
                                       name="GUI thread",
                                       daemon=True)
-        GUI_thread.daemon = True
         GUI_thread.start()
         while not Global.Global.thread_ready_gui:
             print('Waiting for GUI thread...')
             time.sleep(0.5)
 
-    if not Global.Global.gui_use_interface:
+    if Global.Global.gui_use_interface:
         # launch shell input thread
         shell_input_thread = threading.Thread(target=NARSGUI.NARSGUI.get_user_input,
                                               name="Shell input thread",
                                               daemon=True)
-        shell_input_thread.daemon = True
         shell_input_thread.start()
         while not Global.Global.thread_ready_input:
             print('Waiting for input thread...')

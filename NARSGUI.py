@@ -1,3 +1,6 @@
+import queue
+import threading
+
 import Global
 import InputBuffer
 import tkinter as tk
@@ -26,7 +29,7 @@ class NARSGUI:
     GUI_BUDGET_SYMBOL = "$"
 
     @classmethod
-    def _remove_from_output(cls, msg, data_structure=None):
+    def remove_from_output(cls, msg, data_structure=None):
         """
             Remove a message from an output GUI box
         """
@@ -99,7 +102,7 @@ class NARSGUI:
                 toplevel.title("NARS in Python - Internal Data")
                 toplevel.geometry(internal_data_dimensions)
                 cls.execute_internal_gui(toplevel)
-        elif Global.Global.gui_use_internal_data:
+        elif not Global.Global.gui_use_interface and Global.Global.gui_use_internal_data:
             # launch GUI
             window = tk.Tk()
             window.title("NARS in Python - Internal Data")
@@ -257,10 +260,6 @@ class NARSGUI:
                     break
                 i = i + 1
             listbox.insert(idx_to_insert, msg)
-            if data_structure is Global.Global.NARS.overall_experience_buffer:
-                cls.gui_overall_experience_buffer_output_label.config(text="Task Buffer: " + str(len(data_structure)))
-            elif data_structure is Global.Global.NARS.memory.concepts_bag:
-                cls.gui_concepts_bag_output_label.config(text="Concepts: " + str(len(data_structure)))
 
             cls.update_datastructure_labels(data_structure)
 
@@ -324,7 +323,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 evidential_base_listbox.grid(row=5, column=0, columnspan=2)
 
                 stamp = NALGrammar.Sentence.Stamp = sentence_from_iterable.stamp
-                evidential_base_iterator = iter(stamp)
+                evidential_base_iterator = iter(stamp.evidential_base)
                 next(evidential_base_iterator) #skip the first element, which is just the sentence's ID so already displayed
                 for sentence in evidential_base_iterator:
                     evidential_base_listbox.insert(tk.END, str(sentence))

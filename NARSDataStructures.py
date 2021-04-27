@@ -3,7 +3,6 @@ import Config
 import random
 import Global
 import NALGrammar
-import NALSyntax
 import NARSGUI
 import NARSMemory
 
@@ -62,7 +61,7 @@ class ItemContainer:
 
         # update GUI
         if Global.Global.gui_use_internal_data:
-            NARSGUI.NARSGUI._remove_from_output(str(item), data_structure=self)
+            NARSGUI.NARSGUI.remove_from_output(str(item), data_structure=self)
 
         return item
 
@@ -453,15 +452,6 @@ class Depq():
         min = self.depq.poplast()[0]
         return min
 
-    def peek(self):
-        """
-            Peek Item with highest priority from the depq
-            O(1)
-
-            Returns None if depq is empty
-        """
-        return self.peek_max()
-
     def peek_max(self):
         """
             Peek Item with highest priority from the depq
@@ -543,8 +533,8 @@ class EventBuffer(ItemContainer, FIFO):
         FIFO that performs temporal composition
     """
     def __init__(self,item_type):
-        ItemContainer.__init__(item_type=item_type)
-        FIFO.__init__()
+        ItemContainer.__init__(self,item_type=item_type)
+        FIFO.__init__(self)
 
 
 class Table(Depq):
@@ -568,6 +558,16 @@ class Table(Depq):
 
         if len(self) > self.capacity:
             Depq._extract_min(self)
+
+    def peek(self):
+        """
+            Peek item with highest priority from the depq
+            O(1)
+
+            Returns None if depq is empty
+        """
+        if len(self) == 0: return None
+        return Depq.peek_max(self)
 
 
 class Task:

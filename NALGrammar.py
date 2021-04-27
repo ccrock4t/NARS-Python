@@ -146,7 +146,7 @@ class Sentence:
             self.creation_time = Global.Global.NARS.memory.current_cycle_number  # when was this stamp created (in inference cycles)?
             self.occurrence_time = occurrence_time
             self.sentence = self_sentence
-            self.evidential_base = self.EvidentialBase(self.id)
+            self.evidential_base = self.EvidentialBase(self_sentence)
             self.interacted_sentences = []  # list of sentence this sentence has already interacted with
 
         def get_tense(self):
@@ -174,11 +174,11 @@ class Sentence:
             """
                 Stores history of how the sentence was derived
             """
-            def __init__(self,id):
+            def __init__(self,self_sentence):
                 """
                 :param id: Sentence ID
                 """
-                self.base = [id]  # array of sentences
+                self.base = [self_sentence]  # array of sentences
 
             def __iter__(self):
                 return iter(self.base)
@@ -192,7 +192,7 @@ class Sentence:
                     This function assumes the base to merge does not have evidential overlap with this base
                     #todo figure out good way to store evidential bases such that older evidence is purged on overflow
                 """
-                self.base.append(sentence)
+                #self.base.append(sentence)
                 for sentence in sentence.stamp.evidential_base:
                     self.base.append(sentence)
 
