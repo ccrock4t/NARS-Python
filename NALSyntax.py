@@ -12,6 +12,7 @@ class StatementSyntax(enum.Enum):
     End = ")"
     TruthValMarker = "%"
     TruthValDivider = ";"
+    TermDivider = ","
 
 
 class Tense(enum.Enum):

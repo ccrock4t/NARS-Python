@@ -25,7 +25,8 @@ class NARS:
        NARS Class
     """
     def __init__(self):
-        self.overall_experience_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
+        self.experience_task_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
+        self.sensorimotor_event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
         self.delay = 0 # delay between cycles
 
@@ -88,7 +89,7 @@ class NARS:
 
         # working cycle
         rand = random.random()
-        if rand < Config.MINDFULNESS and len(self.overall_experience_buffer) > 0:
+        if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
             # OBSERVE
             self.Observe()
         else:
@@ -109,7 +110,7 @@ class NARS:
         """
             Process a task from the overall experience buffer
         """
-        task_item = self.overall_experience_buffer.take()
+        task_item = self.experience_task_buffer.take()
 
         if task_item is None:
             return  # nothing to observe
@@ -122,36 +123,42 @@ class NARS:
             task_item.budget.priority = 0.99
 
             # return task to buffer
-            self.overall_experience_buffer.put(task_item)
+            self.experience_task_buffer.put(task_item)
 
     def Consider(self):
         """
-            Process a belief from a concept in memory
+            Process a random belief from a concept in memory
         """
-        concept_item = self.memory.concepts_bag.take()
+
+        concept_item = self.memory.get_concept()
 
         if concept_item is None:
             return  # nothing to ponder
 
+        # remove from GUI
+        if Global.Global.gui_use_internal_data:
+            NARSGUI.NARSGUI.remove_from_output(str(concept_item), data_structure=self.memory.concepts_bag)
+
         if isinstance(concept_item.object.term, NALGrammar.StatementTerm):
             # Concept is S --> P
-            concept_to_peek = concept_item.object
+            concept_to_consider = concept_item.object
         else:
             # Concept is S or P
             related_concept = self.memory.get_semantically_related_concept(concept_item.object)
-            concept_to_peek = related_concept
+            concept_to_consider = related_concept
 
-        if concept_to_peek is not None:
-            sentence = concept_to_peek.belief_table.peek()
+        if concept_to_consider is not None:
+            sentence = concept_to_consider.belief_table.peek() # get most confident belief
             if sentence is not None:
                 # process the judgment
                 self.process_judgment_sentence(sentence)
 
-        # decay priority
+         # decay priority
         concept_item.decay(multiplier=Config.PRIORITY_DECAY_MULTIPLIER)
+        # print back to GUI
+        if Global.Global.gui_use_internal_data:
+            NARSGUI.NARSGUI.print_to_output(str(concept_item), data_structure=self.memory.concepts_bag)
 
-        # return concept to bag
-        self.memory.concepts_bag.put(concept_item)
 
     def process_task(self, task: NARSDataStructures.Task):
         """
@@ -188,6 +195,11 @@ class NARS:
                 
                 Revise this judgment with the most confident belief, then insert it into the belief table
             """
+            if task.is_from_input:
+                derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+                for derived_sentence in derived_sentences:
+                    self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+
             # revise the judgment
             self.process_judgment_sentence(j1, statement_concept)
             # add the judgment itself into concept's belief table
@@ -204,7 +216,7 @@ class NARS:
 
     def process_judgment_sentence(self, j1, related_concept=None):
         """
-            Processes a Judgment Sentence with a related belief.
+            Processes a Judgment Sentence with a belief from a related concept.
 
             :param j1 - judgment sentence to process
             :param related_concept - (Optional) concept to process the judgment with
@@ -224,14 +236,17 @@ class NARS:
                 print("none!")
                 return  # no related concepts!
 
-        j2 = related_concept.belief_table.peek()  # get most confident related_belief of related concept
+        # check for a belief we can interact with
+        j2 = None
+        for (belief, confidence) in related_concept.belief_table:
+            if not NALGrammar.Sentence.may_interact(j1,belief): continue
+            j2 = belief # belief can interact with j1
 
-        # done if can't interact
-        if not NALGrammar.Sentence.may_interact(j1,j2): return
+        if j2 is None: return  # done if can't interact
 
-        derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
-        for derived_task in derived_tasks:
-            self.overall_experience_buffer.put(derived_task)
+        derived_sentences = NARSInferenceEngine.do_inference_two_premise(j1, j2)
+        for derived_sentence in derived_sentences:
+            self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
 
     def process_question(self, task):
         """
@@ -272,13 +287,17 @@ class NARS:
 
         # get a related concept
         related_concept = self.memory.get_semantically_related_concept(statement_concept)
-        j2 = related_concept.belief_table.peek_max()  # get most confident related_belief of related concept
         if related_concept is None: return  # no related concepts!
 
-        # done if can't interact
-        if not NALGrammar.Sentence.may_interact(j1,j2): return
+        # check for a belief we can interact with
+        j2 = None
+        for (belief,confidence) in related_concept.belief_table:
+            if not NALGrammar.Sentence.may_interact(j1,belief): continue
+            j2 = belief # belief can interact with j1.
 
-        derived_tasks = NARSInferenceEngine.do_inference(j1, j2)
+        if j2 is None: return  # done if can't interact
+
+        derived_sentences = NARSInferenceEngine.do_inference_two_premise(j1, j2)
         # add all derived tasks to the buffer
-        for derived_task in derived_tasks:
-            self.overall_experience_buffer.put(derived_task)
+        for derived_sentence in derived_sentences:
+            self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))

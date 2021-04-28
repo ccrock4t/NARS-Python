@@ -221,9 +221,21 @@ def Negation(j):
          Returns:
     """
     NALGrammar.assert_sentence(j)
-    #todo return new Sentence
-    j.value.frequency = 1 - j.value.frequency
-    return j
+    # Statement
+    result_statement = NALGrammar.Statement(j.statement.get_subject_term(),
+                                            j.statement.get_predicate_term(),
+                                            j.statement.copula,
+                                            statement_connector=NALSyntax.StatementConnector.Negation)
+
+    if j.punctuation == NALSyntax.Punctuation.Judgment:
+        result_truth = NALGrammar.TruthValue(1 - j.value.frequency, j.value.confidence)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j.punctuation == NALSyntax.Punctuation.Question:
+        assert "error"
+
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+
+    return result
 
 
 
@@ -231,11 +243,14 @@ def Conversion(j: NALGrammar.Sentence):
     """
         Conversion Rule
 
-        Reverses the subject and predicate
+        Reverses the subject and predicate.
         -----------------
 
         Input:
-            j1: Sentence (S --> P <f1, c1>)
+            j: Sentence (S --> P <f1, c1>)
+
+            must have a frequency above zero, or else the confidence of the conclusion will be zero
+
         Truth Val:
             w+: and(f1,c1)
             w-: 0
@@ -265,14 +280,43 @@ def Conversion(j: NALGrammar.Sentence):
     return result
 
 
-# Contrapositive
-# Inputs:
-#   j1:
-#   j2:
-# Returns:
-def Contrapositive(j1, j2):
-    # todo
-    return 0
+
+def Contraposition(j):
+    """
+    Contraposition
+    Inputs:
+      j: (S ==> P)
+
+    Frequency must be below one or confidence of conclusion will be zero
+    
+    :param j:
+    :return:s
+    """
+    NALGrammar.assert_sentence(j)
+    # Statement
+    negated_predicate_term = NALGrammar.CompoundTerm([j.statement.get_predicate_term()], NALSyntax.StatementConnector.Negation)
+    negated_subject_term = NALGrammar.CompoundTerm([j.statement.get_subject_term()],
+                                                     NALSyntax.StatementConnector.Negation)
+
+    result_statement = NALGrammar.Statement(negated_predicate_term,
+                                            negated_subject_term,
+                                            j.statement.copula)
+
+    if j.punctuation == NALSyntax.Punctuation.Judgment:
+        # compute values of combined evidence
+        wp = band(j.value.frequency, j.value.confidence)
+        w = wp
+        f2,c2 = get_truthvalue_from_evidence(wp,w)
+
+        result_truth = NALGrammar.TruthValue(f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
+
+    # merge in the parent sentence's evidential base
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+
+    return result
 
 
 """

@@ -47,6 +47,9 @@ def main():
 
     Global.Global.paused = Global.Global.gui_use_interface # pause if using interface
 
+    print('Starting NARS in the shell.')
+
+    Global.Global.set_paused(False)
     # Finally, run NARS in the shell
     Global.Global.NARS.run()
 

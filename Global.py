@@ -11,7 +11,7 @@ class Global:
     """
     NARS = None  # variable to hold NARS instance
     paused = True
-    BAG_ITEM_ID_MARKER = "ItemID:"  # there are Sentence IDs and Bag Item IDs
+    ITEM_ID_MARKER = "ItemID:"  # there are Sentence IDs and Bag Item IDs
     SENTENCE_ID_MARKER = "SentenceID:"
     ID_END_MARKER = ": "
 

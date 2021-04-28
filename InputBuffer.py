@@ -21,7 +21,7 @@ def add_input_string(input_string: str):
             NARSGUI.NARSGUI.print_to_output(
                 "Memory count (concepts in memory): " + str(Global.Global.NARS.memory.get_number_of_concepts()))
             NARSGUI.NARSGUI.print_to_output(
-                "Buffer count (tasks in buffer): " + str(Global.Global.NARS.overall_experience_buffer.count))
+                "Buffer count (tasks in buffer): " + str(Global.Global.NARS.experience_task_buffer.count))
             return
         elif input_string == "cycle":
             NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.NARS.memory.current_cycle_number))
@@ -67,7 +67,7 @@ def process_sentence(sentence: NALGrammar.Sentence):
     NARSGUI.NARSGUI.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Task(sentence, is_input_task=True)
-    Global.Global.NARS.overall_experience_buffer.put_new(task)
+    Global.Global.NARS.experience_task_buffer.put_new(task)
 
 def load_input(filename="input.nal"):
     """

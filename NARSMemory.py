@@ -20,11 +20,16 @@ class Memory:
 
     def __init__(self):
         self.concepts_bag = NARSDataStructures.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
-        self.concept_lookup_table = dict() # use a separate lookup table since ItemContainer lookup table removes the reference on Take()
         self.current_cycle_number = 0
 
     def __len__(self):
-        return len(self.concept_lookup_table)
+        return self.get_number_of_concepts()
+
+    def get_concept(self):
+        """
+            Probabilistically peek the concepts
+        """
+        return self.concepts_bag.peek()
 
     def get_number_of_concepts(self):
         """
@@ -40,20 +45,16 @@ class Memory:
             :returns New Concept created from the term
         """
         NALGrammar.assert_term(term)
-        assert (self.concepts_bag.peek(term) is None), "Cannot create new concept. Concept already exists."
+        concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
+        assert (self.concepts_bag.peek(concept_key) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         new_concept = Concept(term)
 
-        # insert new concept into memory lookup table
-        concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(new_concept)
-        self.concept_lookup_table[concept_key] = new_concept
-
-        # and into data structure
+        # put into data structure
         purged_item = self.concepts_bag.put_new(new_concept)
 
         if purged_item is not None:
             purged_concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(purged_item.object)
-            self.concept_lookup_table.pop(purged_concept_key)
 
         return new_concept
 
@@ -70,13 +71,13 @@ class Memory:
               :return Concept named by the term
           """
         if isinstance(term, NALGrammar.VariableTerm): return None #todo created concepts for closed variable terms
-        if str(term) in self.concept_lookup_table:
-            concept = self.concept_lookup_table[str(term)]
-            return concept  # return if it already exists
+        concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
+        concept_item: NARSDataStructures.ItemContainer.Item = self.concepts_bag.peek(concept_key)
+        if concept_item is not None:
+            return concept_item.object  # return if it already exists
 
         # it doesn't exist
         # it must be created along with its sub-concepts if necessary
-        concept = None
         if not term.contains_variable():
             concept = self.conceptualize_term(term)
 
@@ -180,8 +181,8 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.term_links), concept + "must be in term links."
-        self.term_links.take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
-        concept.term_links.take(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
+        self.term_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
+        concept.term_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
 
     def get_formatted_string(self):
         """

@@ -22,7 +22,7 @@ class Sentence:
         self.statement: Statement = statement
         self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
         self.punctuation: NALSyntax.Punctuation = punctuation
-        self.stamp: Sentence.Stamp = Sentence.Stamp(self)
+        self.stamp = self.MetadataStamp(self)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -135,7 +135,7 @@ class Sentence:
         if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
         return True
 
-    class Stamp:
+    class MetadataStamp:
         """
             Defines the metadata of a sentence, including
             when it was created, its occurrence time (when is its truth value valid),
@@ -244,12 +244,12 @@ class Statement:
         statement ::= <subject><copula><predicate>
     """
 
-    def __init__(self, subject, predicate, copula):
+    def __init__(self, subject, predicate, copula, statement_connector=None):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
         self.copula: NALSyntax.Copula = copula
-        self.term: StatementTerm = StatementTerm(subject, predicate, copula)
+        self.term: StatementTerm = StatementTerm(subject, predicate, copula, statement_connector)
 
     def get_subject_term(self):
         return self.term.get_subject_term()
@@ -259,6 +259,22 @@ class Statement:
 
     def get_formatted_string(self):
         return self.term.get_formatted_string()
+
+class CompoundStatement(Statement):
+    """
+        2 or more statements connected by a statement connector
+        statement ::= (statement_connector,<subject><copula><predicate>,...)
+    """
+    def __init__(self, statements, statement_connector):
+        self.statement_connector: NALSyntax.StatementConnector = statement_connector
+        self.statements: [Statement] = statements
+
+    @classmethod
+    def from_subject_predicate(cls, subject, predicate, copula, statement_connector):
+        assert_term(subject)
+        assert_term(predicate)
+        assert_copula(copula)
+        cls([Statement(subject,predicate,copula)], statement_connector)
 
 
 class EvidentialValue:
@@ -415,7 +431,7 @@ class VariableTerm(Term):
         if self.dependency_list is not None:
             dependency_string = "("
             for dependency in self.dependency_list:
-                dependency_string = dependency_string + str(dependency) + ","
+                dependency_string = dependency_string + str(dependency) + NALSyntax.StatementSyntax.TermDivider.value
 
             dependency_string = dependency_string[0:-1] + ")"
 
@@ -480,42 +496,46 @@ class CompoundTerm(Term):
         (Connector T1, T2, ..., Tn)
     """
 
-    def __init__(self, subterms: [Term], connector):
+    def __init__(self, subterms: [Term], term_connector):
         """
         Input:
             subterms: array of immediate subterms
 
             connector: subterm connector
         """
-        self.connector = connector  # sets are represented by the opening bracket as the connector, { or [
+        self.term_connector = term_connector  # sets are represented by the opening bracket as the connector, { or [
 
-        if isinstance(self.connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.connector)\
-                or isinstance(self.connector, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(self.connector):
+        if isinstance(self.term_connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.term_connector)\
+                or isinstance(self.term_connector, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(self.term_connector):
             # order doesn't matter, alphabetize so the system can recognize the same term
             subterms.sort(key=lambda t:str(t))
 
-        is_extensional_set = (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
-        is_intensional_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
+        if term_connector is None:
+            self.subterms = subterms
+            return
+
+        is_extensional_set = (self.term_connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
+        is_intensional_set = (self.term_connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
 
         self.is_set = is_extensional_set or is_intensional_set
 
         if self.is_set and len(subterms) > 1:
             # multi_component_set
-            # decompose it into an intersection singleton sets
-            # #todo handle multi-component sets better
-            new_subterms = []
+            # todo handle multi-component sets better
+            singleton_set_subterms = []
 
             for subterm in subterms:
-                new_subterm = CompoundTerm.from_string(self.connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value)
-                new_subterms.append(new_subterm)
+                # decompose the set into an intersection of singleton sets
+                singleton_set_subterm = CompoundTerm.from_string(self.term_connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.term_connector).value)
+                singleton_set_subterms.append(singleton_set_subterm)
 
-            subterms = new_subterms
+            subterms = singleton_set_subterms
 
-            # set new term connector
+            # set new term connector as intersection
             if is_extensional_set:
-                self.connector = NALSyntax.TermConnector.IntensionalIntersection
+                self.term_connector = NALSyntax.TermConnector.IntensionalIntersection
             elif is_intensional_set:
-                self.connector = NALSyntax.TermConnector.ExtensionalIntersection
+                self.term_connector = NALSyntax.TermConnector.ExtensionalIntersection
 
             self.is_set = False
 
@@ -568,7 +588,7 @@ class CompoundTerm(Term):
             elif c == NALSyntax.StatementSyntax.End.value or NALSyntax.TermConnector.is_set_bracket_end(c):
                 depth = depth - 1
 
-            if c == "," and depth == 0:
+            if c == NALSyntax.StatementSyntax.TermDivider.value and depth == 0:
                 subterm = Term.from_string(subterm_string)
                 subterms.append(subterm)
                 subterm_string = ""
@@ -593,35 +613,35 @@ class CompoundTerm(Term):
 
     def get_formatted_string(self):
         if self.is_set:
-            string = self.connector.value
+            string = self.term_connector.value
         else:
-            string = self.connector.value + ","
+            string = self.term_connector.value + NALSyntax.StatementSyntax.TermDivider.value
 
         for subterm in self.subterms:
-            string = string + str(subterm) + ","
+            string = string + str(subterm) + NALSyntax.StatementSyntax.TermDivider.value
 
         string = string[:-1]
 
         if self.is_set:
-            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
+            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.term_connector).value
         else:
-            return "(" + string + ")"
+            return NALSyntax.StatementSyntax.Start.value + string +  NALSyntax.StatementSyntax.End.value
 
 
 class StatementTerm(CompoundTerm):
     """
-        A special kind of compound term with a subject, predicate, and copula
+        A special kind of compound term with a subject, predicate, and copula.
+        Statement connector is none for regular statements
 
         (P --> Q)
     """
 
-    def __init__(self, subject: Term, predicate: Term, copula):
+    def __init__(self, subject: Term, predicate: Term, copula, statement_connector=None):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
-        CompoundTerm.__init__(self,[subject, predicate], copula)
-        if copula == NALSyntax.Copula.Similarity:
-            self.equivalent_term_string = self._get_formatted_string_from_values(predicate, subject)
+        self.copula = copula
+        CompoundTerm.__init__(self,[subject, predicate], statement_connector)
 
     @classmethod
     def from_string(cls, term_string):
@@ -639,26 +659,24 @@ class StatementTerm(CompoundTerm):
         return self.subterms[1]
 
     def get_copula_string(self):
-        return str(self.connector.value)
+        return str(self.copula.value)
 
     def get_formatted_string(self):
         """
             returns: (Subject copula Predicate)
         """
-        return self._get_formatted_string_from_values(self.get_subject_term(), self.get_predicate_term())
-
-    def _get_formatted_string_from_values(self, subject_term, predicate_term):
-        return NALSyntax.StatementSyntax.Start.value + \
-               subject_term.get_formatted_string() + \
+        statement_string = NALSyntax.StatementSyntax.Start.value + \
+               self.get_subject_term().get_formatted_string() + \
                " " + self.get_copula_string() + " " + \
-               predicate_term.get_formatted_string() \
+               self.get_predicate_term().get_formatted_string() \
                + NALSyntax.StatementSyntax.End.value
-
-    def get_reverse_term_string(self):
-        if not NALSyntax.Copula.is_symmetric(self.connector):
-            # no such thing as a reverse term for non-symmetric statements
-            return None
-        return self.equivalent_term_string
+        if self.term_connector is not None:
+            statement_string = NALSyntax.StatementSyntax.Start.value \
+                               + self.term_connector.value \
+                               + NALSyntax.StatementSyntax.TermDivider.value\
+                               + statement_string\
+                               + NALSyntax.StatementSyntax.End.value
+        return statement_string
 
 
 def parse_subject_predicate_copula_and_copula_index(statement_string):

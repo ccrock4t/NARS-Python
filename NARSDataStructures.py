@@ -59,7 +59,6 @@ class ItemContainer:
         """
         item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
 
-        # update GUI
         if Global.Global.gui_use_internal_data:
             NARSGUI.NARSGUI.remove_from_output(str(item), data_structure=self)
 
@@ -137,10 +136,12 @@ class ItemContainer:
                 key = str(object.term)
             elif isinstance(object, NALGrammar.Sentence):
                 key = str(object.stamp.id)
+            else:
+                key = str(object)
             return key
 
         def __str__(self):
-            return Global.Global.BAG_ITEM_ID_MARKER \
+            return Global.Global.ITEM_ID_MARKER \
                    + str(self.id) + Global.Global.ID_END_MARKER \
                    + str(self.object) \
                    + " " \
@@ -239,7 +240,7 @@ class Bag(ItemContainer):
         if self.count == 0: return None  # no items
 
         if key is None:
-            item, _ = self._peek_item_probabilistically()
+            item, _ = self._peek_probabilistically()
         else:
             item = ItemContainer.peek_using_key(self,key=key)
 
@@ -256,28 +257,8 @@ class Bag(ItemContainer):
         item, _ = self._peek_random_item_from_current_bucket()
         return item
 
-    def take(self, key=None):
-        """
-            Remove an item from the bag either probabilistically or from its key
 
-            Use this take() function when you intend to return the item to the bag, since it
-            does NOT do proper cleanup (i.e. removing the item from the Item Lookup Dict)
-
-            :param object - if object is not passed, probabilistically removes it's corresponding item from the bag
-                        if object is passed, the item is not removed from the bag
-
-            :return item taken from the bag
-        """
-        if self.count == 0: return None  # no items
-
-        if key is None:
-            item = self._take_probabilistically()
-        else:
-            item = self._take_using_key(key)
-
-        return item
-
-    def _take_using_key(self, key):
+    def take_using_key(self, key):
         """
         Take an item from the bag using the key
 
@@ -291,21 +272,6 @@ class Bag(ItemContainer):
         self.count = self.count - 1  # decrement bag count
 
         ItemContainer._take_from_lookup_dict(self, key)
-
-        return item
-
-    def _take_probabilistically(self):
-        """
-            Probabilistically removes an item from the bag.
-
-            :returns item probabilistically taken from the Bag
-        """
-        if self.count == 0: return None
-        _, randidx = self._peek_item_probabilistically()
-        item = self.buckets[self.current_bucket_number].pop(randidx)
-        self.count = self.count - 1  # decrement bag count
-
-        ItemContainer._take_from_lookup_dict(self, item.key)
 
         return item
 
@@ -337,7 +303,7 @@ class Bag(ItemContainer):
 
         return item
 
-    def _peek_item_probabilistically(self):
+    def _peek_probabilistically(self):
         """
             Probabilistically selects a priority value / bucket, then peeks an item from that bucket.
 
@@ -533,7 +499,7 @@ class EventBuffer(ItemContainer, FIFO):
         FIFO that performs temporal composition
     """
     def __init__(self,item_type):
-        ItemContainer.__init__(self,item_type=item_type)
+        ItemContainer.__init__(self,item_type=item_type,capacity=Config.BUFFER_DEFAULT_CAPACITY)
         FIFO.__init__(self)
 
 

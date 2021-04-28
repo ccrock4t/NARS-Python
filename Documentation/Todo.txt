@@ -3,6 +3,7 @@
 - Goals (NAL-8)
 - Operations (NAL-8)
 - Self-monitoring and self-control (NAL-9)
+- Sensory terms
 
 - Inference
 	- Structural Inference
