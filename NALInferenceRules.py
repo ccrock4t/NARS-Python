@@ -209,7 +209,7 @@ def Expectation(f, c):
 """
 
 
-def Negation(j):
+def Negation(j: NALGrammar.Sentence):
     """
          Negation
 
@@ -227,9 +227,11 @@ def Negation(j):
                                             j.statement.copula,
                                             statement_connector=NALSyntax.StatementConnector.Negation)
 
+    occurrence_time = j.stamp.occurrence_time
+
     if j.punctuation == NALSyntax.Punctuation.Judgment:
         result_truth = NALGrammar.TruthValue(1 - j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result = NALGrammar.Judgment(result_statement, result_truth,occurrence_time=occurrence_time)
     elif j.punctuation == NALSyntax.Punctuation.Question:
         assert "error"
 
@@ -263,6 +265,8 @@ def Conversion(j: NALGrammar.Sentence):
                                             j.statement.get_subject_term(),
                                             j.statement.copula)
 
+    occurrence_time = j.stamp.occurrence_time
+
     if j.punctuation == NALSyntax.Punctuation.Judgment:
         # compute values of combined evidence
         wp = band(j.value.frequency, j.value.confidence)
@@ -270,7 +274,7 @@ def Conversion(j: NALGrammar.Sentence):
         f2,c2 = get_truthvalue_from_evidence(wp,w)
 
         result_truth = NALGrammar.TruthValue(f2, c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time)
     elif j.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
 
@@ -950,6 +954,102 @@ def Difference(j1, j2):
 
     return result
 
+"""
+    ======================================
+    ++++ (The Temporal Inference Rules) ++++
+    ======================================
+"""
+def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
+    """
+        Temporal Induction
+
+        Input:
+            A: Event <f1, c1> {tense}
+
+            B: Event <f2, c2> {tense}
+        Evidence:
+            w+: and(f1,f2,c1,c2)
+
+            w-: and(f2,c2,not(f1),c1)
+
+            w: and(f2,c1,c2)
+        Returns:
+            :- Sentence (S =|> P <f3, c3>)
+            :- or Sentence (S =/> P <f3, c3>)
+            :- or Sentence (P =/> S <f3, c3>)
+    """
+    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    j1_statement_term = j1.statement.term
+    j2_statement_term = j2.statement.term
+
+    if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
+        # j1 =|> j2
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.ConcurrentImplication)
+    elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
+        # j1 =/> j2
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.PredictiveImplication)
+    elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
+        # j2 =/> j1
+        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term, NALSyntax.Copula.PredictiveImplication)
+
+    # calculate induction truth value
+    wp = band(f1, f2, c1, c2)
+    w = band(f2, c1, c2)
+    f3, c3 = get_truthvalue_from_evidence(wp, w)
+    result_truth = NALGrammar.TruthValue(f3, c3)
+    result = NALGrammar.Judgment(result_statement, result_truth)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
+
+def Temporal_Comparison(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
+    """
+        Temporal Induction
+
+        Input:
+            A: Event <f1, c1> {tense}
+
+            B: Event <f2, c2> {tense}
+        Evidence:
+            w+: and(f1,f2,c1,c2)
+
+            w-: and(f2,c2,not(f1),c1)
+
+            w: and(f2,c1,c2)
+        Returns:
+            :- Sentence (S <|> P <f3, c3>)
+            :- or Sentence (S </> P <f3, c3>)
+            :- or Sentence (P </> S <f3, c3>)
+    """
+    (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+    j1_statement_term = j1.statement.term
+    j2_statement_term = j2.statement.term
+
+    if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
+        # <|>
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.ConcurrentEquivalence)
+    elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
+        # j1 </> j2
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.PredictiveEquivalence)
+    elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
+        # j2 </> j1
+        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term, NALSyntax.Copula.PredictiveEquivalence)
+
+    # calculate induction truth value
+    wp = band(f1, f2, c1, c2)
+    w = band(bor(f1, f2), c1, c2)
+    f3, c3 = get_truthvalue_from_evidence(wp, w)
+    result_truth = NALGrammar.TruthValue(f3, c3)
+    result = NALGrammar.Judgment(result_statement, result_truth)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
 
 """
     ======================================

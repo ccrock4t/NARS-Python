@@ -142,7 +142,7 @@ class Memory:
         """
             :return: next available Stamp ID
         """
-        self.next_stamp_id = self.next_stamp_id + 1
+        self.next_stamp_id += 1
         return self.next_stamp_id - 1
 
 

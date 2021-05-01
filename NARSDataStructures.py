@@ -1,3 +1,5 @@
+import queue
+
 import depq
 import Config
 import random
@@ -72,7 +74,7 @@ class ItemContainer:
         assert False,"Take smallest priority item not defined for generic Item Container!"
 
     def get_next_item_id(self) -> int:
-        self.next_item_id = self.next_item_id + 1
+        self.next_item_id += 1
         return self.next_item_id - 1
 
     def peek_using_key(self,key=None):
@@ -160,7 +162,7 @@ class ItemContainer:
             """
             return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100
 
-        def decay(self, multiplier):
+        def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):
             """
                 Decay this item's priority
             """
@@ -222,7 +224,7 @@ class Bag(ItemContainer):
         self.buckets[item.get_target_bucket_number()].append(item)
 
         # increase Bag count
-        self.count = self.count + 1
+        self.count += 1
 
         # remove lowest priority item if over capacity
         purged_item = None
@@ -380,9 +382,6 @@ class Bag(ItemContainer):
         """
         self.current_bucket_number = (self.current_bucket_number + 1) % self.number_of_buckets
 
-class FIFO():
-    def __init__(self): pass
-
 class Depq():
     def __init__(self):
         self.depq = depq.DEPQ(iterable=None, maxlen=None)  # maxheap depq
@@ -451,7 +450,7 @@ class Buffer(ItemContainer, Depq):
 
     def put(self, item):
         """
-            Insert an Item into the Buffr, sorted by priority.
+            Insert an Item into the Buffer, sorted by priority.
 
             :returns Item that was purged if the inserted item caused an overflow
         """
@@ -472,7 +471,7 @@ class Buffer(ItemContainer, Depq):
 
     def take(self):
         """
-            Take the max item from the Buffer
+            Take the max priority item
             :return:
         """
         if len(self) == 0: return None
@@ -483,7 +482,7 @@ class Buffer(ItemContainer, Depq):
 
     def peek(self, key):
         """
-            Peek item with highest priority from the depq
+            Peek item with highest priority
             O(1)
 
             Returns None if depq is empty
@@ -494,13 +493,48 @@ class Buffer(ItemContainer, Depq):
         else:
             return ItemContainer.peek_using_key(self, key=key)
 
-class EventBuffer(ItemContainer, FIFO):
+class EventBuffer(ItemContainer):
     """
         FIFO that performs temporal composition
     """
-    def __init__(self,item_type):
-        ItemContainer.__init__(self,item_type=item_type,capacity=Config.BUFFER_DEFAULT_CAPACITY)
-        FIFO.__init__(self)
+    def __init__(self,item_type,capacity=Config.BUFFER_DEFAULT_CAPACITY):
+        ItemContainer.__init__(self,item_type=item_type,capacity=capacity)
+        self.fifo = queue.Queue()
+
+    def __len__(self):
+        return self.fifo.qsize()
+
+    def put(self, item):
+        """
+            Insert an Item into the Buffer, sorted by priority.
+
+            :returns Item that was purged if the inserted item caused an overflow
+        """
+        if not isinstance(item,ItemContainer.Item):
+            item = ItemContainer.Item(item, self.get_next_item_id())
+
+        assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
+
+        self.fifo.put(item)
+        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
+
+        purged_item = None
+        if len(self) > self.capacity:
+            purged_item = self.fifo.get()
+            self._take_from_lookup_dict(purged_item.key)
+
+        return purged_item
+
+    def take(self):
+        """
+            Take the max item from the Buffer
+            :return:
+        """
+        if len(self) == 0: return None
+        item = self.fifo.get()
+        self._take_from_lookup_dict(item.key)
+
+        return item
 
 
 class Table(Depq):
@@ -544,11 +578,11 @@ class Task:
     def __init__(self, sentence, is_input_task=False):
         NALGrammar.assert_sentence(sentence)
         self.sentence = sentence
-        self.creation_timestamp: int = Global.Global.NARS.memory.current_cycle_number  # save the task's creation time
+        self.creation_timestamp: int = Global.Global.get_current_cycle_number()  # save the task's creation time
         self.is_from_input: bool = is_input_task
         self.needs_initial_processing: bool = True
         #only used for question tasks
-        self.needs_to_be_answered_in_output: bool = True
+        self.needs_to_be_answered_in_output: bool = is_input_task
 
     def __str__(self):
         return self.sentence.get_formatted_string_no_id()

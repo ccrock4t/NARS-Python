@@ -34,7 +34,7 @@ class StdoutQueue(Queue):
 def run_test(input_judgment_q, input_question_q, output_q, debug=False):
     if not debug:
         sys.stdout = output_q
-    Global.Global.NARS = NARS.NARS()
+    Global.Global.NARS = NARS.NARS() #set global NARS
 
     # feed in judgments
     while input_judgment_q.qsize() > 0:

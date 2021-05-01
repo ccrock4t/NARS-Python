@@ -24,7 +24,7 @@ class NARSGUI:
     # Internal Data vars
     # listboxes
     gui_experience_buffer_listbox = None  # output for tasks in experience buffer
-    gui_concept_bag_listbox = None  # output for concepts in memory bag
+    gui_memory_listbox = None  # output for concepts in memory bag
     gui_sensorimotor_buffer_listbox = None # output for tasks in sensorimotor event buffer
 
     # labels
@@ -38,12 +38,14 @@ class NARSGUI:
         """
              Print a message to an output GUI box
          """
-
+        NARS = Global.Global.NARS
         listbox = None
-        if data_structure is Global.Global.NARS.experience_task_buffer:
+        if data_structure is NARS.experience_task_buffer:
             listbox = cls.gui_experience_buffer_listbox
-        elif data_structure is Global.Global.NARS.memory.concepts_bag:
-            listbox = cls.gui_concept_bag_listbox
+        elif data_structure is NARS.memory.concepts_bag:
+            listbox = cls.gui_memory_listbox
+        elif data_structure is NARS.sensorimotor_event_buffer:
+            listbox = cls.gui_sensorimotor_buffer_listbox
         elif data_structure is None:
             # output to interface or shell
             if Global.Global.gui_use_interface:
@@ -55,20 +57,23 @@ class NARSGUI:
         # internal data output
         # insert item sorted by priority
         if Global.Global.gui_use_internal_data:
-            string_list = listbox.get(0, tk.END)  # get all items in the listbox
-            msg_priority = msg[msg.find(cls.GUI_BUDGET_SYMBOL) + 1:msg.rfind(
-                cls.GUI_BUDGET_SYMBOL)]
-            idx_to_insert = tk.END  # by default insert at the end
-            i = 0
-            for row in string_list:
-                row_priority = row[row.find(cls.GUI_BUDGET_SYMBOL) + 1:row.rfind(
+            if data_structure is NARS.sensorimotor_event_buffer:
+                idx_to_insert = tk.END
+            else:
+                string_list = listbox.get(0, tk.END)  # get all items in the listbox
+                msg_priority = msg[msg.find(cls.GUI_BUDGET_SYMBOL) + 1:msg.rfind(
                     cls.GUI_BUDGET_SYMBOL)]
-                if float(msg_priority) > float(row_priority):
-                    idx_to_insert = i
-                    break
-                i = i + 1
-            listbox.insert(idx_to_insert, msg)
+                idx_to_insert = tk.END  # by default insert at the end
+                i = 0
+                for row in string_list:
+                    row_priority = row[row.find(cls.GUI_BUDGET_SYMBOL) + 1:row.rfind(
+                        cls.GUI_BUDGET_SYMBOL)]
+                    if float(msg_priority) > float(row_priority):
+                        idx_to_insert = i
+                        break
+                    i += 1
 
+            listbox.insert(idx_to_insert, msg)
             cls.update_datastructure_labels(data_structure)
 
     @classmethod
@@ -84,7 +89,7 @@ class NARSGUI:
         if data_structure is NARS.experience_task_buffer:
             listbox = cls.gui_experience_buffer_listbox
         elif data_structure is NARS.memory.concepts_bag:
-            listbox = cls.gui_concept_bag_listbox
+            listbox = cls.gui_memory_listbox
         elif data_structure is NARS.sensorimotor_event_buffer:
             listbox = cls.gui_sensorimotor_buffer_listbox
 
@@ -99,8 +104,10 @@ class NARSGUI:
                 idx_to_remove = i
                 break
             i = i + 1
+
         if idx_to_remove == -1:
             assert False, "GUI Error: cannot find msg to remove: " + msg
+
         listbox.delete(idx_to_remove)
 
         cls.update_datastructure_labels(data_structure)
@@ -112,26 +119,25 @@ class NARSGUI:
         label = None
         NARS = Global.Global.NARS
         if data_structure is NARS.experience_task_buffer:
-            label_txt = "Task "
+            label_txt = "Experience Task "
             label = cls.gui_experience_buffer_output_label
-            length = str(len(data_structure))
         elif data_structure is NARS.memory.concepts_bag:
             label_txt = "Concepts "
             label = cls.gui_concepts_bag_output_label
-            length = str(len(NARS.memory))
         elif data_structure is NARS.sensorimotor_event_buffer:
+            label_txt = "Sensorimotor "
             label = cls.gui_sensorimotor_buffer_output_label
-            length = str(len(NARS.memory))
 
         if label is None: return
+        length = len(data_structure)
         label.config(
-            text=(label_txt + type(data_structure).__name__ + ": " + length + " / " + str(
+            text=(label_txt + type(data_structure).__name__ + ": " + str(length) + " / " + str(
                 data_structure.capacity)))
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):
         if data_structure is Global.Global.NARS.memory.concepts_bag:
-            listbox = cls.gui_concept_bag_listbox
+            listbox = cls.gui_memory_listbox
             listbox.delete(0, tk.END)
 
     @classmethod
@@ -174,48 +180,61 @@ class NARSGUI:
         """
             Sensorimotor event buffer internal contents GUI
         """
+        cls.gui_sensorimotor_buffer_output_label = tk.Label(window)
+        cls.gui_sensorimotor_buffer_output_label.grid(row=0, column=0, sticky='w')
+
+        buffer_scrollbar = tk.Scrollbar(window)
+        buffer_scrollbar.grid(row=1, column=2, sticky='ns')
+        cls.gui_sensorimotor_buffer_listbox = tk.Listbox(window,
+                                                       height=listbox_height//3,
+                                                       width=listbox_width, font=('', 8),
+                                                       yscrollcommand=buffer_scrollbar.set)
+        cls.gui_sensorimotor_buffer_listbox.grid(row=1, column=0, columnspan=1)
 
         """
             Experience Buffer internal contents GUI
         """
         cls.gui_experience_buffer_output_label = tk.Label(window)
-        cls.gui_experience_buffer_output_label.grid(row=0, column=0, sticky='w')
+        cls.gui_experience_buffer_output_label.grid(row=2, column=0, sticky='w')
 
         buffer_scrollbar = tk.Scrollbar(window)
-        buffer_scrollbar.grid(row=1, column=2, sticky='ns')
+        buffer_scrollbar.grid(row=3, column=2, sticky='ns')
         cls.gui_experience_buffer_listbox = tk.Listbox(window,
-                                                       height=listbox_height,
+                                                       height=2*listbox_height//3,
                                                        width=listbox_width, font=('', 8),
                                                        yscrollcommand=buffer_scrollbar.set)
-        cls.gui_experience_buffer_listbox.grid(row=1, column=0, columnspan=2)
+        cls.gui_experience_buffer_listbox.grid(row=3, column=0, columnspan=1)
 
         """
             Memory internal contents GUI
         """
         cls.gui_concepts_bag_output_label = tk.Label(window)
         cls.gui_concepts_bag_output_label.grid(row=0,
-                                                            column=3,
-                                                            sticky='w')
+                                                column=3,
+                                                sticky='w')
 
         concept_bag_scrollbar = tk.Scrollbar(window)
         concept_bag_scrollbar.grid(row=1,
                                    column=5,
+                                   rowspan=4,
                                    sticky='ns')
-        cls.gui_concept_bag_listbox = tk.Listbox(window,
-                                                              height=listbox_height,
-                                                              width=listbox_width,
-                                                              font=('', 8),
-                                                              yscrollcommand=concept_bag_scrollbar.set)
-        cls.gui_concept_bag_listbox.grid(row=1,
-                                                      column=3,
-                                                      columnspan=2)
+        cls.gui_memory_listbox = tk.Listbox(window,
+                                            height=listbox_height,
+                                            width=listbox_width,
+                                            font=('', 8),
+                                            yscrollcommand=concept_bag_scrollbar.set)
+        cls.gui_memory_listbox.grid(row=1,
+                                    column=3,
+                                    columnspan=1,
+                                    rowspan=4)
 
         # define callbacks when clicking items in any box
-        cls.gui_concept_bag_listbox.bind("<<ListboxSelect>>", listbox_datastructure_item_click_callback)
+        cls.gui_memory_listbox.bind("<<ListboxSelect>>", listbox_datastructure_item_click_callback)
         cls.gui_experience_buffer_listbox.bind("<<ListboxSelect>>", listbox_datastructure_item_click_callback)
 
         cls.update_datastructure_labels(Global.Global.NARS.experience_task_buffer)
         cls.update_datastructure_labels(Global.Global.NARS.memory.concepts_bag)
+        cls.update_datastructure_labels(Global.Global.NARS.sensorimotor_event_buffer)
 
     @classmethod
     def execute_interface_gui(cls,window):
@@ -264,20 +283,21 @@ class NARSGUI:
                 Callback when clicking button to send input
             """
             # put input into NARS input buffer
-            userinput = input_field.get()
-            InputBuffer.add_input_string(userinput)
+            userinput = input_field.get(index1=1.0, index2=tk.END)
+            lines = userinput.splitlines(False)
+            for line in lines:
+                InputBuffer.add_input_string(line)
             # empty input field
-            input_field.delete(0, tk.END)
-            input_field.insert(0, "")
+            input_field.delete(1.0, tk.END)
 
         input_lbl = tk.Label(window, text="Input: ")
         input_lbl.grid(column=0, row=4)
 
-        input_field = tk.Entry(window, width=50)
+        input_field = tk.Text(window, width=50, height=4)
         input_field.grid(column=1, row=4)
         input_field.focus()
 
-        window.bind('<Return>', func=input_clicked)  # send input when pressing 'enter'
+        #window.bind('<Return>', func=input_clicked)  # send input when pressing 'enter'
         send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)  # send input when click button
         send_input_btn.grid(column=2, row=4)
 
@@ -342,7 +362,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                                                      width=object_listbox_width, font=('', 8))
                 evidential_base_listbox.grid(row=5, column=0, columnspan=2)
 
-                stamp = NALGrammar.Sentence.MetadataStamp = sentence_from_iterable.stamp
+                stamp = NALGrammar.Sentence.Stamp = sentence_from_iterable.stamp
                 evidential_base_iterator = iter(stamp.evidential_base)
                 next(evidential_base_iterator) #skip the first element, which is just the sentence's ID so already displayed
                 for sentence in evidential_base_iterator:
@@ -381,8 +401,8 @@ def listbox_datastructure_item_click_callback(event):
         key = None
         data_structure = None
 
-        if event.widget is NARSGUI.gui_concept_bag_listbox:
-            key = item_string[item_string.rfind(Global.Global.ID_END_MARKER) + 2:item_string.find(
+        if event.widget is NARSGUI.gui_memory_listbox:
+            key = item_string[item_string.rfind(Global.Global.ID_END_MARKER) + len(Global.Global.ID_END_MARKER):item_string.find(
                 NARSGUI.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
             data_structure = Global.Global.NARS.memory.concepts_bag
         elif event.widget is NARSGUI.gui_experience_buffer_listbox:

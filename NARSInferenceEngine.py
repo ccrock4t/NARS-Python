@@ -8,14 +8,13 @@ import NALInferenceRules
 import NARSDataStructures
 import NALSyntax
 
-
-def do_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
+def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
 
-        :param t1: Task containing sentence j1
-        :param j2: Belief containing sentence j2
+        :param t1: Sentence
+        :param j2: Sentence j2
 
         :assume j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
                 (no evidential overlap)
@@ -257,6 +256,30 @@ def do_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -
 
     return derived_sentences
 
+def do_temporal_inference_two_premise(A: NALGrammar.Sentence, B: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
+    derived_sentences = []
+
+    derived_sentence = NALInferenceRules.Temporal_Induction(A, B) # A =|> B or A =/> B or B =/> A
+    print_inference_rule(inference_rule="Temporal Induction")
+    derived_sentences.append(derived_sentence)
+
+    derived_sentence = NALInferenceRules.Temporal_Comparison(A, B) # A <|> B or  A </> B or B </> A
+    print_inference_rule(inference_rule="Temporal Comparison")
+    derived_sentences.append(derived_sentence)
+
+    """
+    ===============================================
+    ===============================================
+        Post-Processing
+    ===============================================
+    ===============================================
+    """
+    # mark sentences as interacted with each other
+    A.stamp.mutually_add_to_interacted_sentences(B)
+
+    return derived_sentences
+
+
 def do_inference_one_premise(j):
     """
         Immediate Inference Rules
@@ -284,4 +307,4 @@ def do_inference_one_premise(j):
     return derived_sentences
 
 
-def print_inference_rule(inference_rule="Inference"): print(inference_rule)
+def print_inference_rule(inference_rule="Inference"): pass#print(inference_rule)

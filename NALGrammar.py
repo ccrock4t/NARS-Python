@@ -15,14 +15,14 @@ class Sentence:
         sentence ::= <statement><punctuation> <tense> %<value>%
     """
 
-    def __init__(self, statement, value, punctuation):
+    def __init__(self, statement, value, punctuation, occurrence_time=None):
         assert_statement(statement)
         assert_punctuation(punctuation)
 
         self.statement: Statement = statement
         self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
         self.punctuation: NALSyntax.Punctuation = punctuation
-        self.stamp = self.MetadataStamp(self)
+        self.stamp = self.Stamp(self_sentence=self,occurrence_time=occurrence_time)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -111,7 +111,7 @@ class Sentence:
 
         if tense == NALSyntax.Tense.Present:
             #Mark present tense event as happening right now!
-            sentence.stamp.occurrence_time = Global.NARS.memory.current_cycle_number
+            sentence.stamp.occurrence_time = Global.Global.get_current_cycle_number()
 
         return sentence
 
@@ -135,7 +135,7 @@ class Sentence:
         if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
         return True
 
-    class MetadataStamp:
+    class Stamp:
         """
             Defines the metadata of a sentence, including
             when it was created, its occurrence time (when is its truth value valid),
@@ -143,7 +143,7 @@ class Sentence:
         """
         def __init__(self, self_sentence, occurrence_time=None):
             self.id = Global.Global.NARS.memory.get_next_stamp_id()
-            self.creation_time = Global.Global.NARS.memory.current_cycle_number  # when was this stamp created (in inference cycles)?
+            self.creation_time = Global.Global.get_current_cycle_number()  # when was this stamp created (in inference cycles)?
             self.occurrence_time = occurrence_time
             self.sentence = self_sentence
             self.evidential_base = self.EvidentialBase(self_sentence)
@@ -153,7 +153,7 @@ class Sentence:
             if self.occurrence_time is None:
                 return NALSyntax.Tense.Eternal
 
-            current_cycle = Global.Global.NARS.memory.current_cycle_number
+            current_cycle = Global.Global.get_current_cycle_number()
             if self.occurrence_time < current_cycle:
                 return NALSyntax.Tense.Past
             elif self.occurrence_time == current_cycle:
@@ -213,10 +213,10 @@ class Judgment(Sentence):
         judgment ::= <statement>. %<truth-value>%
     """
 
-    def __init__(self, statement, value):
+    def __init__(self, statement, value,occurrence_time=None):
         assert_statement(statement)
         assert_truth_value(value)
-        super().__init__(statement, value, NALSyntax.Punctuation.Judgment)
+        super().__init__(statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
 
 
 class Question(Sentence):
@@ -584,9 +584,9 @@ class CompoundTerm(Term):
         subterm_string = ""
         for i, c in enumerate(internal_string):
             if c == NALSyntax.StatementSyntax.Start.value or NALSyntax.TermConnector.is_set_bracket_start(c):
-                depth = depth + 1
+                depth += 1
             elif c == NALSyntax.StatementSyntax.End.value or NALSyntax.TermConnector.is_set_bracket_end(c):
-                depth = depth - 1
+                depth += 1
 
             if c == NALSyntax.StatementSyntax.TermDivider.value and depth == 0:
                 subterm = Term.from_string(subterm_string)
@@ -710,9 +710,9 @@ def get_top_level_copula(string):
     depth = 0
     for i, v in enumerate(string):
         if v == NALSyntax.StatementSyntax.Start.value:
-            depth = depth + 1
+            depth += 1
         elif v == NALSyntax.StatementSyntax.End.value:
-            depth = depth - 1
+            depth -= 1
         elif depth == 1 and i + 3 <= len(string) and NALSyntax.Copula.is_string_a_copula(string[i:i + 3]):
             copula, copula_idx = NALSyntax.Copula.get_copula_from_string(string[i:i + 3]), i
 

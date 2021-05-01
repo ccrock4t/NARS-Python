@@ -26,7 +26,7 @@ class NARS:
     """
     def __init__(self):
         self.experience_task_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
-        self.sensorimotor_event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task)
+        self.sensorimotor_event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task,capacity=10)
         self.memory = NARSMemory.Memory()
         self.delay = 0 # delay between cycles
 
@@ -42,7 +42,7 @@ class NARS:
     def load_memory_from_disk(self, filename="memory.nars"):
         """
             Load a NARS Memory instance from disk.
-            This will override the NARS current memory
+            This will override the NARS' current memory
         """
         try:
             with open(filename, "rb") as f:
@@ -87,7 +87,8 @@ class NARS:
 
         InputBuffer.process_next_pending_sentence()
 
-        # working cycle
+        self.Process_Sensorimotor_Buffer()
+
         rand = random.random()
         if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
             # OBSERVE
@@ -96,7 +97,7 @@ class NARS:
             # CONSIDER
             self.Consider()
 
-        self.memory.current_cycle_number = self.memory.current_cycle_number + 1
+        self.memory.current_cycle_number += 1
 
     def do_working_cycles(self, cycles: int):
         """
@@ -105,10 +106,34 @@ class NARS:
         for i in range(cycles):
             self.do_working_cycle()
 
+    def Process_Sensorimotor_Buffer(self):
+        """
+            Process sensorimotor events into the experience buffer
+        """
+        if len(self.sensorimotor_event_buffer) > 1: # need multiple events to process implications
+            event_task_A = self.sensorimotor_event_buffer.take().object # take an event from the buffer
+            event_A = event_task_A.sentence
+
+            event_task_B = self.sensorimotor_event_buffer.take().object # take another event from the buffer
+            event_B = event_task_B.sentence
+
+            # insert the events
+            self.experience_task_buffer.put_new(event_task_A)
+            self.experience_task_buffer.put_new(event_task_B)
+
+            # do temporal inference
+            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A,event_B)
+
+            # insert the derived knowledge
+            for derived_sentence in derived_sentences:
+                self.experience_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+
+
+
 
     def Observe(self):
         """
-            Process a task from the overall experience buffer
+            Process a task from the experience buffer
         """
         task_item = self.experience_task_buffer.take()
 
@@ -120,10 +145,11 @@ class NARS:
 
         if isinstance(task_item.object.sentence, NALGrammar.Question) and task_item.object.needs_to_be_answered_in_output:
             # decay priority
-            task_item.budget.priority = 0.99
+            task_item.decay()
 
             # return task to buffer
             self.experience_task_buffer.put(task_item)
+
 
     def Consider(self):
         """
@@ -154,7 +180,7 @@ class NARS:
                 self.process_judgment_sentence(sentence)
 
          # decay priority
-        concept_item.decay(multiplier=Config.PRIORITY_DECAY_MULTIPLIER)
+        concept_item.decay()
         # print back to GUI
         if Global.Global.gui_use_internal_data:
             NARSGUI.NARSGUI.print_to_output(str(concept_item), data_structure=self.memory.concepts_bag)
@@ -244,7 +270,7 @@ class NARS:
 
         if j2 is None: return  # done if can't interact
 
-        derived_sentences = NARSInferenceEngine.do_inference_two_premise(j1, j2)
+        derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         for derived_sentence in derived_sentences:
             self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
 
@@ -297,7 +323,7 @@ class NARS:
 
         if j2 is None: return  # done if can't interact
 
-        derived_sentences = NARSInferenceEngine.do_inference_two_premise(j1, j2)
+        derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         # add all derived tasks to the buffer
         for derived_sentence in derived_sentences:
             self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))

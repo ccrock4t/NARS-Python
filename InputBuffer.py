@@ -2,6 +2,7 @@ import time
 
 import NALGrammar
 import Global
+import NALSyntax
 import NARSDataStructures
 import queue
 
@@ -16,24 +17,26 @@ import NARSGUI
 input_queue = queue.Queue()
 
 def add_input_string(input_string: str):
+    input_string = str.strip(input_string)
     try:
+        NARS = Global.Global.NARS
         if input_string == "count":
             NARSGUI.NARSGUI.print_to_output(
-                "Memory count (concepts in memory): " + str(Global.Global.NARS.memory.get_number_of_concepts()))
+                "Memory count (concepts in memory): " + str(len(NARS.memory)))
             NARSGUI.NARSGUI.print_to_output(
-                "Buffer count (tasks in buffer): " + str(Global.Global.NARS.experience_task_buffer.count))
+                "Buffer count (tasks in buffer): " + str(len(NARS.experience_task_buffer)))
             return
         elif input_string == "cycle":
-            NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.NARS.memory.current_cycle_number))
+            NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.get_current_cycle_number()))
             return
         elif input_string == "save":
-            Global.Global.NARS.save_memory_to_disk()
+            NARS.save_memory_to_disk()
         elif input_string == "load":
-            Global.Global.NARS.load_memory_from_disk()
+            NARS.load_memory_from_disk()
         elif input_string == "load_input":
             load_input()
         else:
-            while Global.Global.NARS is None:
+            while NARS is None:
                 print("Waiting for NARS to start up...")
                 time.sleep(1.0)
             sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
@@ -67,7 +70,13 @@ def process_sentence(sentence: NALGrammar.Sentence):
     NARSGUI.NARSGUI.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Task(sentence, is_input_task=True)
-    Global.Global.NARS.experience_task_buffer.put_new(task)
+
+    if sentence.stamp.get_tense() is NALSyntax.Tense.Eternal:
+        # eternal experience
+        Global.Global.NARS.experience_task_buffer.put_new(task)
+    else:
+        # temporal experience
+        Global.Global.NARS.sensorimotor_event_buffer.put_new(task)
 
 def load_input(filename="input.nal"):
     """
