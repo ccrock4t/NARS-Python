@@ -13,3 +13,4 @@
 	- Conditional Syllogism
 	- One-premise Inference
 	- Temporal Inference
+		- Durations
