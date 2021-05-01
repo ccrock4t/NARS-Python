@@ -19,8 +19,6 @@ import NALSyntax
     ++++ (Binary truth value operations) ++++
     ======================================
 """
-
-
 def band(*argv):
     """
         Binary AND
@@ -71,14 +69,167 @@ def bnot(arg):
     """
     return 1 - arg
 
+"""
+    ======================================
+    ++++ (Inference rule truth value operations) ++++
+    ======================================
+"""
+def F_Revision(wp1, wn1, wp2, wn2):
+    """
+        :return: F_rev
+    """
+    # compute values of combined evidence
+    wp = wp1 + wp2
+    wn = wn1 + wn2
+    w = wp + wn
+    f_rev, c_rev = get_truthvalue_from_evidence(wp, w)
+    return NALGrammar.TruthValue(f_rev, c_rev)
+
+def F_Negation(f,c):
+    """
+        f_neg = 1 - f
+        c_neg = c
+        :return: F_neg
+    """
+    return NALGrammar.TruthValue(1-f,c)
+
+def F_Conversion(f,c):
+    """
+        wp = AND(f, c)
+        wn = AND(NOT(f), c)
+        :return: F_cnv
+    """
+    # compute values of combined evidence
+    wp = band(f, c)
+    w = wp
+    f_cnv, c_cnv = get_truthvalue_from_evidence(wp, w)
+    return NALGrammar.TruthValue(f_cnv, c_cnv)
+
+def F_Contraposition(f,c):
+    """
+        wp = 0
+        wn = AND(NOT(f), c)
+        :return: F_cnt
+    """
+    wp = 0
+    wn = band(bnot(f), c)
+    w = wn
+    f_cnt, c_cnt = get_truthvalue_from_evidence(wp, w)
+
+    return NALGrammar.TruthValue(f_cnt, c_cnt)
+
+
+def F_Deduction(f,c):
+    """
+        f_ded: and(f1,f2)
+        c_ded: and(f1,f2,c1,c2)
+
+        :return: F_ded: Truth-Value (f,c)
+    """
+    pass
+
+def F_Analogy(f1,c1,f2,c2):
+    """
+        f_ana: AND(f1,f2)
+        c_ana: AND(f2,c1,c2)
+
+        :return: F_ana: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    f_ana = band(f1, f2)
+    c_ana = band(f2, c1, c2)
+    return NALGrammar.TruthValue(f_ana, c_ana)
+
+def F_Resemblance(f1,c1,f2,c2):
+    """
+        f_res = AND(f1,f2)
+        c_res = AND(OR(f1,f2),c1,c2)
+
+        :return: F_res
+    """
+    f_res = band(f1, f2)
+    c_res = band(bor(f1, f2), c1, c2)
+
+    return NALGrammar.TruthValue(f_res, c_res)
+
+def F_Abduction(f1,c1,f2,c2):
+    """
+        wp = AND(f1,f2,c1,c2)
+        w = AND(f1,c1,c2)
+
+        :return: F_abd: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    wp = band(f1, f2, c1, c2)
+    w = band(f1, c1, c2)
+    f_abd, c_abd = get_truthvalue_from_evidence(wp, w)
+    return NALGrammar.TruthValue(f_abd, c_abd)
+
+def F_Induction(f1,c1,f2,c2):
+    """
+    :return: F_ind: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    wp = band(f1, f2, c1, c2)
+    w = band(f2, c1, c2)
+    f_ind, c_ind = get_truthvalue_from_evidence(wp, w)
+    return NALGrammar.TruthValue(f_ind, c_ind)
+
+
+def F_Exemplification(f1,c1,f2,c2):
+    """
+    :return: F_exe: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    wp = band(f1, f2, c1, c2)
+    w = wp
+    f_exe, c_exe = get_truthvalue_from_evidence(wp, w)
+    return NALGrammar.TruthValue(f_exe, c_exe)
+
+def F_Comparison(f1,c1,f2,c2):
+    """
+        :return: F_com: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    wp = band(f1, f2, c1, c2)
+    w = band(bor(f1, f2), c1, c2)
+    f3, c3 = get_truthvalue_from_evidence(wp, w)
+    return NALGrammar.TruthValue(f3, c3)
+
+def F_Intersection(f1,c1,f2,c2):
+    """
+    :return: F_int: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    f_int = band(f1, f2)
+    c_int = band(c1, c2)
+    return NALGrammar.TruthValue(f_int, c_int)
+
+
+def F_Union(f1,c1,f2,c2):
+    """
+    :return: F_uni: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    f3 = bor(f1, f2)
+    c3 = band(c1, c2)
+    return NALGrammar.TruthValue(f3, c3)
+
+
+def F_Difference(f1,c1,f2,c2):
+    """
+    :return: F_dif: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    f3 = band(f1, not (f2))
+    c3 = band(c1, c2)
+    return NALGrammar.TruthValue(f3, c3)
 
 """
     ======================================
     ++++  (Local inference rules) ++++
     ======================================
 """
-
-
 def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Revision Rule
@@ -102,15 +253,7 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
 
     # Get Truth Value
     (wp1, w1, wn1), (wp2, w2, wn2) = getevidence_from2sentences(j1, j2)
-
-    # compute values of combined evidence
-    wp3 = wp1 + wp2
-    wn3 = wn1 + wn2
-    w3 = wp3 + wn3
-    f3, c3 = get_truthvalue_from_evidence(wp3, w3)
-
-    # Create the resultant sentence
-    result_truth = NALGrammar.TruthValue(f3, c3)
+    result_truth = F_Revision(wp1=wp1,wn1=wn1,wp2=wp2,wn2=wn2)
 
     result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
@@ -230,7 +373,7 @@ def Negation(j: NALGrammar.Sentence):
     occurrence_time = j.stamp.occurrence_time
 
     if j.punctuation == NALSyntax.Punctuation.Judgment:
-        result_truth = NALGrammar.TruthValue(1 - j.value.frequency, j.value.confidence)
+        result_truth = F_Negation(1 - j.value.frequency, j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth,occurrence_time=occurrence_time)
     elif j.punctuation == NALSyntax.Punctuation.Question:
         assert "error"
@@ -268,12 +411,7 @@ def Conversion(j: NALGrammar.Sentence):
     occurrence_time = j.stamp.occurrence_time
 
     if j.punctuation == NALSyntax.Punctuation.Judgment:
-        # compute values of combined evidence
-        wp = band(j.value.frequency, j.value.confidence)
-        w = wp
-        f2,c2 = get_truthvalue_from_evidence(wp,w)
-
-        result_truth = NALGrammar.TruthValue(f2, c2)
+        result_truth = F_Conversion(j.value.frequency, j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time)
     elif j.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -307,12 +445,7 @@ def Contraposition(j):
                                             j.statement.copula)
 
     if j.punctuation == NALSyntax.Punctuation.Judgment:
-        # compute values of combined evidence
-        wp = band(j.value.frequency, j.value.confidence)
-        w = wp
-        f2,c2 = get_truthvalue_from_evidence(wp,w)
-
-        result_truth = NALGrammar.TruthValue(f2, c2)
+        result_truth = F_Contraposition(j.value.frequency,j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -342,9 +475,7 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
 
             j2: Sentence (S --> M <f2, c2>)
         Truth Val:
-            f3: and(f1,f2)
-
-            c3: and(f1,f2,c1,c2)
+            F_ded
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
@@ -365,6 +496,7 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         f3 = band(f1, f2)
         c3 = band(f1, f2, c1, c2)
         result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Deduction()
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -432,11 +564,7 @@ def Analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
-        # compute values of combined evidence
-        f3 = band(f1, f2)
-        c3 = band(f2, c1, c2)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Analogy(f1, c1, f2, c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -502,10 +630,7 @@ def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-        f3 = band(f1, f2)
-        c3 = band(bor(f1, f2), c1, c2)
-
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Resemblance(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -556,11 +681,7 @@ def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-        # compute values of combined evidence
-        wp = band(f1, f2, c1, c2)
-        w = band(f1, c1, c2)
-        f3, c3 = get_truthvalue_from_evidence(wp, w)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Abduction(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -602,11 +723,7 @@ def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-        # compute values of combined evidence
-        wp = band(f1, f2, c1, c2)
-        w = band(f2, c1, c2)
-        f3, c3 = get_truthvalue_from_evidence(wp, w)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Induction(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -648,11 +765,7 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-        # compute values of combined evidence
-        wp = band(f1, f2, c1, c2)
-        w = wp
-        f3,c3 = get_truthvalue_from_evidence(wp,w)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        F_Exemplification(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -704,11 +817,7 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-        # compute values of combined evidence
-        wp = band(f1, f2, c1, c2)
-        w = band(bor(f1, f2), c1, c2)
-        f3, c3 = get_truthvalue_from_evidence(wp, w)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Comparison(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -726,7 +835,8 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
 """
 def IntensionalIntersection(j1, j2):
     """
-        Intensional Intersection (Strong Inference)
+        First Order: Intensional Intersection (Strong Inference)
+        Higher Order: Disjunction
 
         Assumes: j1 and j2 do not have evidential overlap
         -----------------
@@ -768,10 +878,7 @@ def IntensionalIntersection(j1, j2):
             # Get Truth Value
             (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-            # compute values of combined evidence
-            f3 = band(f1, f2)
-            c3 = band(c1, c2)
-            result_truth = NALGrammar.TruthValue(f3, c3)
+            result_truth = F_Intersection(f1,c1,f2,c2)
             result = NALGrammar.Judgment(result_statement, result_truth)
         elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
             result = NALGrammar.Question(result_statement)
@@ -790,10 +897,7 @@ def IntensionalIntersection(j1, j2):
             # Get Truth Value
             (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-            # compute values of combined evidence
-            f3 = bor(f1, f2)
-            c3 = band(c1, c2)
-            result_truth = NALGrammar.TruthValue(f3, c3)
+            result_truth = F_Union(f1,c1,f2,c2)
             result = NALGrammar.Judgment(result_statement, result_truth)
         elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
             result = NALGrammar.Question(result_statement)
@@ -808,7 +912,8 @@ def IntensionalIntersection(j1, j2):
 
 def ExtensionalIntersection(j1, j2):
     """
-        Extensional Intersection (Strong Inference)
+        First-Order: Extensional Intersection (Strong Inference)
+        Higher-Order: Conjunction
 
         Assumes: j1 and j2 do not have evidential overlap
         -----------------
@@ -850,10 +955,7 @@ def ExtensionalIntersection(j1, j2):
             # Get Truth Value
             (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-            # compute values of combined evidence
-            f3 = bor(f1, f2)
-            c3 = band(c1, c2)
-            result_truth = NALGrammar.TruthValue(f3, c3)
+            result_truth = F_Union(f1,c1,f2,c2)
             result = NALGrammar.Judgment(result_statement, result_truth)
         elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
             result = NALGrammar.Question(result_statement)
@@ -872,10 +974,7 @@ def ExtensionalIntersection(j1, j2):
             # Get Truth Value
             (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-            # compute values of combined evidence
-            f3 = band(f1, f2)
-            c3 = band(c1, c2)
-            result_truth = NALGrammar.TruthValue(f3, c3)
+            result_truth = F_Intersection(f1,c1,f2,c2)
             result = NALGrammar.Judgment(result_statement, result_truth)
         elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
             result = NALGrammar.Question(result_statement)
@@ -886,9 +985,9 @@ def ExtensionalIntersection(j1, j2):
 
     return result
 
-def Difference(j1, j2):
+def IntensionalDifference(j1, j2): #TODO
     """
-        Extensional or Intensional Difference (Strong Inference)
+        Intensional Difference (Strong Inference)
 
         Assumes: j1 and j2 do not have evidential overlap
         -----------------
@@ -897,9 +996,50 @@ def Difference(j1, j2):
             j1: Sentence (T1 --> M <f1, c1>)
             and
             j2: Sentence (T2 --> M <f2, c2>)
+        Evidence:
+            f: band(f1,f2)
+            c: band(c1,c2)
+        Returns:
+            For inputs j1: (T1 --> M), j2: (T2 --> M):
+                :- Sentence ((T1 ~ T2) --> M)
+    """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
+    assert j1.statement.get_predicate_term() == j2.statement.get_predicate_term()
 
-            OR
+    compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
+                                            j2.statement.get_predicate_term()],
+                                            NALSyntax.TermConnector.ExtensionalDifference) # (T1 - T2)
+    result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+                                            compound_term,
+                                            NALSyntax.Copula.Inheritance)# (M --> (T1 - T2))
 
+    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
+
+        # compute values of combined evidence
+        f3 = band(f1, not(f2))
+        c3 = band(c1, c2)
+        result_truth = NALGrammar.TruthValue(f3, c3)
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+        result = NALGrammar.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
+
+def ExtensionalDifference(j1, j2): #TODO
+    """
+        Extensional Difference (Strong Inference)
+
+        Assumes: j1 and j2 do not have evidential overlap
+        -----------------
+
+        Input:
             j1: Sentence (M --> T1 <f1, c1>)
             and
             j2: Sentence (M --> T2 <f2, c2>)
@@ -907,8 +1047,6 @@ def Difference(j1, j2):
             f: band(f1,f2)
             c: band(c1,c2)
         Returns:
-            For inputs j1: (T1 --> M), j2: (T2 --> M):
-                :- Sentence ((T1 ~ T2) --> M)
             For inputs j1: (M --> T1) , j2: (M --> T2):
                 :- Sentence (M --> (T1 - T2))
     """
@@ -940,10 +1078,7 @@ def Difference(j1, j2):
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
 
-        # compute values of combined evidence
-        f3 = band(f1, not(f2))
-        c3 = band(c1, c2)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Difference(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -953,6 +1088,33 @@ def Difference(j1, j2):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
+
+
+def Disjunction(j1, j2): #todo
+    """
+        Non-temporal and temporal disjunction.
+        Corresponds to First-Order Intensional Intersection
+
+        Assumes: j1 and j2 do not have evidential overlap
+        -----------------
+    """
+    pass
+
+def Conjunction(j1, j2): #todo
+    """
+        Non-temporal and temporal conjunction.
+        Corresponds to First-Order Extensional Intersection
+
+        Assumes: j1 and j2 do not have evidential overlap
+        -----------------
+    """
+    pass
+
+
+
+
+
+
 
 """
     ======================================
@@ -964,9 +1126,9 @@ def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
         Temporal Induction
 
         Input:
-            A: Event <f1, c1> {tense}
+            j1: Event <f1, c1> {tense}
 
-            B: Event <f2, c2> {tense}
+            j2: Event <f2, c2> {tense}
         Evidence:
             w+: and(f1,f2,c1,c2)
 
@@ -993,10 +1155,7 @@ def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
         result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term, NALSyntax.Copula.PredictiveImplication)
 
     # calculate induction truth value
-    wp = band(f1, f2, c1, c2)
-    w = band(f2, c1, c2)
-    f3, c3 = get_truthvalue_from_evidence(wp, w)
-    result_truth = NALGrammar.TruthValue(f3, c3)
+    result_truth = F_Induction(f1, c1, f2, c2)
     result = NALGrammar.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
@@ -1039,10 +1198,7 @@ def Temporal_Comparison(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
         result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term, NALSyntax.Copula.PredictiveEquivalence)
 
     # calculate induction truth value
-    wp = band(f1, f2, c1, c2)
-    w = band(bor(f1, f2), c1, c2)
-    f3, c3 = get_truthvalue_from_evidence(wp, w)
-    result_truth = NALGrammar.TruthValue(f3, c3)
+    result_truth = F_Comparison(f1,c1,f2,c2)
     result = NALGrammar.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases

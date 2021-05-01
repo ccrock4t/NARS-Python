@@ -9,7 +9,6 @@ import NALSyntax
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
 
-
 class Sentence:
     """
         sentence ::= <statement><punctuation> <tense> %<value>%
@@ -22,7 +21,7 @@ class Sentence:
         self.statement: Statement = statement
         self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
         self.punctuation: NALSyntax.Punctuation = punctuation
-        self.stamp = self.Stamp(self_sentence=self,occurrence_time=occurrence_time)
+        self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -134,78 +133,6 @@ class Sentence:
         if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
         if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
         return True
-
-    class Stamp:
-        """
-            Defines the metadata of a sentence, including
-            when it was created, its occurrence time (when is its truth value valid),
-            evidential base, etc.
-        """
-        def __init__(self, self_sentence, occurrence_time=None):
-            self.id = Global.Global.NARS.memory.get_next_stamp_id()
-            self.creation_time = Global.Global.get_current_cycle_number()  # when was this stamp created (in inference cycles)?
-            self.occurrence_time = occurrence_time
-            self.sentence = self_sentence
-            self.evidential_base = self.EvidentialBase(self_sentence)
-            self.interacted_sentences = []  # list of sentence this sentence has already interacted with
-
-        def get_tense(self):
-            if self.occurrence_time is None:
-                return NALSyntax.Tense.Eternal
-
-            current_cycle = Global.Global.get_current_cycle_number()
-            if self.occurrence_time < current_cycle:
-                return NALSyntax.Tense.Past
-            elif self.occurrence_time == current_cycle:
-                return NALSyntax.Tense.Present
-            elif self.occurrence_time > current_cycle:
-                return NALSyntax.Tense.Future
-
-        def mutually_add_to_interacted_sentences(self, other_sentence):
-            self.interacted_sentences.append(other_sentence)
-            if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-                self.interacted_sentences.pop(0)
-
-            other_sentence.stamp.interacted_sentences.append(self.sentence)
-            if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-                other_sentence.stamp.interacted_sentences.pop(0)
-
-        class EvidentialBase:
-            """
-                Stores history of how the sentence was derived
-            """
-            def __init__(self,self_sentence):
-                """
-                :param id: Sentence ID
-                """
-                self.base = [self_sentence]  # array of sentences
-
-            def __iter__(self):
-                return iter(self.base)
-
-            def __contains__(self, object):
-                return object in self.base
-
-            def merge_sentence_evidential_base_into_self(self, sentence):
-                """
-                    Merge a Sentence's evidential base into self, including the Sentence itself.
-                    This function assumes the base to merge does not have evidential overlap with this base
-                    #todo figure out good way to store evidential bases such that older evidence is purged on overflow
-                """
-                #self.base.append(sentence)
-                for sentence in sentence.stamp.evidential_base:
-                    self.base.append(sentence)
-
-                while len(self.base) > Config.MAX_EVIDENTIAL_BASE_LENGTH:
-                    self.base.pop(0)
-
-            def has_evidential_overlap(self, other_base):
-                """
-                    Check does other base has overlapping evidence with self?
-                    O(M + N)
-                    https://stackoverflow.com/questions/3170055/test-if-lists-share-any-items-in-python
-                """
-                return not set(self.base).isdisjoint(other_base.base)
 
 
 class Judgment(Sentence):
@@ -325,6 +252,77 @@ class TruthValue(EvidentialValue):
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + "{:.2f}".format(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value)
+
+class Stamp:
+    """
+        Defines the metadata of a sentence, including
+        when it was created, its occurrence time (when is its truth value valid),
+        evidential base, etc.
+    """
+    def __init__(self, self_sentence, occurrence_time=None):
+        self.id = Global.Global.NARS.memory.get_next_stamp_id()
+        self.creation_time = Global.Global.get_current_cycle_number()  # when was this stamp created (in inference cycles)?
+        self.occurrence_time = occurrence_time
+        self.sentence = self_sentence
+        self.evidential_base = EvidentialBase(self_sentence=self_sentence)
+        self.interacted_sentences = []  # list of sentence this sentence has already interacted with
+
+    def get_tense(self):
+        if self.occurrence_time is None:
+            return NALSyntax.Tense.Eternal
+
+        current_cycle = Global.Global.get_current_cycle_number()
+        if self.occurrence_time < current_cycle:
+            return NALSyntax.Tense.Past
+        elif self.occurrence_time == current_cycle:
+            return NALSyntax.Tense.Present
+        elif self.occurrence_time > current_cycle:
+            return NALSyntax.Tense.Future
+
+    def mutually_add_to_interacted_sentences(self, other_sentence):
+        self.interacted_sentences.append(other_sentence)
+        if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+            self.interacted_sentences.pop(0)
+
+        other_sentence.stamp.interacted_sentences.append(self.sentence)
+        if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+            other_sentence.stamp.interacted_sentences.pop(0)
+
+class EvidentialBase:
+    """
+        Stores history of how the sentence was derived
+    """
+    def __init__(self,self_sentence):
+        """
+        :param id: Sentence ID
+        """
+        self.base = [self_sentence]  # array of sentences
+
+    def __iter__(self):
+        return iter(self.base)
+
+    def __contains__(self, object):
+        return object in self.base
+
+    def merge_sentence_evidential_base_into_self(self, sentence):
+        """
+            Merge a Sentence's evidential base into self, including the Sentence itself.
+            This function assumes the base to merge does not have evidential overlap with this base
+            #todo figure out good way to store evidential bases such that older evidence is purged on overflow
+        """
+        for sentence in sentence.stamp.evidential_base:
+            self.base.append(sentence)
+
+        while len(self.base) > Config.MAX_EVIDENTIAL_BASE_LENGTH:
+            self.base.pop(0)
+
+    def has_evidential_overlap(self, other_base):
+        """
+            Check does other base has overlapping evidence with self?
+            O(M + N)
+            https://stackoverflow.com/questions/3170055/test-if-lists-share-any-items-in-python
+        """
+        return not set(self.base).isdisjoint(other_base.base)
 
 
 class Term:

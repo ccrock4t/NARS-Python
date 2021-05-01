@@ -239,8 +239,8 @@ def intensional_composition():
     success_criteria = []
     success_criteria.append(NALInferenceRules.ExtensionalIntersection(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.IntensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Difference(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Difference(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.ExtensionalDifference(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.ExtensionalDifference(j2, j1).get_formatted_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -280,8 +280,8 @@ def extensional_composition():
     success_criteria = []
     success_criteria.append(NALInferenceRules.ExtensionalIntersection(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.IntensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Difference(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Difference(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.ExtensionalDifference(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.ExtensionalDifference(j2, j1).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion

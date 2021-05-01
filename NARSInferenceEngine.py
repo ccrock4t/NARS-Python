@@ -142,20 +142,20 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
             # Extensional Intersection
             """
             derived_sentence = NALInferenceRules.ExtensionalIntersection(j1, j2)  # M --> (S & P)
-            print_inference_rule(inference_rule="Intersection")
+            print_inference_rule(inference_rule="Extensional Intersection")
             derived_sentences.append(derived_sentence)
 
             """
             # Extensional Difference
             """
-            derived_sentence = NALInferenceRules.Difference(j1, j2)  # M --> (S - P)
+            derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # M --> (S - P)
             print_inference_rule(inference_rule="Intersection")
             derived_sentences.append(derived_sentence)
 
             """
             # Swapped Extensional Difference
             """
-            derived_sentence = NALInferenceRules.Difference(j2, j1)  # M --> (S - P)
+            derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # M --> (S - P)
             print_inference_rule( inference_rule="Intersection")
             derived_sentences.append(derived_sentence)
         elif j1_predicate_term == j2_predicate_term:
@@ -198,14 +198,14 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
             """
             # Intensional Difference
             """
-            derived_sentence = NALInferenceRules.Difference(j1, j2)  # (S ~ P) --> M
+            derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # (S ~ P) --> M
             print_inference_rule(inference_rule="Intersection")
             derived_sentences.append(derived_sentence)
 
             """
             # Swapped Intensional Difference
             """
-            derived_sentence = NALInferenceRules.Difference(j2, j1)  # (P ~ S) --> M
+            derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # (P ~ S) --> M
             print_inference_rule(inference_rule="Intersection")
             derived_sentences.append(derived_sentence)
         else:
