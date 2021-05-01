@@ -29,36 +29,6 @@ class Tense(enum.Enum):
 
         return None
 
-
-class StatementConnector(enum.Enum):
-    # NAL-5
-    Negation = "--"
-    Conjunction = "&&"
-    Disjunction = "||"
-    SequentialConjunction = "&/"
-    ParallelConjunction = "&|"
-
-    @classmethod
-    def is_string_a_statement_connector(cls, string):
-        return string in cls._value2member_map_
-
-    @classmethod
-    def get_statement_connector_from_string(cls, string):
-        if not StatementConnector.is_string_a_statement_connector(string):
-            return None
-
-        for connector in cls:
-            if string == connector.value:
-                return connector
-
-        return None
-
-    @classmethod
-    def is_order_invariant(cls, connector):
-        #todo
-        return False
-
-
 class TermConnector(enum.Enum):
     # NAL-2
     ExtensionalSetStart = "{"
@@ -78,6 +48,13 @@ class TermConnector(enum.Enum):
     IntensionalImage = r"\\"
     ImagePlaceHolder = "_"
 
+    # NAL-5
+    Negation = "--"
+    Conjunction = "&&"
+    Disjunction = "||"
+    SequentialConjunction = "&/"
+    ParallelConjunction = "&|"
+
     @classmethod
     def is_string_a_term_connector(cls, value):
         return value in cls._value2member_map_
@@ -96,9 +73,12 @@ class TermConnector(enum.Enum):
     @classmethod
     def is_order_invariant(cls, connector):
         return connector is cls.ExtensionalIntersection or \
-               connector is cls.IntensionalIntersection or \
+                connector is cls.IntensionalIntersection or \
                 connector is cls.ExtensionalSetStart or \
-                connector is cls.IntensionalSetStart
+                connector is cls.IntensionalSetStart or \
+                connector is cls.Negation or \
+                connector is cls.Conjunction or \
+                connector is cls.Disjunction
 
 
     @classmethod
@@ -145,6 +125,14 @@ class Copula(enum.Enum):
     ConcurrentImplication = "=|>"
     PredictiveEquivalence = "</>"
     ConcurrentEquivalence = "<|>"
+
+    @classmethod
+    def is_first_order(cls, copula):
+        return copula is cls.Inheritance \
+            or copula is cls.Similarity \
+            or copula is cls.Instance \
+            or copula is cls.Property \
+            or copula is cls.InstanceProperty
 
     @classmethod
     def is_symmetric(cls, copula):

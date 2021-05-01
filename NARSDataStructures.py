@@ -110,7 +110,7 @@ class ItemContainer:
                 priority = 0.950
                 quality = 0.010
             elif isinstance(object, NARSMemory.Concept):
-                priority = 0.950
+                priority = 0.990 / object.term.syntactic_complexity
                 quality = 0.500
             elif isinstance(object, NALGrammar.Sentence):
                 priority = object.value.confidence

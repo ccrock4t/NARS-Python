@@ -41,14 +41,14 @@ def run_test(input_judgment_q, input_question_q, output_q, debug=False):
         InputBuffer.add_input_sentence(input_judgment_q.get())
 
     # process judgments
-    Global.Global.NARS.do_working_cycles(500)
+    Global.Global.NARS.do_working_cycles(100)
 
     # feed in questions
     while input_question_q.qsize() > 0:
         InputBuffer.add_input_sentence(input_question_q.get())
 
     # process questions
-    Global.Global.NARS.do_working_cycles(500)
+    Global.Global.NARS.do_working_cycles(100)
 
     sys.stdout = sys.__stdout__
 
@@ -237,8 +237,8 @@ def intensional_composition():
     process.join()
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.ExtensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.IntensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.ExtensionalDifference(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.ExtensionalDifference(j2, j1).get_formatted_string_no_id())
 
@@ -278,8 +278,8 @@ def extensional_composition():
     process.join()
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.ExtensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.IntensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.ExtensionalDifference(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.ExtensionalDifference(j2, j1).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)

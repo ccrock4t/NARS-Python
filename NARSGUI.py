@@ -252,7 +252,7 @@ class NARSGUI:
         output_scrollbar = tk.Scrollbar(window)
         output_scrollbar.grid(row=1, column=3, rowspan=output_height, sticky='ns')
 
-        cls.gui_output_textbox = tk.Listbox(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
+        cls.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
         cls.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
 
         # row 2

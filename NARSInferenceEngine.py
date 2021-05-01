@@ -24,7 +24,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    if j1.statement.term.term_connector is not None or j2.statement.term.term_connector is not None:
+    if j1.statement.term.connector is not None or j2.statement.term.connector is not None:
         return []
 
     """
@@ -71,7 +71,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
         """
         # Revision
         # j1=S-->P, j2=S-->P
-        # or j1=S<->P, j2=S<->P or P<->S
+        # or j1=S<->P, j2=S<->P
         """
         if is_question: return derived_sentences # can't do revision with questions
 
@@ -132,17 +132,17 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
             derived_sentences.append(derived_sentence)
 
             """
-            # Intensional Intersection
+            # Intensional Intersection or Disjunction
             """
-            derived_sentence = NALInferenceRules.IntensionalIntersection(j1, j2)  # M --> (S | P)
-            print_inference_rule(inference_rule="Intersection")
+            derived_sentence = NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2)  # M --> (S | P)
+            print_inference_rule(inference_rule="Intensional Intersection or Disjunction")
             derived_sentences.append(derived_sentence)
 
             """
-            # Extensional Intersection
+            # Extensional Intersection or Conjunction
             """
-            derived_sentence = NALInferenceRules.ExtensionalIntersection(j1, j2)  # M --> (S & P)
-            print_inference_rule(inference_rule="Extensional Intersection")
+            derived_sentence = NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2)  # M --> (S & P)
+            print_inference_rule(inference_rule="Extensional Intersection or Conjunction")
             derived_sentences.append(derived_sentence)
 
             """
@@ -163,49 +163,49 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
             # j1=P-->M, j2=S-->M
             # Abduction
             """
-            derived_sentence = NALInferenceRules.Abduction(j1, j2)  # S-->P
+            derived_sentence = NALInferenceRules.Abduction(j1, j2)  # S-->P or S==>P
             print_inference_rule(inference_rule="Abduction")
             derived_sentences.append(derived_sentence)
 
             """
             # Swapped Abduction
             """
-            derived_sentence = NALInferenceRules.Abduction(j2, j1)  # P-->S
+            derived_sentence = NALInferenceRules.Abduction(j2, j1)  # P-->S or P==>S
             print_inference_rule(inference_rule="Swapped Abduction")
             derived_sentences.append(derived_sentence)
 
             """
             # Comparison
             """
-            derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P
+            derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P or S<=>P
             print_inference_rule(inference_rule="Comparison")
             derived_sentences.append(derived_sentence)
 
             """
-            # Intensional Intersection
+            # Intensional Intersection Disjunction
             """
-            derived_sentence = NALInferenceRules.IntensionalIntersection(j1, j2)  # (S | P) --> M
-            print_inference_rule(inference_rule="Intersection")
+            derived_sentence = NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2)  # (P | S) --> M
+            print_inference_rule(inference_rule="Intensional Intersection")
             derived_sentences.append(derived_sentence)
 
             """
-            # Extensional Intersection
+            # Extensional Intersection Conjunction
             """
-            derived_sentence = NALInferenceRules.ExtensionalIntersection(j1, j2)  # (S & P) --> M
-            print_inference_rule(inference_rule="Intersection")
+            derived_sentence = NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2)  # (P & S) --> M
+            print_inference_rule(inference_rule="Extensional Intersection")
             derived_sentences.append(derived_sentence)
 
             """
             # Intensional Difference
             """
-            derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # (S ~ P) --> M
+            derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # (P ~ S) --> M
             print_inference_rule(inference_rule="Intersection")
             derived_sentences.append(derived_sentence)
 
             """
             # Swapped Intensional Difference
             """
-            derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # (P ~ S) --> M
+            derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # (S ~ P) --> M
             print_inference_rule(inference_rule="Intersection")
             derived_sentences.append(derived_sentence)
         else:

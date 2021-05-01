@@ -187,22 +187,6 @@ class Statement:
     def get_formatted_string(self):
         return self.term.get_formatted_string()
 
-class CompoundStatement(Statement):
-    """
-        2 or more statements connected by a statement connector
-        statement ::= (statement_connector,<subject><copula><predicate>,...)
-    """
-    def __init__(self, statements, statement_connector):
-        self.statement_connector: NALSyntax.StatementConnector = statement_connector
-        self.statements: [Statement] = statements
-
-    @classmethod
-    def from_subject_predicate(cls, subject, predicate, copula, statement_connector):
-        assert_term(subject)
-        assert_term(predicate)
-        assert_copula(copula)
-        cls([Statement(subject,predicate,copula)], statement_connector)
-
 
 class EvidentialValue:
     """
@@ -333,7 +317,7 @@ class Term:
     def __init__(self, term_string):
         assert (isinstance(term_string, str)), term_string + " must be a str"
         self.string = term_string
-        self.syntactic_complexity = self.calculate_syntactic_complexity()
+        self.syntactic_complexity = self._calculate_syntactic_complexity()
 
     def get_formatted_string(self):
         return self.string
@@ -350,7 +334,7 @@ class Term:
     def __str__(self):
         return self.get_formatted_string()
 
-    def calculate_syntactic_complexity(self):
+    def _calculate_syntactic_complexity(self):
         assert False, "Complexity not defined for Term base class"
 
     def contains_variable(self):
@@ -455,7 +439,7 @@ class VariableTerm(Term):
         assert type is not None, "Error: Variable type symbol invalid"
         return cls(variable_name, type, dependency_list)
 
-    def calculate_syntactic_complexity(self):
+    def _calculate_syntactic_complexity(self):
         if self.dependency_list is None:
             return 1
         else:
@@ -483,7 +467,7 @@ class AtomicTerm(Term):
             if char not in NALSyntax.valid_term_chars: return False
         return True
 
-    def calculate_syntactic_complexity(self):
+    def _calculate_syntactic_complexity(self):
         return 1
 
 
@@ -501,41 +485,38 @@ class CompoundTerm(Term):
 
             connector: subterm connector
         """
-        self.term_connector = term_connector  # sets are represented by the opening bracket as the connector, { or [
+        self.connector = term_connector  # sets are represented by the opening bracket as the connector, { or [
 
-        if isinstance(self.term_connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.term_connector)\
-                or isinstance(self.term_connector, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(self.term_connector):
+        if isinstance(self.connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.connector)\
+                or isinstance(self, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(self.connector):
             # order doesn't matter, alphabetize so the system can recognize the same term
             subterms.sort(key=lambda t:str(t))
 
-        if term_connector is None:
-            self.subterms = subterms
-            return
+        if term_connector is not None:
+            is_extensional_set = (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
+            is_intensional_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
 
-        is_extensional_set = (self.term_connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
-        is_intensional_set = (self.term_connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
+            self.is_set = is_extensional_set or is_intensional_set
 
-        self.is_set = is_extensional_set or is_intensional_set
+            if self.is_set and len(subterms) > 1:
+                # multi_component_set
+                # todo handle multi-component sets better
+                singleton_set_subterms = []
 
-        if self.is_set and len(subterms) > 1:
-            # multi_component_set
-            # todo handle multi-component sets better
-            singleton_set_subterms = []
+                for subterm in subterms:
+                    # decompose the set into an intersection of singleton sets
+                    singleton_set_subterm = CompoundTerm.from_string(self.connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value)
+                    singleton_set_subterms.append(singleton_set_subterm)
 
-            for subterm in subterms:
-                # decompose the set into an intersection of singleton sets
-                singleton_set_subterm = CompoundTerm.from_string(self.term_connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.term_connector).value)
-                singleton_set_subterms.append(singleton_set_subterm)
+                subterms = singleton_set_subterms
 
-            subterms = singleton_set_subterms
+                # set new term connector as intersection
+                if is_extensional_set:
+                    self.connector = NALSyntax.TermConnector.IntensionalIntersection
+                elif is_intensional_set:
+                    self.connector = NALSyntax.TermConnector.ExtensionalIntersection
 
-            # set new term connector as intersection
-            if is_extensional_set:
-                self.term_connector = NALSyntax.TermConnector.IntensionalIntersection
-            elif is_intensional_set:
-                self.term_connector = NALSyntax.TermConnector.ExtensionalIntersection
-
-            self.is_set = False
+                self.is_set = False
 
         self.subterms: [Term] = subterms
 
@@ -556,25 +537,25 @@ class CompoundTerm(Term):
 
             compound_term_string - a string representing a compound term
         """
-
         compound_term_string = compound_term_string.replace(" ","")
         subterms = []
-        internal_string = compound_term_string[1:-1] # no parentheses () or set brackets [], {}
+        internal_string = compound_term_string[1:-1] # string with no outer parentheses () or set brackets [], {}
 
         # check for intensional/extensional set [a,b], {a,b}
         connector = NALSyntax.TermConnector.get_term_connector_from_string(compound_term_string[0])
         if connector is None:
             # otherwise check for regular Term/Statement connectors
-            connector = NALSyntax.StatementConnector.get_statement_connector_from_string(internal_string[0:2])
-            if connector is None:
-                connector = NALSyntax.TermConnector.get_term_connector_from_string(internal_string[0])
+
+            if internal_string[1] == NALSyntax.StatementSyntax.TermDivider.value:
+                connector_string = internal_string[0] # Term connector
+            else:
+                connector_string = internal_string[0:2] # Statement connector
+            connector = NALSyntax.TermConnector.get_term_connector_from_string(connector_string)
+
             assert (internal_string[
                         len(
-                            connector.value)] == ','), "Connector not followed by comma in CompoundTerm string " + compound_term_string
+                            connector.value)] == NALSyntax.StatementSyntax.TermDivider.value), "Connector not followed by comma in CompoundTerm string " + compound_term_string
             internal_string = internal_string[len(connector.value) + 1:]
-        else:
-            # intensional/extensional set [a,b], {a,b}
-            internal_string = internal_string
 
         assert (connector is not None), "Connector could not be parsed from CompoundTerm string."
 
@@ -584,7 +565,7 @@ class CompoundTerm(Term):
             if c == NALSyntax.StatementSyntax.Start.value or NALSyntax.TermConnector.is_set_bracket_start(c):
                 depth += 1
             elif c == NALSyntax.StatementSyntax.End.value or NALSyntax.TermConnector.is_set_bracket_end(c):
-                depth += 1
+                depth -= 1
 
             if c == NALSyntax.StatementSyntax.TermDivider.value and depth == 0:
                 subterm = Term.from_string(subterm_string)
@@ -598,22 +579,24 @@ class CompoundTerm(Term):
 
         return subterms, connector
 
-    def calculate_syntactic_complexity(self):
+    def _calculate_syntactic_complexity(self):
         """
             Recursively calculate the syntactic complexity of
             the compound term. The connector adds 1 complexity,
             and the subterms syntactic complexities are summed as well.
         """
-        count = 1  # the term connector
+        count = 0
+        if self.connector is not None:
+            count = 1 # the term connector
         for subterm in self.subterms:
-            count = count + subterm.calculate_syntactic_complexity()
+            count = count + subterm._calculate_syntactic_complexity()
         return count
 
     def get_formatted_string(self):
         if self.is_set:
-            string = self.term_connector.value
+            string = self.connector.value
         else:
-            string = self.term_connector.value + NALSyntax.StatementSyntax.TermDivider.value
+            string = self.connector.value + NALSyntax.StatementSyntax.TermDivider.value
 
         for subterm in self.subterms:
             string = string + str(subterm) + NALSyntax.StatementSyntax.TermDivider.value
@@ -621,7 +604,7 @@ class CompoundTerm(Term):
         string = string[:-1]
 
         if self.is_set:
-            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.term_connector).value
+            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
         else:
             return NALSyntax.StatementSyntax.Start.value + string +  NALSyntax.StatementSyntax.End.value
 
@@ -650,6 +633,20 @@ class StatementTerm(CompoundTerm):
         subject, predicate, connector, _ = parse_subject_predicate_copula_and_copula_index(term_string)
         return cls(subject, predicate, connector)
 
+    def _calculate_syntactic_complexity(self):
+        """
+            Recursively calculate the syntactic complexity of
+            the compound term. The connector adds 1 complexity,
+            and the subterms syntactic complexities are summed as well.
+        """
+        count = 1  # the copula
+        if self.connector is not None:
+            count += 1
+        for subterm in self.subterms:
+            count = count + subterm._calculate_syntactic_complexity()
+
+        return count
+
     def get_subject_term(self) -> Term:
         return self.subterms[0]
 
@@ -668,9 +665,9 @@ class StatementTerm(CompoundTerm):
                " " + self.get_copula_string() + " " + \
                self.get_predicate_term().get_formatted_string() \
                + NALSyntax.StatementSyntax.End.value
-        if self.term_connector is not None:
+        if self.connector is not None:
             statement_string = NALSyntax.StatementSyntax.Start.value \
-                               + self.term_connector.value \
+                               + self.connector.value \
                                + NALSyntax.StatementSyntax.TermDivider.value\
                                + statement_string\
                                + NALSyntax.StatementSyntax.End.value

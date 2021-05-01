@@ -119,14 +119,16 @@ def F_Contraposition(f,c):
     return NALGrammar.TruthValue(f_cnt, c_cnt)
 
 
-def F_Deduction(f,c):
+def F_Deduction(f1,c1,f2,c2):
     """
         f_ded: and(f1,f2)
         c_ded: and(f1,f2,c1,c2)
 
         :return: F_ded: Truth-Value (f,c)
     """
-    pass
+    f3 = band(f1, f2)
+    c3 = band(f1, f2, c1, c2)
+    return NALGrammar.TruthValue(f3, c3)
 
 def F_Analogy(f1,c1,f2,c2):
     """
@@ -368,7 +370,7 @@ def Negation(j: NALGrammar.Sentence):
     result_statement = NALGrammar.Statement(j.statement.get_subject_term(),
                                             j.statement.get_predicate_term(),
                                             j.statement.copula,
-                                            statement_connector=NALSyntax.StatementConnector.Negation)
+                                            statement_connector=NALSyntax.TermConnector.Negation)
 
     occurrence_time = j.stamp.occurrence_time
 
@@ -436,9 +438,9 @@ def Contraposition(j):
     """
     NALGrammar.assert_sentence(j)
     # Statement
-    negated_predicate_term = NALGrammar.CompoundTerm([j.statement.get_predicate_term()], NALSyntax.StatementConnector.Negation)
+    negated_predicate_term = NALGrammar.CompoundTerm([j.statement.get_predicate_term()], NALSyntax.TermConnector.Negation)
     negated_subject_term = NALGrammar.CompoundTerm([j.statement.get_subject_term()],
-                                                     NALSyntax.StatementConnector.Negation)
+                                                     NALSyntax.TermConnector.Negation)
 
     result_statement = NALGrammar.Statement(negated_predicate_term,
                                             negated_subject_term,
@@ -491,12 +493,7 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
-        # compute values of combined evidence
-        f3 = band(f1, f2)
-        c3 = band(f1, f2, c1, c2)
-        result_truth = NALGrammar.TruthValue(f3, c3)
-        result_truth = F_Deduction()
+        result_truth = F_Deduction(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -764,8 +761,7 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
-        F_Exemplification(f1,c1,f2,c2)
+        result_truth = F_Exemplification(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -833,7 +829,7 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     ++++ (The Composition Rules) ++++
     ======================================
 """
-def IntensionalIntersection(j1, j2):
+def IntensionalIntersectionOrDisjunction(j1, j2):
     """
         First Order: Intensional Intersection (Strong Inference)
         Higher Order: Disjunction
@@ -842,37 +838,52 @@ def IntensionalIntersection(j1, j2):
         -----------------
 
         Input:
-            j1: Sentence (T1 --> M <f1, c1>)
+            j1: Sentence (T1 --> M <f1, c1>) (Sentence (T1 ==> M <f1, c1>))
             and
-            j2: Sentence (T2 --> M <f2, c2>)
+            j2: Sentence (T2 --> M <f2, c2>) (Sentence (T2 ==> M <f2, c2>))
 
             OR
 
-            j1: Sentence (M --> T1 <f1, c1>)
+            j1: Sentence (M --> T1 <f1, c1>) (Sentence (M ==> T1 <f1, c1>))
             and
-            j2: Sentence (M --> T2 <f2, c2>)
+            j2: Sentence (M --> T2 <f2, c2>) (Sentence (M ==> T2 <f2, c2>))
         Evidence:
-            f: band(f1,f2)
-            c: band(c1,c2)
+            F_int
+
+            OR
+
+            F_uni
         Returns:
-            For inputs j1: (T1 --> M), j2: (T2 --> M):
-                :- Sentence ((T1 | T2) --> M)
-            For inputs j1: (M --> T1) , j2: (M --> T2):
-                :- Sentence (M --> (T1 | T2))
+            :- Sentence ((T1 | T2) --> M) (Sentence ((T1 || T2) --> M))
+            OR
+            :- Sentence (M --> (T1 | T2)) (Sentence (M --> (T1 || T2)))
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
+    j1_copula = j1.statement.copula
+    j2_copula = j2.statement.copula
+    # Statement
+    connector = None
+    copula = None
+    if NALSyntax.Copula.is_first_order(j1_copula) and NALSyntax.Copula.is_first_order(j2_copula):
+        connector = NALSyntax.TermConnector.IntensionalIntersection
+        copula = NALSyntax.Copula.Inheritance
+    else:
+        #higher-order, could be temporal
+        #todo temporal disjunction
+        connector = NALSyntax.TermConnector.Disjunction
+        copula = NALSyntax.Copula.Implication
     # Statement
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1: Sentence(T1 --> M < f1, c1 >)
         #j2: Sentence(T2 --> M < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
-                                                j2.statement.get_subject_term()],
-                                                NALSyntax.TermConnector.IntensionalIntersection)
+                                                 j2.statement.get_subject_term()],
+                                                term_connector=connector)  # (T1 & T2)
         result_statement = NALGrammar.Statement(compound_term,
                                                 j1.statement.get_predicate_term(),
-                                                NALSyntax.Copula.Inheritance) # ((T1 | T2) --> M)
+                                                copula) # ((T1 | T2) --> M)
 
         if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
             # Get Truth Value
@@ -887,11 +898,12 @@ def IntensionalIntersection(j1, j2):
         #j1: Sentence(M --> T1 < f1, c1 >)
         #j2: Sentence(M --> T2 < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
-                                                j2.statement.get_predicate_term()],
-                                                NALSyntax.TermConnector.IntensionalIntersection)
+                                                 j2.statement.get_predicate_term()],
+                                                term_connector=connector)  # (T1 & T2)
+
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 compound_term,
-                                                NALSyntax.Copula.Inheritance)# (M --> (T1 | T2))
+                                                copula)# (M --> (T1 | T2))
 
         if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
             # Get Truth Value
@@ -910,7 +922,7 @@ def IntensionalIntersection(j1, j2):
 
     return result
 
-def ExtensionalIntersection(j1, j2):
+def ExtensionalIntersectionOrConjunction(j1, j2):
     """
         First-Order: Extensional Intersection (Strong Inference)
         Higher-Order: Conjunction
@@ -919,42 +931,56 @@ def ExtensionalIntersection(j1, j2):
         -----------------
 
         Input:
-            j1: Sentence (T1 --> M <f1, c1>)
+            j1: Sentence (T1 --> M <f1, c1>) (Sentence (T1 ==> M <f1, c1>))
             and
-            j2: Sentence (T2 --> M <f2, c2>)
+            j2: Sentence (T2 --> M <f2, c2>) (Sentence (T2 ==> M <f2, c2>))
 
             OR
 
-            j1: Sentence (M --> T1 <f1, c1>)
+            j1: Sentence (M --> T1 <f1, c1>) (Sentence (M ==> T1 <f1, c1>))
             and
-            j2: Sentence (M --> T2 <f2, c2>)
+            j2: Sentence (M --> T2 <f2, c2>) (Sentence (M ==> T2 <f2, c2>))
         Evidence:
-            f: band(f1,f2)
-            c: band(c1,c2)
+            F_uni
+
+            OR
+
+            F_int
         Returns:
-            For inputs j1: (T1 --> M), j2: (T2 --> M):
-                :- Sentence ((T1 & T2) --> M)
-            For inputs j1: (M --> T1) , j2: (M --> T2):
-                :- Sentence (M --> (T1 & T2))
+            :- Sentence ((T1 & T2) --> M) (Sentence ((T1 && T2) ==> M))
+            OR
+            :- Sentence (M --> (T1 & T2)) (Sentence (M ==> (T1 && T2)))
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
+    j1_copula = j1.statement.copula
+    j2_copula = j2.statement.copula
     # Statement
+    connector = None
+    copula = None
+    if NALSyntax.Copula.is_first_order(j1_copula) and NALSyntax.Copula.is_first_order(j2_copula):
+        connector = NALSyntax.TermConnector.ExtensionalIntersection
+        copula = NALSyntax.Copula.Inheritance
+    else:
+        #higher-order, could be temporal
+        #todo temporal conjunction
+        connector = NALSyntax.TermConnector.Conjunction
+        copula = NALSyntax.Copula.Implication
+
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1: Sentence(T1 --> M < f1, c1 >)
         #j2: Sentence(T2 --> M < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
-                                                j2.statement.get_subject_term()],
-                                                NALSyntax.TermConnector.ExtensionalIntersection)
+                                                 j2.statement.get_subject_term()],
+                                                term_connector=connector)  # (T1 & T2)
         result_statement = NALGrammar.Statement(compound_term,
                                                 j1.statement.get_predicate_term(),
-                                                NALSyntax.Copula.Inheritance) # ((T1 & T2) --> M)
+                                                copula) # ((T1 & T2) --> M)
 
         if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
             # Get Truth Value
             (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
             result_truth = F_Union(f1,c1,f2,c2)
             result = NALGrammar.Judgment(result_statement, result_truth)
         elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -964,16 +990,15 @@ def ExtensionalIntersection(j1, j2):
         #j1: Sentence(M --> T1 < f1, c1 >)
         #j2: Sentence(M --> T2 < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
-                                                j2.statement.get_predicate_term()],
-                                                NALSyntax.TermConnector.ExtensionalIntersection)
+                                                 j2.statement.get_predicate_term()],
+                                                term_connector=connector)  # (T1 & T2)
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 compound_term,
-                                                NALSyntax.Copula.Inheritance)# (M --> (T1 & T2))
+                                                copula)# (M --> (T1 & T2))
 
         if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
             # Get Truth Value
             (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
             result_truth = F_Intersection(f1,c1,f2,c2)
             result = NALGrammar.Judgment(result_statement, result_truth)
         elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -985,7 +1010,7 @@ def ExtensionalIntersection(j1, j2):
 
     return result
 
-def IntensionalDifference(j1, j2): #TODO
+def IntensionalDifference(j1, j2):
     """
         Intensional Difference (Strong Inference)
 
@@ -1000,8 +1025,7 @@ def IntensionalDifference(j1, j2): #TODO
             f: band(f1,f2)
             c: band(c1,c2)
         Returns:
-            For inputs j1: (T1 --> M), j2: (T2 --> M):
-                :- Sentence ((T1 ~ T2) --> M)
+            :- Sentence ((T1 ~ T2) --> M)
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
@@ -1017,11 +1041,7 @@ def IntensionalDifference(j1, j2): #TODO
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
-        # compute values of combined evidence
-        f3 = band(f1, not(f2))
-        c3 = band(c1, c2)
-        result_truth = NALGrammar.TruthValue(f3, c3)
+        result_truth = F_Difference(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
         result = NALGrammar.Question(result_statement)
@@ -1032,13 +1052,12 @@ def IntensionalDifference(j1, j2): #TODO
 
     return result
 
-def ExtensionalDifference(j1, j2): #TODO
+def ExtensionalDifference(j1, j2):
     """
         Extensional Difference (Strong Inference)
 
         Assumes: j1 and j2 do not have evidential overlap
         -----------------
-
         Input:
             j1: Sentence (M --> T1 <f1, c1>)
             and
@@ -1047,8 +1066,7 @@ def ExtensionalDifference(j1, j2): #TODO
             f: band(f1,f2)
             c: band(c1,c2)
         Returns:
-            For inputs j1: (M --> T1) , j2: (M --> T2):
-                :- Sentence (M --> (T1 - T2))
+            :- Sentence (M --> (T1 - T2))
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
@@ -1077,7 +1095,6 @@ def ExtensionalDifference(j1, j2): #TODO
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
         (f1, c1), (f2, c2) = gettruthvalues_from2sentences(j1, j2)
-
         result_truth = F_Difference(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
@@ -1088,32 +1105,6 @@ def ExtensionalDifference(j1, j2): #TODO
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
-
-
-def Disjunction(j1, j2): #todo
-    """
-        Non-temporal and temporal disjunction.
-        Corresponds to First-Order Intensional Intersection
-
-        Assumes: j1 and j2 do not have evidential overlap
-        -----------------
-    """
-    pass
-
-def Conjunction(j1, j2): #todo
-    """
-        Non-temporal and temporal conjunction.
-        Corresponds to First-Order Extensional Intersection
-
-        Assumes: j1 and j2 do not have evidential overlap
-        -----------------
-    """
-    pass
-
-
-
-
-
 
 
 """

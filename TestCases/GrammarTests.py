@@ -27,11 +27,11 @@ def calculate_syntactic_complexity_test():
     statement_term = NALGrammar.Term.from_string("(A-->B)")
     statement_term_complexity = 3
 
-    assert atomic_term.calculate_syntactic_complexity() == atomic_term_complexity
-    assert singleton_set_compound_term.calculate_syntactic_complexity() == singleton_set_compound_term_complexity
-    assert extensional_set_compound_term.calculate_syntactic_complexity() == extensional_set_compound_term_complexity
-    assert singleton_set_internal_compound_term.calculate_syntactic_complexity() == singleton_set_internal_compound_term_complexity
-    assert statement_term.calculate_syntactic_complexity() == statement_term_complexity
+    assert atomic_term._calculate_syntactic_complexity() == atomic_term_complexity
+    assert singleton_set_compound_term._calculate_syntactic_complexity() == singleton_set_compound_term_complexity
+    assert extensional_set_compound_term._calculate_syntactic_complexity() == extensional_set_compound_term_complexity
+    assert singleton_set_internal_compound_term._calculate_syntactic_complexity() == singleton_set_internal_compound_term_complexity
+    assert statement_term._calculate_syntactic_complexity() == statement_term_complexity
 
 def main():
     """
