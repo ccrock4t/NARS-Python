@@ -19,8 +19,8 @@ def main():
 
     """
     # set globals
-    Global.Global.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
-    Global.Global.gui_use_interface = True # Setting this to False uses the shell as interface
+    Global.Global.gui_use_internal_data = False  # Setting this to False will prevent creation of the Internal Data GUI thread
+    Global.Global.gui_use_interface = False # Setting this to False uses the shell as interface
 
     # First, create the NARS
     Global.Global.NARS = NARS.NARS()
@@ -35,15 +35,14 @@ def main():
             print('Waiting for GUI thread...')
             time.sleep(0.5)
 
-    if Global.Global.gui_use_interface:
-        # launch shell input thread
-        shell_input_thread = threading.Thread(target=NARSGUI.NARSGUI.get_user_input,
-                                              name="Shell input thread",
-                                              daemon=True)
-        shell_input_thread.start()
-        while not Global.Global.thread_ready_input:
-            print('Waiting for input thread...')
-            time.sleep(0.5)
+    # launch shell input thread
+    shell_input_thread = threading.Thread(target=NARSGUI.NARSGUI.get_user_input,
+                                          name="Shell input thread",
+                                          daemon=True)
+    shell_input_thread.start()
+    while not Global.Global.thread_ready_input:
+        print('Waiting for input thread...')
+        time.sleep(0.5)
 
     Global.Global.paused = Global.Global.gui_use_interface # pause if using interface
 

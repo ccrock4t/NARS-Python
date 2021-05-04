@@ -622,7 +622,10 @@ class StatementTerm(CompoundTerm):
         assert_term(predicate)
         assert_copula(copula)
         self.copula = copula
-        CompoundTerm.__init__(self,[subject, predicate], statement_connector)
+        subterms = [subject, predicate]
+        if NALSyntax.Copula.is_symmetric(copula):
+            subterms.sort(key=lambda t: str(t))  # sort alphabetically
+        CompoundTerm.__init__(self,subterms, statement_connector)
 
     @classmethod
     def from_string(cls, term_string):

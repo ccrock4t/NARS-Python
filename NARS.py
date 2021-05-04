@@ -128,9 +128,6 @@ class NARS:
             for derived_sentence in derived_sentences:
                 self.experience_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
-
-
-
     def Observe(self):
         """
             Process a task from the experience buffer
@@ -143,7 +140,7 @@ class NARS:
         # process task
         self.process_task(task_item.object)
 
-        if isinstance(task_item.object.sentence, NALGrammar.Question) and task_item.object.needs_to_be_answered_in_output:
+        if isinstance(task_item.object.sentence, NALGrammar.Question):
             # decay priority
             task_item.decay()
 
@@ -155,7 +152,6 @@ class NARS:
         """
             Process a random belief from a concept in memory
         """
-
         concept_item = self.memory.get_concept()
 
         if concept_item is None:
@@ -260,13 +256,14 @@ class NARS:
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
             if related_concept is None:
                 print("none!")
-                return  # no related concepts!
+                return  # no related concepts! Should never happen, the concept is always semantically related to itself
 
         # check for a belief we can interact with
         j2 = None
         for (belief, confidence) in related_concept.belief_table:
-            if not NALGrammar.Sentence.may_interact(j1,belief): continue
-            j2 = belief # belief can interact with j1
+            if NALGrammar.Sentence.may_interact(j1,belief):
+                j2 = belief # belief can interact with j1
+                break
 
         if j2 is None: return  # done if can't interact
 
@@ -318,8 +315,9 @@ class NARS:
         # check for a belief we can interact with
         j2 = None
         for (belief,confidence) in related_concept.belief_table:
-            if not NALGrammar.Sentence.may_interact(j1,belief): continue
-            j2 = belief # belief can interact with j1.
+            if NALGrammar.Sentence.may_interact(j1,belief):
+                j2 = belief # belief can interact with j1.
+                break
 
         if j2 is None: return  # done if can't interact
 

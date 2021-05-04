@@ -133,11 +133,6 @@ class Memory:
 
         return related_concept
 
-    def forget(self, term):
-        #todo
-        NALGrammar.assert_term(term)
-
-
     def get_next_stamp_id(self) -> int:
         """
             :return: next available Stamp ID

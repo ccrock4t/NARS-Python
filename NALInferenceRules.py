@@ -85,6 +85,7 @@ def F_Revision(wp1, wn1, wp2, wn2):
     f_rev, c_rev = get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_rev, c_rev)
 
+
 def F_Negation(f,c):
     """
         f_neg = 1 - f
@@ -92,6 +93,7 @@ def F_Negation(f,c):
         :return: F_neg
     """
     return NALGrammar.TruthValue(1-f,c)
+
 
 def F_Conversion(f,c):
     """
@@ -375,7 +377,7 @@ def Negation(j: NALGrammar.Sentence):
     occurrence_time = j.stamp.occurrence_time
 
     if j.punctuation == NALSyntax.Punctuation.Judgment:
-        result_truth = F_Negation(1 - j.value.frequency, j.value.confidence)
+        result_truth = F_Negation(j.value.frequency, j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth,occurrence_time=occurrence_time)
     elif j.punctuation == NALSyntax.Punctuation.Question:
         assert "error"
