@@ -8,9 +8,10 @@ Architecture:
 
 GUI screenshots:
 
-![interface](https://user-images.githubusercontent.com/15344554/111057942-138e9800-8459-11eb-9643-26ff883322e0.PNG)
+![Interface](https://user-images.githubusercontent.com/15344554/116962155-3d9f5200-ac73-11eb-9afd-10b615c85813.PNG)
 
-![internal_data](https://user-images.githubusercontent.com/15344554/112788467-f517c780-9028-11eb-8b24-385c06ab5422.png)
+![InternalData](https://user-images.githubusercontent.com/15344554/116962157-3f691580-ac73-11eb-968e-e71433f452fd.PNG)
+
 
 
 
