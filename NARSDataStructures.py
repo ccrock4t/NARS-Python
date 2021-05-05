@@ -321,6 +321,7 @@ class Bag(ItemContainer):
             # bucket was not selected, try next bucket
             self._move_to_next_nonempty_bucket()  # try next non-empty bucket
             rnd = random.random()  # randomly generated number in [0.0, 1.0)
+            bucket_probability = self.current_bucket_number / self.number_of_buckets
 
         # peek a random item from the bucket
         item, randidx = self._peek_random_item_from_current_bucket()

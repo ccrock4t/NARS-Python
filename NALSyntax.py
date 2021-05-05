@@ -46,7 +46,7 @@ class TermConnector(enum.Enum):
     # NAL-4
     Product = "*"
     ExtensionalImage = "/"
-    IntensionalImage = r"\\"
+    IntensionalImage = "\\"
     ImagePlaceHolder = "_"
 
     # NAL-5

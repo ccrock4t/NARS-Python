@@ -166,13 +166,11 @@ class NARS:
             concept_to_consider = concept_item.object
         else:
             # Concept is S or P
-            related_concept = self.memory.get_semantically_related_concept(concept_item.object)
-            concept_to_consider = related_concept
+            concept_to_consider = self.memory.get_semantically_related_concept(concept_item.object)
 
         if concept_to_consider is not None:
-            sentence = concept_to_consider.belief_table.peek() # get most confident belief
-            if sentence is not None:
-                # process the judgment
+            if len(concept_to_consider.belief_table) > 0:
+                sentence = concept_to_consider.belief_table.peek() # get most confident belief
                 self.process_judgment_sentence(sentence)
 
          # decay priority
@@ -188,7 +186,8 @@ class NARS:
         """
         NARSDataStructures.assert_task(task)
 
-        if task.sentence.punctuation == NALSyntax.Punctuation.Question or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
+        if task.sentence.punctuation == NALSyntax.Punctuation.Question \
+                or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
             self.process_question(task)
         elif task.sentence.punctuation == NALSyntax.Punctuation.Judgment:
             self.process_judgment_task(task)
@@ -251,19 +250,28 @@ class NARS:
         statement_concept = self.memory.peek_concept(statement_term)
 
         if statement_term.contains_variable(): return
-
-        if related_concept is None: # get a related concept
-            related_concept = self.memory.get_semantically_related_concept(statement_concept)
-            if related_concept is None:
-                print("none!")
-                return  # no related concepts! Should never happen, the concept is always semantically related to itself
-
-        # check for a belief we can interact with
         j2 = None
-        for (belief, confidence) in related_concept.belief_table:
-            if NALGrammar.Sentence.may_interact(j1,belief):
-                j2 = belief # belief can interact with j1
-                break
+        if related_concept is None:
+            number_of_attempts = 0
+            while j2 is None and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF: # try searching a maximum of 3 concepts
+                related_concept = self.memory.get_semantically_related_concept(statement_concept)
+                if related_concept is None:
+                    return  # no related concepts! Should never happen, the concept is always semantically related to itself
+
+                # check for a belief we can interact with
+
+                for (belief, confidence) in related_concept.belief_table:
+                    if NALGrammar.Sentence.may_interact(j1,belief):
+                        j2 = belief # belief can interact with j1
+                        break
+
+                number_of_attempts += 1
+                if j2 is None: print (related_concept.get_formatted_string() + ' concept was no good')
+        else:
+            for (belief, confidence) in related_concept.belief_table:
+                if NALGrammar.Sentence.may_interact(j1, belief):
+                    j2 = belief  # belief can interact with j1
+                    break
 
         if j2 is None: return  # done if can't interact
 

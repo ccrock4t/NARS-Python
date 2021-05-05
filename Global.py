@@ -4,6 +4,8 @@
 """
 
 import NARSGUI
+import NALGrammar
+
 
 class Global:
     """
@@ -14,6 +16,11 @@ class Global:
     ITEM_ID_MARKER = "ItemID:"  # there are Sentence IDs and Bag Item IDs
     SENTENCE_ID_MARKER = "SentenceID:"
     ID_END_MARKER = ":ID "
+
+    """
+        Terms
+    """
+    IMAGE_PLACEHOLDER_TERM = NALGrammar.Term.from_string("_")
 
     # thread ready boolean
     thread_ready_gui = False

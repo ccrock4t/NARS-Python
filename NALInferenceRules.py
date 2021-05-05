@@ -1,4 +1,5 @@
 import Config
+import Global
 import NALGrammar
 import NALSyntax
 
@@ -436,7 +437,7 @@ def Contraposition(j):
     Frequency must be below one or confidence of conclusion will be zero
     
     :param j:
-    :return:s
+    :return: ((--,P) ==> (--,S))
     """
     NALGrammar.assert_sentence(j)
     # Statement
@@ -459,6 +460,99 @@ def Contraposition(j):
 
     return result
 
+def ExtensionalImage(j: NALGrammar.Sentence):
+    """
+    Intensional Image
+    Inputs:
+      j: ((*,S,P) --> R)
+
+    :param j:
+    :returns: array of
+    (S --> (/,R,_,P))
+    and
+    (P --> (/,R,S,_))
+    """
+    NALGrammar.assert_sentence(j)
+
+    # Statement
+    S = j.statement.get_subject_term().subterms[0];
+    P = j.statement.get_subject_term().subterms[1];
+    R = j.statement.get_predicate_term()
+
+    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.IMAGE_PLACEHOLDER_TERM, P],
+                                         NALSyntax.TermConnector.ExtensionalImage)
+
+    result_statement_1 = NALGrammar.Statement(S,
+                                            image_term_1,
+                                            NALSyntax.Copula.Inheritance)
+
+    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.IMAGE_PLACEHOLDER_TERM],
+                                         NALSyntax.TermConnector.ExtensionalImage)
+
+    result_statement_2 = NALGrammar.Statement(P,
+                                            image_term_2,
+                                            NALSyntax.Copula.Inheritance)
+
+    if j.punctuation == NALSyntax.Punctuation.Judgment:
+        result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
+        result_1 = NALGrammar.Judgment(result_statement_1, result_truth)
+        result_2 = NALGrammar.Judgment(result_statement_2, result_truth)
+    elif j.punctuation == NALSyntax.Punctuation.Question:
+        result_1 = NALGrammar.Question(result_statement_1)
+        result_2 = NALGrammar.Question(result_statement_2)
+
+    # merge in the parent sentence's evidential base
+    result_1.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+    result_2.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+
+    return [result_1, result_2]
+
+def IntensionalImage(j: NALGrammar.Sentence):
+    """
+    Intensional Image
+    Inputs:
+      j: (R --> (*,S,P))
+
+    :param j:
+    :returns: array of
+    ((/,R,_,P) --> S)
+    and
+    ((/,R,S,_) --> P)
+    """
+    NALGrammar.assert_sentence(j)
+
+    # Statement
+    S = j.statement.get_predicate_term().subterms[0];
+    P = j.statement.get_predicate_term().subterms[1];
+    R = j.statement.get_subject_term()
+
+    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.IMAGE_PLACEHOLDER_TERM, P],
+                                         NALSyntax.TermConnector.IntensionalImage)
+
+    result_statement_1 = NALGrammar.Statement(image_term_1,
+                                              S,
+                                            NALSyntax.Copula.Inheritance)
+
+    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.IMAGE_PLACEHOLDER_TERM],
+                                         NALSyntax.TermConnector.IntensionalImage)
+
+    result_statement_2 = NALGrammar.Statement(image_term_2,
+                                              P,
+                                            NALSyntax.Copula.Inheritance)
+
+    if j.punctuation == NALSyntax.Punctuation.Judgment:
+        result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
+        result_1 = NALGrammar.Judgment(result_statement_1, result_truth)
+        result_2 = NALGrammar.Judgment(result_statement_2, result_truth)
+    elif j.punctuation == NALSyntax.Punctuation.Question:
+        result_1 = NALGrammar.Question(result_statement_1)
+        result_2 = NALGrammar.Question(result_statement_2)
+
+    # merge in the parent sentence's evidential base
+    result_1.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+    result_2.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+
+    return [result_1, result_2]
 
 """
     ======================================

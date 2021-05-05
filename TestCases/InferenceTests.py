@@ -286,6 +286,33 @@ def extensional_composition():
 
     assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion
 
+def extensional_image():
+    """
+        Test Extensional Image rule:
+        j: ((*,S,P)-->R). %1.0;0.9%
+
+        :- j: (S-->(/,R,_,P)). %1.0;0.9%
+        :- j: (P-->(/,R,S,_)). %1.0;0.9%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("((*,S,P)-->R). %1.0;0.9%")
+    q1 = "(S-->(/,R,_,P))?"
+    q2 = "(P-->(/,R,S,_))?"
+    input_judgment_q.put(j1)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q2))
+
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.ExtensionalImage(j1).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Extensional Image test failed: " + failed_criterion
+
 def main():
     revision()
 

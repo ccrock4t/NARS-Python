@@ -238,12 +238,6 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
         print_inference_rule(inference_rule="Resemblance")
         derived_sentences.append(derived_sentence)
 
-    immediate_inference_derived_sentences = []
-    for derived_sentence in derived_sentences:
-        immediate_inference_derived_sentences.extend(do_inference_one_premise(derived_sentence))
-
-    derived_sentences.extend(immediate_inference_derived_sentences)
-
     """
     ===============================================
     ===============================================
@@ -284,25 +278,39 @@ def do_inference_one_premise(j):
     """
         Immediate Inference Rules
 
+        Generates beliefs that are equivalent to j but in a different form.
     """
     derived_sentences = []
     if isinstance(j, NALGrammar.Judgment):
-        # Negation
+        # Negation (--,(S-->P))
         derived_sentence = NALInferenceRules.Negation(j)
         print_inference_rule(inference_rule="Negation")
         derived_sentences.append(derived_sentence)
 
-        # Conversion
+        # Conversion (P --> S)
         if not NALSyntax.Copula.is_symmetric(j.statement.copula) and j.value.frequency > 0:
             derived_sentence = NALInferenceRules.Conversion(j)
             print_inference_rule(inference_rule="Conversion")
             derived_sentences.append(derived_sentence)
 
-        # Contraposition
+        # Contraposition  ((--,P) ==> (--,S))
         if j.statement.copula == NALSyntax.Copula.Implication and j.value.frequency < 1:
             derived_sentence = NALInferenceRules.Contraposition(j)
             print_inference_rule(inference_rule="Contraposition")
             derived_sentences.append(derived_sentence)
+
+        if isinstance(j.statement.get_subject_term(), NALGrammar.CompoundTerm) \
+            and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product:
+            derived_sentence_array = NALInferenceRules.ExtensionalImage(j)
+            print_inference_rule(inference_rule="Extensional Image")
+            for derived_sentence in derived_sentence_array:
+                derived_sentences.append(derived_sentence)
+        elif isinstance(j.statement.get_predicate_term(), NALGrammar.CompoundTerm) \
+            and j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Product:
+            derived_sentence_array = NALInferenceRules.IntensionalImage(j)
+            print_inference_rule(inference_rule="Intensional Image")
+            for derived_sentence in derived_sentence_array:
+                derived_sentences.append(derived_sentence)
 
     return derived_sentences
 

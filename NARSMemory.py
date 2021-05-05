@@ -95,7 +95,7 @@ class Memory:
     def get_semantically_related_concept(self, concept):
         """
             Get a concept (named by a Statement Term) that is semantically related to the given concept by a term.
-            This can return a belief from the input concept, which can be used in Revision.
+            This can return the given concept in rare cases where no other semantically related concept is found
 
             :param concept - Statement-Term Concept for which to find a semantically related Statement-Term concept
 
@@ -108,7 +108,16 @@ class Memory:
             predicate_term = concept.term.get_predicate_term()
 
             concept_item_related_to_subject = self.peek_concept(subject_term).term_links.peek()
+            number_of_attempts = 0
+            while concept_item_related_to_subject.object == concept and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT:
+                concept_item_related_to_subject = self.peek_concept(subject_term).term_links.peek()
+                number_of_attempts += 1
+
             concept_item_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
+            number_of_attempts = 0
+            while concept_item_related_to_predicate.object == concept and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT:
+                concept_item_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
+                number_of_attempts += 1
 
             if concept_item_related_to_subject is not None and \
                     concept_item_related_to_predicate is None: # none from predicate

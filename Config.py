@@ -11,6 +11,8 @@ t = 0.25 # decision rule (goal decision-making) threshold
 MINDFULNESS = 0.90 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
 MEMORY_CONCEPT_CAPACITY = 50000 # how many concepts can this NARS have?
 PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
+NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = 10 # The number of times to look for a semantically related concept
+NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number of times to look for a semantically related belief to interact with
 
 """
     Bags

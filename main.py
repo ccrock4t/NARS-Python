@@ -19,8 +19,8 @@ def main():
 
     """
     # set globals
-    Global.Global.gui_use_internal_data = False  # Setting this to False will prevent creation of the Internal Data GUI thread
-    Global.Global.gui_use_interface = False # Setting this to False uses the shell as interface
+    Global.Global.gui_use_internal_data = True  # Setting this to False will prevent creation of the Internal Data GUI thread
+    Global.Global.gui_use_interface = True # Setting this to False uses the shell as interface
 
     # First, create the NARS
     Global.Global.NARS = NARS.NARS()
