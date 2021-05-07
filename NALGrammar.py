@@ -70,11 +70,10 @@ class Sentence:
         assert (
                     punctuation == NALSyntax.Punctuation.Judgment or punctuation == NALSyntax.Punctuation.Question), " Currently only accepting Judgments and Questions."
 
-        # Find statement copula, subject string, and predicate string
-        subject, predicate, copula, copula_idx = parse_subject_predicate_copula_and_copula_index(
-            sentence_string[start_idx:end_idx + 1])
 
-        statement = Statement(subject, predicate, copula)
+        # Find statement copula, subject string, and predicate string
+        statement = Statement.from_string(sentence_string[start_idx:end_idx + 1])
+
 
         # Find Truth Value, if it exists
         start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value)
@@ -171,21 +170,58 @@ class Statement:
         statement ::= <subject><copula><predicate>
     """
 
-    def __init__(self, subject, predicate, copula, statement_connector=None):
+    def __init__(self, subject, predicate=None, copula=None, statement_connector=None):
         assert_term(subject)
-        assert_term(predicate)
-        assert_copula(copula)
-        self.copula: NALSyntax.Copula = copula
-        self.term: StatementTerm = StatementTerm(subject, predicate, copula, statement_connector)
+
+        statement_term = subject
+        if predicate is not None:
+            statement_term = StatementTerm(subject, predicate, copula)
+
+        if statement_connector is not None:
+            self.term = CompoundTerm([statement_term], statement_connector)
+        else:
+            self.term = statement_term
 
     def get_subject_term(self):
-        return self.term.get_subject_term()
+        if isinstance(self.term, StatementTerm):
+            return self.term.get_subject_term()
+        else:
+            return self.term
 
     def get_predicate_term(self):
-        return self.term.get_predicate_term()
+        if isinstance(self.term, StatementTerm):
+            return self.term.get_predicate_term()
+        else:
+            return None
+
+    def get_statement_connector(self):
+        if not isinstance(self.term, StatementTerm):
+            return self.term.connector
+        else:
+            return None
+
+    def get_copula(self):
+        if isinstance(self.term, StatementTerm):
+            return self.term.get_copula()
+        else:
+            return None
 
     def get_formatted_string(self):
         return self.term.get_formatted_string()
+
+    @classmethod
+    def from_string(cls,statement_string):
+        statement_string = statement_string.replace(" ", "")
+        statement_connector = None
+        if NALSyntax.TermConnector.get_term_connector_from_string(
+                statement_string[1:3]) == NALSyntax.TermConnector.Negation:
+            # found a negation statement connector
+            statement_connector = NALSyntax.TermConnector.Negation
+            statement_string = statement_string[4:-1]
+
+        term = StatementTerm.from_string(statement_string)
+        return cls(subject=term.get_subject_term(), predicate=term.get_predicate_term(),
+                         copula=term.get_copula(),statement_connector=statement_connector)
 
 
 class EvidentialValue:
@@ -337,6 +373,7 @@ class Term:
     def _calculate_syntactic_complexity(self):
         assert False, "Complexity not defined for Term base class"
 
+
     def contains_variable(self):
         return VariableTerm.VARIABLE_SYM in str(self) \
                 or VariableTerm.QUERY_SYM in str(self)
@@ -384,6 +421,23 @@ class Term:
 
         return term
 
+    @classmethod
+    def simplify(cls, term):
+        if isinstance(term,AtomicTerm):
+            return term
+        elif isinstance(term, StatementTerm):
+            simplified_subject_term = Term.simplify(term.get_subject_term())
+            simplified_predicate_term = Term.simplify(term.get_predicate_term())
+            return StatementTerm(subject=simplified_subject_term, predicate=simplified_predicate_term, copula=term.copula)
+        elif isinstance(term, CompoundTerm):
+            if term.connector is NALSyntax.TermConnector.Negation:
+                if len(term.subterms) == 1:
+                    pass
+            elif term.connector is NALSyntax.TermConnector.ExtensionalDifference:pass
+            elif term.connector is NALSyntax.TermConnector.IntensionalDifference:pass
+            elif term.connector is NALSyntax.TermConnector.ExtensionalImage:pass
+            elif term.connector is NALSyntax.TermConnector.IntensionalImage:pass
+            return term
 
 class VariableTerm(Term):
     class Type(enum.Enum):
@@ -617,24 +671,38 @@ class StatementTerm(CompoundTerm):
         (P --> Q)
     """
 
-    def __init__(self, subject: Term, predicate: Term, copula, statement_connector=None):
+    def __init__(self, subject: Term, predicate: Term, copula):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
-        self.copula = copula
         subterms = [subject, predicate]
+        self.copula = copula
         if NALSyntax.Copula.is_symmetric(copula):
             subterms.sort(key=lambda t: str(t))  # sort alphabetically
-        CompoundTerm.__init__(self,subterms, statement_connector)
+        CompoundTerm.__init__(self,subterms, None)
 
     @classmethod
-    def from_string(cls, term_string):
+    def from_string(cls, statement_string):
+
         """
-        :param term_string: string to turn into a Statement Term
-        :return: The Statement Term created from the term_string
+            Parameter: statement_string - String of NAL syntax "(term copula term)"
+
+            Returns: top-level subject term, predicate term, copula, copula index
         """
-        subject, predicate, connector, _ = parse_subject_predicate_copula_and_copula_index(term_string)
-        return cls(subject, predicate, connector)
+
+        statement_string = statement_string.replace(" ", "")
+
+        # get copula
+        copula, copula_idx = get_top_level_copula(statement_string)
+        assert (copula is not None), "Copula not found. Exiting.."
+
+        subject_str = statement_string[1:copula_idx]  # get subject string
+        predicate_str = statement_string[
+                        copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
+
+        return cls(subject=Term.from_string(subject_str), predicate=Term.from_string(predicate_str),
+                         copula=copula)
+
 
     def _calculate_syntactic_complexity(self):
         """
@@ -656,8 +724,11 @@ class StatementTerm(CompoundTerm):
     def get_predicate_term(self) -> Term:
         return self.subterms[1]
 
+    def get_copula(self):
+        return self.copula
+
     def get_copula_string(self):
-        return str(self.copula.value)
+        return str(self.get_copula().value)
 
     def get_formatted_string(self):
         """
@@ -668,31 +739,7 @@ class StatementTerm(CompoundTerm):
                " " + self.get_copula_string() + " " + \
                self.get_predicate_term().get_formatted_string() \
                + NALSyntax.StatementSyntax.End.value
-        if self.connector is not None:
-            statement_string = NALSyntax.StatementSyntax.Start.value \
-                               + self.connector.value \
-                               + NALSyntax.StatementSyntax.TermDivider.value\
-                               + statement_string\
-                               + NALSyntax.StatementSyntax.End.value
         return statement_string
-
-
-def parse_subject_predicate_copula_and_copula_index(statement_string):
-    """
-        Parameter: statement_string - String of NAL syntax "(term copula term)"
-
-        Returns: top-level subject term, predicate term, copula, copula index
-    """
-    statement_string = statement_string.replace(" ","")
-
-    # get copula
-    copula, copula_idx = get_top_level_copula(statement_string)
-    assert (copula is not None), "Copula not found. Exiting.."
-
-    subject_str = statement_string[1:copula_idx] # get subject string
-    predicate_str = statement_string[copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
-
-    return Term.from_string(subject_str), Term.from_string(predicate_str), copula, copula_idx
 
 
 def get_top_level_copula(string):

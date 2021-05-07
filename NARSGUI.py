@@ -446,10 +446,12 @@ def listbox_datastructure_item_click_callback(event):
             label = tk.Label(item_info_window, text="", justify=tk.LEFT)
             label.grid(row=2, column=0)
 
-            label = tk.Label(item_info_window, text="Beliefs", font=('bold'))
+            # beliefs table listbox
+            beliefs_capacity_text = "("+str(len(object.belief_table)) + "/" + str(object.belief_table.capacity)+")"
+            label = tk.Label(item_info_window, text="Beliefs " + beliefs_capacity_text, font=('bold'))
             label.grid(row=4, column=0, columnspan=2)
 
-            # beliefs table listbox
+
             belief_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
                                         font=('', 8))
             belief_listbox.grid(row=5, column=0, columnspan=2)
@@ -463,7 +465,8 @@ def listbox_datastructure_item_click_callback(event):
                                                                                                         object.belief_table))  # define callback
 
             # desires table listbox
-            label = tk.Label(item_info_window, text="Desires", font=('bold'))
+            desires_capacity_text = "("+str(len(object.desire_table)) + "/" + str(object.desire_table.capacity)+")"
+            label = tk.Label(item_info_window, text="Desires " + desires_capacity_text, font=('bold'))
             label.grid(row=4, column=2, columnspan=2)
 
             desire_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,

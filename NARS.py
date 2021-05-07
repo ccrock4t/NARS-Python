@@ -216,10 +216,10 @@ class NARS:
                 
                 Revise this judgment with the most confident belief, then insert it into the belief table
             """
-            if task.is_from_input:
-                derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
-                for derived_sentence in derived_sentences:
-                    self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+            #if task.is_from_input:
+            derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+            for derived_sentence in derived_sentences:
+                self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
 
             # revise the judgment
             self.process_judgment_sentence(j1, statement_concept)

@@ -23,6 +23,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
+    print("doing infernece " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
 
     if j1.statement.term.connector is not None or j2.statement.term.connector is not None:
         return []
@@ -42,13 +43,16 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     j2_subject_term = j2.statement.get_subject_term()
     j1_predicate_term = j1.statement.get_predicate_term()
     j2_predicate_term = j2.statement.get_predicate_term()
-    j1_copula = j1.statement.copula
-    j2_copula = j2.statement.copula
+    j1_copula = j1.statement.get_copula()
+    j2_copula = j2.statement.get_copula()
 
     # check if the result will lead to tautology
     tautology = (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) or\
                 (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term
-                 and not (j1_copula == NALSyntax.Copula.Inheritance and j2_copula == NALSyntax.Copula.Inheritance))
+                 and
+                 ((not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula)) # S-->P and P<->S
+                 or
+                 (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula)))) # S-->P and P<->S
 
     # check if copula are the same
     different_copulas = (j1_copula != j2_copula)
@@ -281,6 +285,9 @@ def do_inference_one_premise(j):
         Generates beliefs that are equivalent to j but in a different form.
     """
     derived_sentences = []
+
+    if j.statement.get_statement_connector() is not None: return derived_sentences
+
     if isinstance(j, NALGrammar.Judgment):
         # Negation (--,(S-->P))
         derived_sentence = NALInferenceRules.Negation(j)
@@ -288,13 +295,14 @@ def do_inference_one_premise(j):
         derived_sentences.append(derived_sentence)
 
         # Conversion (P --> S)
-        if not NALSyntax.Copula.is_symmetric(j.statement.copula) and j.value.frequency > 0:
+        if not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
+                and j.value.frequency > 0:
             derived_sentence = NALInferenceRules.Conversion(j)
             print_inference_rule(inference_rule="Conversion")
             derived_sentences.append(derived_sentence)
 
         # Contraposition  ((--,P) ==> (--,S))
-        if j.statement.copula == NALSyntax.Copula.Implication and j.value.frequency < 1:
+        if j.statement.get_copula() == NALSyntax.Copula.Implication and j.value.frequency < 1:
             derived_sentence = NALInferenceRules.Contraposition(j)
             print_inference_rule(inference_rule="Contraposition")
             derived_sentences.append(derived_sentence)

@@ -262,7 +262,7 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
 
     result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
-                                            j1.statement.copula)
+                                            j1.statement.get_copula())
     result = NALGrammar.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
@@ -369,10 +369,10 @@ def Negation(j: NALGrammar.Sentence):
          Returns:
     """
     NALGrammar.assert_sentence(j)
-    # Statement
+
     result_statement = NALGrammar.Statement(j.statement.get_subject_term(),
                                             j.statement.get_predicate_term(),
-                                            j.statement.copula,
+                                            j.statement.get_copula(),
                                             statement_connector=NALSyntax.TermConnector.Negation)
 
     occurrence_time = j.stamp.occurrence_time
@@ -411,7 +411,7 @@ def Conversion(j: NALGrammar.Sentence):
     # Statement
     result_statement = NALGrammar.Statement(j.statement.get_predicate_term(),
                                             j.statement.get_subject_term(),
-                                            j.statement.copula)
+                                            j.statement.get_copula())
 
     occurrence_time = j.stamp.occurrence_time
 
@@ -447,7 +447,7 @@ def Contraposition(j):
 
     result_statement = NALGrammar.Statement(negated_predicate_term,
                                             negated_subject_term,
-                                            j.statement.copula)
+                                            j.statement.get_copula())
 
     if j.punctuation == NALSyntax.Punctuation.Judgment:
         result_truth = F_Contraposition(j.value.frequency,j.value.confidence)
@@ -583,7 +583,7 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
-                                            j1.statement.copula)
+                                            j1.statement.get_copula())
 
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
@@ -634,22 +634,22 @@ def Analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         #j1=M-->P, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
                                                 j1.statement.get_predicate_term(),
-                                                j1.statement.copula) # S-->P
+                                                j1.statement.get_copula()) # S-->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M-->P, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
                                                 j1.statement.get_predicate_term(),
-                                                j1.statement.copula) # S-->P
+                                                j1.statement.get_copula()) # S-->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1=P-->M, j2=S<->M
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 j2.statement.get_subject_term(),
-                                                j1.statement.copula) # P-->S
+                                                j1.statement.get_copula()) # P-->S
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P-->M, j2=M<->S
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 j2.statement.get_predicate_term(),
-                                                j1.statement.copula) # P-->S
+                                                j1.statement.get_copula()) # P-->S
     else:
         assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
@@ -699,22 +699,22 @@ def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # j1=M<->P, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
                                                 j1.statement.get_predicate_term(),
-                                                j1.statement.copula)  # S<->P
+                                                j1.statement.get_copula())  # S<->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M<->P, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
                                                 j1.statement.get_predicate_term(),
-                                                j1.statement.copula)  # S<->P
+                                                j1.statement.get_copula())  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1=P<->M, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
                                                 j1.statement.get_subject_term(),
-                                                j1.statement.copula)  # S<->P
+                                                j1.statement.get_copula())  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P<->M, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
                                                 j2.statement.get_subject_term(),
-                                                j1.statement.copula)  # S<->P
+                                                j1.statement.get_copula())  # S<->P
     else:
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
@@ -768,7 +768,7 @@ def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
                                             j1.statement.get_subject_term(),
-                                            j1.statement.copula)
+                                            j1.statement.get_copula())
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
@@ -810,7 +810,7 @@ def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j2)
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
-                                j1.statement.get_predicate_term(), j1.statement.copula)
+                                            j1.statement.get_predicate_term(), j1.statement.get_copula())
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
@@ -852,7 +852,7 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j2)
     # Statement
     result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
-                                j1.statement.get_subject_term(), j1.statement.copula)
+                                            j1.statement.get_subject_term(), j1.statement.get_copula())
 
     if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
         # Get Truth Value
@@ -957,8 +957,8 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    j1_copula = j1.statement.copula
-    j2_copula = j2.statement.copula
+    j1_copula = j1.statement.get_copula()
+    j2_copula = j2.statement.get_copula()
     # Statement
     connector = None
     copula = None
@@ -1050,8 +1050,8 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    j1_copula = j1.statement.copula
-    j2_copula = j2.statement.copula
+    j1_copula = j1.statement.get_copula()
+    j2_copula = j2.statement.get_copula()
     # Statement
     connector = None
     copula = None
