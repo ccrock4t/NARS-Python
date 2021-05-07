@@ -41,14 +41,14 @@ def run_test(input_judgment_q, input_question_q, output_q, debug=False):
         InputBuffer.add_input_sentence(input_judgment_q.get())
 
     # process judgments
-    Global.Global.NARS.do_working_cycles(100)
+    Global.Global.NARS.do_working_cycles(200)
 
     # feed in questions
     while input_question_q.qsize() > 0:
         InputBuffer.add_input_sentence(input_question_q.get())
 
     # process questions
-    Global.Global.NARS.do_working_cycles(100)
+    Global.Global.NARS.do_working_cycles(50)
 
     sys.stdout = sys.__stdout__
 

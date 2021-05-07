@@ -249,8 +249,6 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     ===============================================
     ===============================================
     """
-    # mark sentences as interacted with each other
-    j1.stamp.mutually_add_to_interacted_sentences(j2)
 
     return derived_sentences
 
@@ -272,8 +270,7 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentence, B: NALGrammar.Sent
     ===============================================
     ===============================================
     """
-    # mark sentences as interacted with each other
-    A.stamp.mutually_add_to_interacted_sentences(B)
+
 
     return derived_sentences
 
@@ -295,7 +292,8 @@ def do_inference_one_premise(j):
         derived_sentences.append(derived_sentence)
 
         # Conversion (P --> S)
-        if not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
+        if not j.stamp.from_conversion \
+                and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
                 and j.value.frequency > 0:
             derived_sentence = NALInferenceRules.Conversion(j)
             print_inference_rule(inference_rule="Conversion")

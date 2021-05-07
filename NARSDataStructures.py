@@ -107,7 +107,10 @@ class ItemContainer:
             priority = None
             quality = None
             if isinstance(object, Task):
-                priority = 0.950
+                if isinstance( object.sentence, NALGrammar.Judgment):
+                    priority = object.sentence.value.confidence
+                else:
+                    priority = 0.95
                 quality = 0.010
             elif isinstance(object, NARSMemory.Concept):
                 priority = 0.990 / object.term.syntactic_complexity

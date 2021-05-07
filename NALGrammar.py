@@ -66,11 +66,6 @@ class Sentence:
         punctuation = NALSyntax.Punctuation.get_punctuation(punctuation_str)
         assert (punctuation is not None), punctuation_str + " is not punctuation."
 
-        # todo add support for goals
-        assert (
-                    punctuation == NALSyntax.Punctuation.Judgment or punctuation == NALSyntax.Punctuation.Question), " Currently only accepting Judgments and Questions."
-
-
         # Find statement copula, subject string, and predicate string
         statement = Statement.from_string(sentence_string[start_idx:end_idx + 1])
 
@@ -80,20 +75,28 @@ class Sentence:
         middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value)
         end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value)
 
-        no_truth_value_found = start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx
-        if no_truth_value_found:
-            # No truth value, use default truth value
-            truth_value = TruthValue(Config.DEFAULT_JUDGMENT_FREQUENCY, Config.DEFAULT_JUDGMENT_CONFIDENCE)
-        else:
+        truth_value_found = not (start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx)
+        freq = None
+        conf = None
+        if truth_value_found:
             # Parse truth value from string
             freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
             conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
-            truth_value = TruthValue(freq, conf)
 
         if punctuation == NALSyntax.Punctuation.Judgment:
-            sentence = Judgment(statement, truth_value)
+            if freq is None:
+                # No truth value, use default truth value
+                freq = Config.DEFAULT_JUDGMENT_FREQUENCY
+                conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
+            sentence = Judgment(statement, TruthValue(freq, conf))
         elif punctuation == NALSyntax.Punctuation.Question:
             sentence = Question(statement)
+        elif punctuation == NALSyntax.Punctuation.Goal:
+            if freq is None:
+                # No truth value, use default truth value
+                freq = Config.DEFAULT_GOAL_FREQUENCY
+                conf = Config.DEFAULT_GOAL_CONFIDENCE
+            sentence = Goal(statement, DesireValue(freq,conf))
         else:
             assert False,"Error: No Punctuation!"
 
@@ -128,7 +131,6 @@ class Sentence:
         """
         if j1 is None or j2 is None: return False
         if j1.stamp.id == j2.stamp.id: return False
-        if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually
         if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
         if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
         return True
@@ -285,7 +287,7 @@ class Stamp:
         self.occurrence_time = occurrence_time
         self.sentence = self_sentence
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
-        self.interacted_sentences = []  # list of sentence this sentence has already interacted with
+        self.from_conversion = False # is this sentence derived from Conversion?
 
     def get_tense(self):
         if self.occurrence_time is None:
@@ -298,15 +300,6 @@ class Stamp:
             return NALSyntax.Tense.Present
         elif self.occurrence_time > current_cycle:
             return NALSyntax.Tense.Future
-
-    def mutually_add_to_interacted_sentences(self, other_sentence):
-        self.interacted_sentences.append(other_sentence)
-        if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-            self.interacted_sentences.pop(0)
-
-        other_sentence.stamp.interacted_sentences.append(self.sentence)
-        if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-            other_sentence.stamp.interacted_sentences.pop(0)
 
 class EvidentialBase:
     """

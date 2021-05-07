@@ -171,7 +171,7 @@ class NARS:
         if concept_to_consider is not None:
             if len(concept_to_consider.belief_table) > 0:
                 sentence = concept_to_consider.belief_table.peek() # get most confident belief
-                self.process_judgment_sentence(sentence)
+                self.process_sentence(sentence)
 
          # decay priority
         concept_item.decay()
@@ -186,11 +186,15 @@ class NARS:
         """
         NARSDataStructures.assert_task(task)
 
-        if task.sentence.punctuation == NALSyntax.Punctuation.Question \
-                or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
-            self.process_question(task)
-        elif task.sentence.punctuation == NALSyntax.Punctuation.Judgment:
+        punctuation = task.sentence.punctuation
+
+        if punctuation == NALSyntax.Punctuation.Judgment:
             self.process_judgment_task(task)
+        elif punctuation == NALSyntax.Punctuation.Question \
+                or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
+            self.process_question_task(task)
+        elif punctuation == NALSyntax.Punctuation.Goal:
+            self.process_goal_task(task)
 
     def process_judgment_task(self, task: NARSDataStructures.Task):
         """
@@ -205,24 +209,22 @@ class NARS:
         # get terms from sentence
         statement_term = j1.statement.term
 
-        # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.memory.peek_concept(statement_term)
-
         if statement_term.contains_variable(): return #todo handle variables
-        
+
+        statement_concept = None
         if task.needs_initial_processing:
             """
                 Initial Processing
                 
                 Revise this judgment with the most confident belief, then insert it into the belief table
             """
-            #if task.is_from_input:
             derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
             for derived_sentence in derived_sentences:
                 self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
 
-            # revise the judgment
-            self.process_judgment_sentence(j1, statement_concept)
+            # get (or create if necessary) statement concept, and sub-term concepts recursively
+            statement_concept = self.memory.peek_concept(statement_term)
+
             # add the judgment itself into concept's belief table
             statement_concept.belief_table.put(j1)
             task.needs_initial_processing = False
@@ -232,10 +234,94 @@ class NARS:
                 
                 Do local/forward inference on a related belief
             """
-            self.process_judgment_sentence(j1)
+            pass
+
+        # revise the judgment
+        self.process_sentence(j1, statement_concept)
+
+    def process_question_task(self, task):
+        """
+            Process a Narsese question task
+
+            Get the best answer to the question if it's known and perform inference with it;
+            otherwise, use backward inference to derive new questions that could lead to an answer.
+
+            #todo handle variables
+            #todo handle tenses
+        """
+        NARSDataStructures.assert_task(task)
+
+        # get terms from sentence
+        statement_term = task.sentence.statement.term
+
+        if statement_term.contains_variable(): return  # todo handle variables
+
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
+        statement_concept = self.memory.peek_concept(statement_term)
+
+        # get the best answer from concept belief table
+        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek_max()
+        j1 = None
+        if best_answer is not None:
+            #
+            # Answer the question
+            #
+            if task.is_from_input and task.needs_to_be_answered_in_output:
+                NARSGUI.NARSGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
+                task.needs_to_be_answered_in_output = False
+
+            # do inference between answer and a related belief
+            j1 = best_answer
+        else:
+            # do inference between question and a related belief
+            j1 = task.sentence
+
+        self.process_sentence(j1)
+
+    def process_goal_task(self, task: NARSDataStructures.Task):
+        """
+            Processes a Narsese Goal Task
+
+            :param Goal Task to process
+        """
+        NARSDataStructures.assert_task(task)
+
+        j1 = task.sentence
+
+        # get terms from sentence
+        statement_term = j1.statement.term
+
+        if statement_term.contains_variable(): return  # todo handle variables
+
+        statement_concept = None
+        if task.needs_initial_processing:
+            """
+                Initial Processing
+
+                Revise this judgment with the most confident belief, then insert it into the belief table
+            """
+            # derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+            # for derived_sentence in derived_sentences:
+            #     self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+
+            # get (or create if necessary) statement concept, and sub-term concepts recursively
+            statement_concept = self.memory.peek_concept(statement_term)
+
+            # add the judgment itself into concept's desire table
+            statement_concept.desire_table.put(j1)
+            task.needs_initial_processing = False
+        else:
+            """
+                Continued processing
+
+                Do local/forward inference on a related belief
+            """
+            pass
+
+        self.process_sentence(j1, statement_concept)
 
 
-    def process_judgment_sentence(self, j1, related_concept=None):
+    def process_sentence(self, j1, related_concept=None):
         """
             Processes a Judgment Sentence with a belief from a related concept.
 
@@ -276,60 +362,5 @@ class NARS:
         if j2 is None: return  # done if can't interact
 
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-        for derived_sentence in derived_sentences:
-            self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
-
-    def process_question(self, task):
-        """
-            Process a Narsese question task
-
-            Get the best answer to the question if it's known and perform inference with it;
-            otherwise, use backward inference to derive new questions that could lead to an answer.
-
-            #todo handle variables
-            #todo handle tenses
-        """
-        NARSDataStructures.assert_task(task)
-
-        # get terms from sentence
-        statement_term = task.sentence.statement.term
-
-        if statement_term.contains_variable(): return  # todo handle variables
-
-        # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.memory.peek_concept(statement_term)
-
-        # get the best answer from concept belief table
-        best_answer: NALGrammar.Judgment = statement_concept.belief_table.peek_max()
-        j1 = None
-        if best_answer is not None:
-            #
-            # Answer the question
-            #
-            if task.is_from_input and task.needs_to_be_answered_in_output:
-                NARSGUI.NARSGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
-                task.needs_to_be_answered_in_output = False
-
-            # do inference between answer and a related belief
-            j1 = best_answer
-        else:
-            # do inference between question and a related belief
-            j1 = task.sentence
-
-        # get a related concept
-        related_concept = self.memory.get_semantically_related_concept(statement_concept)
-        if related_concept is None: return  # no related concepts!
-
-        # check for a belief we can interact with
-        j2 = None
-        for (belief,confidence) in related_concept.belief_table:
-            if NALGrammar.Sentence.may_interact(j1,belief):
-                j2 = belief # belief can interact with j1.
-                break
-
-        if j2 is None: return  # done if can't interact
-
-        derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-        # add all derived tasks to the buffer
         for derived_sentence in derived_sentences:
             self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))

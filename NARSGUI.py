@@ -371,18 +371,6 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                                              lambda event: listbox_sentence_item_click_callback(event,
                                                                                                 sentence_from_iterable.stamp.evidential_base))
 
-                # Interacted sentences listbox
-                label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
-                label.grid(row=4, column=2, columnspan=2)
-
-                interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
-                                                          width=object_listbox_width, font=('', 8))
-                interacted_sentences_listbox.grid(row=5, column=2, columnspan=2)
-                for sentence in sentence_from_iterable.stamp.interacted_sentences:
-                    interacted_sentences_listbox.insert(tk.END, str(sentence))
-                interacted_sentences_listbox.bind("<<ListboxSelect>>",
-                                                  lambda event: listbox_sentence_item_click_callback(event,
-                                                                                                     sentence_from_iterable.stamp.interacted_sentences))
 
 
 def listbox_datastructure_item_click_callback(event):
@@ -503,19 +491,6 @@ def listbox_datastructure_item_click_callback(event):
                 evidential_base_listbox.insert(tk.END, str(sentence))
             evidential_base_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,
                                                                                                                  object.sentence.stamp.evidential_base))
-
-            # Interacted sentences listbox
-            label = tk.Label(item_info_window, text="Sentence Interacted Sentences", font=('bold'))
-            label.grid(row=3, column=2, columnspan=2)
-
-            interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
-                                                      width=object_listbox_width, font=('', 8))
-            interacted_sentences_listbox.grid(row=4, column=2, columnspan=2)
-            for sentence in object.sentence.stamp.interacted_sentences:
-                interacted_sentences_listbox.insert(tk.END, str(sentence))
-            interacted_sentences_listbox.bind("<<ListboxSelect>>",
-                                              lambda event: listbox_sentence_item_click_callback(event,
-                                                                                                 object.sentence.stamp.interacted_sentences))
 
 
 def toggle_pause(event=None):
