@@ -186,14 +186,12 @@ class NARS:
         """
         NARSDataStructures.assert_task(task)
 
-        punctuation = task.sentence.punctuation
-
-        if punctuation == NALSyntax.Punctuation.Judgment:
+        if isinstance(task.sentence, NALGrammar.Judgment):
             self.process_judgment_task(task)
-        elif punctuation == NALSyntax.Punctuation.Question \
+        elif isinstance(task.sentence, NALGrammar.Question) \
                 or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
             self.process_question_task(task)
-        elif punctuation == NALSyntax.Punctuation.Goal:
+        elif isinstance(task.sentence, NALGrammar.Goal):
             self.process_goal_task(task)
 
     def process_judgment_task(self, task: NARSDataStructures.Task):
@@ -352,7 +350,6 @@ class NARS:
                         break
 
                 number_of_attempts += 1
-                if j2 is None: print (related_concept.get_formatted_string() + ' concept was no good')
         else:
             for (belief, confidence) in related_concept.belief_table:
                 if NALGrammar.Sentence.may_interact(j1, belief):

@@ -1,16 +1,15 @@
 - Handling Variables (NAL-6)
-- Events (NAL-7)
-- Goals (NAL-8)
+- Events (NAL-7) (implemented)
+- Goals (NAL-8) (initial processing implemented)
 - Operations (NAL-8)
 - Self-monitoring and self-control (NAL-9)
 - Sensory terms
 
 - Inference
 	- Structural Inference
-	- Immediate Inference
-	- Composition Rules
+	- Immediate Inference (implemented)
+	- Composition Rules (implemented)
 	- Decomposition Rules
 	- Conditional Syllogism
-	- One-premise Inference
 	- Temporal Inference
 		- Durations

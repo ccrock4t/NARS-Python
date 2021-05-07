@@ -380,10 +380,10 @@ def Negation(j: NALGrammar.Sentence):
 
     occurrence_time = j.stamp.occurrence_time
 
-    if j.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j, NALGrammar.Judgment):
         result_truth = F_Negation(j.value.frequency, j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth,occurrence_time=occurrence_time)
-    elif j.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j, NALGrammar.Question):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
@@ -418,10 +418,10 @@ def Conversion(j: NALGrammar.Sentence):
 
     occurrence_time = j.stamp.occurrence_time
 
-    if j.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j, NALGrammar.Judgment):
         result_truth = F_Conversion(j.value.frequency, j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time)
-    elif j.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentence's evidential base
@@ -453,10 +453,10 @@ def Contraposition(j):
                                             negated_subject_term,
                                             j.statement.get_copula())
 
-    if j.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j, NALGrammar.Judgment):
         result_truth = F_Contraposition(j.value.frequency,j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentence's evidential base
@@ -497,11 +497,11 @@ def ExtensionalImage(j: NALGrammar.Sentence):
                                             image_term_2,
                                             NALSyntax.Copula.Inheritance)
 
-    if j.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j, NALGrammar.Judgment):
         result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
         result_1 = NALGrammar.Judgment(result_statement_1, result_truth)
         result_2 = NALGrammar.Judgment(result_statement_2, result_truth)
-    elif j.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j, NALGrammar.Question):
         result_1 = NALGrammar.Question(result_statement_1)
         result_2 = NALGrammar.Question(result_statement_2)
 
@@ -544,11 +544,11 @@ def IntensionalImage(j: NALGrammar.Sentence):
                                               P,
                                             NALSyntax.Copula.Inheritance)
 
-    if j.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j, NALGrammar.Judgment):
         result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
         result_1 = NALGrammar.Judgment(result_statement_1, result_truth)
         result_2 = NALGrammar.Judgment(result_statement_2, result_truth)
-    elif j.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j, NALGrammar.Question):
         result_1 = NALGrammar.Question(result_statement_1)
         result_2 = NALGrammar.Question(result_statement_2)
 
@@ -589,13 +589,12 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
                                             j1.statement.get_predicate_term(),
                                             j1.statement.get_copula())
 
-    result_truth= None
-    if j1.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = F_Deduction(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -657,13 +656,12 @@ def Analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     else:
         assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    result = None
-    if j1.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = F_Analogy(f1, c1, f2, c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -723,13 +721,12 @@ def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-
         result_truth = F_Resemblance(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -766,13 +763,13 @@ def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
                                             j1.statement.get_subject_term(),
                                             j1.statement.get_copula())
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
 
         result_truth = F_Abduction(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -808,13 +805,12 @@ def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
                                             j1.statement.get_predicate_term(), j1.statement.get_copula())
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-
         result_truth = F_Induction(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -850,12 +846,12 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
                                             j1.statement.get_subject_term(), j1.statement.get_copula())
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = F_Exemplification(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -901,13 +897,12 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     else:
         assert(False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-
         result_truth = F_Comparison(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -966,7 +961,9 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
         #todo temporal disjunction
         connector = NALSyntax.TermConnector.Disjunction
         copula = NALSyntax.Copula.Implication
+
     # Statement
+    result_truth = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1: Sentence(T1 --> M < f1, c1 >)
         #j2: Sentence(T2 --> M < f2, c2 >)
@@ -977,14 +974,10 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                 j1.statement.get_predicate_term(),
                                                 copula) # ((T1 | T2) --> M)
 
-        if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+        if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-
             result_truth = F_Intersection(f1,c1,f2,c2)
-            result = NALGrammar.Judgment(result_statement, result_truth)
-        elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
-            result = NALGrammar.Question(result_statement)
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         #j1: Sentence(M --> T1 < f1, c1 >)
@@ -997,16 +990,15 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                 compound_term,
                                                 copula)# (M --> (T1 | T2))
 
-        if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+        if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-
             result_truth = F_Union(f1,c1,f2,c2)
-            result = NALGrammar.Judgment(result_statement, result_truth)
-        elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
-            result = NALGrammar.Question(result_statement)
 
-
+    if isinstance(j1, NALGrammar.Judgment):
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -1060,6 +1052,7 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
         connector = NALSyntax.TermConnector.Conjunction
         copula = NALSyntax.Copula.Implication
 
+    result_truth = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         #j1: Sentence(T1 --> M < f1, c1 >)
         #j2: Sentence(T2 --> M < f2, c2 >)
@@ -1070,13 +1063,10 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
                                                 j1.statement.get_predicate_term(),
                                                 copula) # ((T1 & T2) --> M)
 
-        if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+        if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
             result_truth = F_Union(f1,c1,f2,c2)
-            result = NALGrammar.Judgment(result_statement, result_truth)
-        elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
-            result = NALGrammar.Question(result_statement)
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         #j1: Sentence(M --> T1 < f1, c1 >)
@@ -1088,13 +1078,15 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
                                                 compound_term,
                                                 copula)# (M --> (T1 & T2))
 
-        if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+        if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
             result_truth = F_Intersection(f1,c1,f2,c2)
-            result = NALGrammar.Judgment(result_statement, result_truth)
-        elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
-            result = NALGrammar.Question(result_statement)
+
+    if isinstance(j1, NALGrammar.Judgment):
+        result = NALGrammar.Judgment(result_statement, result_truth)
+    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -1130,12 +1122,12 @@ def IntensionalDifference(j1, j2):
                                             compound_term,
                                             NALSyntax.Copula.Inheritance)# (M --> (T1 - T2))
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = F_Difference(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -1184,12 +1176,12 @@ def ExtensionalDifference(j1, j2):
                                                 compound_term,
                                                 NALSyntax.Copula.Inheritance)# (M --> (T1 - T2))
 
-    if j1.punctuation == NALSyntax.Punctuation.Judgment and j2.punctuation == NALSyntax.Punctuation.Judgment:
+    if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = F_Difference(f1,c1,f2,c2)
         result = NALGrammar.Judgment(result_statement, result_truth)
-    elif j1.punctuation == NALSyntax.Punctuation.Question or j2.punctuation == NALSyntax.Punctuation.Question:
+    elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
