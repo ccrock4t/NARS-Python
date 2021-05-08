@@ -248,6 +248,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     ===============================================
     ===============================================
     """
+    # mark sentences as interacted with each other
+    j1.stamp.mutually_add_to_interacted_sentences(j2)
 
     return derived_sentences
 

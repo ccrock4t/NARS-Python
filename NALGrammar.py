@@ -131,6 +131,7 @@ class Sentence:
         """
         if j1 is None or j2 is None: return False
         if j1.stamp.id == j2.stamp.id: return False
+        if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually
         if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
         if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
         return True
@@ -145,6 +146,18 @@ class Judgment(Sentence):
         assert_statement(statement)
         assert_truth_value(value)
         super().__init__(statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
+
+    def is_positive(self):
+        """
+            :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
+        """
+        return self.value.frequency >= Config.POSITIVE_THRESHOLD
+
+    def is_negative(self):
+        """
+            :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
+        """
+        return self.value.frequency < Config.NEGATIVE_THRESHOLD
 
 
 class Question(Sentence):
@@ -165,6 +178,7 @@ class Goal(Sentence):
     def __init__(self, statement, value):
         assert_statement(statement)
         super().__init__(statement, value, NALSyntax.Punctuation.Goal)
+
 
 
 class Statement:
@@ -265,7 +279,7 @@ class TruthValue(EvidentialValue):
         Describing the evidential basis for the associated statement to be true
     """
 
-    def __init__(self, frequency, confidence):
+    def __init__(self, frequency=Config.DEFAULT_JUDGMENT_FREQUENCY, confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE):
         super().__init__(frequency=frequency, confidence=confidence)
 
     def get_formatted_string(self):
@@ -287,6 +301,7 @@ class Stamp:
         self.occurrence_time = occurrence_time
         self.sentence = self_sentence
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
+        self.interacted_sentences = []  # list of sentence this sentence has already interacted with
         self.from_conversion = False # is this sentence derived from Conversion?
 
     def get_tense(self):
@@ -300,6 +315,17 @@ class Stamp:
             return NALSyntax.Tense.Present
         elif self.occurrence_time > current_cycle:
             return NALSyntax.Tense.Future
+
+    def mutually_add_to_interacted_sentences(self, other_sentence):
+        self.interacted_sentences.append(other_sentence)
+        if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+            self.interacted_sentences.pop(0)
+
+        other_sentence.stamp.interacted_sentences.append(self.sentence)
+        if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+            other_sentence.stamp.interacted_sentences.pop(0)
+
+
 
 class EvidentialBase:
     """
@@ -348,6 +374,11 @@ class Term:
         self.string = term_string
         self.syntactic_complexity = self._calculate_syntactic_complexity()
 
+        if isinstance(self, StatementTerm):
+            self.is_operation = self.is_operation()
+        else:
+            self.is_operation = False
+
     def get_formatted_string(self):
         return self.string
 
@@ -366,6 +397,8 @@ class Term:
     def _calculate_syntactic_complexity(self):
         assert False, "Complexity not defined for Term base class"
 
+    def is_operation(self):
+        return self.is_operation
 
     def contains_variable(self):
         return VariableTerm.VARIABLE_SYM in str(self) \
@@ -508,15 +541,14 @@ class AtomicTerm(Term):
         assert (AtomicTerm.is_valid_term(term_string)), term_string + " is not a valid Atomic Term name."
         super().__init__(term_string)
 
+    def _calculate_syntactic_complexity(self):
+        return 1
+
     @classmethod
     def is_valid_term(cls, term_string):
         for char in term_string:
             if char not in NALSyntax.valid_term_chars: return False
         return True
-
-    def _calculate_syntactic_complexity(self):
-        return 1
-
 
 class CompoundTerm(Term):
     """
@@ -733,6 +765,14 @@ class StatementTerm(CompoundTerm):
                self.get_predicate_term().get_formatted_string() \
                + NALSyntax.StatementSyntax.End.value
         return statement_string
+
+    def is_operation(self):
+        if not isinstance(self.get_subject_term(), CompoundTerm): return False
+
+        if self.get_subject_term().connector == NALSyntax.TermConnector.Product \
+            and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF:
+            # product and first term is self means this is an operation
+            return True
 
 
 def get_top_level_copula(string):

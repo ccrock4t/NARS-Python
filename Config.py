@@ -7,7 +7,11 @@
     System Parameters
 """
 k = 1 # evidential horizon
-t = 0.25 # decision rule (goal decision-making) threshold
+T = 0.25 # decision rule (goal decision-making) threshold
+
+POSITIVE_THRESHOLD = 2.0/3.0 # frequency must be above this value to be considered "true"
+NEGATIVE_THRESHOLD = 1.0/3.0 # frequency must be below this value to be considered "false"
+
 MINDFULNESS = 0.90 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
 MEMORY_CONCEPT_CAPACITY = 50000 # how many concepts can this NARS have?
 PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
@@ -35,6 +39,7 @@ TABLE_DEFAULT_CAPACITY = 30
 """
 TRUTH_EPSILON = 0.01 # minimum size that truth-value can be incremented/decremented
 MAX_EVIDENTIAL_BASE_LENGTH = 20000 # maximum IDs to store documenting evidential base
+MAX_INTERACTED_SENTENCES_LENGTH = 20000
 
 """
     Default Input Task Values

@@ -319,7 +319,7 @@ def Choice(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return best
 
 
-def Decision(d):
+def Decision(f, c):
     """
          Decision Rule
 
@@ -328,12 +328,14 @@ def Decision(d):
          Make the decision to purse a desire based on its expected desirability
 
          Input:
-           d: Desire's desirability
+           f: Desire-value frequency
+           c: Desire-value confidence
 
          Returns:
            True or false, whether to pursue the goal
     """
-    return abs(d - 0.5) > Config.t
+    desirability = Expectation(f,c)
+    return abs(desirability - 0.5) > Config.T
 
 
 def Expectation(f, c):
@@ -468,48 +470,50 @@ def ExtensionalImage(j: NALGrammar.Sentence):
     """
     Extensional Image
     Inputs:
-      j: ((*,S,P) --> R)
+      j: ((*,S,...,P) --> R)
 
     :param j:
     :returns: array of
-    (S --> (/,R,_,P))
-    and
-    (P --> (/,R,S,_))
+    (S --> (/,R,_,...,P))
+    (P --> (/,R,S,...,_))
+    ...
     """
     NALGrammar.assert_sentence(j)
 
+    results = []
     # Statement
-    S = j.statement.get_subject_term().subterms[0];
-    P = j.statement.get_subject_term().subterms[1];
+    statement_subterms = j.statement.get_subject_term().subterms
     R = j.statement.get_predicate_term()
 
-    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.TERM_IMAGE_PLACEHOLDER, P],
+    for i1 in range(0,len(statement_subterms)):
+        subterm = statement_subterms[i1]
+
+        image_subterms = [R]
+        for i2 in range(0, len(statement_subterms)):
+            if i1 != i2:
+                image_subterms.append(statement_subterms[i2])
+            elif i1 == i2:
+                image_subterms.append(Global.Global.TERM_IMAGE_PLACEHOLDER)
+
+        image_term = NALGrammar.CompoundTerm(image_subterms,
                                            NALSyntax.TermConnector.ExtensionalImage)
 
-    result_statement_1 = NALGrammar.Statement(S,
-                                            image_term_1,
-                                            NALSyntax.Copula.Inheritance)
+        result_statement = NALGrammar.Statement(subterm,
+                                                  image_term,
+                                                  NALSyntax.Copula.Inheritance)
 
-    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.TERM_IMAGE_PLACEHOLDER],
-                                           NALSyntax.TermConnector.ExtensionalImage)
+        if isinstance(j, NALGrammar.Judgment):
+            result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
+            result = NALGrammar.Judgment(result_statement, result_truth)
+        elif isinstance(j, NALGrammar.Question):
+            result = NALGrammar.Question(result_statement)
 
-    result_statement_2 = NALGrammar.Statement(P,
-                                            image_term_2,
-                                            NALSyntax.Copula.Inheritance)
+        # merge in the parent sentence's evidential base
+        result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+        results.append(result)
 
-    if isinstance(j, NALGrammar.Judgment):
-        result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
-        result_1 = NALGrammar.Judgment(result_statement_1, result_truth)
-        result_2 = NALGrammar.Judgment(result_statement_2, result_truth)
-    elif isinstance(j, NALGrammar.Question):
-        result_1 = NALGrammar.Question(result_statement_1)
-        result_2 = NALGrammar.Question(result_statement_2)
 
-    # merge in the parent sentence's evidential base
-    result_1.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result_2.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-
-    return [result_1, result_2]
+    return results
 
 def IntensionalImage(j: NALGrammar.Sentence):
     """
@@ -525,38 +529,39 @@ def IntensionalImage(j: NALGrammar.Sentence):
     """
     NALGrammar.assert_sentence(j)
 
+    results = []
     # Statement
-    S = j.statement.get_predicate_term().subterms[0];
-    P = j.statement.get_predicate_term().subterms[1];
+    statement_subterms = j.statement.get_predicate_term().subterms
     R = j.statement.get_subject_term()
 
-    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.TERM_IMAGE_PLACEHOLDER, P],
-                                           NALSyntax.TermConnector.IntensionalImage)
+    for i1 in range(0,len(statement_subterms)):
+        subterm = statement_subterms[i1]
 
-    result_statement_1 = NALGrammar.Statement(image_term_1,
-                                              S,
-                                            NALSyntax.Copula.Inheritance)
+        image_subterms = [R]
+        for i2 in range(0, len(statement_subterms)):
+            if i1 != i2:
+                image_subterms.append(statement_subterms[i2])
+            elif i1 == i2:
+                image_subterms.append(Global.Global.TERM_IMAGE_PLACEHOLDER)
 
-    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.TERM_IMAGE_PLACEHOLDER],
-                                           NALSyntax.TermConnector.IntensionalImage)
+        image_term = NALGrammar.CompoundTerm(image_subterms,
+                                           NALSyntax.TermConnector.ExtensionalImage)
 
-    result_statement_2 = NALGrammar.Statement(image_term_2,
-                                              P,
-                                            NALSyntax.Copula.Inheritance)
+        result_statement = NALGrammar.Statement(image_term,
+                                                subterm,
+                                                NALSyntax.Copula.Inheritance)
 
-    if isinstance(j, NALGrammar.Judgment):
-        result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
-        result_1 = NALGrammar.Judgment(result_statement_1, result_truth)
-        result_2 = NALGrammar.Judgment(result_statement_2, result_truth)
-    elif isinstance(j, NALGrammar.Question):
-        result_1 = NALGrammar.Question(result_statement_1)
-        result_2 = NALGrammar.Question(result_statement_2)
+        if isinstance(j, NALGrammar.Judgment):
+            result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
+            result = NALGrammar.Judgment(result_statement, result_truth)
+        elif isinstance(j, NALGrammar.Question):
+            result = NALGrammar.Question(result_statement)
 
-    # merge in the parent sentence's evidential base
-    result_1.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result_2.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+        # merge in the parent sentence's evidential base
+        result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+        results.append(result)
 
-    return [result_1, result_2]
+    return results
 
 """
     ======================================

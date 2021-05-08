@@ -4,6 +4,7 @@ import time
 
 import Config
 import InputBuffer
+import NALInferenceRules
 import NARSGUI
 import NARSInferenceEngine
 import NALGrammar
@@ -169,9 +170,15 @@ class NARS:
             concept_to_consider = self.memory.get_semantically_related_concept(concept_item.object)
 
         if concept_to_consider is not None:
-            if len(concept_to_consider.belief_table) > 0:
-                sentence = concept_to_consider.belief_table.peek() # get most confident belief
-                self.process_sentence(sentence)
+            rand_int = random.randint(1,2) # 1 for belief, 2 for desire
+            if rand_int == 1 or len(concept_to_consider.desire_table) == 0:
+                if len(concept_to_consider.belief_table) > 0:
+                    sentence = concept_to_consider.belief_table.peek() # get most confident belief
+                    self.process_judgment_sentence(sentence)
+            elif rand_int == 2 or len(concept_to_consider.belief_table) == 0:
+                if len(concept_to_consider.desire_table) > 0:
+                    sentence = concept_to_consider.desire_table.peek() # get most confident belief
+                    self.process_goal_sentence(sentence)
 
          # decay priority
         concept_item.decay()
@@ -226,16 +233,24 @@ class NARS:
             # add the judgment itself into concept's belief table
             statement_concept.belief_table.put(j1)
             task.needs_initial_processing = False
-        else:
-            """
-                Continued processing
-                
-                Do local/forward inference on a related belief
-            """
-            pass
+
+        """
+            Continued processing
+        
+            Do local/forward inference on a related belief
+        """
 
         # revise the judgment
-        self.process_sentence(j1, statement_concept)
+        self.process_judgment_sentence(j1, statement_concept)
+
+    def process_judgment_sentence(self, j1: NALGrammar.Goal, related_concept=None):
+        """
+            Continued processing for Judgment
+
+            :param j1: Judgment
+            :param related_concept: concept related to judgment with which to perform semantic inference
+        """
+        self.process_sentence_semantic_inference(j1, related_concept)
 
     def process_question_task(self, task):
         """
@@ -274,7 +289,7 @@ class NARS:
             # do inference between question and a related belief
             j1 = task.sentence
 
-        self.process_sentence(j1)
+        self.process_sentence_semantic_inference(j1)
 
     def process_goal_task(self, task: NARSDataStructures.Task):
         """
@@ -296,35 +311,48 @@ class NARS:
             """
                 Initial Processing
 
-                Revise this judgment with the most confident belief, then insert it into the belief table
+                Insert it into the desire table and revise with the most confident desire
             """
-            # derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
-            # for derived_sentence in derived_sentences:
-            #     self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
-
             # get (or create if necessary) statement concept, and sub-term concepts recursively
             statement_concept = self.memory.peek_concept(statement_term)
 
             # add the judgment itself into concept's desire table
             statement_concept.desire_table.put(j1)
             task.needs_initial_processing = False
-        else:
-            """
-                Continued processing
 
-                Do local/forward inference on a related belief
-            """
-            pass
-
-        self.process_sentence(j1, statement_concept)
-
-
-    def process_sentence(self, j1, related_concept=None):
         """
-            Processes a Judgment Sentence with a belief from a related concept.
+            Continued processing
+        """
+        self.process_goal_sentence(j1, statement_concept)
 
-            :param j1 - judgment sentence to process
-            :param related_concept - (Optional) concept to process the judgment with
+    def process_goal_sentence(self, j1: NALGrammar.Goal, related_concept=None):
+        """
+            Continued processing for Goal
+
+            :param j1: Goal
+            :param related_concept: concept related to goal with which to perform semantic inference
+        """
+        should_pursue = NALInferenceRules.Decision(j1.value.frequency, j1.value.confidence)
+        if not should_pursue: return # Failed decision-making rule
+
+        statement_term = j1.statement.term
+
+        statement_concept = self.memory.peek_concept(statement_term)
+        belief = statement_concept.belief_table.peek()
+        if belief is not None and belief.is_positive(): return # Goal is already achieved
+
+        if statement_term.is_operation:
+            self.execute_operation(j1.statement)
+
+        self.process_sentence_semantic_inference(j1, related_concept=related_concept)
+
+
+    def process_sentence_semantic_inference(self, j1, related_concept=None):
+        """
+            Processes a Sentence with a belief from a related concept.
+
+            :param j1 - sentence to process
+            :param related_concept - (Optional) concept to process the sentence with
 
             #todo handle variables
             #todo handle tenses
@@ -362,3 +390,16 @@ class NARS:
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         for derived_sentence in derived_sentences:
             self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+
+    def execute_operation(self, full_operation_statement):
+        """
+
+        :param full_operation_statement: Including SELF, arguments, and Operation itself
+        :return:
+        """
+        #todo extract and use args
+        # full_operation_term.get_subject_term()
+        operation = full_operation_statement.get_predicate_term()
+        NARSGUI.NARSGUI.print_to_output("EXE: ^" + str(operation))
+        operation_event = NALGrammar.Judgment(full_operation_statement, NALGrammar.TruthValue(), occurrence_time=Global.Global.get_current_cycle_number())
+        self.sensorimotor_event_buffer.put(NARSDataStructures.Task(operation_event))
