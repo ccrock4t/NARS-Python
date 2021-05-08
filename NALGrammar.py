@@ -36,7 +36,7 @@ class Sentence:
 
     def get_formatted_string(self):
         string = self.get_formatted_string_no_id()
-        string = Global.Global.SENTENCE_ID_MARKER + str(self.stamp.id) + Global.Global.ID_END_MARKER + string
+        string = Global.Global.MARKER_SENTENCE_ID + str(self.stamp.id) + Global.Global.MARKER_ID_END + string
         return string
 
     def get_formatted_string_no_id(self):

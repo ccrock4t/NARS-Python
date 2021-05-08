@@ -146,8 +146,8 @@ class ItemContainer:
             return key
 
         def __str__(self):
-            return Global.Global.ITEM_ID_MARKER \
-                   + str(self.id) + Global.Global.ID_END_MARKER \
+            return Global.Global.MARKER_ITEM_ID \
+                   + str(self.id) + Global.Global.MARKER_ID_END \
                    + str(self.object) \
                    + " " \
                    + NARSGUI.NARSGUI.GUI_BUDGET_SYMBOL \

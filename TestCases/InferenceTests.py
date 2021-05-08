@@ -206,6 +206,34 @@ def first_order_abduction():
 
     assert success,"TEST FAILURE: First-order Abduction test failed: " + failed_criterion
 
+def first_order_analogy():
+    """
+        Test first-order analogy:
+        j1: (chimp-->monkey). %1.0;0.9%
+        j2: (human<->monkey). %1.0;0.9%
+
+        :- (chimp-->human). %1.0;0.81%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(chimp-->monkey). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(human<->monkey). %1.0;0.9%")
+    q1 = "(chimp-->human)?"
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.Analogy(j1, j2).get_formatted_string_no_id())
+
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: First-order Analogy test failed: " + failed_criterion
+
 def intensional_composition():
     """
         Test Intensional Composition rules:
@@ -322,6 +350,7 @@ def main():
     first_order_deduction()
     first_order_induction()
     first_order_abduction()
+    first_order_analogy()
 
     """
         Composition

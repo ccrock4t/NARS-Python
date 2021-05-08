@@ -466,7 +466,7 @@ def Contraposition(j):
 
 def ExtensionalImage(j: NALGrammar.Sentence):
     """
-    Intensional Image
+    Extensional Image
     Inputs:
       j: ((*,S,P) --> R)
 
@@ -483,15 +483,15 @@ def ExtensionalImage(j: NALGrammar.Sentence):
     P = j.statement.get_subject_term().subterms[1];
     R = j.statement.get_predicate_term()
 
-    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.IMAGE_PLACEHOLDER_TERM, P],
-                                         NALSyntax.TermConnector.ExtensionalImage)
+    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.TERM_IMAGE_PLACEHOLDER, P],
+                                           NALSyntax.TermConnector.ExtensionalImage)
 
     result_statement_1 = NALGrammar.Statement(S,
                                             image_term_1,
                                             NALSyntax.Copula.Inheritance)
 
-    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.IMAGE_PLACEHOLDER_TERM],
-                                         NALSyntax.TermConnector.ExtensionalImage)
+    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.TERM_IMAGE_PLACEHOLDER],
+                                           NALSyntax.TermConnector.ExtensionalImage)
 
     result_statement_2 = NALGrammar.Statement(P,
                                             image_term_2,
@@ -530,15 +530,15 @@ def IntensionalImage(j: NALGrammar.Sentence):
     P = j.statement.get_predicate_term().subterms[1];
     R = j.statement.get_subject_term()
 
-    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.IMAGE_PLACEHOLDER_TERM, P],
-                                         NALSyntax.TermConnector.IntensionalImage)
+    image_term_1 = NALGrammar.CompoundTerm([R, Global.Global.TERM_IMAGE_PLACEHOLDER, P],
+                                           NALSyntax.TermConnector.IntensionalImage)
 
     result_statement_1 = NALGrammar.Statement(image_term_1,
                                               S,
                                             NALSyntax.Copula.Inheritance)
 
-    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.IMAGE_PLACEHOLDER_TERM],
-                                         NALSyntax.TermConnector.IntensionalImage)
+    image_term_2 = NALGrammar.CompoundTerm([R, S, Global.Global.TERM_IMAGE_PLACEHOLDER],
+                                           NALSyntax.TermConnector.IntensionalImage)
 
     result_statement_2 = NALGrammar.Statement(image_term_2,
                                               P,

@@ -1,5 +1,6 @@
-from TestCases import DataStructureTests, GrammarTests, InferenceTests
-
+import DataStructureTests
+import GrammarTests
+import InferenceTests
 
 def main():
     DataStructureTests.main()

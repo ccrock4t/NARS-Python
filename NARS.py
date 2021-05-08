@@ -358,6 +358,7 @@ class NARS:
 
         if j2 is None: return  # done if can't interact
 
+        if Global.Global.DEBUG: print("Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         for derived_sentence in derived_sentences:
             self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))

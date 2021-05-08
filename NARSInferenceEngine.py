@@ -3,6 +3,7 @@
     Created: March 8, 2021
     Purpose: Identifies and performs proper inference for the system
 """
+import Global
 import NALGrammar
 import NALInferenceRules
 import NARSDataStructures
@@ -53,8 +54,9 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                  or
                  (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula)))) # S-->P and P<->S
 
-    if tautology: return [] # can't do inference, it will result in tautology
-
+    if tautology:
+        if Global.Global.DEBUG: print("tautology")
+        return [] # can't do inference, it will result in tautology
     """
     ===============================================
     ===============================================
@@ -63,7 +65,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     ===============================================
     """
     if isinstance(j1, NALGrammar.Judgment) or isinstance(j1, NALGrammar.Question):
-        if (j1_copula != j2_copula): return [] #different copulas, can't do syllogism
+        if (NALSyntax.Copula.is_first_order(j1_copula) != NALSyntax.Copula.is_first_order(j2_copula)): return [] #different copulas, can't do syllogism
 
         if j1_term == j2_term:
             """
@@ -302,6 +304,7 @@ def do_inference_one_premise(j):
             print_inference_rule(inference_rule="Contraposition")
             derived_sentences.append(derived_sentence)
 
+        # Image
         if isinstance(j.statement.get_subject_term(), NALGrammar.CompoundTerm) \
             and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product:
             derived_sentence_array = NALInferenceRules.ExtensionalImage(j)
@@ -318,4 +321,5 @@ def do_inference_one_premise(j):
     return derived_sentences
 
 
-def print_inference_rule(inference_rule="Inference"): pass#print(inference_rule)
+def print_inference_rule(inference_rule="Inference"):
+    if Global.Global.DEBUG: print(inference_rule)

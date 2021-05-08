@@ -94,12 +94,12 @@ class NARSGUI:
             listbox = cls.gui_sensorimotor_buffer_listbox
 
         string_list = listbox.get(0, tk.END)
-        msg_id = msg[len(Global.Global.ITEM_ID_MARKER):msg.rfind(
-            Global.Global.ID_END_MARKER)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
+        msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
+            Global.Global.MARKER_ID_END)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
         idx_to_remove = -1
         i = 0
         for row in string_list:
-            row_id = row[len(Global.Global.ITEM_ID_MARKER):row.rfind(Global.Global.ID_END_MARKER)]
+            row_id = row[len(Global.Global.MARKER_ITEM_ID):row.rfind(Global.Global.MARKER_ID_END)]
             if msg_id == row_id:
                 idx_to_remove = i
                 break
@@ -390,12 +390,12 @@ def listbox_datastructure_item_click_callback(event):
         data_structure = None
 
         if event.widget is NARSGUI.gui_memory_listbox:
-            key = item_string[item_string.rfind(Global.Global.ID_END_MARKER) + len(Global.Global.ID_END_MARKER):item_string.find(
+            key = item_string[item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
                 NARSGUI.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
             data_structure = Global.Global.NARS.memory.concepts_bag
         elif event.widget is NARSGUI.gui_experience_buffer_listbox:
-            key = item_string[item_string.find(Global.Global.ITEM_ID_MARKER) + len(
-                Global.Global.ITEM_ID_MARKER):item_string.rfind(Global.Global.ID_END_MARKER)]
+            key = item_string[item_string.find(Global.Global.MARKER_ITEM_ID) + len(
+                Global.Global.MARKER_ITEM_ID):item_string.rfind(Global.Global.MARKER_ID_END)]
             data_structure = Global.Global.NARS.experience_task_buffer
 
         assert key is not None, "Couldn't get key from item click callback"

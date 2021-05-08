@@ -8,19 +8,25 @@ import NALGrammar
 
 
 class Global:
+    DEBUG = False
     """
         NARS vars
     """
     NARS = None  # variable to hold NARS instance
     paused = True
-    ITEM_ID_MARKER = "ItemID:"  # there are Sentence IDs and Bag Item IDs
-    SENTENCE_ID_MARKER = "SentenceID:"
-    ID_END_MARKER = ":ID "
 
     """
         Terms
     """
-    IMAGE_PLACEHOLDER_TERM = NALGrammar.Term.from_string("_")
+    TERM_SELF = NALGrammar.Term.from_string("SELF")
+    TERM_IMAGE_PLACEHOLDER = NALGrammar.Term.from_string("_")
+
+    """
+    ID markers
+    """
+    MARKER_ITEM_ID = "ItemID:"  # there are Sentence IDs and Bag Item IDs
+    MARKER_SENTENCE_ID = "SentenceID:"
+    MARKER_ID_END = ":ID "
 
     # thread ready boolean
     thread_ready_gui = False
