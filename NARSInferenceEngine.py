@@ -15,7 +15,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
         The resultant sentence's evidential base is merged from its parents.
 
         :param t1: Sentence
-        :param j2: Sentence j2
+        :param j2: Sentence
 
         :assume j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
                 (no evidential overlap)
@@ -57,6 +57,21 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     if tautology:
         if Global.Global.DEBUG: print("tautology")
         return [] # can't do inference, it will result in tautology
+
+
+    # Projection
+    if isinstance(j1, NALGrammar.Judgment):
+        if j2.stamp.get_tense() != NALSyntax.Tense.Eternal:
+            eternalized_j2 = NALInferenceRules.Eternalization(j2)
+            if j1.stamp.get_tense() == NALSyntax.Tense.Eternal:
+                j2 = eternalized_j2
+            elif j1.stamp.get_tense() != NALSyntax.Tense.Eternal:
+                projected_j2 = NALInferenceRules.Projection(j2, j1.stamp.occurrence_time)
+                if projected_j2.value.confidence > eternalized_j2.value.confidence:
+                    j2 = projected_j2
+                else:
+                    j2 = eternalized_j2
+
     """
     ===============================================
     ===============================================

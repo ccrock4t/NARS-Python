@@ -20,6 +20,8 @@ import NALSyntax
     ++++ (Binary truth value operations) ++++
     ======================================
 """
+
+
 def band(*argv):
     """
         Binary AND
@@ -70,11 +72,14 @@ def bnot(arg):
     """
     return 1 - arg
 
+
 """
     ======================================
     ++++ (Inference rule truth value operations) ++++
     ======================================
 """
+
+
 def F_Revision(wp1, wn1, wp2, wn2):
     """
         :return: F_rev
@@ -87,16 +92,16 @@ def F_Revision(wp1, wn1, wp2, wn2):
     return NALGrammar.TruthValue(f_rev, c_rev)
 
 
-def F_Negation(f,c):
+def F_Negation(f, c):
     """
         f_neg = 1 - f
         c_neg = c
         :return: F_neg
     """
-    return NALGrammar.TruthValue(1-f,c)
+    return NALGrammar.TruthValue(1 - f, c)
 
 
-def F_Conversion(f,c):
+def F_Conversion(f, c):
     """
         wp = AND(f, c)
         wn = AND(NOT(f), c)
@@ -108,7 +113,8 @@ def F_Conversion(f,c):
     f_cnv, c_cnv = get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_cnv, c_cnv)
 
-def F_Contraposition(f,c):
+
+def F_Contraposition(f, c):
     """
         wp = 0
         wn = AND(NOT(f), c)
@@ -122,7 +128,7 @@ def F_Contraposition(f,c):
     return NALGrammar.TruthValue(f_cnt, c_cnt)
 
 
-def F_Deduction(f1,c1,f2,c2):
+def F_Deduction(f1, c1, f2, c2):
     """
         f_ded: and(f1,f2)
         c_ded: and(f1,f2,c1,c2)
@@ -133,7 +139,8 @@ def F_Deduction(f1,c1,f2,c2):
     c3 = band(f1, f2, c1, c2)
     return NALGrammar.TruthValue(f3, c3)
 
-def F_Analogy(f1,c1,f2,c2):
+
+def F_Analogy(f1, c1, f2, c2):
     """
         f_ana: AND(f1,f2)
         c_ana: AND(f2,c1,c2)
@@ -145,7 +152,8 @@ def F_Analogy(f1,c1,f2,c2):
     c_ana = band(f2, c1, c2)
     return NALGrammar.TruthValue(f_ana, c_ana)
 
-def F_Resemblance(f1,c1,f2,c2):
+
+def F_Resemblance(f1, c1, f2, c2):
     """
         f_res = AND(f1,f2)
         c_res = AND(OR(f1,f2),c1,c2)
@@ -157,7 +165,8 @@ def F_Resemblance(f1,c1,f2,c2):
 
     return NALGrammar.TruthValue(f_res, c_res)
 
-def F_Abduction(f1,c1,f2,c2):
+
+def F_Abduction(f1, c1, f2, c2):
     """
         wp = AND(f1,f2,c1,c2)
         w = AND(f1,c1,c2)
@@ -170,7 +179,8 @@ def F_Abduction(f1,c1,f2,c2):
     f_abd, c_abd = get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_abd, c_abd)
 
-def F_Induction(f1,c1,f2,c2):
+
+def F_Induction(f1, c1, f2, c2):
     """
     :return: F_ind: Truth-Value (f,c)
     """
@@ -181,7 +191,7 @@ def F_Induction(f1,c1,f2,c2):
     return NALGrammar.TruthValue(f_ind, c_ind)
 
 
-def F_Exemplification(f1,c1,f2,c2):
+def F_Exemplification(f1, c1, f2, c2):
     """
     :return: F_exe: Truth-Value (f,c)
     """
@@ -191,7 +201,8 @@ def F_Exemplification(f1,c1,f2,c2):
     f_exe, c_exe = get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_exe, c_exe)
 
-def F_Comparison(f1,c1,f2,c2):
+
+def F_Comparison(f1, c1, f2, c2):
     """
         :return: F_com: Truth-Value (f,c)
     """
@@ -201,7 +212,8 @@ def F_Comparison(f1,c1,f2,c2):
     f3, c3 = get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f3, c3)
 
-def F_Intersection(f1,c1,f2,c2):
+
+def F_Intersection(f1, c1, f2, c2):
     """
     :return: F_int: Truth-Value (f,c)
     """
@@ -211,7 +223,7 @@ def F_Intersection(f1,c1,f2,c2):
     return NALGrammar.TruthValue(f_int, c_int)
 
 
-def F_Union(f1,c1,f2,c2):
+def F_Union(f1, c1, f2, c2):
     """
     :return: F_uni: Truth-Value (f,c)
     """
@@ -221,7 +233,7 @@ def F_Union(f1,c1,f2,c2):
     return NALGrammar.TruthValue(f3, c3)
 
 
-def F_Difference(f1,c1,f2,c2):
+def F_Difference(f1, c1, f2, c2):
     """
     :return: F_dif: Truth-Value (f,c)
     """
@@ -230,11 +242,32 @@ def F_Difference(f1,c1,f2,c2):
     c3 = band(c1, c2)
     return NALGrammar.TruthValue(f3, c3)
 
+
+def F_Projection(frequency, confidence, t_B, t_T):
+    """
+        Time Projection
+
+        Project the occurrence time of a belief (t_B)
+        to another occurrence time (t_T)
+    """
+    T_c = Global.Global.get_current_cycle_number()
+    k_c = abs(t_B - t_T) / (abs(t_B - T_c) + abs(t_T - T_c))
+    projected_confidence = (1 - k_c) * confidence
+    return NALGrammar.TruthValue(frequency,projected_confidence)
+
+
+def F_Eternalization(temporal_frequency, temporal_confidence):
+    eternal_confidence = 1.0 / (Config.k + temporal_confidence)
+    return NALGrammar.TruthValue(temporal_frequency, eternal_confidence)
+
+
 """
     ======================================
     ++++  (Local inference rules) ++++
     ======================================
 """
+
+
 def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
         Revision Rule
@@ -254,14 +287,14 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     assert (
-                j1.statement.term.get_formatted_string() == j2.statement.term.get_formatted_string()), "Cannot revise sentences for 2 different statements"
+            j1.statement.term.get_formatted_string() == j2.statement.term.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
-    #todo handle occurrence_time
+    # todo handle occurrence_time
     occurrence_time = None
 
     # Get Truth Value
     (wp1, w1, wn1), (wp2, w2, wn2) = getevidence_from2sentences(j1, j2)
-    result_truth = F_Revision(wp1=wp1,wn1=wn1,wp2=wp2,wn2=wn2)
+    result_truth = F_Revision(wp1=wp1, wn1=wn1, wp2=wp2, wn2=wn2)
 
     result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
@@ -334,7 +367,7 @@ def Decision(f, c):
          Returns:
            True or false, whether to pursue the goal
     """
-    desirability = Expectation(f,c)
+    desirability = Expectation(f, c)
     return abs(desirability - 0.5) > Config.T
 
 
@@ -354,6 +387,43 @@ def Expectation(f, c):
     """
     return c * (f - 0.5) + 0.5
 
+
+def Eternalization(j):
+    """
+        Eternalization
+        :param j:
+        :return: Eternalized form of j
+    """
+    NALGrammar.assert_sentence(j)
+
+    if isinstance(j, NALGrammar.Judgment):
+        result_truth = F_Eternalization(j.value.frequency, j.value.confidence)
+        result = NALGrammar.Judgment(j.statement, result_truth, occurrence_time=None)
+    elif isinstance(j, NALGrammar.Question):
+        assert "error"
+
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+
+    return result
+
+def Projection(j, occurrence_time):
+    """
+        Projection
+        :param j:
+        :param occurrence_time: occurrence time to project j to
+        :return: Projected form of j
+    """
+    NALGrammar.assert_sentence(j)
+
+    if isinstance(j, NALGrammar.Judgment):
+        result_truth = F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)
+        result = NALGrammar.Judgment(j.statement, result_truth, occurrence_time=occurrence_time)
+    elif isinstance(j, NALGrammar.Question):
+        assert "error"
+
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+
+    return result
 
 """
     ======================================
@@ -384,14 +454,13 @@ def Negation(j: NALGrammar.Sentence):
 
     if isinstance(j, NALGrammar.Judgment):
         result_truth = F_Negation(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(result_statement, result_truth,occurrence_time=occurrence_time)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=occurrence_time)
     elif isinstance(j, NALGrammar.Question):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
 
     return result
-
 
 
 def Conversion(j: NALGrammar.Sentence):
@@ -422,7 +491,7 @@ def Conversion(j: NALGrammar.Sentence):
 
     if isinstance(j, NALGrammar.Judgment):
         result_truth = F_Conversion(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=occurrence_time)
     elif isinstance(j, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -431,7 +500,6 @@ def Conversion(j: NALGrammar.Sentence):
     result.stamp.from_conversion = True
 
     return result
-
 
 
 def Contraposition(j):
@@ -447,16 +515,17 @@ def Contraposition(j):
     """
     NALGrammar.assert_sentence(j)
     # Statement
-    negated_predicate_term = NALGrammar.CompoundTerm([j.statement.get_predicate_term()], NALSyntax.TermConnector.Negation)
-    negated_subject_term = NALGrammar.CompoundTerm([j.statement.get_subject_term()],
+    negated_predicate_term = NALGrammar.CompoundTerm([j.statement.get_predicate_term()],
                                                      NALSyntax.TermConnector.Negation)
+    negated_subject_term = NALGrammar.CompoundTerm([j.statement.get_subject_term()],
+                                                   NALSyntax.TermConnector.Negation)
 
     result_statement = NALGrammar.Statement(negated_predicate_term,
                                             negated_subject_term,
                                             j.statement.get_copula())
 
     if isinstance(j, NALGrammar.Judgment):
-        result_truth = F_Contraposition(j.value.frequency,j.value.confidence)
+        result_truth = F_Contraposition(j.value.frequency, j.value.confidence)
         result = NALGrammar.Judgment(result_statement, result_truth)
     elif isinstance(j, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
@@ -465,6 +534,7 @@ def Contraposition(j):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
 
     return result
+
 
 def ExtensionalImage(j: NALGrammar.Sentence):
     """
@@ -485,7 +555,7 @@ def ExtensionalImage(j: NALGrammar.Sentence):
     statement_subterms = j.statement.get_subject_term().subterms
     R = j.statement.get_predicate_term()
 
-    for i1 in range(0,len(statement_subterms)):
+    for i1 in range(0, len(statement_subterms)):
         subterm = statement_subterms[i1]
 
         image_subterms = [R]
@@ -496,15 +566,15 @@ def ExtensionalImage(j: NALGrammar.Sentence):
                 image_subterms.append(Global.Global.TERM_IMAGE_PLACEHOLDER)
 
         image_term = NALGrammar.CompoundTerm(image_subterms,
-                                           NALSyntax.TermConnector.ExtensionalImage)
+                                             NALSyntax.TermConnector.ExtensionalImage)
 
         result_statement = NALGrammar.Statement(subterm,
-                                                  image_term,
-                                                  NALSyntax.Copula.Inheritance)
+                                                image_term,
+                                                NALSyntax.Copula.Inheritance)
 
         if isinstance(j, NALGrammar.Judgment):
             result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
-            result = NALGrammar.Judgment(result_statement, result_truth)
+            result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j.stamp.occurrence_time)
         elif isinstance(j, NALGrammar.Question):
             result = NALGrammar.Question(result_statement)
 
@@ -512,8 +582,8 @@ def ExtensionalImage(j: NALGrammar.Sentence):
         result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
         results.append(result)
 
-
     return results
+
 
 def IntensionalImage(j: NALGrammar.Sentence):
     """
@@ -534,7 +604,7 @@ def IntensionalImage(j: NALGrammar.Sentence):
     statement_subterms = j.statement.get_predicate_term().subterms
     R = j.statement.get_subject_term()
 
-    for i1 in range(0,len(statement_subterms)):
+    for i1 in range(0, len(statement_subterms)):
         subterm = statement_subterms[i1]
 
         image_subterms = [R]
@@ -545,7 +615,7 @@ def IntensionalImage(j: NALGrammar.Sentence):
                 image_subterms.append(Global.Global.TERM_IMAGE_PLACEHOLDER)
 
         image_term = NALGrammar.CompoundTerm(image_subterms,
-                                           NALSyntax.TermConnector.ExtensionalImage)
+                                             NALSyntax.TermConnector.ExtensionalImage)
 
         result_statement = NALGrammar.Statement(image_term,
                                                 subterm,
@@ -553,7 +623,7 @@ def IntensionalImage(j: NALGrammar.Sentence):
 
         if isinstance(j, NALGrammar.Judgment):
             result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
-            result = NALGrammar.Judgment(result_statement, result_truth)
+            result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j.stamp.occurrence_time)
         elif isinstance(j, NALGrammar.Question):
             result = NALGrammar.Question(result_statement)
 
@@ -562,6 +632,7 @@ def IntensionalImage(j: NALGrammar.Sentence):
         results.append(result)
 
     return results
+
 
 """
     ======================================
@@ -597,8 +668,8 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Deduction(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Deduction(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -639,33 +710,34 @@ def Analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
-        #j1=M-->P, j2=S<->M
+        # j1=M-->P, j2=S<->M
         result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
                                                 j1.statement.get_predicate_term(),
-                                                j1.statement.get_copula()) # S-->P
+                                                j1.statement.get_copula())  # S-->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M-->P, j2=M<->S
         result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
                                                 j1.statement.get_predicate_term(),
-                                                j1.statement.get_copula()) # S-->P
+                                                j1.statement.get_copula())  # S-->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        #j1=P-->M, j2=S<->M
+        # j1=P-->M, j2=S<->M
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 j2.statement.get_subject_term(),
-                                                j1.statement.get_copula()) # P-->S
+                                                j1.statement.get_copula())  # P-->S
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P-->M, j2=M<->S
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 j2.statement.get_predicate_term(),
-                                                j1.statement.get_copula()) # P-->S
+                                                j1.statement.get_copula())  # P-->S
     else:
-        assert(False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+        assert (
+            False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = F_Analogy(f1, c1, f2, c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -729,8 +801,8 @@ def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if isinstance(j1, NALGrammar.Judgment):
         # Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Resemblance(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Resemblance(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -739,6 +811,7 @@ def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
+
 
 def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
@@ -772,8 +845,8 @@ def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
 
-        result_truth = F_Abduction(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Abduction(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -813,8 +886,8 @@ def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Induction(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Induction(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -854,8 +927,8 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Exemplification(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Exemplification(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
     # merge in the parent sentences' evidential bases
@@ -900,13 +973,14 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
                                                 j1.statement.get_subject_term(),
                                                 NALSyntax.Copula.Similarity)
     else:
-        assert(False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+        assert (
+            False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Comparison(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Comparison(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -916,11 +990,14 @@ def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
 
     return result
 
+
 """
     ======================================
     ++++ (The Composition Rules) ++++
     ======================================
 """
+
+
 def IntensionalIntersectionOrDisjunction(j1, j2):
     """
         First Order: Intensional Intersection (Strong Inference)
@@ -962,46 +1039,46 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
         connector = NALSyntax.TermConnector.IntensionalIntersection
         copula = NALSyntax.Copula.Inheritance
     else:
-        #higher-order, could be temporal
-        #todo temporal disjunction
+        # higher-order, could be temporal
+        # todo temporal disjunction
         connector = NALSyntax.TermConnector.Disjunction
         copula = NALSyntax.Copula.Implication
 
     # Statement
     result_truth = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        #j1: Sentence(T1 --> M < f1, c1 >)
-        #j2: Sentence(T2 --> M < f2, c2 >)
+        # j1: Sentence(T1 --> M < f1, c1 >)
+        # j2: Sentence(T2 --> M < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
                                                  j2.statement.get_subject_term()],
                                                 term_connector=connector)  # (T1 & T2)
         result_statement = NALGrammar.Statement(compound_term,
                                                 j1.statement.get_predicate_term(),
-                                                copula) # ((T1 | T2) --> M)
+                                                copula)  # ((T1 | T2) --> M)
 
         if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = F_Intersection(f1,c1,f2,c2)
+            result_truth = F_Intersection(f1, c1, f2, c2)
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        #j1: Sentence(M --> T1 < f1, c1 >)
-        #j2: Sentence(M --> T2 < f2, c2 >)
+        # j1: Sentence(M --> T1 < f1, c1 >)
+        # j2: Sentence(M --> T2 < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
                                                  j2.statement.get_predicate_term()],
                                                 term_connector=connector)  # (T1 & T2)
 
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 compound_term,
-                                                copula)# (M --> (T1 | T2))
+                                                copula)  # (M --> (T1 | T2))
 
         if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = F_Union(f1,c1,f2,c2)
+            result_truth = F_Union(f1, c1, f2, c2)
 
     if isinstance(j1, NALGrammar.Judgment):
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -1010,6 +1087,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
+
 
 def ExtensionalIntersectionOrConjunction(j1, j2):
     """
@@ -1052,44 +1130,44 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
         connector = NALSyntax.TermConnector.ExtensionalIntersection
         copula = NALSyntax.Copula.Inheritance
     else:
-        #higher-order, could be temporal
-        #todo temporal conjunction
+        # higher-order, could be temporal
+        # todo temporal conjunction
         connector = NALSyntax.TermConnector.Conjunction
         copula = NALSyntax.Copula.Implication
 
     result_truth = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        #j1: Sentence(T1 --> M < f1, c1 >)
-        #j2: Sentence(T2 --> M < f2, c2 >)
+        # j1: Sentence(T1 --> M < f1, c1 >)
+        # j2: Sentence(T2 --> M < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
                                                  j2.statement.get_subject_term()],
                                                 term_connector=connector)  # (T1 & T2)
         result_statement = NALGrammar.Statement(compound_term,
                                                 j1.statement.get_predicate_term(),
-                                                copula) # ((T1 & T2) --> M)
+                                                copula)  # ((T1 & T2) --> M)
 
         if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = F_Union(f1,c1,f2,c2)
+            result_truth = F_Union(f1, c1, f2, c2)
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        #j1: Sentence(M --> T1 < f1, c1 >)
-        #j2: Sentence(M --> T2 < f2, c2 >)
+        # j1: Sentence(M --> T1 < f1, c1 >)
+        # j2: Sentence(M --> T2 < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
                                                  j2.statement.get_predicate_term()],
                                                 term_connector=connector)  # (T1 & T2)
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 compound_term,
-                                                copula)# (M --> (T1 & T2))
+                                                copula)  # (M --> (T1 & T2))
 
         if isinstance(j1, NALGrammar.Judgment):
             # Get Truth Value
             (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = F_Intersection(f1,c1,f2,c2)
+            result_truth = F_Intersection(f1, c1, f2, c2)
 
     if isinstance(j1, NALGrammar.Judgment):
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -1098,6 +1176,7 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
+
 
 def IntensionalDifference(j1, j2):
     """
@@ -1121,17 +1200,17 @@ def IntensionalDifference(j1, j2):
     assert j1.statement.get_predicate_term() == j2.statement.get_predicate_term()
 
     compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
-                                            j2.statement.get_predicate_term()],
-                                            NALSyntax.TermConnector.ExtensionalDifference) # (T1 - T2)
+                                             j2.statement.get_predicate_term()],
+                                            NALSyntax.TermConnector.ExtensionalDifference)  # (T1 - T2)
     result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                             compound_term,
-                                            NALSyntax.Copula.Inheritance)# (M --> (T1 - T2))
+                                            NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Difference(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Difference(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -1140,6 +1219,7 @@ def IntensionalDifference(j1, j2):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
+
 
 def ExtensionalDifference(j1, j2):
     """
@@ -1162,30 +1242,30 @@ def ExtensionalDifference(j1, j2):
 
     # Statement
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        #j1: Sentence(T1 --> M < f1, c1 >)
-        #j2: Sentence(T2 --> M < f2, c2 >)
+        # j1: Sentence(T1 --> M < f1, c1 >)
+        # j2: Sentence(T2 --> M < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
-                                                j2.statement.get_subject_term()],
+                                                 j2.statement.get_subject_term()],
                                                 NALSyntax.TermConnector.IntensionalDifference)
         result_statement = NALGrammar.Statement(compound_term,
                                                 j1.statement.get_predicate_term(),
-                                                NALSyntax.Copula.Inheritance) # ((T1 ~ T2) --> M)
+                                                NALSyntax.Copula.Inheritance)  # ((T1 ~ T2) --> M)
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        #j1: Sentence(M --> T1 < f1, c1 >)
-        #j2: Sentence(M --> T2 < f2, c2 >)
+        # j1: Sentence(M --> T1 < f1, c1 >)
+        # j2: Sentence(M --> T2 < f2, c2 >)
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
-                                                j2.statement.get_predicate_term()],
+                                                 j2.statement.get_predicate_term()],
                                                 NALSyntax.TermConnector.ExtensionalDifference)
         result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                                 compound_term,
-                                                NALSyntax.Copula.Inheritance)# (M --> (T1 - T2))
+                                                NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = F_Difference(f1,c1,f2,c2)
-        result = NALGrammar.Judgment(result_statement, result_truth)
+        result_truth = F_Difference(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
@@ -1201,6 +1281,8 @@ def ExtensionalDifference(j1, j2):
     ++++ (The Temporal Inference Rules) ++++
     ======================================
 """
+
+
 def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
     """
         Temporal Induction
@@ -1226,13 +1308,16 @@ def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 =|> j2
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.ConcurrentImplication)
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+                                                NALSyntax.Copula.ConcurrentImplication)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 =/> j2
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.PredictiveImplication)
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+                                                NALSyntax.Copula.PredictiveImplication)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 =/> j1
-        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term, NALSyntax.Copula.PredictiveImplication)
+        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term,
+                                                NALSyntax.Copula.PredictiveImplication)
 
     # calculate induction truth value
     result_truth = F_Induction(f1, c1, f2, c2)
@@ -1243,6 +1328,7 @@ def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
 
     return result
+
 
 def Temporal_Comparison(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
     """
@@ -1269,16 +1355,19 @@ def Temporal_Comparison(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # <|>
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.ConcurrentEquivalence)
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+                                                NALSyntax.Copula.ConcurrentEquivalence)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 </> j2
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term, NALSyntax.Copula.PredictiveEquivalence)
+        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+                                                NALSyntax.Copula.PredictiveEquivalence)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 </> j1
-        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term, NALSyntax.Copula.PredictiveEquivalence)
+        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term,
+                                                NALSyntax.Copula.PredictiveEquivalence)
 
     # calculate induction truth value
-    result_truth = F_Comparison(f1,c1,f2,c2)
+    result_truth = F_Comparison(f1, c1, f2, c2)
     result = NALGrammar.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
@@ -1287,11 +1376,13 @@ def Temporal_Comparison(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
 
     return result
 
+
 """
     ======================================
     ++++ (Helper Functions) ++++
     ======================================
 """
+
 
 def get_truthvalue_from_evidence(wp, w):
     """
@@ -1323,6 +1414,7 @@ def get_evidence_fromfreqconf(f, c):
     w = Config.k * c / (1 - c)
     return wp, w, w - wp
 
+
 def get_confidence_from_evidence(w):
     """
         Input:
@@ -1331,6 +1423,7 @@ def get_confidence_from_evidence(w):
             confidence
     """
     return w / (w + Config.k)
+
 
 def getevidentialvalues_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     """
