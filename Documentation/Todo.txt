@@ -1,11 +1,12 @@
 - Handling Variables (NAL-6)
-- Events (NAL-7) (implemented)
+- Events (NAL-7) (implemented, TODO: need to handle events and occurrence times for semantic inference)
 - Goals (NAL-8) (initial processing implemented)
 - Operations (NAL-8)
 - Self-monitoring and self-control (NAL-9)
 - Sensory terms
 
 - Inference
+	- Time projection
 	- Structural Inference
 	- Immediate Inference (implemented)
 	- Composition Rules (implemented)
