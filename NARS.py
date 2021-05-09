@@ -27,7 +27,7 @@ class NARS:
     """
     def __init__(self):
         self.experience_task_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
-        self.sensorimotor_event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task,capacity=10)
+        self.event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task, capacity=10)
         self.memory = NARSMemory.Memory()
         self.delay = 0 # delay between cycles
 
@@ -88,7 +88,7 @@ class NARS:
 
         InputBuffer.process_next_pending_sentence()
 
-        self.Process_Sensorimotor_Buffer()
+        self.Process_Event_Buffer()
 
         rand = random.random()
         if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
@@ -107,15 +107,15 @@ class NARS:
         for i in range(cycles):
             self.do_working_cycle()
 
-    def Process_Sensorimotor_Buffer(self):
+    def Process_Event_Buffer(self):
         """
-            Process sensorimotor events into the experience buffer
+            Process events into the experience buffer
         """
-        if len(self.sensorimotor_event_buffer) > 1: # need multiple events to process implications
-            event_task_A = self.sensorimotor_event_buffer.take().object # take an event from the buffer
+        if len(self.event_buffer) > 1: # need multiple events to process implications
+            event_task_A = self.event_buffer.take().object # take an event from the buffer
             event_A = event_task_A.sentence
 
-            event_task_B = self.sensorimotor_event_buffer.take().object # take another event from the buffer
+            event_task_B = self.event_buffer.take().object # take another event from the buffer
             event_B = event_task_B.sentence
 
             # insert the events
@@ -158,10 +158,6 @@ class NARS:
         if concept_item is None:
             return  # nothing to ponder
 
-        # remove from GUI
-        if Global.Global.gui_use_internal_data:
-            NARSGUI.NARSGUI.remove_from_output(str(concept_item), data_structure=self.memory.concepts_bag)
-
         if isinstance(concept_item.object.term, NALGrammar.StatementTerm):
             # Concept is S --> P
             concept_to_consider = concept_item.object
@@ -181,11 +177,9 @@ class NARS:
                     self.process_goal_sentence(sentence)
 
          # decay priority
+        concept_item = self.memory.concepts_bag.take_using_key(concept_item.key)
         concept_item.decay()
-        # print back to GUI
-        if Global.Global.gui_use_internal_data:
-            NARSGUI.NARSGUI.print_to_output(str(concept_item), data_structure=self.memory.concepts_bag)
-
+        self.memory.concepts_bag.put(concept_item)
 
     def process_task(self, task: NARSDataStructures.Task):
         """
@@ -402,4 +396,4 @@ class NARS:
         operation = full_operation_statement.get_predicate_term()
         NARSGUI.NARSGUI.print_to_output("EXE: ^" + str(operation))
         operation_event = NALGrammar.Judgment(full_operation_statement, NALGrammar.TruthValue(), occurrence_time=Global.Global.get_current_cycle_number())
-        self.sensorimotor_event_buffer.put(NARSDataStructures.Task(operation_event))
+        self.event_buffer.put(NARSDataStructures.Task(operation_event))

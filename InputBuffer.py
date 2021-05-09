@@ -76,7 +76,7 @@ def process_sentence(sentence: NALGrammar.Sentence):
         Global.Global.NARS.experience_task_buffer.put_new(task)
     else:
         # temporal experience
-        Global.Global.NARS.sensorimotor_event_buffer.put_new(task)
+        Global.Global.NARS.event_buffer.put_new(task)
 
 def load_input(filename="input.nal"):
     """

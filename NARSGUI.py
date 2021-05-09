@@ -25,10 +25,10 @@ class NARSGUI:
     # listboxes
     gui_experience_buffer_listbox = None  # output for tasks in experience buffer
     gui_memory_listbox = None  # output for concepts in memory bag
-    gui_sensorimotor_buffer_listbox = None # output for tasks in sensorimotor event buffer
+    gui_event_buffer_listbox = None # output for tasks in event buffer
 
     # labels
-    gui_sensorimotor_buffer_output_label = None
+    gui_event_buffer_output_label = None
     gui_experience_buffer_output_label = None
     gui_concepts_bag_output_label = None
     GUI_BUDGET_SYMBOL = "$"
@@ -44,8 +44,8 @@ class NARSGUI:
             listbox = cls.gui_experience_buffer_listbox
         elif data_structure is NARS.memory.concepts_bag:
             listbox = cls.gui_memory_listbox
-        elif data_structure is NARS.sensorimotor_event_buffer:
-            listbox = cls.gui_sensorimotor_buffer_listbox
+        elif data_structure is NARS.event_buffer:
+            listbox = cls.gui_event_buffer_listbox
         elif data_structure is None:
             # output to interface or shell
             if Global.Global.gui_use_interface:
@@ -57,7 +57,7 @@ class NARSGUI:
         # internal data output
         # insert item sorted by priority
         if Global.Global.gui_use_internal_data:
-            if data_structure is NARS.sensorimotor_event_buffer:
+            if data_structure is NARS.event_buffer:
                 idx_to_insert = tk.END
             else:
                 string_list = listbox.get(0, tk.END)  # get all items in the listbox
@@ -90,8 +90,8 @@ class NARSGUI:
             listbox = cls.gui_experience_buffer_listbox
         elif data_structure is NARS.memory.concepts_bag:
             listbox = cls.gui_memory_listbox
-        elif data_structure is NARS.sensorimotor_event_buffer:
-            listbox = cls.gui_sensorimotor_buffer_listbox
+        elif data_structure is NARS.event_buffer:
+            listbox = cls.gui_event_buffer_listbox
 
         string_list = listbox.get(0, tk.END)
         msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
@@ -124,9 +124,8 @@ class NARSGUI:
         elif data_structure is NARS.memory.concepts_bag:
             label_txt = "Concepts "
             label = cls.gui_concepts_bag_output_label
-        elif data_structure is NARS.sensorimotor_event_buffer:
-            label_txt = "Sensorimotor "
-            label = cls.gui_sensorimotor_buffer_output_label
+        elif data_structure is NARS.event_buffer:
+            label = cls.gui_event_buffer_output_label
 
         if label is None: return
         length = len(data_structure)
@@ -178,18 +177,18 @@ class NARSGUI:
         listbox_width = 80
 
         """
-            Sensorimotor event buffer internal contents GUI
+            Event buffer internal contents GUI
         """
-        cls.gui_sensorimotor_buffer_output_label = tk.Label(window)
-        cls.gui_sensorimotor_buffer_output_label.grid(row=0, column=0, sticky='w')
+        cls.gui_event_buffer_output_label = tk.Label(window)
+        cls.gui_event_buffer_output_label.grid(row=0, column=0, sticky='w')
 
         buffer_scrollbar = tk.Scrollbar(window)
         buffer_scrollbar.grid(row=1, column=2, sticky='ns')
-        cls.gui_sensorimotor_buffer_listbox = tk.Listbox(window,
-                                                       height=listbox_height//3,
-                                                       width=listbox_width, font=('', 8),
-                                                       yscrollcommand=buffer_scrollbar.set)
-        cls.gui_sensorimotor_buffer_listbox.grid(row=1, column=0, columnspan=1)
+        cls.gui_event_buffer_listbox = tk.Listbox(window,
+                                                  height=listbox_height//3,
+                                                  width=listbox_width, font=('', 8),
+                                                  yscrollcommand=buffer_scrollbar.set)
+        cls.gui_event_buffer_listbox.grid(row=1, column=0, columnspan=1)
 
         """
             Experience Buffer internal contents GUI
@@ -234,7 +233,7 @@ class NARSGUI:
 
         cls.update_datastructure_labels(Global.Global.NARS.experience_task_buffer)
         cls.update_datastructure_labels(Global.Global.NARS.memory.concepts_bag)
-        cls.update_datastructure_labels(Global.Global.NARS.sensorimotor_event_buffer)
+        cls.update_datastructure_labels(Global.Global.NARS.event_buffer)
 
     @classmethod
     def execute_interface_gui(cls,window):

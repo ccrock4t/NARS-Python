@@ -225,6 +225,7 @@ class Bag(ItemContainer):
         ItemContainer._put_into_lookup_dict(self, item)  # Item Container
         # put item into bucket
         self.buckets[item.get_target_bucket_number()].append(item)
+        item.current_bucket_number = item.get_target_bucket_number()
 
         # increase Bag count
         self.count += 1

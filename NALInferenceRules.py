@@ -268,7 +268,7 @@ def F_Eternalization(temporal_frequency, temporal_confidence):
 """
 
 
-def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Revision(j1, j2):
     """
         Revision Rule
 
@@ -308,7 +308,7 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Choice(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Choice(j1, j2):
     """
          Choice Rule
 
@@ -432,7 +432,7 @@ def Projection(j, occurrence_time):
 """
 
 
-def Negation(j: NALGrammar.Sentence):
+def Negation(j):
     """
          Negation
 
@@ -463,7 +463,7 @@ def Negation(j: NALGrammar.Sentence):
     return result
 
 
-def Conversion(j: NALGrammar.Sentence):
+def Conversion(j):
     """
         Conversion Rule
 
@@ -536,7 +536,7 @@ def Contraposition(j):
     return result
 
 
-def ExtensionalImage(j: NALGrammar.Sentence):
+def ExtensionalImage(j):
     """
     Extensional Image
     Inputs:
@@ -585,7 +585,7 @@ def ExtensionalImage(j: NALGrammar.Sentence):
     return results
 
 
-def IntensionalImage(j: NALGrammar.Sentence):
+def IntensionalImage(j):
     """
     Intensional Image
     Inputs:
@@ -641,7 +641,7 @@ def IntensionalImage(j: NALGrammar.Sentence):
 """
 
 
-def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Deduction(j1, j2):
     """
         Deduction (Strong syllogism)
 
@@ -680,7 +680,7 @@ def Deduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Analogy(j1, j2):
     """
         Analogy (Strong syllogism)
 
@@ -748,7 +748,7 @@ def Analogy(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Resemblance(j1, j2):
     """
         Resemblance (Strong syllogism)
 
@@ -813,7 +813,7 @@ def Resemblance(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Abduction(j1, j2):
     """
         Abduction (Weak syllogism)
 
@@ -857,7 +857,7 @@ def Abduction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Induction(j1, j2):
     """
         Induction (Weak syllogism)
 
@@ -898,7 +898,7 @@ def Induction(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Exemplification(j1, j2):
     """
         Exemplification (Weak syllogism)
 
@@ -938,7 +938,7 @@ def Exemplification(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     return result
 
 
-def Comparison(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def Comparison(j1, j2):
     """
         Comparison (Weak syllogism)
 
@@ -1283,7 +1283,7 @@ def ExtensionalDifference(j1, j2):
 """
 
 
-def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
+def Temporal_Induction(j1, j2):
     """
         Temporal Induction
 
@@ -1330,7 +1330,7 @@ def Temporal_Induction(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
     return result
 
 
-def Temporal_Comparison(j1: NALGrammar.Judgment, j2: NALGrammar.Judgment):
+def Temporal_Comparison(j1, j2):
     """
         Temporal Induction
 
@@ -1425,34 +1425,34 @@ def get_confidence_from_evidence(w):
     return w / (w + Config.k)
 
 
-def getevidentialvalues_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def getevidentialvalues_from2sentences(j1, j2):
     """
         Input:
-            j1: Statement <f1, c1>
+            j1: Sentence <f1, c1>
 
-            j2: Statement <f2, c2>
+            j2: Sentence <f2, c2>
         Returns:
             f1, c1, f2, c2
     """
     return getevidentialvalues_fromsentence(j1), getevidentialvalues_fromsentence(j2)
 
 
-def getevidentialvalues_fromsentence(j: NALGrammar.Sentence):
+def getevidentialvalues_fromsentence(j):
     """
         Input:
-            j: Statement <f, c>
+            j: Sentence <f, c>
         Returns:
             f, c
     """
     return j.value.frequency, j.value.confidence
 
 
-def getevidence_from2sentences(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
+def getevidence_from2sentences(j1, j2):
     """
         Input:
-            j1: Statement <f1, c1>
+            j1: Sentence <f1, c1>
 
-            j2: Statement <f2, c2>
+            j2: Sentence <f2, c2>
         Returns:
             w1+, w1, w1-, w2+, w2, w2-
     """
