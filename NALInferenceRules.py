@@ -299,7 +299,7 @@ def Revision(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence):
     result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
                                             j1.statement.get_copula())
-    result = NALGrammar.Judgment(result_statement, result_truth)
+    result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
