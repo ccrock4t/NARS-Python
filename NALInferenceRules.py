@@ -29,7 +29,7 @@ def band(*argv):
         -----------------
 
         Input:
-            argv - NAL Binary Values
+            argv: NAL Binary Values
 
         Returns:
             argv1*argv2*...*argvn
@@ -47,7 +47,7 @@ def bor(*argv):
         -----------------
 
         Input:
-            argv - NAL Binary Values
+            argv: NAL Binary Values
 
         Returns:
              1-((1-argv1)*(1-argv2)*...*(1-argvn))
@@ -65,10 +65,10 @@ def bnot(arg):
         -----------------
 
         Input:
-            arg - NAL Binary Value
+            arg: NAL Binary Value
 
         Returns:
-            1 - arg
+            1 minus arg
     """
     return 1 - arg
 
@@ -82,7 +82,7 @@ def bnot(arg):
 
 def F_Revision(wp1, wn1, wp2, wn2):
     """
-        :return: F_rev
+        :return: F_rev: Truth-Value (f,c)
     """
     # compute values of combined evidence
     wp = wp1 + wp2
@@ -96,7 +96,7 @@ def F_Negation(f, c):
     """
         f_neg = 1 - f
         c_neg = c
-        :return: F_neg
+        :return: F_neg: Truth-Value (f,c)
     """
     return NALGrammar.TruthValue(1 - f, c)
 
@@ -105,7 +105,7 @@ def F_Conversion(f, c):
     """
         wp = AND(f, c)
         wn = AND(NOT(f), c)
-        :return: F_cnv
+        :return: F_cnv: Truth-Value (f,c)
     """
     # compute values of combined evidence
     wp = band(f, c)
@@ -118,7 +118,7 @@ def F_Contraposition(f, c):
     """
         wp = 0
         wn = AND(NOT(f), c)
-        :return: F_cnt
+        :return: F_cnt: Truth-Value (f,c)
     """
     wp = 0
     wn = band(bnot(f), c)
@@ -158,7 +158,7 @@ def F_Resemblance(f1, c1, f2, c2):
         f_res = AND(f1,f2)
         c_res = AND(OR(f1,f2),c1,c2)
 
-        :return: F_res
+        :return: F_res: Truth-Value (f,c)
     """
     f_res = band(f1, f2)
     c_res = band(bor(f1, f2), c1, c2)

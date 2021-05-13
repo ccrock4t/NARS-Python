@@ -122,7 +122,7 @@ class NARSGUI:
             label_txt = "Experience Task "
             label = cls.gui_experience_buffer_output_label
         elif data_structure is NARS.memory.concepts_bag:
-            label_txt = "Concepts "
+            label_txt = "Memory - Concepts "
             label = cls.gui_concepts_bag_output_label
         elif data_structure is NARS.event_buffer:
             label = cls.gui_event_buffer_output_label

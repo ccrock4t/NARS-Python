@@ -1,7 +1,7 @@
 """
     Author: Christian Hahm
     Created: March 8, 2021
-    Purpose: Identifies and performs proper inference for the system
+    Purpose: Given premises, performs proper inference and returns the resultant sentences as Tasks.
 """
 import Global
 import NALGrammar
@@ -14,13 +14,13 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
 
-        :param t1: Sentence
+        :param j1: Sentence
         :param j2: Sentence
 
         :assume j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
                 (no evidential overlap)
 
-        :returns An array of the derived Tasks, or None if the inputs have evidential overlap
+        :returns An array of the derived Tasks, or an empty array if the inputs have evidential overlap
     """
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
@@ -59,7 +59,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
         return [] # can't do inference, it will result in tautology
 
 
-    # Projection
+    # Time Projection between j1 and j2
+    # j2 is projected to be used with j1
     if isinstance(j1, NALGrammar.Judgment):
         if j2.stamp.get_tense() != NALSyntax.Tense.Eternal:
             eternalized_j2 = NALInferenceRules.Eternalization(j2)
@@ -294,8 +295,11 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentence, B: NALGrammar.Sent
 def do_inference_one_premise(j):
     """
         Immediate Inference Rules
-
         Generates beliefs that are equivalent to j but in a different form.
+
+        :param j: Sentence
+
+        :returns An array of the derived Tasks
     """
     derived_sentences = []
 
