@@ -9,6 +9,7 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import Config
 import Global
 import NALGrammar
 from NALInferenceRules import HelperFunctions, ExtendedBooleanOperators

@@ -9,6 +9,7 @@ import NALInferenceRules.Immediate
 import NALInferenceRules.Syllogistic
 import NALInferenceRules.Composition
 import NALInferenceRules.Local
+import NALInferenceRules.ConditionalSyllogistic
 import NARSDataStructures
 import NALSyntax
 
