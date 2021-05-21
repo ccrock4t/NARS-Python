@@ -1,11 +1,11 @@
 import DataStructureTests
 import GrammarTests
-import InferenceTests
+import InferenceEngineTests
 
 def main():
     DataStructureTests.main()
     GrammarTests.main()
-    InferenceTests.main()
+    InferenceEngineTests.main()
 
 if __name__ == "__main__":
     main()

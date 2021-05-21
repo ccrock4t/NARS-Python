@@ -326,7 +326,7 @@ class NARS:
             :param j1: Goal
             :param related_concept: concept related to goal with which to perform semantic inference
         """
-        should_pursue = NALInferenceRules.Decision(j1.value.frequency, j1.value.confidence)
+        should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
         if not should_pursue: return # Failed decision-making rule
 
         statement_term = j1.statement.term

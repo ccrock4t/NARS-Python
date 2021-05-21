@@ -155,13 +155,13 @@ class Judgment(Sentence):
         """
             :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
         """
-        return NALInferenceRules.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
+        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
 
     def is_negative(self):
         """
             :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
         """
-        return NALInferenceRules.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
+        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
 
 
 class Question(Sentence):
