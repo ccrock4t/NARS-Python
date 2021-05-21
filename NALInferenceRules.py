@@ -459,6 +459,7 @@ def Negation(j):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+    result.stamp.from_one_premise_inference = True
 
     return result
 
@@ -497,7 +498,7 @@ def Conversion(j):
 
     # merge in the parent sentence's evidential base
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result.stamp.from_conversion = True
+    result.stamp.from_one_premise_inference = True
 
     return result
 
@@ -532,6 +533,7 @@ def Contraposition(j):
 
     # merge in the parent sentence's evidential base
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+    result.stamp.from_one_premise_inference = True
 
     return result
 
@@ -693,8 +695,6 @@ def Analogy(j1, j2):
             j1: Sentence (P --> M <f1, c1>)
 
             j2: Sentence (S <-> M <f2, c2>)
-                or
-            j2: Sentence (M <-> S <f2, c2>)
         Truth Val:
             f: and(f1,f2)
 
@@ -1190,8 +1190,7 @@ def IntensionalDifference(j1, j2):
             and
             j2: Sentence (T2 --> M <f2, c2>)
         Evidence:
-            f: band(f1,f2)
-            c: band(c1,c2)
+            F_difference
         Returns:
             :- Sentence ((T1 ~ T2) --> M)
     """
@@ -1232,8 +1231,7 @@ def ExtensionalDifference(j1, j2):
             and
             j2: Sentence (M --> T2 <f2, c2>)
         Evidence:
-            f: band(f1,f2)
-            c: band(c1,c2)
+            F_difference
         Returns:
             :- Sentence (M --> (T1 - T2))
     """
@@ -1275,6 +1273,122 @@ def ExtensionalDifference(j1, j2):
 
     return result
 
+"""
+    ======================================
+    ++++ (The Conditional Syllogistic Rules) ++++
+    ======================================
+"""
+def Conditional_Analogy(j1, j2):
+    """
+        Conditional Analogy
+
+        Input:
+            j1: Event (S) <f1, c1> {tense}
+
+            j2: Equivalence Statement (S <=> P) <f2, c2>
+        Evidence:
+            F_analogy
+        Returns:
+            :- Sentence (P <f3, c3>)
+    """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
+
+    # Statement
+    if j1.statement.term == j2.statement.get_subject_term():
+        statement_term: NALGrammar.StatementTerm = j2.statement.get_predicate_term()
+    elif j1.statement.term == j2.statement.get_predicate_term():
+        statement_term: NALGrammar.StatementTerm  = j2.statement.get_subject_term()
+    else:
+        assert False, "Error: Invalid inputs to Conditional Analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+
+    result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+                                            statement_term.get_copula())
+
+
+    if isinstance(j1, NALGrammar.Judgment):
+        # Get Truth Value
+        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+        result_truth = F_Analogy(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
+
+def Conditional_Deduction(j1, j2):
+    """
+        Conditional Deduction
+
+        Input:
+            j1: Event (S) <f1, c1> {tense}
+
+            j2: Equivalence Statement (S ==> P) <f2, c2>
+        Evidence:
+            F_deduction
+        Returns:
+            :- P <f3, c3>
+    """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
+
+    statement_term: NALGrammar.StatementTerm = j2.statement.get_predicate_term() # P
+    result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+                                            statement_term.get_copula())
+
+
+    if isinstance(j1, NALGrammar.Judgment):
+        # Get Truth Value
+        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+        result_truth = F_Deduction(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
+
+def Conditional_Abduction(j1, j2):
+    """
+        Conditional Abduction
+
+        Input:
+            j1: Event (P) <f1, c1> {tense}
+
+            j2: Equivalence Statement (S ==> P) <f2, c2>
+        Evidence:
+            F_deduction
+        Returns:
+            :- P <f3, c3>
+    """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
+
+    statement_term: NALGrammar.StatementTerm = j2.statement.get_subject_term() # S
+    result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+                                            statement_term.get_copula())
+
+
+    if isinstance(j1, NALGrammar.Judgment):
+        # Get Truth Value
+        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+        result_truth = F_Abduction(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
 
 """
     ======================================
@@ -1302,6 +1416,8 @@ def Temporal_Induction(j1, j2):
             :- or Sentence (S =/> P <f3, c3>)
             :- or Sentence (P =/> S <f3, c3>)
     """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
     j1_statement_term = j1.statement.term
     j2_statement_term = j2.statement.term
@@ -1349,6 +1465,8 @@ def Temporal_Comparison(j1, j2):
             :- or Sentence (S </> P <f3, c3>)
             :- or Sentence (P </> S <f3, c3>)
     """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
     (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
     j1_statement_term = j1.statement.term
     j2_statement_term = j2.statement.term

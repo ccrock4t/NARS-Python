@@ -35,6 +35,9 @@ class Sentence:
         """
         return self.stamp.id
 
+    def is_event(self):
+        return self.stamp.get_tense() != NALSyntax.Tense.Eternal
+
     def get_formatted_string(self):
         string = self.get_formatted_string_no_id()
         string = Global.Global.MARKER_SENTENCE_ID + str(self.stamp.id) + Global.Global.MARKER_ID_END + string
@@ -303,7 +306,7 @@ class Stamp:
         self.sentence = self_sentence
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
         self.interacted_sentences = []  # list of sentence this sentence has already interacted with
-        self.from_conversion = False # is this sentence derived from Conversion?
+        self.from_one_premise_inference = False # is this sentence derived from one-premise inference?
 
     def get_tense(self):
         if self.occurrence_time is None:

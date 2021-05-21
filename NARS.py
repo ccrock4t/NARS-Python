@@ -378,7 +378,9 @@ class NARS:
                     j2 = belief  # belief can interact with j1
                     break
 
-        if j2 is None: return  # done if can't interact
+        if j2 is None:
+            if Global.Global.DEBUG: print('No related belief for ' + j1.get_formatted_string())
+            return  # done if can't interact
 
         if Global.Global.DEBUG: print("Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)

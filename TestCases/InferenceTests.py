@@ -341,22 +341,110 @@ def extensional_image():
 
     assert success,"TEST FAILURE: Extensional Image test failed: " + failed_criterion
 
+def conditional_analogy():
+    """
+        Test Conditional Analogy rule:
+        j1: S %1.0;0.9%
+        j2 S<=>P %1.0;0.9%
+
+        :- P %1.0;0.81%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(a-->b). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("((a-->b)<=>(c-->d)). %1.0;0.9%")
+    q1 = "(c-->d)?"
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.Conditional_Analogy(j1,j2).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Conditional Analogy test failed: " + failed_criterion
+
+def conditional_deduction():
+    """
+        Test Conditional Deduction rule:
+        j1: S %1.0;0.9%
+        j2 S==>P %1.0;0.9%
+
+        :- P %1.0;0.81%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(a-->b). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
+    q1 = "(c-->d)?"
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.Conditional_Deduction(j1,j2).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Conditional Deduction test failed: " + failed_criterion
+
+def conditional_abduction():
+    """
+        Test Conditional Abduction rule:
+        j1: P %1.0;0.9%
+        j2 S==>P %1.0;0.9%
+
+        :- S %1.0;0.81%
+    """
+    input_judgment_q, input_question_q, output_q = initialize_multiprocess_queues()
+
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(c-->d). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
+    q1 = "(a-->b)?"
+    input_judgment_q.put(j1)
+    input_judgment_q.put(j2)
+    input_question_q.put(NALGrammar.Sentence.new_sentence_from_string(q1))
+
+    process = threading.Thread(target=run_test, args=(input_judgment_q, input_question_q, output_q))
+    process.start()
+    process.join()
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.Conditional_Abduction(j1,j2).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Conditional Abduction test failed: " + failed_criterion
+
 def main():
     revision()
 
     """
         First-Order syllogism tests
     """
-    first_order_deduction()
-    first_order_induction()
     first_order_abduction()
     first_order_analogy()
+    first_order_deduction()
+    first_order_induction()
 
     """
         Composition
     """
     extensional_composition()
     intensional_composition()
+
+    """
+        Conditional Syllogism
+    """
+    conditional_abduction()
+    conditional_analogy()
+    conditional_deduction()
 
     print("All Inference Tests successfully passed.")
 

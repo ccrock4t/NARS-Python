@@ -62,16 +62,16 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
     if isinstance(j1, NALGrammar.Judgment):
-        if j2.stamp.get_tense() != NALSyntax.Tense.Eternal:
+        if j2.is_event():
             eternalized_j2 = NALInferenceRules.Eternalization(j2)
-            if j1.stamp.get_tense() == NALSyntax.Tense.Eternal:
-                j2 = eternalized_j2
-            elif j1.stamp.get_tense() != NALSyntax.Tense.Eternal:
+            if j1.is_event():
                 projected_j2 = NALInferenceRules.Projection(j2, j1.stamp.occurrence_time)
                 if projected_j2.value.confidence > eternalized_j2.value.confidence:
                     j2 = projected_j2
                 else:
                     j2 = eternalized_j2
+            else:
+                j2 = eternalized_j2
 
     """
     ===============================================
@@ -80,179 +80,259 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     ===============================================
     ===============================================
     """
+    swapped = False
     if isinstance(j1, NALGrammar.Judgment) or isinstance(j1, NALGrammar.Question):
-        if (NALSyntax.Copula.is_first_order(j1_copula) != NALSyntax.Copula.is_first_order(j2_copula)): return [] #different copulas, can't do syllogism
+        if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
+            if j1_term == j2_term:
+                """
+                # Revision
+                # j1 = S-->P, j2 = S-->P
+                # or j1 = S<->P, j2 = S<->P
+                """
+                if isinstance(j1, NALGrammar.Question): return derived_sentences # can't do revision with questions
 
-        if j1_term == j2_term:
+                derived_sentence = NALInferenceRules.Revision(j1, j2)  # S-->P
+                print_inference_rule(inference_rule="Revision")
+                derived_sentences.append(derived_sentence)
+            elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
+                if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
+                    """
+                    # j1 = M-->P, j2 = S-->M
+                    # or j1 = M-->S, j2 = P-->M
+                    # OR swapped premises
+                    # j1 = S-->M, j2 = M-->P
+                    # or j1 = P-->M, j2 = M-->S
+                    """
+                    if j1_subject_term != j2_predicate_term:
+                        """
+                            j1=S-->M, j2=M-->P
+                            or j1=P-->M, j2=M-->S
+                        """
+                        # swap sentences
+                        j1, j2 = j2, j1
+                        j1_term, j2_term = j2_term, j1_term
+                        j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
+                        j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
+                        j1_copula, j2_copula = j2_copula, j1_copula
+                        swapped = True
+                    """
+                    # Deduction
+                    """
+
+                    derived_sentence = NALInferenceRules.Deduction(j1, j2)  # S-->P or P-->S
+                    print_inference_rule(inference_rule="Deduction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Swapped Exemplification
+                    """
+                    derived_sentence = NALInferenceRules.Exemplification(j2, j1)  # P-->S or S-->P
+                    print_inference_rule(inference_rule="Swapped Exemplification")
+                    derived_sentences.append(derived_sentence)
+
+                    if swapped:
+                        # restore sentences
+                        j1, j2 = j2, j1
+                        j1_term, j2_term = j2_term, j1_term
+                        j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
+                        j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
+                        j1_copula, j2_copula = j2_copula, j1_copula
+                        swapped = False
+                elif j1_subject_term == j2_subject_term:
+                    """
+                        j1=M-->P
+                        j2=M-->S
+                    # Induction
+                    """
+                    derived_sentence = NALInferenceRules.Induction(j1, j2)  # S-->P
+                    print_inference_rule(inference_rule="Induction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Swapped Induction
+                    """
+                    derived_sentence = NALInferenceRules.Induction(j2, j1)  # P-->S
+                    print_inference_rule(inference_rule="Swapped Induction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Comparison
+                    """
+                    derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P
+                    print_inference_rule(inference_rule="Comparison")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Intensional Intersection or Disjunction
+                    """
+                    derived_sentence = NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2)  # M --> (S | P)
+                    print_inference_rule(inference_rule="Intensional Intersection or Disjunction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Extensional Intersection or Conjunction
+                    """
+                    derived_sentence = NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2)  # M --> (S & P)
+                    print_inference_rule(inference_rule="Extensional Intersection or Conjunction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Extensional Difference
+                    """
+                    derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # M --> (S - P)
+                    print_inference_rule(inference_rule="Intersection")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Swapped Extensional Difference
+                    """
+                    derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # M --> (S - P)
+                    print_inference_rule( inference_rule="Intersection")
+                    derived_sentences.append(derived_sentence)
+                elif j1_predicate_term == j2_predicate_term:
+                    """
+                        j1 = P-->M
+                        j2 = S-->M
+                    # Abduction
+                    """
+                    derived_sentence = NALInferenceRules.Abduction(j1, j2)  # S-->P or S==>P
+                    print_inference_rule(inference_rule="Abduction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Swapped Abduction
+                    """
+                    derived_sentence = NALInferenceRules.Abduction(j2, j1)  # P-->S or P==>S
+                    print_inference_rule(inference_rule="Swapped Abduction")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Comparison
+                    """
+                    derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P or S<=>P
+                    print_inference_rule(inference_rule="Comparison")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Intensional Intersection Disjunction
+                    """
+                    derived_sentence = NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2)  # (P | S) --> M
+                    print_inference_rule(inference_rule="Intensional Intersection")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Extensional Intersection Conjunction
+                    """
+                    derived_sentence = NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2)  # (P & S) --> M
+                    print_inference_rule(inference_rule="Extensional Intersection")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Intensional Difference
+                    """
+                    derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # (P ~ S) --> M
+                    print_inference_rule(inference_rule="Intersection")
+                    derived_sentences.append(derived_sentence)
+
+                    """
+                    # Swapped Intensional Difference
+                    """
+                    derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # (S ~ P) --> M
+                    print_inference_rule(inference_rule="Intersection")
+                    derived_sentences.append(derived_sentence)
+                else:
+                    assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
+            elif not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
+                """
+                # j1 = M-->P or P-->M
+                # j2 = S<->M or M<->S
+                # Analogy
+                """
+                derived_sentence = NALInferenceRules.Analogy(j1, j2)  # S-->P or P-->S
+                print_inference_rule(inference_rule="Analogy")
+                derived_sentences.append(derived_sentence)
+            elif NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
+                """
+                # j1 = M<->S or S<->M
+                # j2 = P-->M or M-->P
+                # Swapped Analogy
+                """
+                derived_sentence = NALInferenceRules.Analogy(j2, j1)  # S-->P or P-->S
+                print_inference_rule(inference_rule="Swapped Analogy")
+                derived_sentences.append(derived_sentence)
+            elif NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
+                """
+                # j1 = M<->P or P<->M
+                # j2 = S<->M or M<->S
+                # Resemblance
+                """
+                derived_sentence = NALInferenceRules.Resemblance(j1, j2)  # S<->P
+                print_inference_rule(inference_rule="Resemblance")
+                derived_sentences.append(derived_sentence)
+        else:
+            # They do not have the same-order copula
             """
-            # Revision
-            # j1=S-->P, j2=S-->P
-            # or j1=S<->P, j2=S<->P
+                j1 = A-->B or A<->B
+                j2 = S==>P or S<=>P
+                OR
+                j1 = S==>P or S<=>P
+                j2 = A-->B or A<->B
             """
-            if isinstance(j1, NALGrammar.Question): return derived_sentences # can't do revision with questions
+            if not NALSyntax.Copula.is_first_order(j1_copula):
+                """
+                    j1 = S==>P or S<=>P
+                    j2 = A-->B or A<->B
+                """
+                # swap sentences
+                j1, j2 = j2, j1
+                j1_term, j2_term = j2_term, j1_term
+                j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
+                j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
+                j1_copula, j2_copula = j2_copula, j1_copula
+                swapped = True
 
-            derived_sentence = NALInferenceRules.Revision(j1, j2)  # S-->P
-            print_inference_rule(inference_rule="Revision")
-            derived_sentences.append(derived_sentence)
-        elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
-            if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
+            """
+                j2 = S==>P or S<=>P
+            """
+            if NALSyntax.Copula.is_symmetric(j2_copula):
                 """
-                # j1=M-->P, j2=S-->M
-                # or j1=M-->S, j2=P-->M
-                # OR swapped premises
-                # j1=S-->M, j2=M-->P
-                # or j1=P-->M, j2=M-->S
+                    j1 = S   (A-->B)
+                    j2 = S<=>P
                 """
-                swapped = False
-                if j1_subject_term != j2_predicate_term:
-                    # j1=S-->M, j2=M-->P
-                    # or j1=P-->M, j2=M-->S
-                    j1, j2 = j2, j1  # swap sentences
-                    swapped = True
-                # deduction
-                derived_sentence = NALInferenceRules.Deduction(j1, j2)  # S-->P or P-->S
-                print_inference_rule(inference_rule="Deduction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Swapped Exemplification
-                """
-                derived_sentence = NALInferenceRules.Exemplification(j2, j1)  # P-->S or S-->P
-                print_inference_rule(inference_rule="Swapped Exemplification")
-                derived_sentences.append(derived_sentence)
-
-                if swapped:
-                    j1, j2 = j2, j1  # restore sentences
-                    swapped = False
-            elif j1_subject_term == j2_subject_term:
-                """
-                # j1=M-->P, j2=M-->S
-                # Induction
-                """
-                derived_sentence = NALInferenceRules.Induction(j1, j2)  # S-->P
-                print_inference_rule(inference_rule="Induction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Swapped Induction
-                """
-                derived_sentence = NALInferenceRules.Induction(j2, j1)  # P-->S
-                print_inference_rule(inference_rule="Swapped Induction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Comparison
-                """
-                derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P
-                print_inference_rule(inference_rule="Comparison")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Intensional Intersection or Disjunction
-                """
-                derived_sentence = NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2)  # M --> (S | P)
-                print_inference_rule(inference_rule="Intensional Intersection or Disjunction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Extensional Intersection or Conjunction
-                """
-                derived_sentence = NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2)  # M --> (S & P)
-                print_inference_rule(inference_rule="Extensional Intersection or Conjunction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Extensional Difference
-                """
-                derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # M --> (S - P)
-                print_inference_rule(inference_rule="Intersection")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Swapped Extensional Difference
-                """
-                derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # M --> (S - P)
-                print_inference_rule( inference_rule="Intersection")
-                derived_sentences.append(derived_sentence)
-            elif j1_predicate_term == j2_predicate_term:
-                """
-                # j1=P-->M, j2=S-->M
-                # Abduction
-                """
-                derived_sentence = NALInferenceRules.Abduction(j1, j2)  # S-->P or S==>P
-                print_inference_rule(inference_rule="Abduction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Swapped Abduction
-                """
-                derived_sentence = NALInferenceRules.Abduction(j2, j1)  # P-->S or P==>S
-                print_inference_rule(inference_rule="Swapped Abduction")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Comparison
-                """
-                derived_sentence = NALInferenceRules.Comparison(j1, j2)  # S<->P or S<=>P
-                print_inference_rule(inference_rule="Comparison")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Intensional Intersection Disjunction
-                """
-                derived_sentence = NALInferenceRules.IntensionalIntersectionOrDisjunction(j1, j2)  # (P | S) --> M
-                print_inference_rule(inference_rule="Intensional Intersection")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Extensional Intersection Conjunction
-                """
-                derived_sentence = NALInferenceRules.ExtensionalIntersectionOrConjunction(j1, j2)  # (P & S) --> M
-                print_inference_rule(inference_rule="Extensional Intersection")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Intensional Difference
-                """
-                derived_sentence = NALInferenceRules.ExtensionalDifference(j1, j2)  # (P ~ S) --> M
-                print_inference_rule(inference_rule="Intersection")
-                derived_sentences.append(derived_sentence)
-
-                """
-                # Swapped Intensional Difference
-                """
-                derived_sentence = NALInferenceRules.ExtensionalDifference(j2, j1)  # (S ~ P) --> M
-                print_inference_rule(inference_rule="Intersection")
+                derived_sentence = NALInferenceRules.Conditional_Analogy(j1, j2)  # P
+                print_inference_rule(inference_rule="Conditional Analogy")
                 derived_sentences.append(derived_sentence)
             else:
-                assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
-        elif not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
-            """
-            # j1=M-->P or P-->M
-            # j2=S<->M or M<->S
-            # Analogy
-            """
-            derived_sentence = NALInferenceRules.Analogy(j1, j2)  # S-->P or P-->S
-            print_inference_rule(inference_rule="Analogy")
-            derived_sentences.append(derived_sentence)
-        elif NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
-            """
-            # j1=M<->P or P<->M
-            # j2=S-->M or M-->S
-            # Swapped Analogy
-            """
-            derived_sentence = NALInferenceRules.Analogy(j2, j1)  # S-->P or P-->S
-            print_inference_rule(inference_rule="Swapped Analogy")
-            derived_sentences.append(derived_sentence)
-        elif NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
-            """
-            # j1=M<->P or P<->M
-            # j2=S<->M or M<->S
-            # Resemblance
-            """
-            derived_sentence = NALInferenceRules.Resemblance(j1, j2)  # S<->P
-            print_inference_rule(inference_rule="Resemblance")
-            derived_sentences.append(derived_sentence)
+                """
+                    j1 = S or P (A-->B)
+                    j2 = S==>P
+                """
+                if j1_term == j2_subject_term:
+                    """
+                        j1 = S
+                    """
+                    derived_sentence = NALInferenceRules.Conditional_Deduction(j1, j2)  # P
+                    print_inference_rule(inference_rule="Conditional Deduction")
+                    derived_sentences.append(derived_sentence)
+                else:
+                    """
+                        j1 = P
+                    """
+                    derived_sentence = NALInferenceRules.Conditional_Abduction(j1, j2)  # S
+                    print_inference_rule(inference_rule="Conditional Abduction")
+                    derived_sentences.append(derived_sentence)
+
+            if swapped:
+                # restore sentences
+                j1, j2 = j2, j1
+                j1_term, j2_term = j2_term, j1_term
+                j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
+                j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
+                j1_copula, j2_copula = j2_copula, j1_copula
+                swapped = False
+
+
+
     elif isinstance(j1, NALGrammar.Goal):
         #todo conditional syllogism
         pass
@@ -312,7 +392,7 @@ def do_inference_one_premise(j):
         derived_sentences.append(derived_sentence)
 
         # Conversion (P --> S)
-        if not j.stamp.from_conversion \
+        if not j.stamp.from_one_premise_inference \
                 and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
                 and j.value.frequency > 0:
             derived_sentence = NALInferenceRules.Conversion(j)

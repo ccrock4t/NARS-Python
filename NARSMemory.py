@@ -102,43 +102,15 @@ class Memory:
             :return Statement-Term Concept semantically related to param: `concept`; None if couldn't find any such belief
         """
         related_concept = None
+        related_concept_item = concept.term_links.peek()
 
-        if isinstance(concept.term, NALGrammar.StatementTerm):
-            subject_term = concept.term.get_subject_term()
-            predicate_term = concept.term.get_predicate_term()
-
-            concept_item_related_to_subject = self.peek_concept(subject_term).term_links.peek()
-            number_of_attempts = 0
-            while concept_item_related_to_subject.object == concept and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT:
-                concept_item_related_to_subject = self.peek_concept(subject_term).term_links.peek()
-                number_of_attempts += 1
-
-            concept_item_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
-            number_of_attempts = 0
-            while concept_item_related_to_predicate.object == concept and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT:
-                concept_item_related_to_predicate = self.peek_concept(predicate_term).term_links.peek()
-                number_of_attempts += 1
-
-            if concept_item_related_to_subject is not None and \
-                    concept_item_related_to_predicate is None: # none from predicate
-                related_concept = concept_item_related_to_subject.object
-            elif concept_item_related_to_subject is None \
-                    and concept_item_related_to_predicate is not None: # none from subject
-                related_concept = concept_item_related_to_predicate.object
-            elif concept_item_related_to_subject is not None \
-                    and concept_item_related_to_predicate is not None:  # one from both
-                rand = random.random()
-                if rand < 0.5:
-                    related_concept = concept_item_related_to_subject.object
-                elif rand >= 0.5:
-                    related_concept = concept_item_related_to_predicate.object
-        else:
-            # Non-statement concept
-            related_concept_item = self.peek_concept(concept.term).term_links.peek()
-            if related_concept_item is None:
-                related_concept = None
-            else:
-                related_concept = related_concept_item.object
+        if related_concept_item is not None:
+            related_concept: Concept = related_concept_item.object
+            if isinstance(related_concept.term, NALGrammar.AtomicTerm):
+                # related_concept is atomic so peek its term links to get a statement term / concept
+                related_concept_item = related_concept.term_links.peek()
+                if related_concept_item is not None:
+                    related_concept: Concept = related_concept_item.object
 
         return related_concept
 
