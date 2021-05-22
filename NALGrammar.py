@@ -192,15 +192,8 @@ class Statement:
 
     def __init__(self, subject, predicate=None, copula=None, statement_connector=None):
         assert_term(subject)
-
-        statement_term = subject
-        if predicate is not None:
-            statement_term = StatementTerm(subject, predicate, copula)
-
-        if statement_connector is not None:
-            self.term = CompoundTerm([statement_term], statement_connector)
-        else:
-            self.term = statement_term
+        statement_term = subject if predicate is None else StatementTerm(self, subject, predicate, copula)
+        self.term = statement_term if statement_connector is None else CompoundTerm([statement_term], statement_connector)
 
     def get_subject_term(self):
         if isinstance(self.term, StatementTerm):
@@ -215,10 +208,10 @@ class Statement:
             return None
 
     def get_statement_connector(self):
-        if not isinstance(self.term, StatementTerm):
-            return self.term.connector
-        else:
-            return None
+        """
+            Can be none
+        """
+        return self.term.connector
 
     def get_copula(self):
         if isinstance(self.term, StatementTerm):
@@ -231,17 +224,8 @@ class Statement:
 
     @classmethod
     def from_string(cls,statement_string):
-        statement_string = statement_string.replace(" ", "")
-        statement_connector = None
-        if NALSyntax.TermConnector.get_term_connector_from_string(
-                statement_string[1:3]) == NALSyntax.TermConnector.Negation:
-            # found a negation statement connector
-            statement_connector = NALSyntax.TermConnector.Negation
-            statement_string = statement_string[4:-1]
-
         term = StatementTerm.from_string(statement_string)
-        return cls(subject=term.get_subject_term(), predicate=term.get_predicate_term(),
-                         copula=term.get_copula(),statement_connector=statement_connector)
+        return term.statement
 
 
 class EvidentialValue:
@@ -701,12 +685,13 @@ class StatementTerm(CompoundTerm):
         (P --> Q)
     """
 
-    def __init__(self, subject: Term, predicate: Term, copula):
+    def __init__(self, statement: Statement, subject: Term, predicate: Term, copula):
         assert_term(subject)
         assert_term(predicate)
         assert_copula(copula)
         subterms = [subject, predicate]
         self.copula = copula
+        self.statement = statement
         if NALSyntax.Copula.is_symmetric(copula):
             subterms.sort(key=lambda t: str(t))  # sort alphabetically
         CompoundTerm.__init__(self,subterms, None)
@@ -721,6 +706,13 @@ class StatementTerm(CompoundTerm):
         """
 
         statement_string = statement_string.replace(" ", "")
+        statement_connector = None
+
+        if NALSyntax.TermConnector.get_term_connector_from_string(
+                statement_string[1:3]) == NALSyntax.TermConnector.Negation:
+            # found a negation statement connector
+            statement_connector = NALSyntax.TermConnector.Negation
+            statement_string = statement_string[4:-1]
 
         # get copula
         copula, copula_idx = get_top_level_copula(statement_string)
@@ -730,8 +722,10 @@ class StatementTerm(CompoundTerm):
         predicate_str = statement_string[
                         copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
 
-        return cls(subject=Term.from_string(subject_str), predicate=Term.from_string(predicate_str),
-                         copula=copula)
+        statement = Statement(subject=Term.from_string(subject_str), predicate=Term.from_string(predicate_str),
+                         copula=copula,statement_connector=statement_connector)
+
+        return statement.term
 
 
     def _calculate_syntactic_complexity(self):

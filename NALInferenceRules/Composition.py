@@ -215,12 +215,12 @@ def IntensionalDifference(j1, j2):
     NALGrammar.assert_sentence(j2)
     assert j1.statement.get_predicate_term() == j2.statement.get_predicate_term()
 
-    compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
-                                             j2.statement.get_predicate_term()],
-                                            NALSyntax.TermConnector.ExtensionalDifference)  # (T1 - T2)
-    result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
-                                            compound_term,
-                                            NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
+    compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
+                                             j2.statement.get_subject_term()],
+                                            NALSyntax.TermConnector.IntensionalDifference)  # (T1 ~ T2)
+    result_statement = NALGrammar.Statement(compound_term,
+                                            j1.statement.get_predicate_term(),
+                                            NALSyntax.Copula.Inheritance)  # ((T1 ~ T2) --> M)
 
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
@@ -255,25 +255,11 @@ def ExtensionalDifference(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    # Statement
-    if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        # j1: Sentence(T1 --> M < f1, c1 >)
-        # j2: Sentence(T2 --> M < f2, c2 >)
-        compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
-                                                 j2.statement.get_subject_term()],
-                                                NALSyntax.TermConnector.IntensionalDifference)
-        result_statement = NALGrammar.Statement(compound_term,
-                                                j1.statement.get_predicate_term(),
-                                                NALSyntax.Copula.Inheritance)  # ((T1 ~ T2) --> M)
-
-    elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        # j1: Sentence(M --> T1 < f1, c1 >)
-        # j2: Sentence(M --> T2 < f2, c2 >)
-        compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
-                                                 j2.statement.get_predicate_term()],
-                                                NALSyntax.TermConnector.ExtensionalDifference)
-        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
-                                                compound_term,
+    compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
+                                             j2.statement.get_predicate_term()],
+                                            NALSyntax.TermConnector.ExtensionalDifference)
+    result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+                                            compound_term,
                                                 NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 
     if isinstance(j1, NALGrammar.Judgment):

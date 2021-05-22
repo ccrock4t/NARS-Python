@@ -58,7 +58,7 @@ class NARS:
                             NARSGUI.NARSGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
                 if Global.Global.gui_use_interface:
-                    NARSGUI.NARSGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
+                    NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
 
                 NARSGUI.NARSGUI.print_to_output("LOAD MEMORY SUCCESS")
         except:
@@ -84,7 +84,7 @@ class NARS:
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
         if Global.Global.gui_use_interface:
-            NARSGUI.NARSGUI.gui_total_cycles_lbl.config(text="Cycle #" + str(self.memory.current_cycle_number))
+            NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
 
         InputBuffer.process_next_pending_sentence()
 
@@ -159,7 +159,7 @@ class NARS:
             return  # nothing to ponder
 
         if isinstance(concept_item.object.term, NALGrammar.StatementTerm):
-            # Concept is S --> P
+            # Concept is S --> P or S ==> P
             concept_to_consider = concept_item.object
         else:
             # Concept is S or P

@@ -19,6 +19,7 @@ class NARSGUI:
     gui_output_textbox = None  # primary output gui
     gui_delay_slider = None  # delay slider
     gui_total_cycles_lbl = None
+    gui_total_cycles_stringvar = None
     gui_play_pause_button = None
 
     # Internal Data vars
@@ -255,7 +256,9 @@ class NARSGUI:
         cls.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
 
         # row 2
-        cls.gui_total_cycles_lbl = tk.Label(window, text="Cycle #0")
+        cls.gui_total_cycles_stringvar = tk.StringVar()
+        cls.gui_total_cycles_stringvar.set("Cycle #0")
+        cls.gui_total_cycles_lbl = tk.Label(window, textvariable=cls.gui_total_cycles_stringvar)
         cls.gui_total_cycles_lbl.grid(row=2, column=4, columnspan=2, sticky='n')
 
         speed_slider_lbl = tk.Label(window, text="Cycle Delay in millisec: ")
@@ -267,7 +270,6 @@ class NARSGUI:
 
         def delay_slider_changed(event=None):
             Global.Global.NARS.delay = NARSGUI.gui_delay_slider.get() / 1000
-
 
         max_delay = 1000  # in milliseconds
         cls.gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
@@ -433,7 +435,7 @@ def listbox_datastructure_item_click_callback(event):
         # window
         item_info_window = tk.Toplevel()
         item_info_window.title(type(object).__name__ + " Internal Data: " + item_string)
-        item_info_window.geometry('500x700')
+        item_info_window.geometry('750x700')
         item_info_window.grab_set()  # lock the other windows until this window is exited
 
         row_num = 0
@@ -453,7 +455,7 @@ def listbox_datastructure_item_click_callback(event):
             label = tk.Label(item_info_window, text="", justify=tk.LEFT)
             label.grid(row=row_num, column=0)
 
-            # Listbox labels
+            # Row 1 Listbox labels
             beliefs_capacity_text = "("+str(len(object.belief_table)) + "/" + str(object.belief_table.capacity)+")"
             label = tk.Label(item_info_window, text="Beliefs " + beliefs_capacity_text, font=('bold'))
             row_num += 2
@@ -462,6 +464,10 @@ def listbox_datastructure_item_click_callback(event):
             desires_capacity_text = "("+str(len(object.desire_table)) + "/" + str(object.desire_table.capacity)+")"
             label = tk.Label(item_info_window, text="Desires " + desires_capacity_text, font=('bold'))
             label.grid(row=row_num, column=2, columnspan=2)
+
+            term_links_text = "(" + str(object.term_links.count) + ")"
+            label = tk.Label(item_info_window, text="Term Links " + term_links_text, font=('bold'))
+            label.grid(row=row_num, column=4, columnspan=2)
 
             # beliefs table listbox
             belief_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
@@ -484,20 +490,46 @@ def listbox_datastructure_item_click_callback(event):
                 desire_listbox.insert(tk.END, str(desire[0]))
             desire_listbox.bind("<<ListboxSelect>>", lambda event: listbox_sentence_item_click_callback(event,
                                                                                                         object.desire_table))  # define callback
-
             # Term Links listbox
-            row_num += 1
-            term_links_text = "(" + str(object.term_links.count) + ")"
-            label = tk.Label(item_info_window, text="Term Links " + term_links_text, font=('bold'))
-            label.grid(row=row_num, column=0, columnspan=2)
-
-            row_num += 1
             termlinks_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
                                         font=('', 8))
-            termlinks_listbox.grid(row=row_num, column=0, columnspan=2)
+            termlinks_listbox.grid(row=row_num, column=4, columnspan=2)
             for concept_item in object.term_links:
                 termlinks_listbox.insert(tk.END, str(concept_item.object))
             termlinks_listbox.bind("<<ListboxSelect>>", lambda event: listbox_datastructure_item_click_callback(event))
+
+            row_num += 1
+
+            # Row 2 Listbox labels
+            # Prediction Links listbox
+            prediction_links_text = "(" + str(object.prediction_links.count) + ")"
+            label = tk.Label(item_info_window, text="Prediction Links " + prediction_links_text, font=('bold'))
+            label.grid(row=row_num, column=0, columnspan=2)
+
+            explanation_links_text = "(" + str(object.explanation_links.count) + ")"
+            label = tk.Label(item_info_window, text="Explanation Links " + explanation_links_text, font=('bold'))
+            label.grid(row=row_num, column=2, columnspan=2)
+
+            row_num += 1
+
+            # Prediction Links Listbox
+            predictionlinks_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
+                                        font=('', 8))
+            predictionlinks_listbox.grid(row=row_num, column=0, columnspan=2)
+            for concept_item in object.prediction_links:
+                predictionlinks_listbox.insert(tk.END, str(concept_item.object))
+            predictionlinks_listbox.bind("<<ListboxSelect>>", lambda event: listbox_datastructure_item_click_callback(event))
+
+            # Explanation Links Listbox
+            explanationlinks_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
+                                                 width=object_listbox_width,
+                                                 font=('', 8))
+            explanationlinks_listbox.grid(row=row_num, column=2, columnspan=2)
+            for concept_item in object.explanation_links:
+                explanationlinks_listbox.insert(tk.END, str(concept_item.object))
+            explanationlinks_listbox.bind("<<ListboxSelect>>",
+                                         lambda event: listbox_datastructure_item_click_callback(event))
+
 
         elif isinstance(object, NARSDataStructures.Task):
             # Evidential base listbox

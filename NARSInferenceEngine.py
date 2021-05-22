@@ -56,7 +56,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                  and
                  ((not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula)) # S-->P and P<->S
                  or
-                 (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula)))) # S-->P and P<->S
+                 (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula)))) # S<->P and S-->P
 
     if tautology:
         if Global.Global.DEBUG: print("tautology")
@@ -184,14 +184,14 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                     # Extensional Difference
                     """
                     derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j1, j2)  # M --> (S - P)
-                    print_inference_rule(inference_rule="Intersection")
+                    print_inference_rule(inference_rule="Extensional Difference")
                     derived_sentences.append(derived_sentence)
 
                     """
                     # Swapped Extensional Difference
                     """
-                    derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)  # M --> (S - P)
-                    print_inference_rule( inference_rule="Intersection")
+                    derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)  # M --> (P - S)
+                    print_inference_rule( inference_rule="Extensional Difference")
                     derived_sentences.append(derived_sentence)
                 elif j1_predicate_term == j2_predicate_term:
                     """
@@ -209,6 +209,33 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                     derived_sentence = NALInferenceRules.Syllogistic.Abduction(j2, j1)  # P-->S or P==>S
                     print_inference_rule(inference_rule="Swapped Abduction")
                     derived_sentences.append(derived_sentence)
+
+                    if not NALSyntax.Copula.is_first_order(j1_copula):
+                        # two implication statements
+                        if NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector) or \
+                                NALSyntax.TermConnector.is_conjunction(j2_subject_term.connector):
+                            j1_subject_statement_terms = j1_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
+                                j1_subject_term.connector) else [j1_subject_term]
+
+                            j2_subject_statement_terms = j2_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
+                                j2_subject_term.connector) else [j2_subject_term]
+
+                            if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
+                                difference_of_subterms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
+                            else:
+                                difference_of_subterms = list(set(j2_subject_statement_terms) - set(j1_subject_statement_terms))
+
+                            if len(difference_of_subterms) == 1:
+                                """
+                                   At least one of the statement's subjects is conjunctive and differs from the
+                                   other statement's subject by 1 term
+                                """
+                                if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
+                                    derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1,j2)  # S
+                                else:
+                                    derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j2,j1)  # S
+                                print_inference_rule(inference_rule="Conditional Conjunctional Abduction")
+                                derived_sentences.append(derived_sentence)
 
                     """
                     # Comparison
@@ -303,7 +330,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                     j1 = S<=>P
                     j2 = S (A-->B)
                 """
-                derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j1, j2)  # P
+                derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j2, j1)  # P
                 print_inference_rule(inference_rule="Conditional Analogy")
                 derived_sentences.append(derived_sentence)
             else:
