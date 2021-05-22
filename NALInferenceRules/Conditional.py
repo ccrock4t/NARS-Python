@@ -15,14 +15,14 @@ from NALInferenceRules import TruthValueFunctions
 from NALInferenceRules.HelperFunctions import getevidentialvalues_from2sentences
 
 
-def Analogy(j1, j2):
+def ConditionalAnalogy(j1, j2):
     """
         Conditional Analogy
 
         Input:
-            j1: Event (S) <f1, c1> {tense}
+            j1: Equivalence Statement (S <=> P) <f2, c2>
 
-            j2: Equivalence Statement (S <=> P) <f2, c2>
+            j2: Statement (S) <f1, c1> {tense}
         Evidence:
             F_analogy
         Returns:
@@ -32,10 +32,10 @@ def Analogy(j1, j2):
     NALGrammar.assert_sentence(j2)
 
     # Statement
-    if j1.statement.term == j2.statement.get_subject_term():
-        statement_term: NALGrammar.StatementTerm = j2.statement.get_predicate_term()
-    elif j1.statement.term == j2.statement.get_predicate_term():
-        statement_term: NALGrammar.StatementTerm  = j2.statement.get_subject_term()
+    if j2.statement.term == j1.statement.get_subject_term():
+        statement_term: NALGrammar.StatementTerm = j1.statement.get_predicate_term()
+    elif j2.statement.term == j1.statement.get_predicate_term():
+        statement_term: NALGrammar.StatementTerm  = j1.statement.get_subject_term()
     else:
         assert False, "Error: Invalid inputs to Conditional Analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
@@ -43,12 +43,12 @@ def Analogy(j1, j2):
                                             statement_term.get_copula())
 
 
-    if isinstance(j1, NALGrammar.Judgment):
+    if isinstance(j2, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Analogy(f1, c1, f2, c2)
-        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -57,14 +57,14 @@ def Analogy(j1, j2):
 
     return result
 
-def Deduction(j1, j2):
+def ConditionalDeduction(j1, j2):
     """
         Conditional Deduction
 
         Input:
-            j1: Event (S) <f1, c1> {tense}
+            j1: Equivalence Statement (S ==> P) <f2, c2>
 
-            j2: Equivalence Statement (S ==> P) <f2, c2>
+            j2: Statement (S) <f1, c1> {tense}
         Evidence:
             F_deduction
         Returns:
@@ -73,17 +73,17 @@ def Deduction(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    statement_term: NALGrammar.StatementTerm = j2.statement.get_predicate_term() # P
+    statement_term: NALGrammar.StatementTerm = j1.statement.get_predicate_term() # P
     result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
                                             statement_term.get_copula())
 
 
-    if isinstance(j1, NALGrammar.Judgment):
+    if isinstance(j2, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Deduction(f1, c1, f2, c2)
-        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Question):
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -92,14 +92,61 @@ def Deduction(j1, j2):
 
     return result
 
-def Abduction(j1, j2):
+def ConditionalConjunctionalDeduction(j1, j2):
+    """
+        Conditional Conjunctional Deduction
+
+        Input:
+            j1: Equivalence Statement ((C1 && C2 && ... CN && S) ==> P) <f2, c2>
+
+            j2: Statement (S) <f1, c1> {tense}
+        Evidence:
+            F_deduction
+        Returns:
+            :-  ((C1 && C2 && ... CN) ==> P)  <f3, c3>
+    """
+    NALGrammar.assert_sentence(j1)
+    NALGrammar.assert_sentence(j2)
+
+    subject_term: NALGrammar.CompoundTerm = j1.statement.get_subject_term()
+
+    new_subterms = []
+    for subterm in subject_term.subterms:
+        if subterm != j2.statement.term:
+            new_subterms.append(subterm)
+
+    if len(new_subterms) > 1:
+        new_compound_subject_term = NALGrammar.CompoundTerm(new_subterms, subject_term.connector)
+    else:
+        new_compound_subject_term = new_subterms[0]
+
+
+    result_statement = NALGrammar.Statement(new_compound_subject_term, j1.statement.get_predicate_term(),
+                                            j1.statement.get_copula())
+
+
+    if isinstance(j2, NALGrammar.Judgment):
+        # Get Truth Value
+        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+        result_truth = TruthValueFunctions.F_Deduction(f1, c1, f2, c2)
+        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Question):
+        result = NALGrammar.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    return result
+
+def ConditionalAbduction(j1, j2):
     """
         Conditional Abduction
 
         Input:
-            j1: Event (P) <f1, c1> {tense}
+            j1: Equivalence Statement (S ==> P) <f2, c2>
 
-            j2: Equivalence Statement (S ==> P) <f2, c2>
+            j2: Event (P) <f1, c1> {tense}
         Evidence:
             F_deduction
         Returns:
@@ -108,17 +155,17 @@ def Abduction(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    statement_term: NALGrammar.StatementTerm = j2.statement.get_subject_term() # S
+    statement_term: NALGrammar.StatementTerm = j1.statement.get_subject_term() # S
     result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
                                             statement_term.get_copula())
 
 
-    if isinstance(j1, NALGrammar.Judgment):
+    if isinstance(j2, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Abduction(f1, c1, f2, c2)
         result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Question):
+    elif isinstance(j2, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -127,7 +174,7 @@ def Abduction(j1, j2):
 
     return result
 
-def Induction(j1, j2):
+def ConditionalInduction(j1, j2):
     """
         Temporal Induction
 
@@ -176,9 +223,9 @@ def Induction(j1, j2):
     return result
 
 
-def Comparison(j1, j2):
+def ConditionalComparison(j1, j2):
     """
-        Temporal Induction
+        Temporal Comparison
 
         Input:
             A: Event S <f1, c1> {tense}

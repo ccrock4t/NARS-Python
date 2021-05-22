@@ -9,7 +9,7 @@ import NALInferenceRules.Immediate
 import NALInferenceRules.Syllogistic
 import NALInferenceRules.Composition
 import NALInferenceRules.Local
-import NALInferenceRules.ConditionalSyllogistic
+import NALInferenceRules.Conditional
 import NARSDataStructures
 import NALSyntax
 
@@ -276,16 +276,16 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
         else:
             # They do not have the same-order copula
             """
-                j1 = A-->B or A<->B
-                j2 = S==>P or S<=>P
-                OR
                 j1 = S==>P or S<=>P
                 j2 = A-->B or A<->B
+                OR
+                j1 = A-->B or A<->B
+                j2 = S==>P or S<=>P
             """
-            if not NALSyntax.Copula.is_first_order(j1_copula):
+            if NALSyntax.Copula.is_first_order(j1_copula):
                 """
-                    j1 = S==>P or S<=>P
-                    j2 = A-->B or A<->B
+                    j1 = A-->B or A<->B 
+                    j2 = S==>P or S<=>P
                 """
                 # swap sentences
                 j1, j2 = j2, j1
@@ -296,34 +296,43 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                 swapped = True
 
             """
-                j2 = S==>P or S<=>P
+                j1 = S==>P or S<=>P
             """
-            if NALSyntax.Copula.is_symmetric(j2_copula):
+            if NALSyntax.Copula.is_symmetric(j1_copula):
                 """
-                    j1 = S   (A-->B)
-                    j2 = S<=>P
+                    j1 = S<=>P
+                    j2 = S (A-->B)
                 """
-                derived_sentence = NALInferenceRules.ConditionalSyllogistic.Analogy(j1, j2)  # P
+                derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j1, j2)  # P
                 print_inference_rule(inference_rule="Conditional Analogy")
                 derived_sentences.append(derived_sentence)
             else:
                 """
-                    j1 = S or P (A-->B)
-                    j2 = S==>P
+                    j1 = S==>P
+                    j2 = S or P (A-->B)
                 """
-                if j1_term == j2_subject_term:
+
+                if j2_term == j1_subject_term:
                     """
-                        j1 = S
+                        j2 = S
                     """
-                    derived_sentence = NALInferenceRules.ConditionalSyllogistic.Deduction(j1, j2)  # P
+                    derived_sentence = NALInferenceRules.Conditional.ConditionalDeduction(j1, j2)  # P
                     print_inference_rule(inference_rule="Conditional Deduction")
                     derived_sentences.append(derived_sentence)
-                else:
+                elif j2_term == j1_predicate_term:
                     """
-                        j1 = P
+                        j2 = P
                     """
-                    derived_sentence = NALInferenceRules.ConditionalSyllogistic.Abduction(j1, j2)  # S
+                    derived_sentence = NALInferenceRules.Conditional.ConditionalAbduction(j1, j2)  # S
                     print_inference_rule(inference_rule="Conditional Abduction")
+                    derived_sentences.append(derived_sentence)
+                elif NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector):
+                    """
+                        j1 = (C1 && C2 && ..CN && S) ==> P
+                        j2 = S
+                    """
+                    derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # (C1 && C2 && ..CN) ==> P
+                    print_inference_rule(inference_rule="Conditional Conjunctional Deduction")
                     derived_sentences.append(derived_sentence)
 
             if swapped:
@@ -356,11 +365,11 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
 def do_temporal_inference_two_premise(A: NALGrammar.Sentence, B: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
     derived_sentences = []
 
-    derived_sentence = NALInferenceRules.ConditionalSyllogistic.Induction(A, B) # A =|> B or A =/> B or B =/> A
+    derived_sentence = NALInferenceRules.Conditional.ConditionalInduction(A, B) # A =|> B or A =/> B or B =/> A
     print_inference_rule(inference_rule="Temporal Induction")
     derived_sentences.append(derived_sentence)
 
-    derived_sentence = NALInferenceRules.ConditionalSyllogistic.Comparison(A, B) # A <|> B or  A </> B or B </> A
+    derived_sentence = NALInferenceRules.Conditional.ConditionalComparison(A, B) # A <|> B or  A </> B or B </> A
     print_inference_rule(inference_rule="Temporal Comparison")
     derived_sentences.append(derived_sentence)
 

@@ -3,7 +3,7 @@ import InputBuffer
 
 import NALGrammar
 import NALInferenceRules.Local
-import NALInferenceRules.ConditionalSyllogistic
+import NALInferenceRules.Conditional
 
 import NARSInferenceEngine
 
@@ -235,8 +235,8 @@ def extensional_image():
 def conditional_analogy():
     """
         Test Conditional Analogy rule:
-        j1: S %1.0;0.9%
-        j2 S<=>P %1.0;0.9%
+        j1: S<=>P %1.0;0.9%
+        j2: S %1.0;0.9%
 
         :- P %1.0;0.81%
     """
@@ -246,7 +246,7 @@ def conditional_analogy():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.ConditionalSyllogistic.Analogy(j1,j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalAnalogy(j1, j2).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Conditional Analogy test failed: " + failed_criterion
@@ -254,18 +254,38 @@ def conditional_analogy():
 def conditional_deduction():
     """
         Test Conditional Deduction rule:
-        j1: S %1.0;0.9%
-        j2 S==>P %1.0;0.9%
+        j1: S==>P %1.0;0.9%
+        j2: S %1.0;0.9%
 
         :- P %1.0;0.81%
     """
-    j1 = NALGrammar.Sentence.new_sentence_from_string("(a-->b). %1.0;0.9%")
-    j2 = NALGrammar.Sentence.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
+    j1 = NALGrammar.Sentence.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(a-->b). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.ConditionalSyllogistic.Deduction(j1,j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalDeduction(j1, j2).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Conditional Deduction test failed: " + failed_criterion
+
+def conditional_conjunctional_deduction():
+    """
+        Test Conditional Conjunctional Deduction rule:
+        j1: (C1 && C2 && ... CN && S) ==> P %1.0;0.9%
+        j2: S %1.0;0.9%
+
+        :- (C1 && C2 && ... CN) ==> P %1.0;0.81%
+    """
+
+    # test removal of second element
+    j1 = NALGrammar.Sentence.new_sentence_from_string("((&&,(a-->b),(c-->d))==>(e-->f)). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(c-->d). %1.0;0.9%")
+    output_q = run_test(j1,j2)
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1, j2).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Conditional Deduction test failed: " + failed_criterion
@@ -273,8 +293,8 @@ def conditional_deduction():
 def conditional_abduction():
     """
         Test Conditional Abduction rule:
-        j1: P %1.0;0.9%
-        j2 S==>P %1.0;0.9%
+        j1: S==>P %1.0;0.9%
+        j2: P %1.0;0.9%
 
         :- S %1.0;0.81%
     """
@@ -284,7 +304,7 @@ def conditional_abduction():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.ConditionalSyllogistic.Abduction(j1,j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalAbduction(j1, j2).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Conditional Abduction test failed: " + failed_criterion

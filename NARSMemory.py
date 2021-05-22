@@ -86,7 +86,7 @@ class Memory:
                 # get/create subterm concepts
                 subconcept = self.peek_concept(subterm)
 
-                if concept is not None and isinstance(term, NALGrammar.StatementTerm):
+                if concept is not None:
                     # do term linking with subterms
                     concept.set_term_link(subconcept)
 
@@ -99,18 +99,22 @@ class Memory:
 
             :param concept - Statement-Term Concept for which to find a semantically related Statement-Term concept
 
-            :return Statement-Term Concept semantically related to param: `concept`; None if couldn't find any such belief
+            :return Statement-Term Concept semantically related to param: `concept`; None if couldn't find any such statement concept
         """
-        related_concept = None
-        related_concept_item = concept.term_links.peek()
+        if len(concept.term_links) == 0: return None
 
-        if related_concept_item is not None:
-            related_concept: Concept = related_concept_item.object
-            if isinstance(related_concept.term, NALGrammar.AtomicTerm):
-                # related_concept is atomic so peek its term links to get a statement term / concept
-                related_concept_item = related_concept.term_links.peek()
-                if related_concept_item is not None:
-                    related_concept: Concept = related_concept_item.object
+        related_concept_item = concept.term_links.peek()
+        initial_related_concept: Concept = related_concept_item.object
+        related_concept = initial_related_concept
+
+        attempts = 0
+        while not isinstance(related_concept.term, NALGrammar.StatementTerm) and attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT:
+            # related_concept is atomic so peek its term links to get a statement term / concept
+            related_concept_item = initial_related_concept.term_links.peek()
+            if related_concept_item is not None: related_concept: Concept = related_concept_item.object
+            attempts += 1
+
+        if not isinstance(related_concept.term, NALGrammar.StatementTerm): related_concept = None # only return statement concepts
 
         return related_concept
 

@@ -82,12 +82,18 @@ class TermConnector(enum.Enum):
     @classmethod
     def is_order_invariant(cls, connector):
         return (connector is cls.ExtensionalIntersection or
-               connector is cls.IntensionalIntersection or
-               connector is cls.ExtensionalSetStart or
-               connector is cls.IntensionalSetStart or
-               connector is cls.Negation or
-               connector is cls.Conjunction or
-               connector is cls.Disjunction)
+                connector is cls.IntensionalIntersection or
+                connector is cls.ExtensionalSetStart or
+                connector is cls.IntensionalSetStart or
+                connector is cls.Negation or
+                connector is cls.Conjunction or
+                connector is cls.Disjunction)
+
+    @classmethod
+    def is_conjunction(cls, connector):
+        return (connector is cls.Conjunction or
+                connector is cls.SequentialConjunction or
+                connector is cls.ParallelConjunction)
 
     @classmethod
     def get_set_end_connector_from_set_start_connector(cls, start_connector):
@@ -98,7 +104,7 @@ class TermConnector(enum.Enum):
     @classmethod
     def is_set_bracket_start(cls, bracket):
         """
-        Test if a character is a starting bracket for a set
+        Returns true if character is a starting bracket for a set
         :param bracket:
         :return:
         """
@@ -108,7 +114,7 @@ class TermConnector(enum.Enum):
     @classmethod
     def is_set_bracket_end(cls, bracket):
         """
-        Test if a character is an ending bracket for a set
+        Returns true if character is an ending bracket for a set
         :param bracket:
         :return:
         """

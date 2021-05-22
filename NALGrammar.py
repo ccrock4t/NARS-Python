@@ -575,6 +575,7 @@ class CompoundTerm(Term):
             # order doesn't matter, alphabetize so the system can recognize the same term
             subterms.sort(key=lambda t:str(t))
 
+        self.is_set = None
         if term_connector is not None:
             is_extensional_set = (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
             is_intensional_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
