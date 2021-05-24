@@ -296,14 +296,11 @@ def ConditionalConjunctionalAbduction(j1, j2):
     j2_subject_statement_terms = j2_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
         j2_subject_term.connector) else [j2_subject_term]
 
-    if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
-        result_terms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
-    else:
-        result_terms = list(set(j2_subject_statement_terms) - set(j1_subject_statement_terms))
+    set_difference_of_terms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
 
-    if len(result_terms) != 1: assert False, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in result_terms])
+    if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in set_difference_of_terms])
 
-    result_term: NALGrammar.StatementTerm = result_terms[0]
+    result_term: NALGrammar.StatementTerm = set_difference_of_terms[0]
     result_statement = NALGrammar.Statement(result_term.get_subject_term(), result_term.get_predicate_term(),
                                             result_term.get_copula())
 

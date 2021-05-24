@@ -3,6 +3,7 @@ import Config
 import Global
 import NALInferenceRules
 import NALSyntax
+import numpy as np
 
 """
     Author: Christian Hahm
@@ -522,9 +523,7 @@ class AtomicTerm(Term):
     def __init__(self, term_string):
         """
         Input:
-            subterms: array of terms or compound terms
-
-            connector: Connector
+            term_string = name of the term
         """
         assert (AtomicTerm.is_valid_term(term_string)), term_string + " is not a valid Atomic Term name."
         super().__init__(term_string)
@@ -772,6 +771,104 @@ class StatementTerm(CompoundTerm):
             and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF:
             # product and first term is self means this is an operation
             return True
+
+class ArrayTerm(CompoundTerm):
+    """
+        A N-dimensional array term that can be indexed (e.g. T).
+        or a array element term (e.g. T[0.0,0.0])
+
+        Note that no values are stored in the array. The term only represents an array of terms.
+    """
+    def __init__(self, term_string, dimensions, dim_length):
+        """
+        :param dim:The dimension of the array (e.g. 1,2,3) The step size of array indices in (0,1)
+        :param dim_length: the number of elements in each dimensional axis;
+            provides a granularity = 2.0/(dim_length - 1)
+        """
+        assert dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
+        assert dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
+        self.string = term_string
+        self.dimensions = dimensions
+        self.dim_length = dim_length
+        self.offset = (dim_length - 1) / 2.0
+
+        x_array = []
+        if dimensions == 1:
+            for x in np.linspace(-1.0, 1.0,num=dim_length):
+                formatted_indices = (x)
+                element = ArrayTerm.ArrayElementTerm(array_term=self,indices=formatted_indices)
+                x_array.append(element)
+        elif dimensions == 2:
+            for x in np.linspace(-1.0, 1.0,num=dim_length):
+                y_array = []
+                for y in np.linspace(-1.0, 1.0,num=dim_length):
+                    formatted_indices = (x, y)
+                    element = ArrayTerm.ArrayElementTerm(array_term=self, indices=formatted_indices)
+                    y_array.append(element)
+                x_array.append(np.array(y_array))
+        elif dimensions == 2:
+            for x in np.linspace(-1.0, 1.0,num=dim_length):
+                y_array = []
+                for y in np.linspace(-1.0, 1.0,num=dim_length):
+                    z_array = []
+                    for z in np.linspace(-1.0, 1.0,num=dim_length):
+                        formatted_indices = (x, y, z)
+                        element = ArrayTerm.ArrayElementTerm(array_term=self, indices=formatted_indices)
+                        z_array.append(element)
+                    y_array.append(np.array(z_array))
+                x_array.append(np.array(y_array))
+
+        self.array = np.array(x_array)
+        CompoundTerm.__init__(self, subterms=self.array.flatten(), term_connector=NALSyntax.TermConnector.Array)
+
+    def __getitem__(self, indices):
+        """
+            Define the indexing operator []
+        :param indices: a tuple of the indices to get
+        :return: Array element term at index
+        """
+        dim = len(indices)
+        indices = self._convert_relative_indices_to_array_indices(indices)
+        if dim == 1:
+            return self.array[indices[0]]
+        elif dim == 2:
+            return self.array[indices[0]][indices[1]]
+        elif dim == 3:
+            return self.array[indices[0]][indices[1]][indices[2]]
+
+    def _convert_relative_indices_to_array_indices(self, indices):
+        # un-offset and un-regularize
+        indices = tuple(map(lambda x: round(x*self.offset + self.offset), indices))
+        return indices
+
+    def _convert_array_indices_to_relative_indices(self, indices):
+        # offset then regularize
+        indices = tuple(map(lambda x: (x - self.offset) // self.offset, indices))
+        return indices
+
+    def get_formatted_string(self):
+        return self.string
+
+    class ArrayElementTerm(AtomicTerm):
+        """
+            A term that is an element of an array term.
+            It is simply the array term with attached tuple of indices
+        """
+        def __init__(self, array_term, indices):
+            self.array_term = array_term # the array term of which this is an element
+            self.indices = indices
+
+        def get_formatted_string(self):
+            return self.array_term.get_formatted_string() + str(self.indices)
+
+
+
+class PerceptualTerm(StatementTerm):
+    """
+        A special kind of statement term representing a sensation or percept.
+
+        Takes the form {S}
+    """
 
 
 def get_top_level_copula(string):

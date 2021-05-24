@@ -33,11 +33,25 @@ def calculate_syntactic_complexity_test():
     assert singleton_set_internal_compound_term._calculate_syntactic_complexity() == singleton_set_internal_compound_term_complexity
     assert statement_term._calculate_syntactic_complexity() == statement_term_complexity
 
+def array_term_indexing_test():
+    array_term = NALGrammar.ArrayTerm(term_string="M",dimensions=2,dim_length=5) # create a 5x5 array term
+
+    array_element_term = array_term[0.0,0.0]
+    assert array_element_term.get_formatted_string() == "M(0.0, 0.0)"
+
+    array_element_term = array_term[-1.0, 0.0]
+    assert array_element_term.get_formatted_string() == "M(-1.0, 0.0)"
+
+    array_element_term = array_term[1.0, 0.5]
+    assert array_element_term.get_formatted_string() == "M(1.0, 0.5)"
+
+
 def main():
     """
         Term Tests
     """
     calculate_syntactic_complexity_test()
+    array_term_indexing_test()
 
     print("All Grammar Tests successfully passed.")
 

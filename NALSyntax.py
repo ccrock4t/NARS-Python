@@ -56,6 +56,8 @@ class TermConnector(enum.Enum):
     SequentialConjunction = "&/"
     ParallelConjunction = "&|"
 
+    Array = "#"
+
     @classmethod
     def is_string_a_term_connector(cls, value):
         return value in cls._value2member_map_
