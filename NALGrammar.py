@@ -57,6 +57,8 @@ class Sentence:
 
             :returns Sentence parsed from sentence_string
         """
+        sentence_string = sentence_string.replace(" ", "") # remove all spaces
+
         # Find statement start and statement end
         start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
         assert (start_idx != -1), "Statement start character " + NALSyntax.StatementSyntax.Start.value + " not found."
@@ -71,14 +73,10 @@ class Sentence:
         punctuation = NALSyntax.Punctuation.get_punctuation(punctuation_str)
         assert (punctuation is not None), punctuation_str + " is not punctuation."
 
-        # Find statement copula, subject string, and predicate string
-        statement = Statement.from_string(sentence_string[start_idx:end_idx + 1])
-
-
         # Find Truth Value, if it exists
-        start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value)
-        middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value)
-        end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value)
+        start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
+        middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value, punctuation_idx)
+        end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
 
         truth_value_found = not (start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx)
         freq = None
@@ -88,22 +86,35 @@ class Sentence:
             freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
             conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
 
-        if punctuation == NALSyntax.Punctuation.Judgment:
+        # create the statement
+        statement_string = sentence_string[start_idx:end_idx + 1]
+
+        if sentence_string[2] == NALSyntax.TermConnector.Array.value:
             if freq is None:
                 # No truth value, use default truth value
                 freq = Config.DEFAULT_JUDGMENT_FREQUENCY
                 conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
-            sentence = Judgment(statement, TruthValue(freq, conf))
-        elif punctuation == NALSyntax.Punctuation.Question:
-            sentence = Question(statement)
-        elif punctuation == NALSyntax.Punctuation.Goal:
-            if freq is None:
-                # No truth value, use default truth value
-                freq = Config.DEFAULT_GOAL_FREQUENCY
-                conf = Config.DEFAULT_GOAL_CONFIDENCE
-            sentence = Goal(statement, DesireValue(freq,conf))
+            sentence = Percept.from_string(statement_string, TruthValue(freq, conf))
         else:
-            assert False,"Error: No Punctuation!"
+            # create standard statement from string
+            statement = Statement.from_string(statement_string)
+
+            if punctuation == NALSyntax.Punctuation.Judgment:
+                if freq is None:
+                    # No truth value, use default truth value
+                    freq = Config.DEFAULT_JUDGMENT_FREQUENCY
+                    conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
+                sentence = Judgment(statement, TruthValue(freq, conf))
+            elif punctuation == NALSyntax.Punctuation.Question:
+                sentence = Question(statement)
+            elif punctuation == NALSyntax.Punctuation.Goal:
+                if freq is None:
+                    # No truth value, use default truth value
+                    freq = Config.DEFAULT_GOAL_FREQUENCY
+                    conf = Config.DEFAULT_GOAL_CONFIDENCE
+                sentence = Goal(statement, DesireValue(freq,conf))
+            else:
+                assert False,"Error: No Punctuation!"
 
         # Find Tense, if it exists
         # otherwise mark it as eternal
@@ -184,6 +195,188 @@ class Goal(Sentence):
         assert_statement(statement)
         super().__init__(statement, value, NALSyntax.Punctuation.Goal)
 
+class Percept(Judgment):
+    """
+        A special type of judgment named by a perceptual term.
+        The subject is an extensional set of an array term,
+        the predicate is an intensional set.
+
+        The Percept itself has a truth-value,
+        and also contains a judgment for each array element.
+    """
+    def __init__(self, statement, value, element_list, occurrence_time=None):
+        #todo occurrence time
+        self.elements = element_list
+
+        np_array = np.array(element_list)
+        for index, judgment in np.ndenumerate(np_array):
+            np_array[index] = judgment.value.frequency * 255
+        if len(np_array) == 1: np_array = np_array[0]
+
+        self.image_array = np_array.astype(np.uint8)
+        Judgment.__init__(self, statement, value, occurrence_time=occurrence_time)
+
+    @classmethod
+    def from_string(cls, percept_statement_string, truth_value, occurrence_time=None):
+        """
+            Parameter: percept_string - String of NAL syntax ({@S([...])} --> [t])
+
+            Where @S is an array term followed by element-level truth-values separated by brackets and commas.
+            1D (sequence):
+             @S(f;c,...,f;c)"
+
+             2D (matrix):
+             @S(
+                [f;c,...,f;c],
+                [...,...,...],
+                [f;c,...,f;c]
+                )"
+
+            3D (tensor):
+            @S(
+                [
+                    [f;c,...,f;c],
+                    [...,...,...],
+                    [f;c,...,f;c]
+                ],
+                ...,
+                [
+                    [f;c,...,f;c],
+                    [...,...,...],
+                    [f;c,...,f;c]
+                ]
+                )"
+
+            Returns: Percept
+        """
+        # this input is a sensory percept
+        copula, copula_idx = get_top_level_copula(percept_statement_string)
+        assert (copula is not None), "ERROR: Copula not found. Exiting.."
+
+        subject_str = percept_statement_string[1:copula_idx]  # get subject string {@S([])}
+        predicate_str = percept_statement_string[copula_idx + len(copula.value):-1]  # get predicate string [t]
+        predicate_term = Term.from_string(predicate_str)
+
+        array_start_bracket_idx = subject_str.find(NALSyntax.StatementSyntax.ArrayElementTruthValuesStart.value)
+        array_end_bracket_idx = subject_str.rfind(NALSyntax.StatementSyntax.ArrayElementTruthValuesEnd.value)
+
+        #get only the truth values, e.g. [...],[...],[...]
+        truth_value_array_str = subject_str[array_start_bracket_idx + 1:array_end_bracket_idx]
+        assert len(truth_value_array_str) > 0, "Percept should contain at least one truth value"
+
+        array_term_name = subject_str[2:array_start_bracket_idx]
+
+        x_length = 1
+        y_length = 1
+        z_length = 1
+
+        array_idx_start_marker = NALSyntax.StatementSyntax.ArrayElementIndexStart.value
+        array_idx_end_marker = NALSyntax.StatementSyntax.ArrayElementIndexEnd.value
+
+        truth_value_str_array = []
+
+        if truth_value_array_str[0] != array_idx_start_marker:
+            # 1D array
+            truth_value_str_array = truth_value_array_str.split(",")
+            x_length = len(truth_value_str_array)
+            dim_lengths = (x_length,) # how many elements in a row
+        else:
+            if truth_value_array_str[1] != array_idx_start_marker:
+                #2D array
+                depth = 0
+                piece = ""
+                for i in range(len(truth_value_array_str)):
+                    c = truth_value_array_str[i]
+                    if depth == 0 and c == ",":
+                        truth_value_str_array.append(piece.split(","))
+                        piece = ""
+                    else:
+                        if c == array_idx_start_marker:
+                            depth +=1
+                        elif c == array_idx_end_marker:
+                            depth -= 1
+                        else:
+                            piece += c
+
+                truth_value_str_array.append(piece.split(","))
+
+                x_length = len(truth_value_str_array[0]) # how many elements in a row
+                y_length = len(truth_value_str_array) # how many rows
+
+                dim_lengths = (x_length, y_length)
+            else:
+                #TODO
+                # 3D array
+                layer_strings = []
+                depth = 0
+                piece = ""
+                for i in range(len(truth_value_array_str)):
+                    c = truth_value_array_str[i]
+                    if depth == 0 and c == ",":
+                        layer_strings.append(piece)
+                        piece = ""
+                    else:
+                        piece += c
+                        if c == array_idx_start_marker:
+                            depth +=1
+                        elif c == array_idx_end_marker:
+                            depth -= 1
+                x_length = len(layer_strings[0][0])  # how many elements in a row
+                y_length = len(layer_strings[0])  # how many rows
+                z_length = len(layer_strings) # how many layers
+                dim_lengths = (x_length, y_length, z_length)
+
+        array_term = ArrayTerm(name=array_term_name, dim_lengths=dim_lengths)
+
+        z_elements = []
+
+        # iterate over every element / truth-value
+        for z in range(z_length):
+            y_elements = []
+            for y in range(y_length):
+                x_elements = []
+                for x in range(x_length):
+                    if y_length == 1 and z_length == 1:
+                        array_element_coords = (x,)
+                        truth_value_str_parts = truth_value_str_array[x].split(";")
+                    elif z_length == 1:
+                        array_element_coords = (x,y)
+                        truth_value_str_parts = truth_value_str_array[y][x].split(";")
+                    else:
+                        array_element_coords = (x,y,z)
+                        truth_value_str_parts = truth_value_str_array[z][y][x].split(";")
+
+                    assert len(truth_value_str_parts) == 2, "ERROR: Truth value should only consist of 2 values"
+                    percept_element_truth_value = TruthValue(float(truth_value_str_parts[0]),float(truth_value_str_parts[1]))
+
+                    array_element_term = array_term[array_element_coords]
+
+                    percept_element_subject_term = CompoundTerm(subterms=[array_element_term], term_connector=NALSyntax.TermConnector.ExtensionalSetStart)
+                    percept_element_statement = Statement(subject_term=percept_element_subject_term,
+                                        predicate_term=predicate_term,
+                                        copula=copula)
+
+                    percept_element = Judgment(statement=percept_element_statement,
+                                              value=percept_element_truth_value,
+                                               occurrence_time=occurrence_time)
+                    x_elements.append(percept_element)
+                y_elements.append(x_elements)
+            z_elements.append(y_elements)
+
+        percept_array = z_elements
+
+        subject_term = CompoundTerm(subterms=[array_term], term_connector=NALSyntax.TermConnector.ExtensionalSetStart)
+
+        assert predicate_term.is_intensional_set(), "ERROR: Predicate term must be an intensional set"
+
+        statement = Statement(subject_term=subject_term,
+                              predicate_term=predicate_term,
+                              copula=copula,
+                              statement_connector=None)
+
+        return Percept(statement=statement,
+                       value=truth_value,
+                       element_list=percept_array)
 
 
 class Statement:
@@ -191,9 +384,13 @@ class Statement:
         statement ::= <subject><copula><predicate>
     """
 
-    def __init__(self, subject, predicate=None, copula=None, statement_connector=None):
-        assert_term(subject)
-        statement_term = subject if predicate is None else StatementTerm(self, subject, predicate, copula)
+    def __init__(self, subject_term, predicate_term=None, copula=None, statement_connector=None):
+        assert_term(subject_term)
+        if predicate_term is None:
+            assert statement_connector is not None,"ERROR: Cannot make statement with only a subject term and no statement connector"
+            statement_term = subject_term
+        else:
+            statement_term = StatementTerm(self, subject_term, predicate_term, copula)
         self.term = statement_term if statement_connector is None else CompoundTerm([statement_term], statement_connector)
 
     def get_subject_term(self):
@@ -225,9 +422,8 @@ class Statement:
 
     @classmethod
     def from_string(cls,statement_string):
-        term = StatementTerm.from_string(statement_string)
+        term = Term.from_string(statement_string)
         return term.statement
-
 
 class EvidentialValue:
     """
@@ -235,8 +431,8 @@ class EvidentialValue:
     """
 
     def __init__(self, frequency, confidence):
-        assert (isinstance(frequency, float)), "frequency must be a float"
-        assert (isinstance(confidence, float)), "confidence must be a float"
+        assert (isinstance(frequency, float) and frequency >= 0.0 and frequency <= 1.0), "ERROR: Frequency must be a float in [0,1]"
+        assert (isinstance(confidence, float) and confidence > 0.0 and confidence < 1.0), "ERROR: Confidence must be a float (0,1)"
         self.frequency = frequency
         self.confidence = confidence
 
@@ -359,7 +555,7 @@ class Term:
     """
 
     def __init__(self, term_string):
-        assert (isinstance(term_string, str)), term_string + " must be a str"
+        assert isinstance(term_string, str), term_string + " must be a str"
         self.string = term_string
         self.syntactic_complexity = self._calculate_syntactic_complexity()
 
@@ -403,6 +599,7 @@ class Term:
             :returns Term constructed using the string
         """
         is_set_term = NALSyntax.TermConnector.is_set_bracket_start(term_string[0])
+
         if term_string[0] == NALSyntax.StatementSyntax.Start.value:
             """
                 Compound or Statement Term
@@ -414,7 +611,6 @@ class Term:
                 # compound term
                 term = CompoundTerm.from_string(term_string)
             else:
-                # statement term
                 term = StatementTerm.from_string(term_string)
         elif is_set_term:
             term = CompoundTerm.from_string(term_string)
@@ -544,7 +740,7 @@ class CompoundTerm(Term):
         (Connector T1, T2, ..., Tn)
     """
 
-    def __init__(self, subterms: [Term], term_connector):
+    def __init__(self, subterms: [Term], term_connector: NALSyntax.TermConnector = None):
         """
         Input:
             subterms: array of immediate subterms
@@ -553,19 +749,19 @@ class CompoundTerm(Term):
         """
         self.connector = term_connector  # sets are represented by the opening bracket as the connector, { or [
 
-        if isinstance(self.connector, NALSyntax.TermConnector) and NALSyntax.TermConnector.is_order_invariant(self.connector)\
-                or isinstance(self, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(self.connector):
-            # order doesn't matter, alphabetize so the system can recognize the same term
-            subterms.sort(key=lambda t:str(t))
-
-        self.is_set = None
         if term_connector is not None:
-            is_extensional_set = (self.connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
-            is_intensional_set = (self.connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
+            if len(subterms) > 1 \
+                    and NALSyntax.TermConnector.is_order_invariant(term_connector) \
+                    or isinstance(self, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(term_connector):
+                # order doesn't matter, alphabetize so the system can recognize the same term
+                subterms.sort(key=lambda t: str(t))
 
-            self.is_set = is_extensional_set or is_intensional_set
+            is_extensional_set = (term_connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
+            is_intensional_set = (term_connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
 
-            if self.is_set and len(subterms) > 1:
+            is_set = is_extensional_set or is_intensional_set
+
+            if is_set and len(subterms) > 1:
                 # multi_component_set
                 # todo handle multi-component sets better
                 singleton_set_subterms = []
@@ -583,11 +779,48 @@ class CompoundTerm(Term):
                 elif is_intensional_set:
                     self.connector = NALSyntax.TermConnector.ExtensionalIntersection
 
-                self.is_set = False
-
         self.subterms: [Term] = subterms
 
-        super().__init__(self.get_formatted_string())
+        Term.__init__(self,term_string=self.get_formatted_string())
+
+    def is_intensional_set(self):
+        return self.connector == NALSyntax.TermConnector.IntensionalSetStart
+
+    def is_extensional_set(self):
+        return self.connector == NALSyntax.TermConnector.ExtensionalSetStart
+
+    def is_set(self):
+        return self.is_intensional_set() or self.is_extensional_set()
+
+    def get_formatted_string(self):
+        if self.is_set():
+            string = self.connector.value
+        else:
+            string = self.connector.value + NALSyntax.StatementSyntax.TermDivider.value
+
+        for subterm in self.subterms:
+            string = string + subterm.get_formatted_string() + NALSyntax.StatementSyntax.TermDivider.value
+
+        string = string[:-1] # remove the final term divider
+
+        if self.is_set():
+            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
+        else:
+            return NALSyntax.StatementSyntax.Start.value + string + NALSyntax.StatementSyntax.End.value
+
+    def _calculate_syntactic_complexity(self):
+        """
+            Recursively calculate the syntactic complexity of
+            the compound term. The connector adds 1 complexity,
+            and the subterms syntactic complexities are summed as well.
+        """
+        count = 0
+        if self.connector is not None:
+            count = 1 # the term connector
+        for subterm in self.subterms:
+            count = count + subterm._calculate_syntactic_complexity()
+        return count
+
 
     @classmethod
     def from_string(cls, compound_term_string):
@@ -612,7 +845,6 @@ class CompoundTerm(Term):
         connector = NALSyntax.TermConnector.get_term_connector_from_string(compound_term_string[0])
         if connector is None:
             # otherwise check for regular Term/Statement connectors
-
             if internal_string[1] == NALSyntax.StatementSyntax.TermDivider.value:
                 connector_string = internal_string[0] # Term connector
             else:
@@ -639,47 +871,19 @@ class CompoundTerm(Term):
                 subterms.append(subterm)
                 subterm_string = ""
             else:
-                subterm_string = subterm_string + c
+                subterm_string += c
 
         subterm = Term.from_string(subterm_string)
         subterms.append(subterm)
 
         return subterms, connector
 
-    def _calculate_syntactic_complexity(self):
-        """
-            Recursively calculate the syntactic complexity of
-            the compound term. The connector adds 1 complexity,
-            and the subterms syntactic complexities are summed as well.
-        """
-        count = 0
-        if self.connector is not None:
-            count = 1 # the term connector
-        for subterm in self.subterms:
-            count = count + subterm._calculate_syntactic_complexity()
-        return count
-
-    def get_formatted_string(self):
-        if self.is_set:
-            string = self.connector.value
-        else:
-            string = self.connector.value + NALSyntax.StatementSyntax.TermDivider.value
-
-        for subterm in self.subterms:
-            string = string + str(subterm) + NALSyntax.StatementSyntax.TermDivider.value
-
-        string = string[:-1]
-
-        if self.is_set:
-            return string + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value
-        else:
-            return NALSyntax.StatementSyntax.Start.value + string +  NALSyntax.StatementSyntax.End.value
 
 
 class StatementTerm(CompoundTerm):
     """
         A special kind of compound term with a subject, predicate, and copula.
-        Statement connector is none for regular statements
+        Statement connector is `None` for regular statements
 
         (P --> Q)
     """
@@ -697,14 +901,11 @@ class StatementTerm(CompoundTerm):
 
     @classmethod
     def from_string(cls, statement_string):
-
         """
             Parameter: statement_string - String of NAL syntax "(term copula term)"
 
             Returns: top-level subject term, predicate term, copula, copula index
         """
-
-        statement_string = statement_string.replace(" ", "")
         statement_connector = None
 
         if NALSyntax.TermConnector.get_term_connector_from_string(
@@ -721,8 +922,8 @@ class StatementTerm(CompoundTerm):
         predicate_str = statement_string[
                         copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
 
-        statement = Statement(subject=Term.from_string(subject_str), predicate=Term.from_string(predicate_str),
-                         copula=copula,statement_connector=statement_connector)
+        statement = Statement(subject_term=Term.from_string(subject_str), predicate_term=Term.from_string(predicate_str),
+                              copula=copula, statement_connector=statement_connector)
 
         return statement.term
 
@@ -767,92 +968,106 @@ class StatementTerm(CompoundTerm):
     def is_operation(self):
         if not isinstance(self.get_subject_term(), CompoundTerm): return False
 
-        if self.get_subject_term().connector == NALSyntax.TermConnector.Product \
-            and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF:
-            # product and first term is self means this is an operation
-            return True
+        return self.get_subject_term().connector == NALSyntax.TermConnector.Product \
+            and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF # product and first term is self means this is an operation
 
 class ArrayTerm(CompoundTerm):
     """
         A N-dimensional array term that can be indexed (e.g. T).
         or a array element term (e.g. T[0.0,0.0])
 
+        (N between 1 and 3)
+
         Note that no values are stored in the array. The term only represents an array of terms.
     """
-    def __init__(self, term_string, dimensions, dim_length):
+    def __init__(self, name, dim_lengths):
         """
-        :param dim:The dimension of the array (e.g. 1,2,3) The step size of array indices in (0,1)
-        :param dim_length: the number of elements in each dimensional axis;
+        :param name: Name of the array term
+        :param dim_lengths: the number of elements in each dimensional axis (x,y,z);
             provides a granularity = 2.0/(dim_length - 1)
         """
-        assert dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
-        assert dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
-        self.string = term_string
-        self.dimensions = dimensions
-        self.dim_length = dim_length
-        self.offset = (dim_length - 1) / 2.0
+        self.num_of_dimensions = len(dim_lengths)
+        assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
+        assert self.num_of_dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
 
-        x_array = []
-        if dimensions == 1:
-            for x in np.linspace(-1.0, 1.0,num=dim_length):
-                formatted_indices = (x)
-                element = ArrayTerm.ArrayElementTerm(array_term=self,indices=formatted_indices)
-                x_array.append(element)
-        elif dimensions == 2:
-            for x in np.linspace(-1.0, 1.0,num=dim_length):
-                y_array = []
-                for y in np.linspace(-1.0, 1.0,num=dim_length):
-                    formatted_indices = (x, y)
+        if self.num_of_dimensions == 1:
+            dim_lengths = (dim_lengths[0], 1, 1)
+        elif self.num_of_dimensions == 2:
+            dim_lengths = (dim_lengths[0], dim_lengths[1], 1)
+
+        self.name = name
+        self.dim_lengths = dim_lengths
+        self.offsets = []
+        for i in range(self.num_of_dimensions):
+            self.offsets.append((dim_lengths[i] - 1) / 2.0)
+
+        z_array = []
+        for z in np.linspace(-1.0, 1.0, num=dim_lengths[2]):
+            y_array = []
+            for y in np.linspace(-1.0, 1.0, num=dim_lengths[1]):
+                x_array = []
+                for x in np.linspace(-1.0, 1.0, num=dim_lengths[0]):
+                    if self.num_of_dimensions == 1:
+                        formatted_indices = [x]
+                    elif self.num_of_dimensions == 2:
+                        formatted_indices = [x, y]
+                    elif self.num_of_dimensions == 3:
+                        formatted_indices = [x, y, z]
                     element = ArrayTerm.ArrayElementTerm(array_term=self, indices=formatted_indices)
-                    y_array.append(element)
-                x_array.append(np.array(y_array))
-        elif dimensions == 2:
-            for x in np.linspace(-1.0, 1.0,num=dim_length):
-                y_array = []
-                for y in np.linspace(-1.0, 1.0,num=dim_length):
-                    z_array = []
-                    for z in np.linspace(-1.0, 1.0,num=dim_length):
-                        formatted_indices = (x, y, z)
-                        element = ArrayTerm.ArrayElementTerm(array_term=self, indices=formatted_indices)
-                        z_array.append(element)
-                    y_array.append(np.array(z_array))
-                x_array.append(np.array(y_array))
+                    x_array.append(element)
+                y_array.append(np.array(x_array))
+            z_array.append(np.array(y_array))
 
-        self.array = np.array(x_array)
+        self.array = np.array(z_array)
+
+        assert self.array is not None,"ERROR: Null array"
         CompoundTerm.__init__(self, subterms=self.array.flatten(), term_connector=NALSyntax.TermConnector.Array)
 
     def __getitem__(self, indices):
         """
-            Define the indexing operator []
+            Define the indexing operator [], to get array elements.
+            Pass the indices as a tuple.
+
+            The values in the tuple can be either absolute values e.g. (0,1,2...N) or
+            relative indices e.g. (0.5, 0.75), but must be of the same type for the whole tuple.
         :param indices: a tuple of the indices to get
         :return: Array element term at index
         """
-        dim = len(indices)
-        indices = self._convert_relative_indices_to_array_indices(indices)
-        if dim == 1:
-            return self.array[indices[0]]
-        elif dim == 2:
-            return self.array[indices[0]][indices[1]]
-        elif dim == 3:
-            return self.array[indices[0]][indices[1]][indices[2]]
+        assert len(indices)<=self.num_of_dimensions,"Error: Number of indices must match number of dimensions"
+        if isinstance(indices[0],float): indices = self._convert_relative_indices_to_array_indices(indices)
+
+        if self.num_of_dimensions == 1:
+            indices = (indices[0], 0, 0)
+        elif self.num_of_dimensions == 2:
+            indices = (indices[0], indices[1], 0)
+
+        return self.array[indices[2]][indices[1]][indices[0]]
 
     def _convert_relative_indices_to_array_indices(self, indices):
+        assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
         # un-offset and un-regularize
-        indices = tuple(map(lambda x: round(x*self.offset + self.offset), indices))
-        return indices
+        new_indices = []
+        for i in range(self.num_of_dimensions):
+            new_indices.append(int(indices[i] * self.offsets[i] + self.offsets[i]))
+        return tuple(new_indices)
 
     def _convert_array_indices_to_relative_indices(self, indices):
+        assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
         # offset then regularize
-        indices = tuple(map(lambda x: (x - self.offset) // self.offset, indices))
-        return indices
+        new_indices = []
+        for i in range(self.num_of_dimensions):
+            new_indices.append((indices[i] - self.offsets[i]) // self.offsets[i])
+        return tuple(new_indices)
 
     def get_formatted_string(self):
-        return self.string
+        return NALSyntax.TermConnector.Array.value + self.name
 
     class ArrayElementTerm(AtomicTerm):
         """
             A term that is an element of an array term.
-            It is simply the array term with attached tuple of indices
+            It is simply the array term with attached list of indices
+
+            @A[x,y,z]
         """
         def __init__(self, array_term, indices):
             self.array_term = array_term # the array term of which this is an element
@@ -860,15 +1075,6 @@ class ArrayTerm(CompoundTerm):
 
         def get_formatted_string(self):
             return self.array_term.get_formatted_string() + str(self.indices)
-
-
-
-class PerceptualTerm(StatementTerm):
-    """
-        A special kind of statement term representing a sensation or percept.
-
-        Takes the form {S}
-    """
 
 
 def get_top_level_copula(string):

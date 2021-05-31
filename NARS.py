@@ -70,8 +70,9 @@ class NARS:
         """
         while True:
             # global parameters
-            while Global.Global.paused:
+            if Global.Global.paused:
                 time.sleep(0.2)
+                continue
 
             if self.delay > 0:
                 time.sleep(self.delay)
@@ -86,10 +87,11 @@ class NARS:
         if Global.Global.gui_use_interface:
             NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
 
-        InputBuffer.process_next_pending_sentence()
+        InputBuffer.process_next_pending_sentence() # process strings coming from input buffer
 
-        self.Process_Event_Buffer()
+        self.Process_Event_Buffer() # process events from the event buffer
 
+        # now do something with tasks from experience buffer and/or knowledge from memory
         rand = random.random()
         if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
             # OBSERVE

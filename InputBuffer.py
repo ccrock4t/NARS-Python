@@ -25,10 +25,8 @@ def add_input_string(input_string: str):
                 "Memory count (concepts in memory): " + str(len(NARS.memory)))
             NARSGUI.NARSGUI.print_to_output(
                 "Buffer count (tasks in buffer): " + str(len(NARS.experience_task_buffer)))
-            return
         elif input_string == "cycle":
             NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.get_current_cycle_number()))
-            return
         elif input_string == "save":
             NARS.save_memory_to_disk()
         elif input_string == "load":
@@ -43,7 +41,6 @@ def add_input_string(input_string: str):
             add_input_sentence(sentence)
     except AssertionError as msg:
         NARSGUI.NARSGUI.print_to_output("INPUT REJECTED: " + str(msg))
-        return
 
 def add_input_sentence(sentence: NALGrammar.Sentence):
     """

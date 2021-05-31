@@ -246,11 +246,13 @@ def ConditionalConjunctionalDeduction(j1, j2):
 
     subject_term: NALGrammar.CompoundTerm = j1.statement.get_subject_term()
 
-    new_subterms = list(set(subject_term.subterms) - {j2.statement.term})
+    new_subterms = list(set(subject_term.subterms) - {j2.statement.term}) # subtract j2 from j1 subject subterms
 
     if len(new_subterms) > 1:
+        # recreate the conjunctional compound with the new subterms
         new_compound_subject_term = NALGrammar.CompoundTerm(new_subterms, subject_term.connector)
     else:
+        # only 1 subterm, no need to make it a compound
         new_compound_subject_term = new_subterms[0]
 
     result_statement = NALGrammar.Statement(new_compound_subject_term, j1.statement.get_predicate_term(),

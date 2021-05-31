@@ -14,6 +14,11 @@ class StatementSyntax(enum.Enum):
     TruthValDivider = ";"
     TermDivider = ","
 
+    ArrayElementIndexStart = "["
+    ArrayElementIndexEnd = "]"
+    ArrayElementTruthValuesStart = "("
+    ArrayElementTruthValuesEnd = ")"
+
 
 class Tense(enum.Enum):
     Future = ":/:"
@@ -56,7 +61,7 @@ class TermConnector(enum.Enum):
     SequentialConjunction = "&/"
     ParallelConjunction = "&|"
 
-    Array = "#"
+    Array = "@"
 
     @classmethod
     def is_string_a_term_connector(cls, value):

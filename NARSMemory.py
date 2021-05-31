@@ -84,7 +84,8 @@ class Memory:
         if isinstance(term, NALGrammar.CompoundTerm):
             for subterm in term.subterms:
                 # get/create subterm concepts
-                if not isinstance(subterm, NALGrammar.VariableTerm):
+                if not isinstance(subterm, NALGrammar.VariableTerm) and\
+                        not isinstance(subterm, NALGrammar.ArrayTerm.ArrayElementTerm): # don't create concepts for variables or array elements
                     subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)
@@ -133,9 +134,9 @@ class Memory:
 
     def get_random_link(self, concept):
         """
-            Randomly gets a prediction or explanation link to/from this concept.
+            Randomly gets a term link, prediction link, or explanation link to/from this concept.
             :param concept: A concept representing an first-order statement
-            :return: A concept from an implication link
+            :return: An immediately linked concept
         """
         if len(concept.term_links) > 0 \
                 and len(concept.prediction_links) > 0\
@@ -209,6 +210,9 @@ class Concept:
 
     def __eq__(self, other):
         return self.get_formatted_string() == other.get_formatted_string()
+
+    def get_term(self):
+        return self.term
 
     def set_term_link(self, concept):
         """

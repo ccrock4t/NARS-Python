@@ -34,16 +34,29 @@ def calculate_syntactic_complexity_test():
     assert statement_term._calculate_syntactic_complexity() == statement_term_complexity
 
 def array_term_indexing_test():
-    array_term = NALGrammar.ArrayTerm(term_string="M",dimensions=2,dim_length=5) # create a 5x5 array term
+    array_term_name = "M"
+    array_term = NALGrammar.ArrayTerm(name=array_term_name, dim_lengths=(5, 5)) # create a 5x5 array term
 
-    array_element_term = array_term[0.0,0.0]
-    assert array_element_term.get_formatted_string() == "M(0.0, 0.0)"
+    array_element_term = array_term[0.1,0.1]
+    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.Array.value +
+                                                         array_term_name +
+                                                         NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
+                                                         "0.0, 0.0" +
+                                                         NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
 
     array_element_term = array_term[-1.0, 0.0]
-    assert array_element_term.get_formatted_string() == "M(-1.0, 0.0)"
+    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.Array.value +
+                                                         array_term_name +
+                                                         NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
+                                                         "-1.0, 0.0" +
+                                                         NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
 
     array_element_term = array_term[1.0, 0.5]
-    assert array_element_term.get_formatted_string() == "M(1.0, 0.5)"
+    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.Array.value +
+                                                         array_term_name +
+                                                         NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
+                                                         "1.0, 0.5" +
+                                                         NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
 
 
 def main():
