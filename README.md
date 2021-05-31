@@ -12,6 +12,6 @@ GUI screenshots:
 
 ![InternalData](https://user-images.githubusercontent.com/15344554/116962157-3f691580-ac73-11eb-968e-e71433f452fd.PNG)
 
-
+![Percepts](https://github.com/ccrock4t/NARS-Python/blob/main/Documentation/percepts.PNG)
 
 
