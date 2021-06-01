@@ -192,7 +192,7 @@ class NARS:
         if isinstance(task.sentence, NALGrammar.Judgment):
             self.process_judgment_task(task)
         elif isinstance(task.sentence, NALGrammar.Question) \
-                or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement.term):
+                or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement):
             self.process_question_task(task)
         elif isinstance(task.sentence, NALGrammar.Goal):
             self.process_goal_task(task)
@@ -208,7 +208,7 @@ class NARS:
         j1 = task.sentence
 
         # get terms from sentence
-        statement_term = j1.statement.term
+        statement_term = j1.statement
 
         if statement_term.contains_variable(): return #todo handle variables
 
@@ -261,7 +261,7 @@ class NARS:
         NARSDataStructures.assert_task(task)
 
         # get terms from sentence
-        statement_term = task.sentence.statement.term
+        statement_term = task.sentence.statement
 
         if statement_term.contains_variable(): return  # todo handle variables
 
@@ -298,7 +298,7 @@ class NARS:
         j1 = task.sentence
 
         # get terms from sentence
-        statement_term = j1.statement.term
+        statement_term = j1.statement
 
         if statement_term.contains_variable(): return  # todo handle variables
 
@@ -331,13 +331,13 @@ class NARS:
         should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
         if not should_pursue: return # Failed decision-making rule
 
-        statement_term = j1.statement.term
+        statement_term = j1.statement
 
         statement_concept = self.memory.peek_concept(statement_term)
         belief = statement_concept.belief_table.peek()
         if belief is not None and belief.is_positive(): return # Goal is already achieved
 
-        if statement_term.is_operation:
+        if statement_term.is_operation():
             self.execute_operation(j1.statement)
 
         self.process_sentence_semantic_inference(j1, related_concept=related_concept)
@@ -353,7 +353,7 @@ class NARS:
             #todo handle variables
             #todo handle tenses
         """
-        statement_term = j1.statement.term
+        statement_term = j1.statement
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
 

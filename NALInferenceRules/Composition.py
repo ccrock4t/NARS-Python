@@ -69,7 +69,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
                                                  j2.statement.get_subject_term()],
                                                 term_connector=connector)  # (T1 & T2)
-        result_statement = NALGrammar.Statement(compound_term,
+        result_statement = NALGrammar.StatementTerm(compound_term,
                                                 j1.statement.get_predicate_term(),
                                                 copula)  # ((T1 | T2) --> M)
 
@@ -85,7 +85,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                  j2.statement.get_predicate_term()],
                                                 term_connector=connector)  # (T1 & T2)
 
-        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
                                                 compound_term,
                                                 copula)  # (M --> (T1 | T2))
 
@@ -159,7 +159,7 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
                                                  j2.statement.get_subject_term()],
                                                 term_connector=connector)  # (T1 & T2)
-        result_statement = NALGrammar.Statement(compound_term,
+        result_statement = NALGrammar.StatementTerm(compound_term,
                                                 j1.statement.get_predicate_term(),
                                                 copula)  # ((T1 & T2) --> M)
 
@@ -174,7 +174,7 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
         compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
                                                  j2.statement.get_predicate_term()],
                                                 term_connector=connector)  # (T1 & T2)
-        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
                                                 compound_term,
                                                 copula)  # (M --> (T1 & T2))
 
@@ -218,7 +218,7 @@ def IntensionalDifference(j1, j2):
     compound_term = NALGrammar.CompoundTerm([j1.statement.get_subject_term(),
                                              j2.statement.get_subject_term()],
                                             NALSyntax.TermConnector.IntensionalDifference)  # (T1 ~ T2)
-    result_statement = NALGrammar.Statement(compound_term,
+    result_statement = NALGrammar.StatementTerm(compound_term,
                                             j1.statement.get_predicate_term(),
                                             NALSyntax.Copula.Inheritance)  # ((T1 ~ T2) --> M)
 
@@ -258,7 +258,7 @@ def ExtensionalDifference(j1, j2):
     compound_term = NALGrammar.CompoundTerm([j1.statement.get_predicate_term(),
                                              j2.statement.get_predicate_term()],
                                             NALSyntax.TermConnector.ExtensionalDifference)
-    result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+    result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
                                             compound_term,
                                                 NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 

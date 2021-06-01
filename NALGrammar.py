@@ -11,19 +11,145 @@ import numpy as np
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
 
-class Sentence:
+class Array():
+    def __init__(self, dim_lengths, truth_values = None, occurrence_time=None):
+        """
+        :param parent: Name of the array term
+        :param dim_lengths: the number of elements in each dimensional axis (x,y,z);
+            provides a granularity = 2.0/(dim_length - 1)
+        """
+        self.is_array = True
+        self.dimensions = dim_lengths
+        self.num_of_dimensions = len(dim_lengths)
+        assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
+        assert self.num_of_dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
+
+        if self.num_of_dimensions == 1:
+            dim_lengths = (dim_lengths[0], 1, 1)
+        elif self.num_of_dimensions == 2:
+            dim_lengths = (dim_lengths[0], dim_lengths[1], 1)
+
+        self.dim_lengths = dim_lengths
+        self.offsets = []
+        for i in range(self.num_of_dimensions):
+            self.offsets.append((dim_lengths[i] - 1) / 2.0)
+
+        if isinstance(self, Judgment) or isinstance(self, Goal):
+            self.image_array = [] # image_array is used to visualize an array of judgments/goals activations
+        else:
+            self.image_array = None
+
+        z_array = []
+        z_image_array = []
+        for z in np.linspace(-1.0, 1.0, num=dim_lengths[2]):
+            y_array = []
+            y_image_array = []
+            for y in np.linspace(-1.0, 1.0, num=dim_lengths[1]):
+                x_array = []
+                x_image_array = []
+                for x in np.linspace(-1.0, 1.0, num=dim_lengths[0]):
+                    if self.num_of_dimensions == 1:
+                        formatted_indices = [x]
+                    elif self.num_of_dimensions == 2:
+                        formatted_indices = [x, y]
+                    elif self.num_of_dimensions == 3:
+                        formatted_indices = [x, y, z]
+
+                    if isinstance(self, StatementTerm):
+                        array_term: ArrayTerm = self.get_subject_term().subterms[0]
+                        atomic_element = array_term[formatted_indices] # get atomic array element
+                        element = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_element],
+                                                                    term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                                predicate_term=self.get_predicate_term(),
+                                                copula=NALSyntax.Copula.Inheritance)
+                    elif isinstance(self, Judgment):
+                        truth_value: TruthValue = truth_values[len(z_array)][len(y_array)][len(x_array)]
+                        statement_element: StatementTerm = self.statement[formatted_indices] # get atomic array element
+                        element = Judgment(statement=statement_element,
+                                           value=truth_value,
+                                           occurrence_time=occurrence_time)
+                        x_image_array.append(truth_value.frequency * 255)
+                    else:
+                        element = AtomicArrayElementTerm(array_term=self, indices=formatted_indices)
+
+                    x_array.append(element)
+                y_array.append(np.array(x_array))
+                if self.image_array is not None: y_image_array.append(x_image_array)
+            z_array.append(np.array(y_array))
+            if self.image_array is not None: z_image_array.append(y_image_array)
+        if self.image_array is not None:
+            if len(self.image_array ) == 1: z_image_array = z_image_array[0]
+            self.image_array = np.array(z_image_array).astype(np.uint8)
+            while len(self.image_array) == 1:
+                self.image_array = self.image_array[0]
+
+        self.array = np.array(z_array)
+
+    def __getitem__(self, indices):
+        """
+            Define the indexing operator [], to get array elements.
+            Pass the indices as an indexible item
+
+            The values in the tuple can be either absolute values e.g. (0,1,2...N) or
+            relative indices e.g. (0.5, 0.75), but must be of the same type for the whole tuple.
+        :param indices: a tuple of the indices to get
+        :return: Array element term at index
+        """
+        assert len(indices)<=self.num_of_dimensions,"Error: Number of indices must match number of dimensions"
+        if isinstance(indices[0],float): indices = self._convert_relative_indices_to_array_indices(indices)
+
+        if self.num_of_dimensions == 1:
+            indices = (indices[0], 0, 0)
+        elif self.num_of_dimensions == 2:
+            indices = (indices[0], indices[1], 0)
+
+        return self.array[indices[2]][indices[1]][indices[0]]
+
+    def _convert_relative_indices_to_array_indices(self, indices):
+        assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
+        # un-offset and un-regularize
+        new_indices = []
+        for i in range(self.num_of_dimensions):
+            new_indices.append(int(indices[i] * self.offsets[i] + self.offsets[i]))
+        return tuple(new_indices)
+
+    def _convert_array_indices_to_relative_indices(self, indices):
+        assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
+        # offset then regularize
+        new_indices = []
+        for i in range(self.num_of_dimensions):
+            new_indices.append((indices[i] - self.offsets[i]) // self.offsets[i])
+        return tuple(new_indices)
+
+    def get_dimensions(self):
+        return self.dimensions
+
+class Sentence(Array):
     """
         sentence ::= <statement><punctuation> <tense> %<value>%
     """
 
     def __init__(self, statement, value, punctuation, occurrence_time=None):
-        assert_statement(statement)
-        assert_punctuation(punctuation)
+        """
 
-        self.statement: Statement = statement
-        self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
+        :param statement:
+        :param value: Pass as a tuple for array sentences (overall_truth, list_of_element_truth_values)
+        :param punctuation:
+        :param occurrence_time:
+        :param array_truth_values:
+        """
+        assert_punctuation(punctuation)
+        assert isinstance(statement,StatementTerm),"ERROR: Judgment needs a statement"
+        self.is_array = False
+        self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
+
+        if statement.is_array:
+            Array.__init__(self,statement.get_dimensions(),truth_values=value[1])
+            self.value = value[0]
+        else:
+            self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -49,6 +175,14 @@ class Sentence:
         if self.stamp.get_tense() != NALSyntax.Tense.Eternal: string = string + " " + self.stamp.get_tense().value
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
+
+    def __getitem__(self, indices):
+        """
+            Define the indexing operator [], to get array elements.
+            Pass the indices as a tuple.
+        """
+        assert isinstance(self.statement, ArrayTerm),"ERROR: Cannot index non-array"
+        return self.statement[indices], self.array[indices]
 
     @classmethod
     def new_sentence_from_string(cls, sentence_string: str):
@@ -94,10 +228,10 @@ class Sentence:
                 # No truth value, use default truth value
                 freq = Config.DEFAULT_JUDGMENT_FREQUENCY
                 conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
-            sentence = Percept.from_string(statement_string, TruthValue(freq, conf))
+            sentence = Sentence.new_percept_from_string(statement_string, TruthValue(freq, conf))
         else:
             # create standard statement from string
-            statement = Statement.from_string(statement_string)
+            statement = StatementTerm.from_string(statement_string)
 
             if punctuation == NALSyntax.Punctuation.Judgment:
                 if freq is None:
@@ -133,93 +267,10 @@ class Sentence:
         return sentence
 
     @classmethod
-    def may_interact(cls,j1,j2):
+    def new_percept_from_string(cls, percept_sentence_string, truth_value, occurrence_time=None):
         """
-            2 Sentences may interact if:
-                #1. Neither is "None"
-                #2. They are not the same Sentence
-                #3. They have not interacted previously
-                #4. One is not in the other's evidential base
-                #5. They do not have overlapping evidential base
-        :param j1:
-        :param j2:
-        :return: Are the sentence allowed to interact for inference
-        """
-        if j1 is None or j2 is None: return False
-        if j1.stamp.id == j2.stamp.id: return False
-        if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually
-        if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
-        if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
-        return True
-
-
-class Judgment(Sentence):
-    """
-        judgment ::= <statement>. %<truth-value>%
-    """
-
-    def __init__(self, statement, value,occurrence_time=None):
-        assert_statement(statement)
-        assert_truth_value(value)
-        super().__init__(statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
-
-    def is_positive(self):
-        """
-            :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
-        """
-        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
-
-    def is_negative(self):
-        """
-            :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
-        """
-        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
-
-
-class Question(Sentence):
-    """
-        question ::= <statement>? %<truth-value>%
-    """
-
-    def __init__(self, statement):
-        assert_statement(statement)
-        super().__init__(statement, None, NALSyntax.Punctuation.Question)
-
-
-class Goal(Sentence):
-    """
-        goal ::= <statement>! %<desire-value>%
-    """
-
-    def __init__(self, statement, value):
-        assert_statement(statement)
-        super().__init__(statement, value, NALSyntax.Punctuation.Goal)
-
-class Percept(Judgment):
-    """
-        A special type of judgment named by a perceptual term.
-        The subject is an extensional set of an array term,
-        the predicate is an intensional set.
-
-        The Percept itself has a truth-value,
-        and also contains a judgment for each array element.
-    """
-    def __init__(self, statement, value, element_list, occurrence_time=None):
-        #todo occurrence time
-        self.elements = element_list
-
-        np_array = np.array(element_list)
-        for index, judgment in np.ndenumerate(np_array):
-            np_array[index] = judgment.value.frequency * 255
-        if len(np_array) == 1: np_array = np_array[0]
-
-        self.image_array = np_array.astype(np.uint8)
-        Judgment.__init__(self, statement, value, occurrence_time=occurrence_time)
-
-    @classmethod
-    def from_string(cls, percept_statement_string, truth_value, occurrence_time=None):
-        """
-            Parameter: percept_string - String of NAL syntax ({@S([...])} --> [t])
+            :param: percept_sentence_string - String of NAL syntax ({@S([...])} --> [t])
+            :param: truth_value - Truth-value of the overall sentence
 
             Where @S is an array term followed by element-level truth-values separated by brackets and commas.
             1D (sequence):
@@ -250,12 +301,13 @@ class Percept(Judgment):
             Returns: Percept
         """
         # this input is a sensory percept
-        copula, copula_idx = get_top_level_copula(percept_statement_string)
+        copula, copula_idx = get_top_level_copula(percept_sentence_string)
         assert (copula is not None), "ERROR: Copula not found. Exiting.."
 
-        subject_str = percept_statement_string[1:copula_idx]  # get subject string {@S([])}
-        predicate_str = percept_statement_string[copula_idx + len(copula.value):-1]  # get predicate string [t]
+        subject_str = percept_sentence_string[1:copula_idx]  # get subject string {@S([])}
+        predicate_str = percept_sentence_string[copula_idx + len(copula.value):-1]  # get predicate string [t]
         predicate_term = Term.from_string(predicate_str)
+        assert predicate_term.is_intensional_set(), "ERROR: Predicate term must be an intensional set"
 
         array_start_bracket_idx = subject_str.find(NALSyntax.StatementSyntax.ArrayElementTruthValuesStart.value)
         array_end_bracket_idx = subject_str.rfind(NALSyntax.StatementSyntax.ArrayElementTruthValuesEnd.value)
@@ -326,104 +378,100 @@ class Percept(Judgment):
                 z_length = len(layer_strings) # how many layers
                 dim_lengths = (x_length, y_length, z_length)
 
-        array_term = ArrayTerm(name=array_term_name, dim_lengths=dim_lengths)
+        atomic_array_term = ArrayTerm(name=array_term_name,
+                                      dim_lengths=dim_lengths)
+        statement_array_term = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_array_term],
+                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                              predicate_term=predicate_term,
+                                              copula=copula)
 
-        z_elements = []
-
+        z_truth_value_elements = []
         # iterate over every element / truth-value
         for z in range(z_length):
-            y_elements = []
+            y_truth_value_elements = []
             for y in range(y_length):
-                x_elements = []
+                x_truth_value_elements = []
                 for x in range(x_length):
                     if y_length == 1 and z_length == 1:
-                        array_element_coords = (x,)
                         truth_value_str_parts = truth_value_str_array[x].split(";")
                     elif z_length == 1:
-                        array_element_coords = (x,y)
                         truth_value_str_parts = truth_value_str_array[y][x].split(";")
                     else:
-                        array_element_coords = (x,y,z)
                         truth_value_str_parts = truth_value_str_array[z][y][x].split(";")
 
                     assert len(truth_value_str_parts) == 2, "ERROR: Truth value should only consist of 2 values"
-                    percept_element_truth_value = TruthValue(float(truth_value_str_parts[0]),float(truth_value_str_parts[1]))
+                    element_truth_value = TruthValue(float(truth_value_str_parts[0]),float(truth_value_str_parts[1]))
+                    x_truth_value_elements.append(element_truth_value)
+                y_truth_value_elements.append(x_truth_value_elements)
+            z_truth_value_elements.append(y_truth_value_elements)
 
-                    array_element_term = array_term[array_element_coords]
+        truth_value_list = z_truth_value_elements
 
-                    percept_element_subject_term = CompoundTerm(subterms=[array_element_term], term_connector=NALSyntax.TermConnector.ExtensionalSetStart)
-                    percept_element_statement = Statement(subject_term=percept_element_subject_term,
-                                        predicate_term=predicate_term,
-                                        copula=copula)
+        percept = Judgment(statement=statement_array_term,
+                 value=(truth_value, truth_value_list))
 
-                    percept_element = Judgment(statement=percept_element_statement,
-                                              value=percept_element_truth_value,
-                                               occurrence_time=occurrence_time)
-                    x_elements.append(percept_element)
-                y_elements.append(x_elements)
-            z_elements.append(y_elements)
-
-        percept_array = z_elements
-
-        subject_term = CompoundTerm(subterms=[array_term], term_connector=NALSyntax.TermConnector.ExtensionalSetStart)
-
-        assert predicate_term.is_intensional_set(), "ERROR: Predicate term must be an intensional set"
-
-        statement = Statement(subject_term=subject_term,
-                              predicate_term=predicate_term,
-                              copula=copula,
-                              statement_connector=None)
-
-        return Percept(statement=statement,
-                       value=truth_value,
-                       element_list=percept_array)
-
-
-class Statement:
-    """
-        statement ::= <subject><copula><predicate>
-    """
-
-    def __init__(self, subject_term, predicate_term=None, copula=None, statement_connector=None):
-        assert_term(subject_term)
-        if predicate_term is None:
-            assert statement_connector is not None,"ERROR: Cannot make statement with only a subject term and no statement connector"
-            statement_term = subject_term
-        else:
-            statement_term = StatementTerm(self, subject_term, predicate_term, copula)
-        self.term = statement_term if statement_connector is None else CompoundTerm([statement_term], statement_connector)
-
-    def get_subject_term(self):
-        if isinstance(self.term, StatementTerm):
-            return self.term.get_subject_term()
-        else:
-            return self.term
-
-    def get_predicate_term(self):
-        if isinstance(self.term, StatementTerm):
-            return self.term.get_predicate_term()
-        else:
-            return None
-
-    def get_statement_connector(self):
-        """
-            Can be none
-        """
-        return self.term.connector
-
-    def get_copula(self):
-        if isinstance(self.term, StatementTerm):
-            return self.term.get_copula()
-        else:
-            return None
-
-    def get_formatted_string(self):
-        return self.term.get_formatted_string()
+        return percept
 
     @classmethod
-    def from_string(cls,statement_string):
-        term = Term.from_string(statement_string)
-        return term.statement
+    def may_interact(cls,j1,j2):
+        """
+            2 Sentences may interact if:
+                #1. Neither is "None"
+                #2. They are not the same Sentence
+                #3. They have not interacted previously
+                #4. One is not in the other's evidential base
+                #5. They do not have overlapping evidential base
+        :param j1:
+        :param j2:
+        :return: Are the sentence allowed to interact for inference
+        """
+        if j1 is None or j2 is None: return False
+        if j1.stamp.id == j2.stamp.id: return False
+        if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually
+        if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
+        if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
+        return True
+
+
+class Judgment(Sentence):
+    """
+        judgment ::= <statement>. %<truth-value>%
+    """
+
+    def __init__(self, statement, value,occurrence_time=None):
+        Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
+
+    def is_positive(self):
+        """
+            :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
+        """
+        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
+
+    def is_negative(self):
+        """
+            :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
+        """
+        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
+
+
+class Question(Sentence):
+    """
+        question ::= <statement>? %<truth-value>%
+    """
+
+    def __init__(self, statement):
+        assert_statement_term(statement)
+        Sentence.__init__(self,statement, None, NALSyntax.Punctuation.Question)
+
+
+class Goal(Sentence):
+    """
+        goal ::= <statement>! %<desire-value>%
+    """
+
+    def __init__(self, statement, value):
+        assert_statement_term(statement)
+        Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Goal)
 
 class EvidentialValue:
     """
@@ -559,11 +607,6 @@ class Term:
         self.string = term_string
         self.syntactic_complexity = self._calculate_syntactic_complexity()
 
-        if isinstance(self, StatementTerm):
-            self.is_operation = self.is_operation()
-        else:
-            self.is_operation = False
-
     def get_formatted_string(self):
         return self.string
 
@@ -583,7 +626,7 @@ class Term:
         assert False, "Complexity not defined for Term base class"
 
     def is_operation(self):
-        return self.is_operation
+        return False
 
     def contains_variable(self):
         return VariableTerm.VARIABLE_SYM in str(self) \
@@ -639,7 +682,7 @@ class Term:
         elif isinstance(term, StatementTerm):
             simplified_subject_term = Term.simplify(term.get_subject_term())
             simplified_predicate_term = Term.simplify(term.get_predicate_term())
-            return StatementTerm(subject=simplified_subject_term, predicate=simplified_predicate_term, copula=term.copula)
+            return StatementTerm(subject_term=simplified_subject_term, predicate_term=simplified_predicate_term, copula=term.copula)
         elif isinstance(term, CompoundTerm):
             if term.connector is NALSyntax.TermConnector.Negation:
                 if len(term.subterms) == 1:
@@ -751,8 +794,7 @@ class CompoundTerm(Term):
 
         if term_connector is not None:
             if len(subterms) > 1 \
-                    and NALSyntax.TermConnector.is_order_invariant(term_connector) \
-                    or isinstance(self, NALSyntax.Copula) and NALSyntax.Copula.is_symmetric(term_connector):
+                    and NALSyntax.TermConnector.is_order_invariant(term_connector):
                 # order doesn't matter, alphabetize so the system can recognize the same term
                 subterms.sort(key=lambda t: str(t))
 
@@ -880,24 +922,42 @@ class CompoundTerm(Term):
 
 
 
-class StatementTerm(CompoundTerm):
+class StatementTerm(CompoundTerm,Array):
     """
+        <subject><copula><predicate>
+
         A special kind of compound term with a subject, predicate, and copula.
         Statement connector is `None` for regular statements
 
         (P --> Q)
+
+        May also represent a single-statement compound, like negation (--,(P-->Q))
+        in which case the non-negated statement is stored in subject and predicate is None.
     """
 
-    def __init__(self, statement: Statement, subject: Term, predicate: Term, copula):
-        assert_term(subject)
-        assert_term(predicate)
-        assert_copula(copula)
-        subterms = [subject, predicate]
-        self.copula = copula
-        self.statement = statement
-        if NALSyntax.Copula.is_symmetric(copula):
-            subterms.sort(key=lambda t: str(t))  # sort alphabetically
-        CompoundTerm.__init__(self,subterms, None)
+    def __init__(self, subject_term: Term, predicate_term = None, copula=None, statement_connector = None):
+        self.is_array = False
+        assert_term(subject_term)
+        subterms = [subject_term]
+        if predicate_term is not None:
+            subterms.append(predicate_term)
+
+        self.copula = None
+        if copula is not None:
+            self.copula = copula
+            if NALSyntax.Copula.is_symmetric(copula):
+                subterms.sort(key=lambda t: str(t))  # sort alphabetically
+
+        CompoundTerm.__init__(self,subterms, statement_connector)
+
+        is_perceptual_term = isinstance(subject_term, CompoundTerm) \
+                             and subject_term.is_extensional_set() \
+                             and isinstance(subject_term.subterms[0], Array) \
+                             and subject_term.subterms[0].is_array \
+                             and isinstance(predicate_term, CompoundTerm) \
+                             and predicate_term.is_intensional_set()
+        if is_perceptual_term:
+            Array.__init__(self, dim_lengths=subject_term.subterms[0].get_dimensions())
 
     @classmethod
     def from_string(cls, statement_string):
@@ -922,10 +982,9 @@ class StatementTerm(CompoundTerm):
         predicate_str = statement_string[
                         copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
 
-        statement = Statement(subject_term=Term.from_string(subject_str), predicate_term=Term.from_string(predicate_str),
+        return StatementTerm(subject_term=Term.from_string(subject_str), predicate_term=Term.from_string(predicate_str),
                               copula=copula, statement_connector=statement_connector)
 
-        return statement.term
 
 
     def _calculate_syntactic_complexity(self):
@@ -951,6 +1010,9 @@ class StatementTerm(CompoundTerm):
     def get_copula(self):
         return self.copula
 
+    def get_statement_connector(self):
+        return self.connector
+
     def get_copula_string(self):
         return str(self.get_copula().value)
 
@@ -958,20 +1020,24 @@ class StatementTerm(CompoundTerm):
         """
             returns: (Subject copula Predicate)
         """
-        statement_string = NALSyntax.StatementSyntax.Start.value + \
+        if len(self.subterms) > 1:
+            string = NALSyntax.StatementSyntax.Start.value + \
                self.get_subject_term().get_formatted_string() + \
                " " + self.get_copula_string() + " " + \
                self.get_predicate_term().get_formatted_string() \
                + NALSyntax.StatementSyntax.End.value
-        return statement_string
+        else:
+            string = CompoundTerm.get_formatted_string(self)
+
+        return string
 
     def is_operation(self):
-        if not isinstance(self.get_subject_term(), CompoundTerm): return False
-
-        return self.get_subject_term().connector == NALSyntax.TermConnector.Product \
+        return isinstance(self.get_subject_term(), CompoundTerm) \
+            and self.get_subject_term().connector == NALSyntax.TermConnector.Product \
             and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF # product and first term is self means this is an operation
 
-class ArrayTerm(CompoundTerm):
+
+class ArrayTerm(CompoundTerm,Array):
     """
         A N-dimensional array term that can be indexed (e.g. T).
         or a array element term (e.g. T[0.0,0.0])
@@ -986,96 +1052,28 @@ class ArrayTerm(CompoundTerm):
         :param dim_lengths: the number of elements in each dimensional axis (x,y,z);
             provides a granularity = 2.0/(dim_length - 1)
         """
-        self.num_of_dimensions = len(dim_lengths)
-        assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
-        assert self.num_of_dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
-
-        if self.num_of_dimensions == 1:
-            dim_lengths = (dim_lengths[0], 1, 1)
-        elif self.num_of_dimensions == 2:
-            dim_lengths = (dim_lengths[0], dim_lengths[1], 1)
-
+        self.is_array = False
         self.name = name
-        self.dim_lengths = dim_lengths
-        self.offsets = []
-        for i in range(self.num_of_dimensions):
-            self.offsets.append((dim_lengths[i] - 1) / 2.0)
-
-        z_array = []
-        for z in np.linspace(-1.0, 1.0, num=dim_lengths[2]):
-            y_array = []
-            for y in np.linspace(-1.0, 1.0, num=dim_lengths[1]):
-                x_array = []
-                for x in np.linspace(-1.0, 1.0, num=dim_lengths[0]):
-                    if self.num_of_dimensions == 1:
-                        formatted_indices = [x]
-                    elif self.num_of_dimensions == 2:
-                        formatted_indices = [x, y]
-                    elif self.num_of_dimensions == 3:
-                        formatted_indices = [x, y, z]
-                    element = ArrayTerm.ArrayElementTerm(array_term=self, indices=formatted_indices)
-                    x_array.append(element)
-                y_array.append(np.array(x_array))
-            z_array.append(np.array(y_array))
-
-        self.array = np.array(z_array)
-
-        assert self.array is not None,"ERROR: Null array"
+        Array.__init__(self,dim_lengths)
         CompoundTerm.__init__(self, subterms=self.array.flatten(), term_connector=NALSyntax.TermConnector.Array)
-
-    def __getitem__(self, indices):
-        """
-            Define the indexing operator [], to get array elements.
-            Pass the indices as a tuple.
-
-            The values in the tuple can be either absolute values e.g. (0,1,2...N) or
-            relative indices e.g. (0.5, 0.75), but must be of the same type for the whole tuple.
-        :param indices: a tuple of the indices to get
-        :return: Array element term at index
-        """
-        assert len(indices)<=self.num_of_dimensions,"Error: Number of indices must match number of dimensions"
-        if isinstance(indices[0],float): indices = self._convert_relative_indices_to_array_indices(indices)
-
-        if self.num_of_dimensions == 1:
-            indices = (indices[0], 0, 0)
-        elif self.num_of_dimensions == 2:
-            indices = (indices[0], indices[1], 0)
-
-        return self.array[indices[2]][indices[1]][indices[0]]
-
-    def _convert_relative_indices_to_array_indices(self, indices):
-        assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
-        # un-offset and un-regularize
-        new_indices = []
-        for i in range(self.num_of_dimensions):
-            new_indices.append(int(indices[i] * self.offsets[i] + self.offsets[i]))
-        return tuple(new_indices)
-
-    def _convert_array_indices_to_relative_indices(self, indices):
-        assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
-        # offset then regularize
-        new_indices = []
-        for i in range(self.num_of_dimensions):
-            new_indices.append((indices[i] - self.offsets[i]) // self.offsets[i])
-        return tuple(new_indices)
 
     def get_formatted_string(self):
         return NALSyntax.TermConnector.Array.value + self.name
 
-    class ArrayElementTerm(AtomicTerm):
-        """
-            A term that is an element of an array term.
-            It is simply the array term with attached list of indices
 
-            @A[x,y,z]
-        """
-        def __init__(self, array_term, indices):
-            self.array_term = array_term # the array term of which this is an element
-            self.indices = indices
+class AtomicArrayElementTerm(AtomicTerm):
+    """
+        A term that is an element of an atomic array term.
+        It is simply the atomic array term with attached indices
 
-        def get_formatted_string(self):
-            return self.array_term.get_formatted_string() + str(self.indices)
+        e.g. @A[x,y,z]
+    """
+    def __init__(self, array_term, indices):
+        self.array_term = array_term # the array term of which this is an element
+        self.indices = indices
 
+    def get_formatted_string(self):
+        return self.array_term.get_formatted_string() + str(self.indices)
 
 def get_top_level_copula(string):
     """
@@ -1109,10 +1107,6 @@ def assert_statement_term(t):
 
 def assert_sentence(j):
     assert (isinstance(j, Sentence)), str(j) + " must be a Sentence"
-
-
-def assert_statement(j):
-    assert (isinstance(j, Statement)), str(j) + " must be a Statement"
 
 
 def assert_truth_value(j):

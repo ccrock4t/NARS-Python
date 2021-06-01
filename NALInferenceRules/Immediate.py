@@ -28,10 +28,7 @@ def Negation(j):
     """
     NALGrammar.assert_sentence(j)
 
-    result_statement = NALGrammar.Statement(j.statement.get_subject_term(),
-                                            j.statement.get_predicate_term(),
-                                            j.statement.get_copula(),
-                                            statement_connector=NALSyntax.TermConnector.Negation)
+    result_statement = NALGrammar.StatementTerm(j.statement, statement_connector=NALSyntax.TermConnector.Negation)
 
     occurrence_time = j.stamp.occurrence_time
 
@@ -67,7 +64,7 @@ def Conversion(j):
     """
     NALGrammar.assert_sentence(j)
     # Statement
-    result_statement = NALGrammar.Statement(j.statement.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(j.statement.get_predicate_term(),
                                             j.statement.get_subject_term(),
                                             j.statement.get_copula())
 
@@ -104,7 +101,7 @@ def Contraposition(j):
     negated_subject_term = NALGrammar.CompoundTerm([j.statement.get_subject_term()],
                                                    NALSyntax.TermConnector.Negation)
 
-    result_statement = NALGrammar.Statement(negated_predicate_term,
+    result_statement = NALGrammar.StatementTerm(negated_predicate_term,
                                             negated_subject_term,
                                             j.statement.get_copula())
 
@@ -153,7 +150,7 @@ def ExtensionalImage(j):
         image_term = NALGrammar.CompoundTerm(image_subterms,
                                              NALSyntax.TermConnector.ExtensionalImage)
 
-        result_statement = NALGrammar.Statement(subterm,
+        result_statement = NALGrammar.StatementTerm(subterm,
                                                 image_term,
                                                 NALSyntax.Copula.Inheritance)
 
@@ -202,7 +199,7 @@ def IntensionalImage(j):
         image_term = NALGrammar.CompoundTerm(image_subterms,
                                              NALSyntax.TermConnector.ExtensionalImage)
 
-        result_statement = NALGrammar.Statement(image_term,
+        result_statement = NALGrammar.StatementTerm(image_term,
                                                 subterm,
                                                 NALSyntax.Copula.Inheritance)
 

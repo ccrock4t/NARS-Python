@@ -32,14 +32,14 @@ def ConditionalAnalogy(j1, j2):
     NALGrammar.assert_sentence(j2)
 
     # Statement
-    if j1.statement.term == j2.statement.get_subject_term():
+    if j1.statement == j2.statement.get_subject_term():
         statement_term: NALGrammar.StatementTerm = j2.statement.get_predicate_term()
-    elif j1.statement.term == j2.statement.get_predicate_term():
+    elif j1.statement == j2.statement.get_predicate_term():
         statement_term: NALGrammar.StatementTerm  = j2.statement.get_subject_term()
     else:
         assert False, "Error: Invalid inputs to Conditional Analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
                                             statement_term.get_copula())
 
     if isinstance(j2, NALGrammar.Judgment):
@@ -73,7 +73,7 @@ def ConditionalDeduction(j1, j2):
     NALGrammar.assert_sentence(j2)
 
     statement_term: NALGrammar.StatementTerm = j1.statement.get_predicate_term() # P
-    result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
                                             statement_term.get_copula())
 
 
@@ -108,7 +108,7 @@ def ConditionalAbduction(j1, j2):
     NALGrammar.assert_sentence(j2)
 
     statement_term: NALGrammar.StatementTerm = j1.statement.get_subject_term() # S
-    result_statement = NALGrammar.Statement(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
                                             statement_term.get_copula())
 
 
@@ -148,20 +148,20 @@ def ConditionalInduction(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-    j1_statement_term = j1.statement.term
-    j2_statement_term = j2.statement.term
+    j1_statement_term = j1.statement
+    j2_statement_term = j2.statement
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 =|> j2
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+        result_statement = NALGrammar.StatementTerm(j1_statement_term, j2_statement_term,
                                                 NALSyntax.Copula.ConcurrentImplication)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 =/> j2
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+        result_statement = NALGrammar.StatementTerm(j1_statement_term, j2_statement_term,
                                                 NALSyntax.Copula.PredictiveImplication)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 =/> j1
-        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term,
+        result_statement = NALGrammar.StatementTerm(j2_statement_term, j1_statement_term,
                                                 NALSyntax.Copula.PredictiveImplication)
 
     # calculate induction truth value
@@ -197,20 +197,20 @@ def ConditionalComparison(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-    j1_statement_term = j1.statement.term
-    j2_statement_term = j2.statement.term
+    j1_statement_term = j1.statement
+    j2_statement_term = j2.statement
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # <|>
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+        result_statement = NALGrammar.StatementTerm(j1_statement_term, j2_statement_term,
                                                 NALSyntax.Copula.ConcurrentEquivalence)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 </> j2
-        result_statement = NALGrammar.Statement(j1_statement_term, j2_statement_term,
+        result_statement = NALGrammar.StatementTerm(j1_statement_term, j2_statement_term,
                                                 NALSyntax.Copula.PredictiveEquivalence)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 </> j1
-        result_statement = NALGrammar.Statement(j2_statement_term, j1_statement_term,
+        result_statement = NALGrammar.StatementTerm(j2_statement_term, j1_statement_term,
                                                 NALSyntax.Copula.PredictiveEquivalence)
 
     # calculate induction truth value
@@ -246,7 +246,7 @@ def ConditionalConjunctionalDeduction(j1, j2):
 
     subject_term: NALGrammar.CompoundTerm = j1.statement.get_subject_term()
 
-    new_subterms = list(set(subject_term.subterms) - {j2.statement.term}) # subtract j2 from j1 subject subterms
+    new_subterms = list(set(subject_term.subterms) - {j2.statement}) # subtract j2 from j1 subject subterms
 
     if len(new_subterms) > 1:
         # recreate the conjunctional compound with the new subterms
@@ -255,7 +255,7 @@ def ConditionalConjunctionalDeduction(j1, j2):
         # only 1 subterm, no need to make it a compound
         new_compound_subject_term = new_subterms[0]
 
-    result_statement = NALGrammar.Statement(new_compound_subject_term, j1.statement.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
                                             j1.statement.get_copula())
 
 
@@ -303,7 +303,7 @@ def ConditionalConjunctionalAbduction(j1, j2):
     if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in set_difference_of_terms])
 
     result_term: NALGrammar.StatementTerm = set_difference_of_terms[0]
-    result_statement = NALGrammar.Statement(result_term.get_subject_term(), result_term.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(result_term.get_subject_term(), result_term.get_predicate_term(),
                                             result_term.get_copula())
 
     if isinstance(j2, NALGrammar.Judgment):

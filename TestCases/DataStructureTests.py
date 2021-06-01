@@ -20,7 +20,7 @@ def test_table_removemax():
     maximum = max(confidences)
     for c in confidences:
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.StatementTerm(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
         table.put(sentence)
     tablemax = table._extract_max().value.confidence
@@ -37,7 +37,7 @@ def test_table_removemin():
     for c in confidences:
         #make sentence <a --> b>. %0.9;c%
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.StatementTerm(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, c))
         table.put(sentence)
 
@@ -69,7 +69,7 @@ def test_buffer_removemax():
     maximum = max(priorities)
     for p in priorities:
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.StatementTerm(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainer.Item(sentence,-1)
         item.budget.priority = p
@@ -88,7 +88,7 @@ def test_buffer_removemin():
     for p in priorities:
         #make sentence <a --> b>. %0.9;c%
         sentence = NALGrammar.Judgment(
-            NALGrammar.Statement(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
+            NALGrammar.StatementTerm(NALGrammar.Term.from_string("a"), NALGrammar.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainer.Item(sentence,-1)
         item.budget.priority = p

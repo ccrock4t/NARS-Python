@@ -35,7 +35,7 @@ def Deduction(j1, j2):
     NALGrammar.assert_sentence(j2)
 
     # Statement
-    result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+    result_statement = NALGrammar.StatementTerm(j2.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
                                             j1.statement.get_copula())
 
@@ -83,22 +83,22 @@ def Analogy(j1, j2):
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         # j1=M-->P, j2=S<->M
-        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_subject_term(),
                                                 j1.statement.get_predicate_term(),
                                                 j1.statement.get_copula())  # S-->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M-->P, j2=M<->S
-        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_predicate_term(),
                                                 j1.statement.get_predicate_term(),
                                                 j1.statement.get_copula())  # S-->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1=P-->M, j2=S<->M
-        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
                                                 j2.statement.get_subject_term(),
                                                 j1.statement.get_copula())  # P-->S
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P-->M, j2=M<->S
-        result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
                                                 j2.statement.get_predicate_term(),
                                                 j1.statement.get_copula())  # P-->S
     else:
@@ -148,22 +148,22 @@ def Resemblance(j1, j2):
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         # j1=M<->P, j2=S<->M
-        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_subject_term(),
                                                 j1.statement.get_predicate_term(),
                                                 j1.statement.get_copula())  # S<->P
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1=M<->P, j2=M<->S
-        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_predicate_term(),
                                                 j1.statement.get_predicate_term(),
                                                 j1.statement.get_copula())  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1=P<->M, j2=S<->M
-        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_subject_term(),
                                                 j1.statement.get_subject_term(),
                                                 j1.statement.get_copula())  # S<->P
     elif j1.statement.get_predicate_term() == j2.statement.get_subject_term():
         # j1=P<->M, j2=M<->S
-        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_predicate_term(),
                                                 j2.statement.get_subject_term(),
                                                 j1.statement.get_copula())  # S<->P
     else:
@@ -209,7 +209,7 @@ def Abduction(j1, j2):
     NALGrammar.assert_sentence(j2)
 
     # Statement
-    result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+    result_statement = NALGrammar.StatementTerm(j2.statement.get_subject_term(),
                                             j1.statement.get_subject_term(),
                                             j1.statement.get_copula())
 
@@ -252,7 +252,7 @@ def Induction(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     # Statement
-    result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(j2.statement.get_predicate_term(),
                                             j1.statement.get_predicate_term(), j1.statement.get_copula())
 
     if isinstance(j1, NALGrammar.Judgment):
@@ -293,7 +293,7 @@ def Exemplification(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     # Statement
-    result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+    result_statement = NALGrammar.StatementTerm(j2.statement.get_predicate_term(),
                                             j1.statement.get_subject_term(), j1.statement.get_copula())
 
     if isinstance(j1, NALGrammar.Judgment):
@@ -337,11 +337,11 @@ def Comparison(j1, j2):
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_subject_term():
-        result_statement = NALGrammar.Statement(j2.statement.get_predicate_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_predicate_term(),
                                                 j1.statement.get_predicate_term(),
                                                 NALSyntax.Copula.Similarity)
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
-        result_statement = NALGrammar.Statement(j2.statement.get_subject_term(),
+        result_statement = NALGrammar.StatementTerm(j2.statement.get_subject_term(),
                                                 j1.statement.get_subject_term(),
                                                 NALSyntax.Copula.Similarity)
     else:

@@ -17,6 +17,7 @@ class Memory:
         NARS Memory
     """
     next_stamp_id = 0
+    next_percept_id = 0
 
     def __init__(self):
         self.concepts_bag = NARSDataStructures.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
@@ -85,12 +86,14 @@ class Memory:
             for subterm in term.subterms:
                 # get/create subterm concepts
                 if not isinstance(subterm, NALGrammar.VariableTerm) and\
-                        not isinstance(subterm, NALGrammar.ArrayTerm.ArrayElementTerm): # don't create concepts for variables or array elements
+                        (not isinstance(subterm, NALGrammar.Array) or isinstance(subterm, NALGrammar.ArrayTerm)): # don't create concepts for variables or array elements
                     subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)
 
-        if isinstance(term, NALGrammar.StatementTerm) and not NALSyntax.Copula.is_first_order(term.get_copula()):
+        if isinstance(term, NALGrammar.StatementTerm) and \
+                term.copula is not None and\
+                not NALSyntax.Copula.is_first_order(term.get_copula()):
             # implication statement
             subject_concept = self.peek_concept(term.get_subject_term())
             predicate_concept = self.peek_concept(term.get_predicate_term())
@@ -190,6 +193,13 @@ class Memory:
         """
         self.next_stamp_id += 1
         return self.next_stamp_id - 1
+
+    def get_next_percept_id(self) -> int:
+        """
+            :return: next available Percept ID
+        """
+        self.next_percept_id += 1
+        return self.next_percept_id - 1
 
 
 class Concept:

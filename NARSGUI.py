@@ -328,7 +328,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 # window
                 item_info_window = tk.Toplevel()
                 item_info_window.title("Sentence Internal Data: " + str(sentence))
-                if isinstance(sentence, NALGrammar.Percept):
+                if sentence.is_array:
                     item_info_window.geometry('600x750')
                 else:
                     item_info_window.geometry('600x500')
@@ -410,7 +410,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                                                   lambda event: listbox_sentence_item_click_callback(event,
                                                                                                      sentence.stamp.interacted_sentences))
 
-                if isinstance(sentence, NALGrammar.Percept):
+                if isinstance(sentence, NALGrammar.Array) and not isinstance(sentence, NALGrammar.Question):
                     # Percept elements label
                     rownum += 1
                     label = tk.Label(item_info_window, text="Percept Visualization", font=('bold'))

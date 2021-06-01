@@ -33,7 +33,7 @@ def Revision(j1, j2):
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
     assert (
-            j1.statement.term.get_formatted_string() == j2.statement.term.get_formatted_string()), "Cannot revise sentences for 2 different statements"
+            j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
     # todo handle occurrence_time
     occurrence_time = None
@@ -42,7 +42,7 @@ def Revision(j1, j2):
     (wp1, w1, wn1), (wp2, w2, wn2) = HelperFunctions.getevidence_from2sentences(j1, j2)
     result_truth = TruthValueFunctions.F_Revision(wp1=wp1, wn1=wn1, wp2=wp2, wn2=wn2)
 
-    result_statement = NALGrammar.Statement(j1.statement.get_subject_term(),
+    result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
                                             j1.statement.get_copula())
     result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)

@@ -590,7 +590,7 @@ class Task:
         self.needs_to_be_answered_in_output: bool = is_input_task
 
     def get_term(self):
-        return self.sentence.statement.term
+        return self.sentence.statement
 
     def __str__(self):
         return self.sentence.get_formatted_string_no_id()

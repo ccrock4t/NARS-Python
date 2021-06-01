@@ -29,7 +29,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     NALGrammar.assert_sentence(j1)
     NALGrammar.assert_sentence(j2)
 
-    if j1.statement.term.connector is not None or j2.statement.term.connector is not None:
+    if j1.statement.connector is not None or j2.statement.connector is not None:
         return []
 
     """
@@ -41,8 +41,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     """
     derived_sentences = []
 
-    j1_term = j1.statement.term
-    j2_term = j2.statement.term
+    j1_statement = j1.statement
+    j2_statement = j2.statement
     j1_subject_term = j1.statement.get_subject_term()
     j2_subject_term = j2.statement.get_subject_term()
     j1_predicate_term = j1.statement.get_predicate_term()
@@ -87,7 +87,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     swapped = False
     if isinstance(j1, NALGrammar.Judgment) or isinstance(j1, NALGrammar.Question):
         if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
-            if j1_term == j2_term:
+            if j1_statement == j2_statement:
                 """
                 # Revision
                 # j1 = S-->P, j2 = S-->P
@@ -114,7 +114,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                         """
                         # swap sentences
                         j1, j2 = j2, j1
-                        j1_term, j2_term = j2_term, j1_term
+                        j1_statement, j2_statement = j2_statement, j1_statement
                         j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
                         j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
                         j1_copula, j2_copula = j2_copula, j1_copula
@@ -137,7 +137,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                     if swapped:
                         # restore sentences
                         j1, j2 = j2, j1
-                        j1_term, j2_term = j2_term, j1_term
+                        j1_statement, j2_statement = j2_statement, j1_statement
                         j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
                         j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
                         j1_copula, j2_copula = j2_copula, j1_copula
@@ -272,7 +272,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                     print_inference_rule(inference_rule="Swapped Intensional Difference")
                     derived_sentences.append(derived_sentence)
                 else:
-                    assert False, "error, concept " + str(j1.statement.term) + " and " + str(j2.statement.term) + " not related"
+                    assert False, "error, concept " + str(j1.statement) + " and " + str(j2.statement) + " not related"
             elif not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
                 """
                 # j1 = M-->P or P-->M
@@ -316,7 +316,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                 """
                 # swap sentences
                 j1, j2 = j2, j1
-                j1_term, j2_term = j2_term, j1_term
+                j1_statement, j2_statement = j2_statement, j1_statement
                 j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
                 j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
                 j1_copula, j2_copula = j2_copula, j1_copula
@@ -339,14 +339,14 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                     j2 = S or P (A-->B)
                 """
 
-                if j2_term == j1_subject_term:
+                if j2_statement == j1_subject_term:
                     """
                         j2 = S
                     """
                     derived_sentence = NALInferenceRules.Conditional.ConditionalDeduction(j1, j2)  # P
                     print_inference_rule(inference_rule="Conditional Deduction")
                     derived_sentences.append(derived_sentence)
-                elif j2_term == j1_predicate_term:
+                elif j2_statement == j1_predicate_term:
                     """
                         j2 = P
                     """
@@ -365,7 +365,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
             if swapped:
                 # restore sentences
                 j1, j2 = j2, j1
-                j1_term, j2_term = j2_term, j1_term
+                j1_statement, j2_statement = j2_statement, j1_statement
                 j1_subject_term, j2_subject_term = j2_subject_term, j1_subject_term
                 j1_predicate_term, j2_predicate_term = j2_predicate_term, j1_predicate_term
                 j1_copula, j2_copula = j2_copula, j1_copula
