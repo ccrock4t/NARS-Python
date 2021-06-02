@@ -188,7 +188,7 @@ class Punctuation(enum.Enum):
         return value in cls._value2member_map_
 
     @classmethod
-    def get_punctuation(cls, value):
+    def get_punctuation_from_string(cls, value):
         if not Punctuation.is_punctuation(value):
             return None
 

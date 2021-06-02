@@ -85,8 +85,9 @@ class Memory:
         if isinstance(term, NALGrammar.CompoundTerm):
             for subterm in term.subterms:
                 # get/create subterm concepts
-                if not isinstance(subterm, NALGrammar.VariableTerm) and\
-                        (not isinstance(subterm, NALGrammar.Array) or isinstance(subterm, NALGrammar.ArrayTerm)): # don't create concepts for variables or array elements
+                if not isinstance(subterm, NALGrammar.VariableTerm) \
+                    and not isinstance(subterm, NALGrammar.ArrayTermElementTerm) \
+                    and (not isinstance(subterm, NALGrammar.Array) or isinstance(subterm, NALGrammar.ArrayTerm)): # don't create concepts for variables or array elements
                     subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)

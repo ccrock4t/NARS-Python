@@ -12,42 +12,45 @@ import numpy as np
 """
 
 class Array():
-    def __init__(self, dim_lengths, truth_values = None, occurrence_time=None):
+    def __init__(self, dimensions, truth_values = None, occurrence_time=None):
         """
         :param parent: Name of the array term
-        :param dim_lengths: the number of elements in each dimensional axis (x,y,z);
+        :param dimensions: the number of elements in each dimensional axis (x,y,z);
             provides a granularity = 2.0/(dim_length - 1)
         """
-        self.is_array = True
-        self.dimensions = dim_lengths
-        self.num_of_dimensions = len(dim_lengths)
+        self.is_array = dimensions is not None
+        if not self.is_array: return
+        self.dimensions = dimensions
+        self.num_of_dimensions = len(dimensions)
         assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
         assert self.num_of_dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
 
+        # expand dimensions
         if self.num_of_dimensions == 1:
-            dim_lengths = (dim_lengths[0], 1, 1)
+            dimensions = (dimensions[0], 1, 1)
         elif self.num_of_dimensions == 2:
-            dim_lengths = (dim_lengths[0], dim_lengths[1], 1)
+            dimensions = (dimensions[0], dimensions[1], 1)
 
-        self.dim_lengths = dim_lengths
+        self.dim_lengths = dimensions
         self.offsets = []
         for i in range(self.num_of_dimensions):
-            self.offsets.append((dim_lengths[i] - 1) / 2.0)
+            self.offsets.append((dimensions[i] - 1) / 2.0)
 
         if isinstance(self, Judgment) or isinstance(self, Goal):
             self.image_array = [] # image_array is used to visualize an array of judgments/goals activations
         else:
             self.image_array = None
 
+        # create the array
         z_array = []
         z_image_array = []
-        for z in np.linspace(-1.0, 1.0, num=dim_lengths[2]):
+        for z in np.linspace(-1.0, 1.0, num=dimensions[2]):
             y_array = []
             y_image_array = []
-            for y in np.linspace(-1.0, 1.0, num=dim_lengths[1]):
+            for y in np.linspace(-1.0, 1.0, num=dimensions[1]):
                 x_array = []
                 x_image_array = []
-                for x in np.linspace(-1.0, 1.0, num=dim_lengths[0]):
+                for x in np.linspace(-1.0, 1.0, num=dimensions[0]):
                     if self.num_of_dimensions == 1:
                         formatted_indices = [x]
                     elif self.num_of_dimensions == 2:
@@ -69,8 +72,11 @@ class Array():
                                            value=truth_value,
                                            occurrence_time=occurrence_time)
                         x_image_array.append(truth_value.frequency * 255)
+                    elif isinstance(self, Question):
+                        statement_element: StatementTerm = self.statement[formatted_indices]  # get atomic array element
+                        element = Question(statement=statement_element)
                     else:
-                        element = AtomicArrayElementTerm(array_term=self, indices=formatted_indices)
+                        element = ArrayTermElementTerm(array_term=self, indices=formatted_indices)
 
                     x_array.append(element)
                 y_array.append(np.array(x_array))
@@ -90,8 +96,8 @@ class Array():
             Define the indexing operator [], to get array elements.
             Pass the indices as an indexible item
 
-            The values in the tuple can be either absolute values e.g. (0,1,2...N) or
-            relative indices e.g. (0.5, 0.75), but must be of the same type for the whole tuple.
+            The values in the tuple can be either absolute integer values e.g. (0,1,2...N) or
+            relative indices as floats e.g. (0.5, 0.75), but must be consistent for the whole tuple.
         :param indices: a tuple of the indices to get
         :return: Array element term at index
         """
@@ -140,15 +146,19 @@ class Sentence(Array):
         """
         assert_punctuation(punctuation)
         assert isinstance(statement,StatementTerm),"ERROR: Judgment needs a statement"
-        self.is_array = False
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
 
         if statement.is_array:
-            Array.__init__(self,statement.get_dimensions(),truth_values=value[1])
-            self.value = value[0]
+            if isinstance(self,Judgment) or isinstance(self,Goal):
+                Array.__init__(self,statement.get_dimensions(),truth_values=value[1])
+                self.value = value[0]
+            else:
+                Array.__init__(self, statement.get_dimensions())
+                self.value = None
         else:
+            Array.__init__(self, None)
             self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
 
     def __str__(self):
@@ -204,7 +214,7 @@ class Sentence(Array):
         punctuation_idx = end_idx + 1
         assert (punctuation_idx < len(sentence_string)), "No punctuation found."
         punctuation_str = sentence_string[punctuation_idx]
-        punctuation = NALSyntax.Punctuation.get_punctuation(punctuation_str)
+        punctuation = NALSyntax.Punctuation.get_punctuation_from_string(punctuation_str)
         assert (punctuation is not None), punctuation_str + " is not punctuation."
 
         # Find Truth Value, if it exists
@@ -223,12 +233,12 @@ class Sentence(Array):
         # create the statement
         statement_string = sentence_string[start_idx:end_idx + 1]
 
-        if sentence_string[2] == NALSyntax.TermConnector.Array.value:
+        if punctuation != NALSyntax.Punctuation.Question and sentence_string[2] == NALSyntax.TermConnector.Array.value:
             if freq is None:
                 # No truth value, use default truth value
                 freq = Config.DEFAULT_JUDGMENT_FREQUENCY
                 conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
-            sentence = Sentence.new_percept_from_string(statement_string, TruthValue(freq, conf))
+            sentence = cls.new_percept_from_string(statement_string, TruthValue(freq, conf))
         else:
             # create standard statement from string
             statement = StatementTerm.from_string(statement_string)
@@ -379,7 +389,7 @@ class Sentence(Array):
                 dim_lengths = (x_length, y_length, z_length)
 
         atomic_array_term = ArrayTerm(name=array_term_name,
-                                      dim_lengths=dim_lengths)
+                                      dimensions=dim_lengths)
         statement_array_term = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_array_term],
                                               term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
                                               predicate_term=predicate_term,
@@ -641,7 +651,6 @@ class Term:
             :param term_string - String from which to construct the term
             :returns Term constructed using the string
         """
-        is_set_term = NALSyntax.TermConnector.is_set_bracket_start(term_string[0])
 
         if term_string[0] == NALSyntax.StatementSyntax.Start.value:
             """
@@ -655,8 +664,11 @@ class Term:
                 term = CompoundTerm.from_string(term_string)
             else:
                 term = StatementTerm.from_string(term_string)
-        elif is_set_term:
+        elif NALSyntax.TermConnector.is_set_bracket_start(term_string[0]):
+            # set term
             term = CompoundTerm.from_string(term_string)
+        elif term_string[0] == NALSyntax.TermConnector.Array.value:
+            term = ArrayTerm.from_string(term_string)
         elif term_string[0] == VariableTerm.VARIABLE_SYM or term_string[0] == VariableTerm.QUERY_SYM:
             # variable term
             dependency_list_start_idx = term_string.find("(")
@@ -936,11 +948,13 @@ class StatementTerm(CompoundTerm,Array):
     """
 
     def __init__(self, subject_term: Term, predicate_term = None, copula=None, statement_connector = None):
-        self.is_array = False
         assert_term(subject_term)
-        subterms = [subject_term]
-        if predicate_term is not None:
-            subterms.append(predicate_term)
+
+        if predicate_term is None:
+            assert_statement_term(subject_term)
+            subterms = [subject_term]
+        else:
+            subterms = [subject_term, predicate_term]
 
         self.copula = None
         if copula is not None:
@@ -956,8 +970,9 @@ class StatementTerm(CompoundTerm,Array):
                              and subject_term.subterms[0].is_array \
                              and isinstance(predicate_term, CompoundTerm) \
                              and predicate_term.is_intensional_set()
-        if is_perceptual_term:
-            Array.__init__(self, dim_lengths=subject_term.subterms[0].get_dimensions())
+        dimensions = subject_term.subterms[0].get_dimensions() if is_perceptual_term else None
+        Array.__init__(self, dimensions=dimensions)
+
 
     @classmethod
     def from_string(cls, statement_string):
@@ -1039,32 +1054,41 @@ class StatementTerm(CompoundTerm,Array):
 
 class ArrayTerm(CompoundTerm,Array):
     """
-        A N-dimensional array term that can be indexed (e.g. T).
-        or a array element term (e.g. T[0.0,0.0])
-
-        (N between 1 and 3)
+        A N-dimensional array term that can be indexed. (N between 1 and 3)
 
         Note that no values are stored in the array. The term only represents an array of terms.
     """
-    def __init__(self, name, dim_lengths):
+    def __init__(self, name, dimensions):
         """
         :param name: Name of the array term
-        :param dim_lengths: the number of elements in each dimensional axis (x,y,z);
+        :param dimensions: the number of elements in each dimensional axis (x,y,z);
             provides a granularity = 2.0/(dim_length - 1)
         """
-        self.is_array = False
         self.name = name
-        Array.__init__(self,dim_lengths)
+        Array.__init__(self, dimensions)
         CompoundTerm.__init__(self, subterms=self.array.flatten(), term_connector=NALSyntax.TermConnector.Array)
 
     def get_formatted_string(self):
         return NALSyntax.TermConnector.Array.value + self.name
 
+    @classmethod
+    def from_string(cls, name, dimensions=None):
+        """
+            name: @ArrayTermName
+            Create a compound term from a string representing a compound term
+        """
+        if dimensions is None:
+            concept_item = Global.Global.NARS.memory.concepts_bag.peek(name)
+            assert concept_item is not None,"ERROR: Cannot parse Array term without dimensions unless it already exists in the system"
+            return concept_item.object.term
+        else:
+            return cls(name, dimensions)
 
-class AtomicArrayElementTerm(AtomicTerm):
+
+class ArrayTermElementTerm(AtomicTerm):
     """
-        A term that is an element of an atomic array term.
-        It is simply the atomic array term with attached indices
+        A term that is an element of an array term.
+        It is simply the array term with attached indices
 
         e.g. @A[x,y,z]
     """
