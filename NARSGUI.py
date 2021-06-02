@@ -36,6 +36,9 @@ class NARSGUI:
     gui_concepts_bag_output_label = None
     GUI_BUDGET_SYMBOL = "$"
 
+    # array visualization
+    gui_array_image_frame = None
+
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
         """
@@ -300,7 +303,6 @@ class NARSGUI:
         input_field.grid(column=1, row=4)
         input_field.focus()
 
-        #window.bind('<Return>', func=input_clicked)  # send input when pressing 'enter'
         send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)  # send input when click button
         send_input_btn.grid(column=2, row=4)
 
@@ -329,7 +331,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 item_info_window = tk.Toplevel()
                 item_info_window.title("Sentence Internal Data: " + str(sentence))
                 if sentence.is_array:
-                    item_info_window.geometry('600x750')
+                    item_info_window.geometry('1000x500')
                 else:
                     item_info_window.geometry('600x500')
                 item_info_window.grab_set()  # lock the other windows until this window is exited
@@ -412,21 +414,46 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
 
                 if isinstance(sentence, NALGrammar.Array) and not isinstance(sentence, NALGrammar.Question):
                     # Percept elements label
-                    rownum += 1
-                    label = tk.Label(item_info_window, text="Percept Visualization", font=('bold'))
-                    label.grid(row=rownum, column=0, columnspan=2)
+                    label = tk.Label(item_info_window, text="Percept Visualization (scroll to zoom in/out)", font=('bold'))
+                    label.grid(row=rownum-1, column=4, columnspan=2)
 
-                    # Percept visualization
-                    rownum += 1
-                    pil_image = Image.fromarray(sentence.image_array)
-                    image_resize_dims = (200, 200)
-                    pil_image = pil_image.resize(image_resize_dims,resample=Image.NEAREST)
-                    render = ImageTk.PhotoImage(pil_image)
-                    img = tk.Label(item_info_window, image=render)
-                    img.image = render
-                    img.grid(row=rownum, column=0, columnspan=2)
+                    MAX_IMAGE_SIZE = 2000
+                    PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence.image_array[0][0])
+                    if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1
+
+                    #5x5 --> 300x300
+
+                    def _on_mousewheel(event):
+                        offset = 1 if event.delta > 0 else -1
+                        for child in NARSGUI.gui_array_image_frame.winfo_children():
+                            child.config(width=child.winfo_width()+offset, height=child.winfo_height()+offset)
+
+                    image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE, name="image frame")
+                    image_frame.grid(row=rownum, column=4, columnspan=2, rowspan=2)
+                    image_frame.bind_all("<MouseWheel>", _on_mousewheel)
+
+                    for z, layer in enumerate(sentence.image_array):
+                        for y, row in enumerate(layer):
+                            for x, value in enumerate(row):
+                                f = tk.Frame(image_frame, width=PIXEL_SIZE_PER_ELEMENT, height=PIXEL_SIZE_PER_ELEMENT)
+                                f.grid(row=y,column=x, columnspan=1, rowspan=1)
+                                f.rowconfigure(0, weight=1)
+                                f.columnconfigure(0, weight=1)
+                                f.grid_propagate(0)
+
+                                color = from_rgb_to_tkinter_color((value, value, value))
+                                button = tk.Button(f,bg=color)
+                                button.config(relief='solid', borderwidth=1)
+                                button.grid(sticky = "NWSE")
+                                CreateToolTip(button, text=(sentence[(x,y)]))
+
+                    NARSGUI.gui_array_image_frame = image_frame
 
 
+def from_rgb_to_tkinter_color(rgb):
+    """translates an rgb tuple of int to a tkinter friendly color code
+    """
+    return "#%02x%02x%02x" % rgb
 
 
 def listbox_datastructure_item_click_callback(event):
@@ -441,9 +468,6 @@ def listbox_datastructure_item_click_callback(event):
         Global.Global.set_paused(True)
         index = selection[0]
         item_string = event.widget.get(index)
-
-        key = None
-        data_structure = None
 
         if event.widget is NARSGUI.gui_memory_listbox:
             key = item_string[item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
@@ -626,3 +650,45 @@ def toggle_pause(event=None):
         Toggle the global paused parameter
     """
     Global.Global.set_paused(not Global.Global.paused)
+
+
+
+# from https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python
+class ToolTip(object):
+
+    def __init__(self, widget):
+        self.widget = widget
+        self.tipwindow = None
+        self.id = None
+        self.x = self.y = 0
+
+    def showtip(self, text):
+        "Display text in tooltip window"
+        self.text = text
+        if self.tipwindow or not self.text:
+            return
+        x, y, cx, cy = self.widget.bbox("insert")
+        x = x + self.widget.winfo_rootx() + 57
+        y = y + cy + self.widget.winfo_rooty() +27
+        self.tipwindow = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry("+%d+%d" % (x, y))
+        label = tk.Label(tw, text=self.text, justify=tk.LEFT,
+                      background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                      font=("tahoma", "8", "normal"))
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tipwindow
+        self.tipwindow = None
+        if tw:
+            tw.destroy()
+
+def CreateToolTip(widget, text):
+    toolTip = ToolTip(widget)
+    def enter(event):
+        toolTip.showtip(text)
+    def leave(event):
+        toolTip.hidetip()
+    widget.bind('<Enter>', enter)
+    widget.bind('<Leave>', leave)

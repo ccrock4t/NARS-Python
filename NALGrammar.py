@@ -86,8 +86,6 @@ class Array():
         if self.image_array is not None:
             if len(self.image_array ) == 1: z_image_array = z_image_array[0]
             self.image_array = np.array(z_image_array).astype(np.uint8)
-            while len(self.image_array) == 1:
-                self.image_array = self.image_array[0]
 
         self.array = np.array(z_array)
 
@@ -185,14 +183,6 @@ class Sentence(Array):
         if self.stamp.get_tense() != NALSyntax.Tense.Eternal: string = string + " " + self.stamp.get_tense().value
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
-
-    def __getitem__(self, indices):
-        """
-            Define the indexing operator [], to get array elements.
-            Pass the indices as a tuple.
-        """
-        assert isinstance(self.statement, ArrayTerm),"ERROR: Cannot index non-array"
-        return self.statement[indices], self.array[indices]
 
     @classmethod
     def new_sentence_from_string(cls, sentence_string: str):
