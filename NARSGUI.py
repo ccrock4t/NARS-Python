@@ -334,7 +334,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                     item_info_window.geometry('1000x500')
                 else:
                     item_info_window.geometry('600x500')
-                item_info_window.grab_set()  # lock the other windows until this window is exited
+                #item_info_window.grab_set()  # lock the other windows until this window is exited
 
                 object_listbox_width = 40
                 object_listbox_height = 20
@@ -412,26 +412,26 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                                                   lambda event: listbox_sentence_item_click_callback(event,
                                                                                                      sentence.stamp.interacted_sentences))
 
-                if isinstance(sentence, NALGrammar.Array) and not isinstance(sentence, NALGrammar.Question):
+                if isinstance(sentence, NALGrammar.Array) and sentence.is_array and not isinstance(sentence, NALGrammar.Question):
                     # Percept elements label
-                    label = tk.Label(item_info_window, text="Percept Visualization (scroll to zoom in/out)", font=('bold'))
+                    label = tk.Label(item_info_window, text="Array Visualization (scroll to zoom in/out)", font=('bold'))
                     label.grid(row=rownum-1, column=4, columnspan=2)
 
                     MAX_IMAGE_SIZE = 2000
                     PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence.image_array[0][0])
-                    if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1
+                    if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1 # minimum size 1 pixel
 
-                    #5x5 --> 300x300
-
-                    def _on_mousewheel(event):
+                    def zoom_image_array(event):
+                        # zoom the image array depending on how the user scrolled
                         offset = 1 if event.delta > 0 else -1
                         for child in NARSGUI.gui_array_image_frame.winfo_children():
                             child.config(width=child.winfo_width()+offset, height=child.winfo_height()+offset)
 
-                    image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE, name="image frame")
+                    image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE, name="array image frame")
                     image_frame.grid(row=rownum, column=4, columnspan=2, rowspan=2)
-                    image_frame.bind_all("<MouseWheel>", _on_mousewheel)
+                    image_frame.bind_all("<MouseWheel>", zoom_image_array)
 
+                    # iterate over each element and draw a pixel for it
                     for z, layer in enumerate(sentence.image_array):
                         for y, row in enumerate(layer):
                             for x, value in enumerate(row):
@@ -443,7 +443,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
 
                                 color = from_rgb_to_tkinter_color((value, value, value))
                                 button = tk.Button(f,bg=color)
-                                button.config(relief='solid', borderwidth=1)
+                                button.config(relief='solid', borderwidth=0)
                                 button.grid(sticky = "NWSE")
                                 CreateToolTip(button, text=(sentence[(x,y)]))
 
@@ -496,7 +496,7 @@ def listbox_datastructure_item_click_callback(event):
         item_info_window = tk.Toplevel()
         item_info_window.title(type(object).__name__ + " Internal Data: " + item_string)
         item_info_window.geometry('750x700')
-        item_info_window.grab_set()  # lock the other windows until this window is exited
+        #item_info_window.grab_set()  # lock the other windows until this window is exited
 
         row_num = 0
 
