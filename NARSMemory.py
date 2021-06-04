@@ -1,6 +1,7 @@
 import random
 
 import Config
+import Global
 import NALGrammar
 import NALSyntax
 import NARSDataStructures
@@ -114,7 +115,7 @@ class Memory:
 
             :return Statement-Term Concept semantically related to param: `concept`; None if couldn't find any such statement concept
         """
-        if len(statement_concept.term_links) == 0: return None
+        if len(statement_concept.term_links) == 0: return statement_concept
         related_concept_item = statement_concept.term_links.peek()
         initial_related_concept: Concept = related_concept_item.object
         related_concept = None
@@ -129,6 +130,7 @@ class Memory:
                 and (related_concept is None \
                 or not isinstance(related_concept.term, NALGrammar.StatementTerm)):
                 related_concept_item = self.get_random_link(initial_related_concept)
+
                 if related_concept_item is not None: related_concept = related_concept_item.object
                 attempts += 1
 
@@ -183,6 +185,21 @@ class Memory:
                 links_to_peek = concept.prediction_links
             else:
                 links_to_peek = concept.term_links
+        elif len(concept.term_links) > 0 \
+             and len(concept.prediction_links) == 0 \
+             and len(concept.explanation_links) == 0:
+            # only term links
+            links_to_peek = concept.term_links
+        elif len(concept.term_links) == 0 \
+             and len(concept.prediction_links) > 0 \
+             and len(concept.explanation_links) == 0:
+            # only prediction links
+            links_to_peek = concept.prediction_links
+        elif len(concept.term_links) > 0 \
+             and len(concept.prediction_links) > 0 \
+             and len(concept.explanation_links) == 0:
+            # only explanation links
+            links_to_peek = concept.explanation_links
         else:
             return None
 

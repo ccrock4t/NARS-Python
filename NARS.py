@@ -232,7 +232,6 @@ class NARS:
         
             Do local/forward inference on a related belief
         """
-
         # revise the judgment
         self.process_judgment_sentence(j1, statement_concept)
 
@@ -347,6 +346,7 @@ class NARS:
             #todo handle variables
             #todo handle tenses
         """
+        if Global.Global.DEBUG: print("Processing: " + j1.get_formatted_string())
         statement_term = j1.statement
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
@@ -358,6 +358,7 @@ class NARS:
             while j2 is None and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF: # try searching a maximum of 3 concepts
                 related_concept = self.memory.get_semantically_related_concept(statement_concept)
                 if related_concept is None:
+                    if Global.Global.DEBUG: print("No related concepts?")
                     return  # no related concepts! Should never happen, the concept is always semantically related to itself
 
                 # check for a belief we can interact with

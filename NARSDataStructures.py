@@ -120,7 +120,10 @@ class ItemContainer:
                 quality = 0.500
 
             if priority is not None:
-                self.key = ItemContainer.Item.get_key_from_object(object)
+                if isinstance(object, Task):
+                    self.key = id
+                else:
+                    self.key = ItemContainer.Item.get_key_from_object(object)
                 self.budget = ItemContainer.Item.Budget(priority=priority, quality=quality)
             else:
                 self.key = str(object)
@@ -135,9 +138,7 @@ class ItemContainer:
                 :return: key for object
             """
             key = None
-            if isinstance(object, Task):
-                key = str(object.sentence.stamp.id)
-            elif isinstance(object, NARSMemory.Concept):
+            if isinstance(object, NARSMemory.Concept):
                 key = str(object.term)
             elif isinstance(object, NALGrammar.Sentence):
                 key = str(object.stamp.id)
@@ -461,6 +462,7 @@ class Buffer(ItemContainer, Depq):
         """
         if not isinstance(item,ItemContainer.Item):
             item = ItemContainer.Item(item, self.get_next_item_id())
+            print(item.key)
 
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 

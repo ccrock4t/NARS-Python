@@ -36,11 +36,6 @@ class Array():
         for i in range(self.num_of_dimensions):
             self.offsets.append((dimensions[i] - 1) / 2.0)
 
-        if isinstance(self, Judgment) or isinstance(self, Goal):
-            self.image_array = [] # image_array is used to visualize an array of judgments/goals activations
-        else:
-            self.image_array = None
-
         # create the array
         z_array = []
         z_image_array = []
@@ -71,21 +66,15 @@ class Array():
                         element = Judgment(statement=statement_element,
                                            value=truth_value,
                                            occurrence_time=occurrence_time)
-                        x_image_array.append(truth_value.frequency * 255)
                     elif isinstance(self, Question):
                         statement_element: StatementTerm = self.statement[formatted_indices]  # get atomic array element
                         element = Question(statement=statement_element)
                     else:
                         element = ArrayTermElementTerm(array_term=self, indices=formatted_indices)
-
                     x_array.append(element)
                 y_array.append(np.array(x_array))
-                if self.image_array is not None: y_image_array.append(x_image_array)
+
             z_array.append(np.array(y_array))
-            if self.image_array is not None: z_image_array.append(y_image_array)
-        if self.image_array is not None:
-            if len(self.image_array ) == 1: z_image_array = z_image_array[0]
-            self.image_array = np.array(z_image_array).astype(np.uint8)
 
         self.array = np.array(z_array)
 
@@ -99,12 +88,11 @@ class Array():
         :param indices: a tuple of the indices to get
         :return: Array element term at index
         """
-        assert len(indices)<=self.num_of_dimensions,"Error: Number of indices must match number of dimensions"
         if isinstance(indices[0],float): indices = self._convert_relative_indices_to_array_indices(indices)
 
-        if self.num_of_dimensions == 1:
+        if len(indices) == 1:
             indices = (indices[0], 0, 0)
-        elif self.num_of_dimensions == 2:
+        elif len(indices) == 2:
             indices = (indices[0], indices[1], 0)
 
         return self.array[indices[2]][indices[1]][indices[0]]

@@ -1,6 +1,8 @@
 import queue
 import threading
 
+import numpy as np
+
 import Global
 import InputChannel
 import tkinter as tk
@@ -337,12 +339,12 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 item_info_window = tk.Toplevel()
                 item_info_window.title("Sentence Internal Data: " + str(sentence))
                 if sentence.is_array:
-                    item_info_window.geometry('1000x500')
+                    item_info_window.geometry('1100x500')
                 else:
-                    item_info_window.geometry('600x500')
+                    item_info_window.geometry('1000x500')
                 #item_info_window.grab_set()  # lock the other windows until this window is exited
 
-                object_listbox_width = 40
+                object_listbox_width = 60
                 object_listbox_height = 20
 
                 rownum = 0
@@ -424,7 +426,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                     label.grid(row=rownum-1, column=4, columnspan=2)
 
                     MAX_IMAGE_SIZE = 2000
-                    PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence.image_array[0][0])
+                    PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence.array[0][0])
                     if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1 # minimum size 1 pixel
 
                     def zoom_image_array(event):
@@ -438,7 +440,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                     image_frame.bind_all("<MouseWheel>", zoom_image_array)
 
                     # iterate over each element and draw a pixel for it
-                    for z, layer in enumerate(sentence.image_array):
+                    for z, layer in enumerate(sentence.array):
                         for y, row in enumerate(layer):
                             for x, value in enumerate(row):
                                 f = tk.Frame(image_frame, width=PIXEL_SIZE_PER_ELEMENT, height=PIXEL_SIZE_PER_ELEMENT)
@@ -447,11 +449,15 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                                 f.columnconfigure(0, weight=1)
                                 f.grid_propagate(0)
 
+                                sentence_element = sentence[(x,y,z)]
+
+                                value = int(sentence_element.value.frequency * 255)
                                 color = from_rgb_to_tkinter_color((value, value, value))
-                                button = tk.Button(f,bg=color)
+                                button = tk.Button(f,bg=color,command=lambda event: listbox_sentence_item_click_callback(event,
+                                                                                                     sentence_element.stamp.interacted_sentences))
                                 button.config(relief='solid', borderwidth=0)
                                 button.grid(sticky = "NWSE")
-                                CreateToolTip(button, text=(sentence[(x,y)]))
+                                CreateToolTip(button, text=(sentence_element))
 
                     NARSGUI.gui_array_image_frame = image_frame
 
@@ -483,6 +489,7 @@ def listbox_datastructure_item_click_callback(event):
             key = item_string[item_string.find(Global.Global.MARKER_ITEM_ID) + len(
                 Global.Global.MARKER_ITEM_ID):item_string.rfind(Global.Global.MARKER_ID_END)]
             data_structure = Global.Global.NARS.experience_task_buffer
+            key = int(key)
         else:
             # clicked concept within another concept
             key = item_string
@@ -492,7 +499,7 @@ def listbox_datastructure_item_click_callback(event):
 
         item = data_structure.peek(key)
         if item is None:
-            NARSGUI.print_to_output("Error - could not get item: " + key)
+            NARSGUI.print_to_output("ERROR: could not get item with key: " + key)
             return
 
         object = item.object
@@ -501,7 +508,7 @@ def listbox_datastructure_item_click_callback(event):
         # window
         item_info_window = tk.Toplevel()
         item_info_window.title(type(object).__name__ + " Internal Data: " + item_string)
-        item_info_window.geometry('750x700')
+        item_info_window.geometry('1100x700')
         #item_info_window.grab_set()  # lock the other windows until this window is exited
 
         row_num = 0
@@ -521,7 +528,7 @@ def listbox_datastructure_item_click_callback(event):
         label = tk.Label(item_info_window, text=type(object.get_term()).__name__)
         label.grid(row=row_num, column=1)
 
-        object_listbox_width = 40
+        object_listbox_width = 60
         object_listbox_height = 20
 
         row_num += 1
@@ -677,7 +684,7 @@ class ToolTip(object):
             return
         x, y, cx, cy = self.widget.bbox("insert")
         x = x + self.widget.winfo_rootx() + 57
-        y = y + cy + self.widget.winfo_rooty() +27
+        y = y + cy + self.widget.winfo_rooty() + 27
         self.tipwindow = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
