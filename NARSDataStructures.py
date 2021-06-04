@@ -585,7 +585,6 @@ class Task:
         self.sentence = sentence
         self.creation_timestamp: int = Global.Global.get_current_cycle_number()  # save the task's creation time
         self.is_from_input: bool = is_input_task
-        self.needs_initial_processing: bool = True
         #only used for question tasks
         self.needs_to_be_answered_in_output: bool = is_input_task
 

@@ -1,5 +1,5 @@
 import threading
-import InputBuffer
+import InputChannel
 
 import NALGrammar
 import NALInferenceRules.Local

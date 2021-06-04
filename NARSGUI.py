@@ -2,7 +2,7 @@ import queue
 import threading
 
 import Global
-import InputBuffer
+import InputChannel
 import tkinter as tk
 
 import NALGrammar
@@ -290,9 +290,15 @@ class NARSGUI:
             """
             # put input into NARS input buffer
             userinput = input_field.get(index1=1.0, index2=tk.END)
-            lines = userinput.splitlines(False)
-            for line in lines:
-                InputBuffer.add_input_string(line)
+            if InputChannel.is_sensory_input_string(userinput):
+                # don't split by lines, this is an array input
+                InputChannel.add_input_string(userinput)
+            else:
+                # treat each line as a separate input
+                lines = userinput.splitlines(False)
+                for line in lines:
+                    InputChannel.add_input_string(line)
+
             # empty input field
             input_field.delete(1.0, tk.END)
 
@@ -314,7 +320,7 @@ class NARSGUI:
         userinput = ""
         while userinput != "exit":
             userinput = input("")
-            InputBuffer.add_input_string(userinput)
+            InputChannel.add_input_string(userinput)
 
 def listbox_sentence_item_click_callback(event, iterable_with_sentences):
     selection = event.widget.curselection()

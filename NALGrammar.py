@@ -191,8 +191,6 @@ class Sentence(Array):
 
             :returns Sentence parsed from sentence_string
         """
-        sentence_string = sentence_string.replace(" ", "") # remove all spaces
-
         # Find statement start and statement end
         start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
         assert (start_idx != -1), "Statement start character " + NALSyntax.StatementSyntax.Start.value + " not found."
@@ -267,167 +265,19 @@ class Sentence(Array):
         return sentence
 
     @classmethod
-    def new_percept_from_string(cls, percept_sentence_string, truth_value, occurrence_time=None):
-        """
-            :param: percept_sentence_string - String of NAL syntax ({@S([...])} --> [t])
-            :param: truth_value - Truth-value of the overall sentence
-
-            Where @S is an array term followed by element-level truth-values separated by brackets and commas.
-            1D (sequence):
-             @S(f;c,...,f;c)"
-
-             2D (matrix):
-             @S(
-                [f;c,...,f;c],
-                [...,...,...],
-                [f;c,...,f;c]
-                )"
-
-            3D (tensor):
-            @S(
-                [
-                    [f;c,...,f;c],
-                    [...,...,...],
-                    [f;c,...,f;c]
-                ],
-                ...,
-                [
-                    [f;c,...,f;c],
-                    [...,...,...],
-                    [f;c,...,f;c]
-                ]
-                )"
-
-            Returns: Percept
-        """
-        # this input is a sensory percept
-        copula, copula_idx = get_top_level_copula(percept_sentence_string)
-        assert (copula is not None), "ERROR: Copula not found. Exiting.."
-
-        subject_str = percept_sentence_string[1:copula_idx]  # get subject string {@S([])}
-        predicate_str = percept_sentence_string[copula_idx + len(copula.value):-1]  # get predicate string [t]
-        predicate_term = Term.from_string(predicate_str)
-        assert predicate_term.is_intensional_set(), "ERROR: Predicate term must be an intensional set"
-
-        array_start_bracket_idx = subject_str.find(NALSyntax.StatementSyntax.ArrayElementTruthValuesStart.value)
-        array_end_bracket_idx = subject_str.rfind(NALSyntax.StatementSyntax.ArrayElementTruthValuesEnd.value)
-
-        #get only the truth values, e.g. [...],[...],[...]
-        truth_value_array_str = subject_str[array_start_bracket_idx + 1:array_end_bracket_idx]
-        assert len(truth_value_array_str) > 0, "Percept should contain at least one truth value"
-
-        array_term_name = subject_str[2:array_start_bracket_idx]
-
-        x_length = 1
-        y_length = 1
-        z_length = 1
-
-        array_idx_start_marker = NALSyntax.StatementSyntax.ArrayElementIndexStart.value
-        array_idx_end_marker = NALSyntax.StatementSyntax.ArrayElementIndexEnd.value
-
-        truth_value_str_array = []
-
-        if truth_value_array_str[0] != array_idx_start_marker:
-            # 1D array
-            truth_value_str_array = truth_value_array_str.split(",")
-            x_length = len(truth_value_str_array)
-            dim_lengths = (x_length,) # how many elements in a row
-        else:
-            if truth_value_array_str[1] != array_idx_start_marker:
-                #2D array
-                depth = 0
-                piece = ""
-                for i in range(len(truth_value_array_str)):
-                    c = truth_value_array_str[i]
-                    if depth == 0 and c == ",":
-                        truth_value_str_array.append(piece.split(","))
-                        piece = ""
-                    else:
-                        if c == array_idx_start_marker:
-                            depth +=1
-                        elif c == array_idx_end_marker:
-                            depth -= 1
-                        else:
-                            piece += c
-
-                truth_value_str_array.append(piece.split(","))
-
-                x_length = len(truth_value_str_array[0]) # how many elements in a row
-                y_length = len(truth_value_str_array) # how many rows
-
-                dim_lengths = (x_length, y_length)
-            else:
-                #TODO
-                # 3D array
-                layer_strings = []
-                depth = 0
-                piece = ""
-                for i in range(len(truth_value_array_str)):
-                    c = truth_value_array_str[i]
-                    if depth == 0 and c == ",":
-                        layer_strings.append(piece)
-                        piece = ""
-                    else:
-                        piece += c
-                        if c == array_idx_start_marker:
-                            depth +=1
-                        elif c == array_idx_end_marker:
-                            depth -= 1
-                x_length = len(layer_strings[0][0])  # how many elements in a row
-                y_length = len(layer_strings[0])  # how many rows
-                z_length = len(layer_strings) # how many layers
-                dim_lengths = (x_length, y_length, z_length)
-
-        atomic_array_term = ArrayTerm(name=array_term_name,
-                                      dimensions=dim_lengths)
-        statement_array_term = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_array_term],
-                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                              predicate_term=predicate_term,
-                                              copula=copula)
-
-        z_truth_value_elements = []
-        # iterate over every element / truth-value
-        for z in range(z_length):
-            y_truth_value_elements = []
-            for y in range(y_length):
-                x_truth_value_elements = []
-                for x in range(x_length):
-                    if y_length == 1 and z_length == 1:
-                        truth_value_str_parts = truth_value_str_array[x].split(";")
-                    elif z_length == 1:
-                        truth_value_str_parts = truth_value_str_array[y][x].split(";")
-                    else:
-                        truth_value_str_parts = truth_value_str_array[z][y][x].split(";")
-
-                    assert len(truth_value_str_parts) == 2, "ERROR: Truth value should only consist of 2 values"
-                    element_truth_value = TruthValue(float(truth_value_str_parts[0]),float(truth_value_str_parts[1]))
-                    x_truth_value_elements.append(element_truth_value)
-                y_truth_value_elements.append(x_truth_value_elements)
-            z_truth_value_elements.append(y_truth_value_elements)
-
-        truth_value_list = z_truth_value_elements
-
-        percept = Judgment(statement=statement_array_term,
-                 value=(truth_value, truth_value_list))
-
-        return percept
-
-    @classmethod
     def may_interact(cls,j1,j2):
         """
             2 Sentences may interact if:
                 #1. Neither is "None"
                 #2. They are not the same Sentence
-                #3. They have not interacted previously
-                #4. One is not in the other's evidential base
-                #5. They do not have overlapping evidential base
+                #3. One is not in the other's evidential base
+                #4. They do not have overlapping evidential base
         :param j1:
         :param j2:
         :return: Are the sentence allowed to interact for inference
         """
         if j1 is None or j2 is None: return False
         if j1.stamp.id == j2.stamp.id: return False
-        if j1 in j2.stamp.interacted_sentences: return False # don't need to check the inverse, since they are added mutually
         if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
         if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
         return True
@@ -480,7 +330,7 @@ class EvidentialValue:
 
     def __init__(self, frequency, confidence):
         assert (isinstance(frequency, float) and frequency >= 0.0 and frequency <= 1.0), "ERROR: Frequency must be a float in [0,1]"
-        assert (isinstance(confidence, float) and confidence > 0.0 and confidence < 1.0), "ERROR: Confidence must be a float (0,1)"
+        assert (isinstance(confidence, float) and confidence >= 0.0 and confidence < 1.0), "ERROR: Confidence must be a float [0,1)"
         self.frequency = frequency
         self.confidence = confidence
 

@@ -3,7 +3,7 @@ import random
 import time
 
 import Config
-import InputBuffer
+import InputChannel
 import NALInferenceRules
 import NARSGUI
 import NARSInferenceEngine
@@ -87,7 +87,7 @@ class NARS:
         if Global.Global.gui_use_interface:
             NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
 
-        InputBuffer.process_next_pending_sentence() # process strings coming from input buffer
+        InputChannel.process_next_pending_sentence() # process strings coming from input buffer
 
         self.Process_Event_Buffer() # process events from the event buffer
 
@@ -212,23 +212,20 @@ class NARS:
 
         if statement_term.contains_variable(): return #todo handle variables
 
-        statement_concept = None
-        if task.needs_initial_processing:
-            """
-                Initial Processing
-                
-                Revise this judgment with the most confident belief, then insert it into the belief table
-            """
-            derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
-            for derived_sentence in derived_sentences:
-                self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+        """
+            Initial Processing
+            
+            Revise this judgment with the most confident belief, then insert it into the belief table
+        """
+        derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+        for derived_sentence in derived_sentences:
+            self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
 
-            # get (or create if necessary) statement concept, and sub-term concepts recursively
-            statement_concept = self.memory.peek_concept(statement_term)
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
+        statement_concept = self.memory.peek_concept(statement_term)
 
-            # add the judgment itself into concept's belief table
-            statement_concept.belief_table.put(j1)
-            task.needs_initial_processing = False
+        # add the judgment itself into concept's belief table
+        statement_concept.belief_table.put(j1)
 
         """
             Continued processing
@@ -302,19 +299,16 @@ class NARS:
 
         if statement_term.contains_variable(): return  # todo handle variables
 
-        statement_concept = None
-        if task.needs_initial_processing:
-            """
-                Initial Processing
+        """
+            Initial Processing
 
-                Insert it into the desire table and revise with the most confident desire
-            """
-            # get (or create if necessary) statement concept, and sub-term concepts recursively
-            statement_concept = self.memory.peek_concept(statement_term)
+            Insert it into the desire table and revise with the most confident desire
+        """
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
+        statement_concept = self.memory.peek_concept(statement_term)
 
-            # add the judgment itself into concept's desire table
-            statement_concept.desire_table.put(j1)
-            task.needs_initial_processing = False
+        # add the judgment itself into concept's desire table
+        statement_concept.desire_table.put(j1)
 
         """
             Continued processing
