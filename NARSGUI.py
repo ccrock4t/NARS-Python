@@ -664,12 +664,14 @@ class ToolTip(object):
 
     def __init__(self, widget):
         self.widget = widget
+        self.color = widget.cget('bg')
         self.tipwindow = None
         self.id = None
         self.x = self.y = 0
 
     def showtip(self, text):
         "Display text in tooltip window"
+        self.widget.config(bg="yellow",borderwidth=1)
         self.text = text
         if self.tipwindow or not self.text:
             return
@@ -685,6 +687,7 @@ class ToolTip(object):
         label.pack(ipadx=1)
 
     def hidetip(self):
+        self.widget.config(bg=self.color, borderwidth=0)
         tw = self.tipwindow
         self.tipwindow = None
         if tw:

@@ -135,7 +135,7 @@ def process_visual_sensory_input(input_string):
     input_string = input_string.replace("\n", "")
     input_string = input_string.replace("\r", "")
 
-    subject_str = "TEST"
+    subject_str = "V" + str(Global.Global.NARS.memory.get_next_percept_id())
     predicate_term = NALGrammar.Term.from_string("[BRIGHT]")
 
     x_length = 1
