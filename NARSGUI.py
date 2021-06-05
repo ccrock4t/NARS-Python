@@ -58,8 +58,7 @@ class NARSGUI:
             # output to interface or shell
             if Global.Global.gui_use_interface:
                 cls.gui_output_textbox.insert(tk.END, msg + "\n")
-            else:
-                print(msg)
+            print(msg)
 
         if listbox is None: return
         # internal data output
@@ -331,14 +330,14 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
         sentence_string = event.widget.get(index)
 
         needs_indexing = isinstance(iterable_with_sentences, NARSDataStructures.Table)
-        for sentence in iterable_with_sentences:
+        for sentence_from_iterable in iterable_with_sentences:
             if needs_indexing:
-                sentence = sentence[0]
-            if str(sentence) == sentence_string:  # found clicked sentence
+                sentence_from_iterable = sentence_from_iterable[0]
+            if sentence_from_iterable.get_formatted_string() == sentence_string:  # found clicked sentence
                 # window
                 item_info_window = tk.Toplevel()
-                item_info_window.title("Sentence Internal Data: " + str(sentence))
-                if sentence.is_array:
+                item_info_window.title("Sentence Internal Data: " + str(sentence_from_iterable))
+                if sentence_from_iterable.is_array:
                     item_info_window.geometry('1100x500')
                 else:
                     item_info_window.geometry('1000x500')
@@ -353,7 +352,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 label = tk.Label(item_info_window, text="Sentence: ")
                 label.grid(row=rownum, column=0)
 
-                label = tk.Label(item_info_window, text=sentence.get_formatted_string_no_id())
+                label = tk.Label(item_info_window, text=sentence_from_iterable.get_formatted_string_no_id())
                 label.grid(row=rownum, column=1)
 
                 # sentence ID
@@ -361,7 +360,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 label = tk.Label(item_info_window, text="Sentence ID: ")
                 label.grid(row=rownum, column=0)
 
-                label = tk.Label(item_info_window, text=str(sentence.stamp.id))
+                label = tk.Label(item_info_window, text=str(sentence_from_iterable.stamp.id))
                 label.grid(row=rownum, column=1)
 
                 # sentence occurrence time
@@ -369,7 +368,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 label = tk.Label(item_info_window, text="Occurrence Time: ")
                 label.grid(row=rownum, column=0)
 
-                oc_time = sentence.stamp.occurrence_time
+                oc_time = sentence_from_iterable.stamp.occurrence_time
 
                 label = tk.Label(item_info_window, text=str("Eternal" if oc_time is None else oc_time))
                 label.grid(row=rownum, column=1)
@@ -379,7 +378,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 label = tk.Label(item_info_window, text="Sentence Type: ")
                 label.grid(row=rownum, column=0)
 
-                label = tk.Label(item_info_window, text=type(sentence).__name__)
+                label = tk.Label(item_info_window, text=type(sentence_from_iterable).__name__)
                 label.grid(row=rownum, column=1)
 
                 # blank
@@ -396,37 +395,36 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                 label.grid(row=rownum, column=2, columnspan=2)
 
                 # Evidential base listbox
-                rownum += 1
                 evidential_base_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
                                                      width=object_listbox_width, font=('', 8))
-                evidential_base_listbox.grid(row=rownum, column=0, columnspan=2)
+                evidential_base_listbox.grid(row=rownum+1, column=0, columnspan=2)
 
-                stamp: NALGrammar.Stamp = sentence.stamp
+                stamp: NALGrammar.Stamp = sentence_from_iterable.stamp
                 evidential_base_iterator = iter(stamp.evidential_base)
                 next(evidential_base_iterator) #skip the first element, which is just the sentence's ID so it' already displayed
                 for sentence in evidential_base_iterator:
                     evidential_base_listbox.insert(tk.END, str(sentence))
                 evidential_base_listbox.bind("<<ListboxSelect>>",
                                              lambda event: listbox_sentence_item_click_callback(event,
-                                                                                                sentence.stamp.evidential_base))
+                                                                                                sentence_from_iterable.stamp.evidential_base))
 
                 # Interacted sentences listbox
                 interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
                                                           width=object_listbox_width, font=('', 8))
-                interacted_sentences_listbox.grid(row=rownum, column=2, columnspan=2)
-                for sentence in sentence.stamp.interacted_sentences:
+                interacted_sentences_listbox.grid(row=rownum+1, column=2, columnspan=2)
+                for sentence in stamp.interacted_sentences:
                     interacted_sentences_listbox.insert(tk.END, str(sentence))
                 interacted_sentences_listbox.bind("<<ListboxSelect>>",
                                                   lambda event: listbox_sentence_item_click_callback(event,
-                                                                                                     sentence.stamp.interacted_sentences))
+                                                                                                     sentence_from_iterable.stamp.interacted_sentences))
 
-                if isinstance(sentence, NALGrammar.Array) and sentence.is_array and not isinstance(sentence, NALGrammar.Question):
+                if isinstance(sentence_from_iterable, NALGrammar.Array) and sentence_from_iterable.is_array and not isinstance(sentence_from_iterable, NALGrammar.Question):
                     # Percept elements label
                     label = tk.Label(item_info_window, text="Array Visualization (scroll to zoom in/out)", font=('bold'))
-                    label.grid(row=rownum-1, column=4, columnspan=2)
+                    label.grid(row=rownum, column=4, columnspan=2)
 
                     MAX_IMAGE_SIZE = 2000
-                    PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence.array[0][0])
+                    PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence_from_iterable.array[0][0])
                     if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1 # minimum size 1 pixel
 
                     def zoom_image_array(event):
@@ -436,11 +434,11 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                             child.config(width=child.winfo_width()+offset, height=child.winfo_height()+offset)
 
                     image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE, name="array image frame")
-                    image_frame.grid(row=rownum, column=4, columnspan=2, rowspan=2)
+                    image_frame.grid(row=rownum+1, column=4, columnspan=2, rowspan=2)
                     image_frame.bind_all("<MouseWheel>", zoom_image_array)
 
                     # iterate over each element and draw a pixel for it
-                    for z, layer in enumerate(sentence.array):
+                    for z, layer in enumerate(sentence_from_iterable.array):
                         for y, row in enumerate(layer):
                             for x, value in enumerate(row):
                                 f = tk.Frame(image_frame, width=PIXEL_SIZE_PER_ELEMENT, height=PIXEL_SIZE_PER_ELEMENT)
@@ -449,8 +447,7 @@ def listbox_sentence_item_click_callback(event, iterable_with_sentences):
                                 f.columnconfigure(0, weight=1)
                                 f.grid_propagate(0)
 
-                                sentence_element = sentence[(x,y,z)]
-
+                                sentence_element = sentence_from_iterable[(x,y,z)]
                                 value = int(sentence_element.value.frequency * 255)
                                 color = from_rgb_to_tkinter_color((value, value, value))
                                 button = tk.Button(f,bg=color,command=lambda event: listbox_sentence_item_click_callback(event,

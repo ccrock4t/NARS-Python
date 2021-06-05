@@ -12,8 +12,8 @@
 import Config
 import Global
 import NALGrammar
-from NALInferenceRules import HelperFunctions, ExtendedBooleanOperators
-from NALInferenceRules.HelperFunctions import get_truthvalue_from_evidence
+import NALInferenceRules
+from NALInferenceRules import ExtendedBooleanOperators
 
 
 def F_Revision(wp1, wn1, wp2, wn2):
@@ -24,7 +24,7 @@ def F_Revision(wp1, wn1, wp2, wn2):
     wp = wp1 + wp2
     wn = wn1 + wn2
     w = wp + wn
-    f_rev, c_rev = HelperFunctions.get_truthvalue_from_evidence(wp, w)
+    f_rev, c_rev = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_rev, c_rev)
 
 
@@ -39,14 +39,13 @@ def F_Negation(f, c):
 
 def F_Conversion(f, c):
     """
-        wp = AND(f, c)
-        wn = AND(NOT(f), c)
+        f_cnv = 1
+        c_cnv = (f*c)/(f*c+k)
         :return: F_cnv: Truth-Value (f,c)
     """
     # compute values of combined evidence
-    wp = ExtendedBooleanOperators.band(f, c)
-    w = wp
-    f_cnv, c_cnv = get_truthvalue_from_evidence(wp, w)
+    f_cnv = 1.0
+    c_cnv = (f*c)/(f*c+Config.k)
     return NALGrammar.TruthValue(f_cnv, c_cnv)
 
 
@@ -59,7 +58,7 @@ def F_Contraposition(f, c):
     wp = 0
     wn = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bnot(f), c)
     w = wn
-    f_cnt, c_cnt = get_truthvalue_from_evidence(wp, w)
+    f_cnt, c_cnt = NALInferenceRules.Helperfunctions.get_truthvalue_from_evidence(wp, w)
 
     return NALGrammar.TruthValue(f_cnt, c_cnt)
 
@@ -112,7 +111,7 @@ def F_Abduction(f1, c1, f2, c2):
     # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(f1, c1, c2)
-    f_abd, c_abd = get_truthvalue_from_evidence(wp, w)
+    f_abd, c_abd = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_abd, c_abd)
 
 
@@ -123,7 +122,7 @@ def F_Induction(f1, c1, f2, c2):
     # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(f2, c1, c2)
-    f_ind, c_ind = get_truthvalue_from_evidence(wp, w)
+    f_ind, c_ind = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_ind, c_ind)
 
 
@@ -134,7 +133,7 @@ def F_Exemplification(f1, c1, f2, c2):
     # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = wp
-    f_exe, c_exe = get_truthvalue_from_evidence(wp, w)
+    f_exe, c_exe = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f_exe, c_exe)
 
 
@@ -145,7 +144,7 @@ def F_Comparison(f1, c1, f2, c2):
     # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bor(f1, f2), c1, c2)
-    f3, c3 = get_truthvalue_from_evidence(wp, w)
+    f3, c3 = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.TruthValue(f3, c3)
 
 
@@ -211,3 +210,46 @@ def Expectation(f, c):
             expectation value
     """
     return c * (f - 0.5) + 0.5
+
+def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_function):
+    """
+        Performs a truth value function element-wise on the array
+    :param truth_value_array_1:
+    :param truth_value_array_2:
+    :param truth_value_function:
+    :return:
+    """
+    if truth_value_array_1 is None and truth_value_array_2 is None: return None
+    truth_values = []
+    for z, layer in enumerate(truth_value_array_1):
+        truth_values_layer = []
+        for y, row in enumerate(layer):
+            truth_values_row = []
+            for x, value in enumerate(row):
+                if truth_value_array_2 is None:
+                    # single truth value
+                    truth_values_row.append(truth_value_function(value.frequency, value.confidence))
+                else:
+                    truth_values_row.append(truth_value_function(value.frequency, value.confidence,truth_value_array_2[z][y][x].frequency, truth_value_array_2[z][y][x].confidence))
+            truth_values_layer.append(truth_values_row)
+        truth_values.append(truth_values_layer)
+    return truth_values
+
+
+def ReviseArray(array_to_iterate):
+    """
+         Performs a truth value function element-wise on the array
+         and revises it into a single truth-value
+    """
+    final_truth_value = None
+
+    for z, layer in enumerate(array_to_iterate):
+        for y, row in enumerate(layer):
+            for x, value in enumerate(row):
+                if final_truth_value is None:
+                    final_truth_value = value
+                else:
+                    wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
+                    wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(value.frequency, value.confidence)
+                    final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
+    return final_truth_value

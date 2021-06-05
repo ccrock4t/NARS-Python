@@ -134,6 +134,7 @@ def process_visual_sensory_input(input_string):
     #remove line endings
     input_string = input_string.replace("\n", "")
     input_string = input_string.replace("\r", "")
+    input_string = input_string[1:-1]
 
     subject_str = "V" + str(Global.Global.NARS.memory.get_next_percept_id())
     predicate_term = NALGrammar.Term.from_string("[BRIGHT]")

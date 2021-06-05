@@ -216,7 +216,6 @@ def Abduction(j1, j2):
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-
         result_truth = TruthValueFunctions.F_Abduction(f1, c1, f2, c2)
         result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
@@ -351,8 +350,14 @@ def Comparison(j1, j2):
     if isinstance(j1, NALGrammar.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = TruthValueFunctions.F_Comparison(f1, c1, f2, c2)
-        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+        if j1.is_array and j2.is_array:
+            result_truths = TruthValueFunctions.TruthFunctionOnArray(j1.truth_values, j2.truth_values,truth_value_function=TruthValueFunctions.F_Comparison)
+            result_truth = TruthValueFunctions.ReviseArray(result_truths)
+        else:
+            result_truths = None
+            result_truth = TruthValueFunctions.F_Comparison(f1, c1, f2, c2)
+
+        result = NALGrammar.Judgment(result_statement, (result_truth,result_truths), occurrence_time=j1.stamp.occurrence_time)
     elif isinstance(j1, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 

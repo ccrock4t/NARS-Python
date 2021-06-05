@@ -72,7 +72,8 @@ def Conversion(j):
 
     if isinstance(j, NALGrammar.Judgment):
         result_truth = TruthValueFunctions.F_Conversion(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=occurrence_time)
+        truth_values = TruthValueFunctions.TruthFunctionOnArray(j.truth_values,None,truth_value_function=TruthValueFunctions.F_Conversion)
+        result = NALGrammar.Judgment(result_statement, (result_truth, truth_values), occurrence_time=occurrence_time)
     elif isinstance(j, NALGrammar.Question):
         result = NALGrammar.Question(result_statement)
 

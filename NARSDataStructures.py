@@ -462,7 +462,6 @@ class Buffer(ItemContainer, Depq):
         """
         if not isinstance(item,ItemContainer.Item):
             item = ItemContainer.Item(item, self.get_next_item_id())
-            print(item.key)
 
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 

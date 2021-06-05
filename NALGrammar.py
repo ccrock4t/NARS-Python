@@ -19,7 +19,9 @@ class Array():
             provides a granularity = 2.0/(dim_length - 1)
         """
         self.is_array = dimensions is not None
+        self.truth_values = None
         if not self.is_array: return
+        self.truth_values = truth_values
         self.dimensions = dimensions
         self.num_of_dimensions = len(dimensions)
         assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
@@ -54,12 +56,33 @@ class Array():
                         formatted_indices = [x, y, z]
 
                     if isinstance(self, StatementTerm):
-                        array_term: ArrayTerm = self.get_subject_term().subterms[0]
-                        atomic_element = array_term[formatted_indices] # get atomic array element
-                        element = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_element],
-                                                                    term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                predicate_term=self.get_predicate_term(),
-                                                copula=NALSyntax.Copula.Inheritance)
+                        subject_is_array = isinstance(self.get_subject_term(), CompoundTerm) and isinstance(self.get_subject_term().subterms[0], ArrayTerm)
+                        predicate_is_array = isinstance(self.get_predicate_term(), CompoundTerm) and isinstance(self.get_predicate_term().subterms[0], ArrayTerm)
+                        if subject_is_array and predicate_is_array:
+                            subject_array_term = self.get_subject_term().subterms[0]
+                            subject_atomic_element = subject_array_term[formatted_indices]  # get atomic array element
+                            predicate_array_term = self.get_predicate_term().subterms[0]
+                            predicate_atomic_element = predicate_array_term[formatted_indices]  # get atomic array element
+                            element = StatementTerm(subject_term=CompoundTerm(subterms=[subject_atomic_element],
+                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                                    predicate_term=CompoundTerm(subterms=[predicate_atomic_element],
+                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                                    copula=self.get_copula())
+                        elif subject_is_array:
+                            array_term = self.get_subject_term().subterms[0]
+                            atomic_element = array_term[formatted_indices]  # get atomic array element
+                            element = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_element],
+                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                                    predicate_term=self.get_predicate_term(),
+                                                    copula=self.get_copula())
+                        elif predicate_is_array:
+                            array_term = self.get_predicate_term().subterms[0]
+                            atomic_element = array_term[formatted_indices]  # get atomic array element
+                            element = StatementTerm(subject_term=self.get_subject_term(),
+                                                    predicate_term=CompoundTerm(subterms=[atomic_element],
+                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                                    copula=self.get_copula())
+
                     elif isinstance(self, Judgment):
                         truth_value: TruthValue = truth_values[len(z_array)][len(y_array)][len(x_array)]
                         statement_element: StatementTerm = self.statement[formatted_indices] # get atomic array element
@@ -136,7 +159,7 @@ class Sentence(Array):
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
 
-        if statement.is_array:
+        if statement.is_array and hasattr(value, '__iter__') and value[1] is not None:
             if isinstance(self,Judgment) or isinstance(self,Goal):
                 Array.__init__(self,statement.get_dimensions(),truth_values=value[1])
                 self.value = value[0]
@@ -144,7 +167,10 @@ class Sentence(Array):
                 Array.__init__(self, statement.get_dimensions())
                 self.value = None
         else:
+            #not an array
             Array.__init__(self, None)
+            if hasattr(value, '__iter__'): # if its iterable, only use the primary truth-value
+                value = value[0]
             self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
 
     def __str__(self):
@@ -209,32 +235,41 @@ class Sentence(Array):
         # create the statement
         statement_string = sentence_string[start_idx:end_idx + 1]
 
-        if punctuation != NALSyntax.Punctuation.Question and sentence_string[2] == NALSyntax.TermConnector.Array.value:
+        # create standard statement from string
+        statement = StatementTerm.from_string(statement_string)
+
+        if punctuation == NALSyntax.Punctuation.Judgment:
             if freq is None:
                 # No truth value, use default truth value
                 freq = Config.DEFAULT_JUDGMENT_FREQUENCY
                 conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
-            sentence = cls.new_percept_from_string(statement_string, TruthValue(freq, conf))
-        else:
-            # create standard statement from string
-            statement = StatementTerm.from_string(statement_string)
+            truth_values = None
+            if statement.is_array:
+                dims = list(statement.get_dimensions())
+                while len(dims) < 3:
+                    dims.append(1)
+                truth_values = []
+                for z in range(dims[2]):
+                    layer = []
+                    for y in range(dims[1]):
+                        row = []
+                        for x in range(dims[0]):
+                            element = TruthValue(freq, conf)
+                            row.append(element)
+                        layer.append(row)
+                    truth_values.append(layer)
 
-            if punctuation == NALSyntax.Punctuation.Judgment:
-                if freq is None:
-                    # No truth value, use default truth value
-                    freq = Config.DEFAULT_JUDGMENT_FREQUENCY
-                    conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
-                sentence = Judgment(statement, TruthValue(freq, conf))
-            elif punctuation == NALSyntax.Punctuation.Question:
-                sentence = Question(statement)
-            elif punctuation == NALSyntax.Punctuation.Goal:
-                if freq is None:
-                    # No truth value, use default truth value
-                    freq = Config.DEFAULT_GOAL_FREQUENCY
-                    conf = Config.DEFAULT_GOAL_CONFIDENCE
-                sentence = Goal(statement, DesireValue(freq,conf))
-            else:
-                assert False,"Error: No Punctuation!"
+            sentence = Judgment(statement, (TruthValue(freq, conf),truth_values))
+        elif punctuation == NALSyntax.Punctuation.Question:
+            sentence = Question(statement)
+        elif punctuation == NALSyntax.Punctuation.Goal:
+            if freq is None:
+                # No truth value, use default truth value
+                freq = Config.DEFAULT_GOAL_FREQUENCY
+                conf = Config.DEFAULT_GOAL_CONFIDENCE
+            sentence = Goal(statement, DesireValue(freq,conf))
+        else:
+            assert False,"Error: No Punctuation!"
 
         # Find Tense, if it exists
         # otherwise mark it as eternal
@@ -366,13 +401,14 @@ class Stamp:
         when it was created, its occurrence time (when is its truth value valid),
         evidential base, etc.
     """
-    def __init__(self, self_sentence, occurrence_time=None):
+    def __init__(self, self_sentence, occurrence_time=None, derived_by=None):
         self.id = Global.Global.NARS.memory.get_next_stamp_id()
         self.creation_time = Global.Global.get_current_cycle_number()  # when was this stamp created (in inference cycles)?
         self.occurrence_time = occurrence_time
         self.sentence = self_sentence
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
         self.interacted_sentences = []  # list of sentence this sentence has already interacted with
+        self.derived_by = derived_by
         self.from_one_premise_inference = False # is this sentence derived from one-premise inference?
 
     def get_tense(self):
@@ -439,6 +475,7 @@ class Term:
     """
         Base class for all terms.
     """
+    term_dict = {} # a dictionary of existing terms to prevent duplicate term creation. Key: term string ; Value: term
 
     def __init__(self, term_string):
         assert isinstance(term_string, str), term_string + " must be a str"
@@ -480,6 +517,9 @@ class Term:
             :returns Term constructed using the string
         """
 
+        if term_string in cls.term_dict:
+            return cls.term_dict[term_string]
+
         if term_string[0] == NALSyntax.StatementSyntax.Start.value:
             """
                 Compound or Statement Term
@@ -512,6 +552,8 @@ class Term:
                                             dependency_list_string=dependency_list_string)
         else:
             term = AtomicTerm(term_string)
+
+        cls.term_dict[term_string] = term
 
         return term
 
@@ -792,13 +834,23 @@ class StatementTerm(CompoundTerm,Array):
 
         CompoundTerm.__init__(self,subterms, statement_connector)
 
-        is_perceptual_term = isinstance(subject_term, CompoundTerm) \
+        subject_is_array_term = isinstance(subject_term, CompoundTerm) \
                              and subject_term.is_extensional_set() \
                              and isinstance(subject_term.subterms[0], Array) \
-                             and subject_term.subterms[0].is_array \
-                             and isinstance(predicate_term, CompoundTerm) \
-                             and predicate_term.is_intensional_set()
-        dimensions = subject_term.subterms[0].get_dimensions() if is_perceptual_term else None
+                             and subject_term.subterms[0].is_array
+        predicate_is_array_term = isinstance(predicate_term, CompoundTerm) \
+                             and predicate_term.is_extensional_set() \
+                             and isinstance(predicate_term.subterms[0], Array) \
+                             and predicate_term.subterms[0].is_array
+
+        dimensions = None
+        if subject_is_array_term and predicate_is_array_term:
+            dimensions = subject_term.subterms[0].get_dimensions()
+        elif subject_is_array_term:
+            dimensions = subject_term.subterms[0].get_dimensions()
+        elif predicate_is_array_term:
+            dimensions = predicate_term.subterms[0].get_dimensions()
+
         Array.__init__(self, dimensions=dimensions)
 
 

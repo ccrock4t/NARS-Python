@@ -92,13 +92,14 @@ class NARS:
         self.Process_Event_Buffer() # process events from the event buffer
 
         # now do something with tasks from experience buffer and/or knowledge from memory
-        rand = random.random()
-        if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
-            # OBSERVE
-            self.Observe()
-        else:
-            # CONSIDER
-            self.Consider()
+        for _ in range(3):
+            rand = random.random()
+            if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
+                # OBSERVE
+                self.Observe()
+            else:
+                # CONSIDER
+                self.Consider()
 
         self.memory.current_cycle_number += 1
 
@@ -217,9 +218,9 @@ class NARS:
             
             Revise this judgment with the most confident belief, then insert it into the belief table
         """
-        derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
-        for derived_sentence in derived_sentences:
-            self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+        #derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+        #for derived_sentence in derived_sentences:
+        #    self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
