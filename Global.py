@@ -43,7 +43,9 @@ class Global:
 
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
-        cls.NARS_string_pipe.send(("print", msg, str(data_structure)))
+        data_structure_name = None
+        if data_structure is not None: data_structure_name = str(data_structure)
+        cls.NARS_string_pipe.send(("print", msg, data_structure_name))
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):

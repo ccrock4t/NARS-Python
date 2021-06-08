@@ -14,7 +14,7 @@ import Global
 import NALGrammar
 import NALInferenceRules
 from NALInferenceRules import ExtendedBooleanOperators
-
+import numpy as np
 
 def F_Revision(wp1, wn1, wp2, wn2):
     """
@@ -220,20 +220,26 @@ def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_f
     :return:
     """
     if truth_value_array_1 is None and truth_value_array_2 is None: return None
-    truth_values = []
-    for z, layer in enumerate(truth_value_array_1):
-        truth_values_layer = []
-        for y, row in enumerate(layer):
-            truth_values_row = []
-            for x, value in enumerate(row):
-                if truth_value_array_2 is None:
-                    # single truth value
-                    truth_values_row.append(truth_value_function(value.frequency, value.confidence))
-                else:
-                    truth_values_row.append(truth_value_function(value.frequency, value.confidence,truth_value_array_2[z][y][x].frequency, truth_value_array_2[z][y][x].confidence))
-            truth_values_layer.append(truth_values_row)
-        truth_values.append(truth_values_layer)
-    return truth_values
+    assert truth_value_array_1.shape == truth_value_array_2.shape,"ERROR: Truth value arrays must be the same shape"
+
+    def function(*coord_vars):
+        coords = tuple([int(var) for var in coord_vars])
+        truth_value_1 = truth_value_array_1[coords]
+        if truth_value_array_2 is None:
+            # single truth value
+            truth_value = truth_value_function(truth_value_1.frequency,
+                                                        truth_value_1.confidence)
+        else:
+            truth_value_2 = truth_value_array_2[coords]
+            truth_value = truth_value_function(truth_value_1.frequency,
+                                                        truth_value_1.confidence,
+                                                        truth_value_2.frequency,
+                                                        truth_value_2.confidence)
+        return truth_value
+
+    func_vectorized = np.vectorize(function)
+    return np.fromfunction(function=func_vectorized,shape=truth_value_array_1.shape)
+
 
 
 def ReviseArray(array_to_iterate):
@@ -242,14 +248,11 @@ def ReviseArray(array_to_iterate):
          and revises it into a single truth-value
     """
     final_truth_value = None
-
-    for z, layer in enumerate(array_to_iterate):
-        for y, row in enumerate(layer):
-            for x, value in enumerate(row):
-                if final_truth_value is None:
-                    final_truth_value = value
-                else:
-                    wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
-                    wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(value.frequency, value.confidence)
-                    final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
+    for (coords), element in np.ndenumerate(array_to_iterate):
+        if final_truth_value is None:
+            final_truth_value = element
+        else:
+            wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
+            wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(element.frequency, element.confidence)
+            final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
     return final_truth_value

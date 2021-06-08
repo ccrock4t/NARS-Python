@@ -24,17 +24,11 @@ class Array():
         self.is_array = dimensions is not None
         self.truth_values = None
         if not self.is_array: return
-        self.truth_values = truth_values
+        self.truth_values = np.array(truth_values)
         self.dimensions = dimensions
         self.num_of_dimensions = len(dimensions)
         assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
         assert self.num_of_dimensions > 0, "ERROR: Use Atomic Term instead of zero-dimensional array"
-
-        # expand dimensions
-        if self.num_of_dimensions == 1:
-            dimensions = (dimensions[0], 1, 1)
-        elif self.num_of_dimensions == 2:
-            dimensions = (dimensions[0], dimensions[1], 1)
 
         self.dim_lengths = dimensions
         self.offsets = []
@@ -42,82 +36,65 @@ class Array():
             self.offsets.append((dimensions[i] - 1) / 2.0)
 
         # prepare to store an image if necessary
-        if isinstance(self, Judgment) or isinstance(self, Goal):
-            self.image = [] # image_array is used to visualize an array of judgments/goals activations
+        if not Config.ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS and (isinstance(self, Judgment) or isinstance(self, Goal)):
+            self.image_array = np.empty(shape=dimensions) # image_array is used to visualize an array of judgments/goals activations
         else:
-            self.image = None
+            self.image_array = None
 
+        def index_function(*coord_vars, self_obj=None):
+            absolute_indices = tuple([int(var) for var in coord_vars])
 
-        # create the array
-        z_array = []
-        z_image_array = [] # and the image
-        for z in np.linspace(-1.0, 1.0, num=dimensions[2]):
-            y_array = []
-            y_image_array = []
-            for y in np.linspace(-1.0, 1.0, num=dimensions[1]):
-                x_array = []
-                x_image_array = []
-                for x in np.linspace(-1.0, 1.0, num=dimensions[0]):
-                    if self.num_of_dimensions == 1:
-                        formatted_indices = [x]
-                    elif self.num_of_dimensions == 2:
-                        formatted_indices = [x, y]
-                    elif self.num_of_dimensions == 3:
-                        formatted_indices = [x, y, z]
+            if isinstance(self_obj, StatementTerm):
+                subject_is_array = isinstance(self_obj.get_subject_term(), CompoundTerm) and isinstance(
+                    self_obj.get_subject_term().subterms[0], ArrayTerm)
+                predicate_is_array = isinstance(self_obj.get_predicate_term(), CompoundTerm) and isinstance(
+                    self_obj.get_predicate_term().subterms[0], ArrayTerm)
+                if subject_is_array and predicate_is_array:
+                    subject_array_term = self_obj.get_subject_term().subterms[0]
+                    subject_atomic_element = subject_array_term[absolute_indices]  # get atomic array element
+                    predicate_array_term = self_obj.get_predicate_term().subterms[0]
+                    predicate_atomic_element = predicate_array_term[absolute_indices]  # get atomic array element
+                    element = StatementTerm(subject_term=CompoundTerm(subterms=[subject_atomic_element],
+                                                                      term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                            predicate_term=CompoundTerm(subterms=[predicate_atomic_element],
+                                                                        term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                            copula=self_obj.get_copula())
+                elif subject_is_array:
+                    array_term = self_obj.get_subject_term().subterms[0]
+                    atomic_element = array_term[absolute_indices]  # get atomic array element
+                    element = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_element],
+                                                                      term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                            predicate_term=self_obj.get_predicate_term(),
+                                            copula=self_obj.get_copula())
+                elif predicate_is_array:
+                    array_term = self_obj.get_predicate_term().subterms[0]
+                    atomic_element = array_term[absolute_indices]  # get atomic array element
+                    element = StatementTerm(subject_term=self_obj.get_subject_term(),
+                                            predicate_term=CompoundTerm(subterms=[atomic_element],
+                                                                        term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                                            copula=self_obj.get_copula())
 
-                    if isinstance(self, StatementTerm):
-                        subject_is_array = isinstance(self.get_subject_term(), CompoundTerm) and isinstance(self.get_subject_term().subterms[0], ArrayTerm)
-                        predicate_is_array = isinstance(self.get_predicate_term(), CompoundTerm) and isinstance(self.get_predicate_term().subterms[0], ArrayTerm)
-                        if subject_is_array and predicate_is_array:
-                            subject_array_term = self.get_subject_term().subterms[0]
-                            subject_atomic_element = subject_array_term[formatted_indices]  # get atomic array element
-                            predicate_array_term = self.get_predicate_term().subterms[0]
-                            predicate_atomic_element = predicate_array_term[formatted_indices]  # get atomic array element
-                            element = StatementTerm(subject_term=CompoundTerm(subterms=[subject_atomic_element],
-                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                    predicate_term=CompoundTerm(subterms=[predicate_atomic_element],
-                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                    copula=self.get_copula())
-                        elif subject_is_array:
-                            array_term = self.get_subject_term().subterms[0]
-                            atomic_element = array_term[formatted_indices]  # get atomic array element
-                            element = StatementTerm(subject_term=CompoundTerm(subterms=[atomic_element],
-                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                    predicate_term=self.get_predicate_term(),
-                                                    copula=self.get_copula())
-                        elif predicate_is_array:
-                            array_term = self.get_predicate_term().subterms[0]
-                            atomic_element = array_term[formatted_indices]  # get atomic array element
-                            element = StatementTerm(subject_term=self.get_subject_term(),
-                                                    predicate_term=CompoundTerm(subterms=[atomic_element],
-                                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                    copula=self.get_copula())
+            elif isinstance(self_obj, Judgment):
+                truth_value: TruthValue = self_obj.truth_values[absolute_indices]
+                statement_element: StatementTerm = self_obj.statement[absolute_indices]  # get atomic array element
+                element = Judgment(statement=statement_element,
+                                   value=truth_value,
+                                   occurrence_time=occurrence_time)
+                if self_obj.image_array is not None: self_obj.image_array[absolute_indices] = (np.uint8)(truth_value.frequency * 255)
+                self_obj.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
+            elif isinstance(self_obj, Question):
+                statement_element: StatementTerm = self_obj.statement[absolute_indices]  # get atomic array element
+                element = Question(statement=statement_element)
+                self_obj.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
+            else:
+                relative_indices = self_obj.convert_absolute_indices_to_relative_indices(absolute_indices)
+                element = ArrayTermElementTerm(array_term=self_obj, indices=relative_indices)
 
-                    elif isinstance(self, Judgment):
-                        truth_value: TruthValue = truth_values[len(z_array)][len(y_array)][len(x_array)]
-                        statement_element: StatementTerm = self.statement[formatted_indices] # get atomic array element
-                        element = Judgment(statement=statement_element,
-                                           value=truth_value,
-                                           occurrence_time=occurrence_time)
-                        x_image_array.append(truth_value.frequency * 255)
-                        self.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
-                    elif isinstance(self, Question):
-                        statement_element: StatementTerm = self.statement[formatted_indices]  # get atomic array element
-                        element = Question(statement=statement_element)
-                        self.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
-                    else:
-                        element = ArrayTermElementTerm(array_term=self, indices=formatted_indices)
-                    x_array.append(element)
-                if self.image is not None: y_image_array.append(x_image_array)
-                y_array.append(np.array(x_array))
+            return element
 
-            z_array.append(np.array(y_array))
-            if self.image is not None: z_image_array.append(y_image_array)
-        if self.image is not None:
-            if len(z_image_array) == 1: z_image_array = z_image_array[0]
-            self.image = z_image_array # create PIL image from array
+        vectorized_func = np.vectorize(index_function)
+        self.array = np.fromfunction(function=vectorized_func,shape=dimensions,self_obj=self)
 
-        self.array = np.array(z_array)
 
     def __getitem__(self, indices):
         """
@@ -129,29 +106,30 @@ class Array():
         :param indices: a tuple of the indices to get
         :return: Array element term at index
         """
-        if isinstance(indices[0],float): indices = self._convert_relative_indices_to_array_indices(indices)
+        if isinstance(indices[0],float): indices = self.convert_relative_indices_to_absolute_indices(indices)
 
-        if len(indices) == 1:
-            indices = (indices[0], 0, 0)
-        elif len(indices) == 2:
-            indices = (indices[0], indices[1], 0)
+        if self.num_of_dimensions == 1:
+            return self.array[indices[0]]
+        elif self.num_of_dimensions == 2:
+            return self.array[indices[0],indices[1]]
+        elif self.num_of_dimensions == 3:
+            return self.array[indices[0], indices[1], indices[2]]
+        return None
 
-        return self.array[indices[2]][indices[1]][indices[0]]
-
-    def _convert_relative_indices_to_array_indices(self, indices):
+    def convert_relative_indices_to_absolute_indices(self, indices):
         assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
         # un-offset and un-regularize
         new_indices = []
-        for i in range(self.num_of_dimensions):
+        for i in range(len(indices)):
             new_indices.append(int(indices[i] * self.offsets[i] + self.offsets[i]))
         return tuple(new_indices)
 
-    def _convert_array_indices_to_relative_indices(self, indices):
+    def convert_absolute_indices_to_relative_indices(self, indices):
         assert len(indices) == self.num_of_dimensions, "Error: Number of indices must match number of dimensions"
         # offset then regularize
         new_indices = []
-        for i in range(self.num_of_dimensions):
-            new_indices.append((indices[i] - self.offsets[i]) // self.offsets[i])
+        for i in range(len(indices)):
+            new_indices.append((indices[i] - self.offsets[i]) / self.offsets[i])
         return tuple(new_indices)
 
     def get_dimensions(self):

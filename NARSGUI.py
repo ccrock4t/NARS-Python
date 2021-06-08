@@ -98,11 +98,13 @@ class NARSGUI:
             print('ERROR: Data structure name invalid ' + data_structure_name)
 
         string_list = listbox.get(0, tk.END)
+        msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
+            Global.Global.MARKER_ID_END)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
         idx_to_remove = -1
         i = 0
         for row in string_list:
-            #row_id = row[len(Global.Global.MARKER_ITEM_ID):row.rfind(Global.Global.MARKER_ID_END)]
-            if msg == row:
+            row_id = row[len(Global.Global.MARKER_ITEM_ID):row.rfind(Global.Global.MARKER_ID_END)]
+            if msg_id == row_id:
                 idx_to_remove = i
                 break
             i = i + 1
@@ -483,7 +485,7 @@ class NARSGUI:
                         offset = 0  # initialize
                     else:
                         offset = 3 if event.delta > 0 else -3
-                    pil_image = Image.fromarray(np.array(sentence_to_draw.image).astype(np.uint8))
+                    pil_image = Image.fromarray(sentence_to_draw.image_array)
                     gui_array_image_dimensions[0] += offset
                     if gui_array_image_dimensions[0] < 1: gui_array_image_dimensions[0] = 1
                     gui_array_image_dimensions[1] += offset
@@ -500,7 +502,7 @@ class NARSGUI:
                     Array - Draw Individual Cells (slower)
                 """
 
-                PIXEL_SIZE_PER_ELEMENT = 300 / len(sentence_to_draw.array[0][0])
+                PIXEL_SIZE_PER_ELEMENT = 300 / sentence_to_draw.array.shape[0]
                 if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1  # minimum size 1 pixel
 
                 image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
@@ -520,25 +522,26 @@ class NARSGUI:
                     return lambda: self.draw_sentence_internal_data(sentence)
 
                 # iterate over each element and draw a pixel for it
-                for z, layer in enumerate(sentence_to_draw.array):
-                    for y, row in enumerate(layer):
-                        for x, value in enumerate(row):
-                            f = tk.Frame(image_frame, width=PIXEL_SIZE_PER_ELEMENT,
-                                         height=PIXEL_SIZE_PER_ELEMENT)
-                            f.grid(row=y, column=x, columnspan=1, rowspan=1)
-                            f.rowconfigure(0, weight=1)
-                            f.columnconfigure(0, weight=1)
-                            f.grid_propagate(0)
+                if sentence_to_draw.num_of_dimensions == 2:
+                    for (x,y), sentence_element in np.ndenumerate(sentence_to_draw.array):
+                        f = tk.Frame(image_frame, width=PIXEL_SIZE_PER_ELEMENT,
+                                     height=PIXEL_SIZE_PER_ELEMENT)
+                        f.grid(row=y, column=x, columnspan=1, rowspan=1)
+                        f.rowconfigure(0, weight=1)
+                        f.columnconfigure(0, weight=1)
+                        f.grid_propagate(0)
 
-                            sentence_element = sentence_to_draw[(x, y, z)]
-                            value = int(sentence_element.value.frequency * 255)
-                            color = from_rgb_to_tkinter_color((value, value, value))
+                        value = int(sentence_element.value.frequency * 255)
+                        color = from_rgb_to_tkinter_color((value, value, value))
 
-                            button = tk.Button(f, bg=color,
-                                               command=create_array_element_click_lambda(sentence_element))
-                            button.config(relief='solid', borderwidth=0)
-                            button.grid(sticky="NWSE")
-                            CreateToolTip(button, text=(sentence_element))
+                        button = tk.Button(f, bg=color,
+                                           command=create_array_element_click_lambda(sentence_element))
+                        button.config(relief='solid', borderwidth=0)
+                        button.grid(sticky="NWSE")
+                        CreateToolTip(button, text=(sentence_element))
+                if sentence_to_draw.num_of_dimensions == 3:
+                    #todo draw rgb
+                    pass
 
             self.gui_array_image_frame = image_frame
 

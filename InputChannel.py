@@ -20,6 +20,7 @@ import NARSGUI
 input_queue = queue.Queue()
 vision_sensor_keyword = "vision:"
 
+
 def get_user_input():
     userinput = ""
     while userinput != "exit":
@@ -53,11 +54,12 @@ def add_input_string(input_string: str):
                 # sensory array input (a matrix of RGB or brightness values)
                 sentence = process_visual_sensory_input(input_string[len(vision_sensor_keyword):])
             else:
-                #regular Narsese input
+                # regular Narsese input
                 sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
             add_input_sentence(sentence)
     except AssertionError as msg:
         Global.Global.print_to_output("INPUT REJECTED: " + str(msg))
+
 
 def add_input_sentence(sentence: NALGrammar.Sentence):
     """
@@ -92,6 +94,7 @@ def process_sentence(sentence: NALGrammar.Sentence):
         # temporal experience
         Global.Global.NARS.event_buffer.put_new(task)
 
+
 def load_input(filename="input.nal"):
     """
         Load NAL input from a file
@@ -105,8 +108,10 @@ def load_input(filename="input.nal"):
     except:
         Global.Global.print_to_output("LOAD INPUT FAIL")
 
+
 def is_sensory_input_string(input_string):
     return input_string[0:len(vision_sensor_keyword)] == vision_sensor_keyword
+
 
 def process_visual_sensory_input(input_string):
     """
@@ -138,7 +143,7 @@ def process_visual_sensory_input(input_string):
 
 
     """
-    #remove line endings
+    # remove line endings
     input_string = input_string.replace("\n", "")
     input_string = input_string.replace("\r", "")
     input_string = input_string[1:-1]
@@ -159,10 +164,10 @@ def process_visual_sensory_input(input_string):
         # 1D array
         pixel_value_array = input_string.split(",")
         x_length = len(pixel_value_array)
-        dim_lengths = (x_length,) # how many elements in a row
+        dim_lengths = (x_length,)  # how many elements in a row
     else:
         if input_string[1] != array_idx_start_marker:
-            #2D array
+            # 2D array
             depth = 0
             piece = ""
             for i in range(len(input_string)):
@@ -172,7 +177,7 @@ def process_visual_sensory_input(input_string):
                     piece = ""
                 else:
                     if c == array_idx_start_marker:
-                        depth +=1
+                        depth += 1
                     elif c == array_idx_end_marker:
                         depth -= 1
                     else:
@@ -180,12 +185,12 @@ def process_visual_sensory_input(input_string):
 
             pixel_value_array.append(piece.split(","))
 
-            x_length = len(pixel_value_array[0]) # how many elements in a row
-            y_length = len(pixel_value_array) # how many rows
+            x_length = len(pixel_value_array[0])  # how many elements in a row
+            y_length = len(pixel_value_array)  # how many rows
 
             dim_lengths = (x_length, y_length)
         else:
-            #TODO
+            # TODO
             # 3D array
             layer_strings = []
             depth = 0
@@ -198,12 +203,12 @@ def process_visual_sensory_input(input_string):
                 else:
                     piece += c
                     if c == array_idx_start_marker:
-                        depth +=1
+                        depth += 1
                     elif c == array_idx_end_marker:
                         depth -= 1
             x_length = len(layer_strings[0][0])  # how many elements in a row
             y_length = len(layer_strings[0])  # how many rows
-            z_length = len(layer_strings) # how many layers
+            z_length = len(layer_strings)  # how many layers
             dim_lengths = (x_length, y_length, z_length)
 
     atomic_array_term = NALGrammar.ArrayTerm(name=subject_str,
@@ -222,38 +227,32 @@ def process_visual_sensory_input(input_string):
     else:
         dims = 3
 
-    z_truth_value_elements = []
-    # iterate over every element and create corresponding truth values
-    for z in np.linspace(-1.0, 1.0, num=z_length):
-        y_truth_value_elements = []
-        yidx = 0
-        for y in np.linspace(-1.0, 1.0, num=y_length):
-            x_truth_value_elements = []
-            for x in np.linspace(-1.0, 1.0, num=x_length):
-                xidx = len(x_truth_value_elements)
-                if z_length == 1:
-                    if y_length == 1:
-                        pixel_value = float(pixel_value_array[xidx])
-                    else:
-                        yidx = len(y_truth_value_elements)
-                        pixel_value = float(pixel_value_array[yidx][xidx])
-                else:
-                    zidx = len(z_truth_value_elements)
-                    pixel_value = float(pixel_value_array[zidx][yidx][xidx])
+    def create_truth_value_array(*coord_vars):
+        coords = tuple([int(var) for var in coord_vars])
+        if len(coords) == 1:
+            pixel_value = float(pixel_value_array[coords[0]])
+        elif len(coords) == 2:
+            pixel_value = float(pixel_value_array[coords[1]][coords[0]])
+        elif len(coords) == 3:
+            pixel_value = float(pixel_value_array[coords[2]][coords[1]][coords[0]])
+        coords = atomic_array_term.convert_absolute_indices_to_relative_indices(coords)
+        c = 0
+        for coord in coords:
+            c += (1.0 - abs(coord))
+        c /= dims
 
-                f = pixel_value / 255.0
-                c = ((1.0 - abs(z)) + (1.0 - abs(y)) + (1.0 - abs(x))) / dims
-                if c >= 1: c = 0.99
-                elif c <= 0.0: c = 0.0
-                element_truth_value = NALGrammar.TruthValue(frequency=f, confidence=c)
-                x_truth_value_elements.append(element_truth_value)
-            y_truth_value_elements.append(x_truth_value_elements)
-        z_truth_value_elements.append(y_truth_value_elements)
+        f = pixel_value / 255.0
+        if c >= 1:
+            c = 0.99
+        elif c <= 0.0:
+            c = 0.0
+        return NALGrammar.TruthValue(frequency=f, confidence=c)
 
+    func_vectorized = np.vectorize(create_truth_value_array)
+    truth_value_list = np.fromfunction(function=func_vectorized, shape=dim_lengths)
 
-    truth_value_list = z_truth_value_elements
-
-    default_truth_value = NALGrammar.TruthValue(frequency=Config.DEFAULT_JUDGMENT_FREQUENCY, confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE)
+    default_truth_value = NALGrammar.TruthValue(frequency=Config.DEFAULT_JUDGMENT_FREQUENCY,
+                                                confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE)
 
     return NALGrammar.Judgment(statement=statement_array_term,
-                                  value=(default_truth_value, truth_value_list))
+                               value=(default_truth_value, truth_value_list))
