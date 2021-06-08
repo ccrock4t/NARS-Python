@@ -55,13 +55,13 @@ def add_input_string(input_string: str):
                 sentence = process_visual_sensory_input(input_string[len(vision_sensor_keyword):])
             else:
                 # regular Narsese input
-                sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
+                sentence = NALGrammar.Sentence.Sentence.new_sentence_from_string(input_string)
             add_input_sentence(sentence)
     except AssertionError as msg:
         Global.Global.print_to_output("INPUT REJECTED: " + str(msg))
 
 
-def add_input_sentence(sentence: NALGrammar.Sentence):
+def add_input_sentence(sentence: NALGrammar.Sentence.Sentence):
     """
         Pend a sentence to be processed.
         :param sentence:
@@ -78,7 +78,7 @@ def process_next_pending_sentence():
         process_sentence(sentence)
 
 
-def process_sentence(sentence: NALGrammar.Sentence):
+def process_sentence(sentence: NALGrammar.Sentence.Sentence):
     """
         Given a Sentence, ingest it into NARS' experience buffer
         :param sentence:

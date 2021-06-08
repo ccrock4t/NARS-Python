@@ -26,8 +26,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
 
         :returns An array of the derived Tasks, or an empty array if the inputs have evidential overlap
     """
-    NALGrammar.assert_sentence(j1)
-    NALGrammar.assert_sentence(j2)
+    NALGrammar.Asserts.assert_sentence(j1)
+    NALGrammar.Asserts.assert_sentence(j2)
 
     if j1.statement.connector is not None or j2.statement.connector is not None:
         return []
@@ -65,7 +65,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
 
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
-    if isinstance(j1, NALGrammar.Judgment):
+    if isinstance(j1, NALGrammar.Sentence.Judgment):
         if j2.is_event():
             eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
             if j1.is_event():
@@ -85,7 +85,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     ===============================================
     """
     swapped = False
-    if isinstance(j1, NALGrammar.Judgment) or isinstance(j1, NALGrammar.Question):
+    if isinstance(j1, NALGrammar.Sentence.Judgment) or isinstance(j1, NALGrammar.Sentence.Question):
         if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
             if j1_statement == j2_statement:
                 """
@@ -93,7 +93,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                 # j1 = S-->P, j2 = S-->P
                 # or j1 = S<->P, j2 = S<->P
                 """
-                if isinstance(j1, NALGrammar.Question): return derived_sentences # can't do revision with questions
+                if isinstance(j1, NALGrammar.Sentence.Question): return derived_sentences # can't do revision with questions
 
                 derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
                 stamp_and_print_inference_rule(inference_rule="Revision", sentence=derived_sentence)

@@ -8,7 +8,7 @@ import NALGrammar
 
 
 class Global:
-    DEBUG = False
+    DEBUG = False # set to true for useful debug statements
 
     """
         NARS vars
@@ -19,8 +19,8 @@ class Global:
     """
         Terms
     """
-    TERM_SELF = NALGrammar.Term.from_string("self")
-    TERM_IMAGE_PLACEHOLDER = NALGrammar.Term.from_string("_")
+    TERM_SELF = NALGrammar.Term.Term.from_string("self")
+    TERM_IMAGE_PLACEHOLDER = NALGrammar.Term.Term.from_string("_")
 
     """
         ID markers

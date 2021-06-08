@@ -46,7 +46,7 @@ class Memory:
             :param term: The term naming the concept to create
             :returns New Concept created from the term
         """
-        NALGrammar.assert_term(term)
+        NALGrammar.Asserts.assert_term(term)
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
         assert (self.concepts_bag.peek(concept_key) is None), "Cannot create new concept. Concept already exists."
         # create new concept
@@ -72,7 +72,7 @@ class Memory:
               :param term: The term naming the concept to peek
               :return Concept named by the term
           """
-        if isinstance(term, NALGrammar.VariableTerm): return None #todo created concepts for closed variable terms
+        if isinstance(term, NALGrammar.Term.VariableTerm): return None #todo created concepts for closed variable terms
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
         concept_item: NARSDataStructures.ItemContainer.Item = self.concepts_bag.peek(concept_key)
         if concept_item is not None:
@@ -80,20 +80,20 @@ class Memory:
 
         # it doesn't exist
         # it must be created along with its sub-concepts if necessary
-        if not isinstance(term, NALGrammar.VariableTerm):
+        if not isinstance(term, NALGrammar.Term.VariableTerm):
             concept = self.conceptualize_term(term)
 
-        if isinstance(term, NALGrammar.CompoundTerm):
+        if isinstance(term, NALGrammar.Term.CompoundTerm):
             for subterm in term.subterms:
                 # get/create subterm concepts
-                if not isinstance(subterm, NALGrammar.VariableTerm) \
-                    and not isinstance(subterm, NALGrammar.ArrayTermElementTerm) \
-                    and (not isinstance(subterm, NALGrammar.Array) or isinstance(subterm, NALGrammar.ArrayTerm)): # don't create concepts for variables or array elements
+                if not isinstance(subterm, NALGrammar.Term.VariableTerm) \
+                    and not isinstance(subterm, NALGrammar.Term.ArrayTermElementTerm) \
+                    and (not isinstance(subterm, NALGrammar.Term.Array) or isinstance(subterm, NALGrammar.Term.ArrayTerm)): # don't create concepts for variables or array elements
                     subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)
 
-        if isinstance(term, NALGrammar.StatementTerm) and \
+        if isinstance(term, NALGrammar.Term.StatementTerm) and \
                 term.copula is not None and\
                 not NALSyntax.Copula.is_first_order(term.get_copula()):
             # implication statement
@@ -120,7 +120,7 @@ class Memory:
         initial_related_concept: Concept = related_concept_item.object
         related_concept = None
 
-        if isinstance(initial_related_concept.term, NALGrammar.AtomicTerm):
+        if isinstance(initial_related_concept.term, NALGrammar.Term.AtomicTerm):
             related_concept_item = initial_related_concept.term_links.peek()
             related_concept = related_concept_item.object
         else:
@@ -128,13 +128,13 @@ class Memory:
             attempts = 0
             while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
                 and (related_concept is None \
-                or not isinstance(related_concept.term, NALGrammar.StatementTerm)):
+                or not isinstance(related_concept.term, NALGrammar.Term.StatementTerm)):
                 related_concept_item = self.get_random_link(initial_related_concept)
 
                 if related_concept_item is not None: related_concept = related_concept_item.object
                 attempts += 1
 
-        if related_concept is not None and not isinstance(related_concept.term, NALGrammar.StatementTerm): related_concept = None # only return statement concepts
+        if related_concept is not None and not isinstance(related_concept.term, NALGrammar.Term.StatementTerm): related_concept = None # only return statement concepts
 
         return related_concept
 
@@ -225,11 +225,11 @@ class Concept:
         NARS Concept
     """
     def __init__(self, term):
-        NALGrammar.assert_term(term)
+        NALGrammar.Asserts.assert_term(term)
         self.term = term  # concept's unique term
         self.term_links = NARSDataStructures.Bag(item_type=Concept)  # Bag of related concepts (related by term)
-        self.belief_table = NARSDataStructures.Table(NALGrammar.Judgment)
-        self.desire_table = NARSDataStructures.Table(NALGrammar.Goal)
+        self.belief_table = NARSDataStructures.Table(NALGrammar.Sentence.Judgment)
+        self.desire_table = NARSDataStructures.Table(NALGrammar.Sentence.Goal)
         self.prediction_links = NARSDataStructures.Bag(item_type=Concept)
         self.explanation_links = NARSDataStructures.Bag(item_type=Concept)
 

@@ -30,8 +30,8 @@ def Revision(j1, j2):
         Returns:
           :- Sentence (Statement <f3, c3>)
     """
-    NALGrammar.assert_sentence(j1)
-    NALGrammar.assert_sentence(j2)
+    NALGrammar.Asserts.assert_sentence(j1)
+    NALGrammar.Asserts.assert_sentence(j2)
     assert (
             j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
@@ -42,10 +42,10 @@ def Revision(j1, j2):
     (wp1, w1, wn1), (wp2, w2, wn2) = HelperFunctions.getevidence_from2sentences(j1, j2)
     result_truth = TruthValueFunctions.F_Revision(wp1=wp1, wn1=wn1, wp2=wp2, wn2=wn2)
 
-    result_statement = NALGrammar.StatementTerm(j1.statement.get_subject_term(),
+    result_statement = NALGrammar.Term.StatementTerm(j1.statement.get_subject_term(),
                                             j1.statement.get_predicate_term(),
                                             j1.statement.get_copula())
-    result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -72,8 +72,8 @@ def Choice(j1, j2):
          Returns:
            j1 or j2, depending on which is better according to the choice rule
     """
-    NALGrammar.assert_sentence(j1)
-    NALGrammar.assert_sentence(j2)
+    NALGrammar.Asserts.assert_sentence(j1)
+    NALGrammar.Asserts.assert_sentence(j2)
     # Subject Predicate
     subjpred1 = j1.subject_predicate
     subjpred2 = j2.subject_predicate
@@ -122,12 +122,12 @@ def Eternalization(j):
         :param j:
         :return: Eternalized form of j
     """
-    NALGrammar.assert_sentence(j)
+    NALGrammar.Asserts.assert_sentence(j)
 
-    if isinstance(j, NALGrammar.Judgment):
+    if isinstance(j, NALGrammar.Sentence.Judgment):
         result_truth = TruthValueFunctions.F_Eternalization(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(j.statement, result_truth, occurrence_time=None)
-    elif isinstance(j, NALGrammar.Question):
+        result = NALGrammar.Sentence.Judgment(j.statement, result_truth, occurrence_time=None)
+    elif isinstance(j, NALGrammar.Sentence.Question):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
@@ -141,12 +141,12 @@ def Projection(j, occurrence_time):
         :param occurrence_time: occurrence time to project j to
         :return: Projected form of j
     """
-    NALGrammar.assert_sentence(j)
+    NALGrammar.Asserts.assert_sentence(j)
 
-    if isinstance(j, NALGrammar.Judgment):
+    if isinstance(j, NALGrammar.Sentence.Judgment):
         result_truth = TruthValueFunctions.F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)
-        result = NALGrammar.Judgment(j.statement, result_truth, occurrence_time=occurrence_time)
-    elif isinstance(j, NALGrammar.Question):
+        result = NALGrammar.Sentence.Judgment(j.statement, result_truth, occurrence_time=occurrence_time)
+    elif isinstance(j, NALGrammar.Sentence.Question):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)

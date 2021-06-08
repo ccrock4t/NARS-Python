@@ -14,10 +14,8 @@ class StatementSyntax(enum.Enum):
     TruthValDivider = ";"
     TermDivider = ","
 
-    ArrayElementIndexStart = "["
-    ArrayElementIndexEnd = "]"
-    ArrayElementTruthValuesStart = "("
-    ArrayElementTruthValuesEnd = ")"
+    ArrayElementIndexStart = "("
+    ArrayElementIndexEnd = ")"
 
 
 class Tense(enum.Enum):

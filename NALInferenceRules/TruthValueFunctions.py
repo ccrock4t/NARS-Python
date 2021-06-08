@@ -25,7 +25,7 @@ def F_Revision(wp1, wn1, wp2, wn2):
     wn = wn1 + wn2
     w = wp + wn
     f_rev, c_rev = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
-    return NALGrammar.TruthValue(f_rev, c_rev)
+    return NALGrammar.Value.TruthValue(f_rev, c_rev)
 
 
 def F_Negation(f, c):
@@ -34,7 +34,7 @@ def F_Negation(f, c):
         c_neg = c
         :return: F_neg: Truth-Value (f,c)
     """
-    return NALGrammar.TruthValue(1 - f, c)
+    return NALGrammar.Value.TruthValue(1 - f, c)
 
 
 def F_Conversion(f, c):
@@ -46,7 +46,7 @@ def F_Conversion(f, c):
     # compute values of combined evidence
     f_cnv = 1.0
     c_cnv = (f*c)/(f*c+Config.k)
-    return NALGrammar.TruthValue(f_cnv, c_cnv)
+    return NALGrammar.Value.TruthValue(f_cnv, c_cnv)
 
 
 def F_Contraposition(f, c):
@@ -60,7 +60,7 @@ def F_Contraposition(f, c):
     w = wn
     f_cnt, c_cnt = NALInferenceRules.Helperfunctions.get_truthvalue_from_evidence(wp, w)
 
-    return NALGrammar.TruthValue(f_cnt, c_cnt)
+    return NALGrammar.Value.TruthValue(f_cnt, c_cnt)
 
 
 def F_Deduction(f1, c1, f2, c2):
@@ -72,7 +72,7 @@ def F_Deduction(f1, c1, f2, c2):
     """
     f3 = ExtendedBooleanOperators.band(f1, f2)
     c3 = ExtendedBooleanOperators.band(f1, f2, c1, c2)
-    return NALGrammar.TruthValue(f3, c3)
+    return NALGrammar.Value.TruthValue(f3, c3)
 
 
 def F_Analogy(f1, c1, f2, c2):
@@ -85,7 +85,7 @@ def F_Analogy(f1, c1, f2, c2):
     # compute values of combined evidence
     f_ana = ExtendedBooleanOperators.band(f1, f2)
     c_ana = ExtendedBooleanOperators.band(f2, c1, c2)
-    return NALGrammar.TruthValue(f_ana, c_ana)
+    return NALGrammar.Value.TruthValue(f_ana, c_ana)
 
 
 def F_Resemblance(f1, c1, f2, c2):
@@ -98,7 +98,7 @@ def F_Resemblance(f1, c1, f2, c2):
     f_res = ExtendedBooleanOperators.band(f1, f2)
     c_res = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bor(f1, f2), c1, c2)
 
-    return NALGrammar.TruthValue(f_res, c_res)
+    return NALGrammar.Value.TruthValue(f_res, c_res)
 
 
 def F_Abduction(f1, c1, f2, c2):
@@ -112,7 +112,7 @@ def F_Abduction(f1, c1, f2, c2):
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(f1, c1, c2)
     f_abd, c_abd = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
-    return NALGrammar.TruthValue(f_abd, c_abd)
+    return NALGrammar.Value.TruthValue(f_abd, c_abd)
 
 
 def F_Induction(f1, c1, f2, c2):
@@ -123,7 +123,7 @@ def F_Induction(f1, c1, f2, c2):
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(f2, c1, c2)
     f_ind, c_ind = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
-    return NALGrammar.TruthValue(f_ind, c_ind)
+    return NALGrammar.Value.TruthValue(f_ind, c_ind)
 
 
 def F_Exemplification(f1, c1, f2, c2):
@@ -134,7 +134,7 @@ def F_Exemplification(f1, c1, f2, c2):
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = wp
     f_exe, c_exe = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
-    return NALGrammar.TruthValue(f_exe, c_exe)
+    return NALGrammar.Value.TruthValue(f_exe, c_exe)
 
 
 def F_Comparison(f1, c1, f2, c2):
@@ -145,7 +145,7 @@ def F_Comparison(f1, c1, f2, c2):
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bor(f1, f2), c1, c2)
     f3, c3 = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
-    return NALGrammar.TruthValue(f3, c3)
+    return NALGrammar.Value.TruthValue(f3, c3)
 
 
 def F_Intersection(f1, c1, f2, c2):
@@ -155,7 +155,7 @@ def F_Intersection(f1, c1, f2, c2):
     # compute values of combined evidence
     f_int = ExtendedBooleanOperators.band(f1, f2)
     c_int = ExtendedBooleanOperators.band(c1, c2)
-    return NALGrammar.TruthValue(f_int, c_int)
+    return NALGrammar.Value.TruthValue(f_int, c_int)
 
 
 def F_Union(f1, c1, f2, c2):
@@ -165,7 +165,7 @@ def F_Union(f1, c1, f2, c2):
     # compute values of combined evidence
     f3 = ExtendedBooleanOperators.bor(f1, f2)
     c3 = ExtendedBooleanOperators.band(c1, c2)
-    return NALGrammar.TruthValue(f3, c3)
+    return NALGrammar.Value.TruthValue(f3, c3)
 
 
 def F_Difference(f1, c1, f2, c2):
@@ -175,7 +175,7 @@ def F_Difference(f1, c1, f2, c2):
     # compute values of combined evidence
     f3 = ExtendedBooleanOperators.band(f1, ExtendedBooleanOperators.bnot(f2))
     c3 = ExtendedBooleanOperators.band(c1, c2)
-    return NALGrammar.TruthValue(f3, c3)
+    return NALGrammar.Value.TruthValue(f3, c3)
 
 
 def F_Projection(frequency, confidence, t_B, t_T):
@@ -188,12 +188,12 @@ def F_Projection(frequency, confidence, t_B, t_T):
     T_c = Global.Global.get_current_cycle_number()
     k_c = abs(t_B - t_T) / (abs(t_B - T_c) + abs(t_T - T_c))
     projected_confidence = (1 - k_c) * confidence
-    return NALGrammar.TruthValue(frequency,projected_confidence)
+    return NALGrammar.Value.TruthValue(frequency,projected_confidence)
 
 
 def F_Eternalization(temporal_frequency, temporal_confidence):
     eternal_confidence = 1.0 / (Config.k + temporal_confidence)
-    return NALGrammar.TruthValue(temporal_frequency, eternal_confidence)
+    return NALGrammar.Value.TruthValue(temporal_frequency, eternal_confidence)
 
 def Expectation(f, c):
     """
