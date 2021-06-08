@@ -19,8 +19,8 @@ class Global:
     """
         Terms
     """
-    TERM_SELF = NALGrammar.Term.Term.from_string("self")
-    TERM_IMAGE_PLACEHOLDER = NALGrammar.Term.Term.from_string("_")
+    TERM_SELF = NALGrammar.Terms.Term.from_string("self")
+    TERM_IMAGE_PLACEHOLDER = NALGrammar.Terms.Term.from_string("_")
 
     """
         ID markers

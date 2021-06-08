@@ -42,10 +42,10 @@ def Revision(j1, j2):
     (wp1, w1, wn1), (wp2, w2, wn2) = HelperFunctions.getevidence_from2sentences(j1, j2)
     result_truth = TruthValueFunctions.F_Revision(wp1=wp1, wn1=wn1, wp2=wp2, wn2=wn2)
 
-    result_statement = NALGrammar.Term.StatementTerm(j1.statement.get_subject_term(),
-                                            j1.statement.get_predicate_term(),
-                                            j1.statement.get_copula())
-    result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    result_statement = NALGrammar.Terms.StatementTerm(j1.statement.get_subject_term(),
+                                                      j1.statement.get_predicate_term(),
+                                                      j1.statement.get_copula())
+    result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -124,10 +124,10 @@ def Eternalization(j):
     """
     NALGrammar.Asserts.assert_sentence(j)
 
-    if isinstance(j, NALGrammar.Sentence.Judgment):
+    if isinstance(j, NALGrammar.Sentences.Judgment):
         result_truth = TruthValueFunctions.F_Eternalization(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Sentence.Judgment(j.statement, result_truth, occurrence_time=None)
-    elif isinstance(j, NALGrammar.Sentence.Question):
+        result = NALGrammar.Sentences.Judgment(j.statement, result_truth, occurrence_time=None)
+    elif isinstance(j, NALGrammar.Sentences.Question):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
@@ -143,10 +143,10 @@ def Projection(j, occurrence_time):
     """
     NALGrammar.Asserts.assert_sentence(j)
 
-    if isinstance(j, NALGrammar.Sentence.Judgment):
+    if isinstance(j, NALGrammar.Sentences.Judgment):
         result_truth = TruthValueFunctions.F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)
-        result = NALGrammar.Sentence.Judgment(j.statement, result_truth, occurrence_time=occurrence_time)
-    elif isinstance(j, NALGrammar.Sentence.Question):
+        result = NALGrammar.Sentences.Judgment(j.statement, result_truth, occurrence_time=occurrence_time)
+    elif isinstance(j, NALGrammar.Sentences.Question):
         assert "error"
 
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)

@@ -13,7 +13,7 @@ import NALInferenceRules.Conditional
 import NARSDataStructures
 import NALSyntax
 
-def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
+def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
@@ -65,7 +65,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
 
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
-    if isinstance(j1, NALGrammar.Sentence.Judgment):
+    if isinstance(j1, NALGrammar.Sentences.Judgment):
         if j2.is_event():
             eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
             if j1.is_event():
@@ -85,7 +85,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
     ===============================================
     """
     swapped = False
-    if isinstance(j1, NALGrammar.Sentence.Judgment) or isinstance(j1, NALGrammar.Sentence.Question):
+    if isinstance(j1, NALGrammar.Sentences.Judgment) or isinstance(j1, NALGrammar.Sentences.Question):
         if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
             if j1_statement == j2_statement:
                 """
@@ -93,7 +93,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
                 # j1 = S-->P, j2 = S-->P
                 # or j1 = S<->P, j2 = S<->P
                 """
-                if isinstance(j1, NALGrammar.Sentence.Question): return derived_sentences # can't do revision with questions
+                if isinstance(j1, NALGrammar.Sentences.Question): return derived_sentences # can't do revision with questions
 
                 derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
                 stamp_and_print_inference_rule(inference_rule="Revision", sentence=derived_sentence)
@@ -389,7 +389,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentence, j2: NALGrammar.Se
 
     return derived_sentences
 
-def do_temporal_inference_two_premise(A: NALGrammar.Sentence, B: NALGrammar.Sentence) -> [NARSDataStructures.Task]:
+def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Task]:
     derived_sentences = []
 
     derived_sentence = NALInferenceRules.Conditional.ConditionalInduction(A, B) # A =|> B or A =/> B or B =/> A

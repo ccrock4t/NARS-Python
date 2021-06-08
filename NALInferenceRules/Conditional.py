@@ -33,22 +33,22 @@ def ConditionalAnalogy(j1, j2):
 
     # Statement
     if j1.statement == j2.statement.get_subject_term():
-        statement_term: NALGrammar.Term.StatementTerm = j2.statement.get_predicate_term()
+        statement_term: NALGrammar.Terms.StatementTerm = j2.statement.get_predicate_term()
     elif j1.statement == j2.statement.get_predicate_term():
-        statement_term: NALGrammar.Term.StatementTerm  = j2.statement.get_subject_term()
+        statement_term: NALGrammar.Terms.StatementTerm  = j2.statement.get_subject_term()
     else:
         assert False, "Error: Invalid inputs to Conditional Analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    result_statement = NALGrammar.Term.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
-                                            statement_term.get_copula())
+    result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+                                                      statement_term.get_copula())
 
-    if isinstance(j2, NALGrammar.Sentence.Judgment):
+    if isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Analogy(f1, c1, f2, c2)
-        result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentence.Question):
-        result = NALGrammar.Sentence.Question(result_statement)
+        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Sentences.Question):
+        result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -72,18 +72,18 @@ def ConditionalDeduction(j1, j2):
     NALGrammar.Asserts.assert_sentence(j1)
     NALGrammar.Asserts.assert_sentence(j2)
 
-    statement_term: NALGrammar.Term.StatementTerm = j1.statement.get_predicate_term() # P
-    result_statement = NALGrammar.Term.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
-                                            statement_term.get_copula())
+    statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
+    result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+                                                      statement_term.get_copula())
 
 
-    if isinstance(j2, NALGrammar.Sentence.Judgment):
+    if isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Deduction(f1, c1, f2, c2)
-        result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentence.Question):
-        result = NALGrammar.Sentence.Question(result_statement)
+        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Sentences.Question):
+        result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -107,18 +107,18 @@ def ConditionalAbduction(j1, j2):
     NALGrammar.Asserts.assert_sentence(j1)
     NALGrammar.Asserts.assert_sentence(j2)
 
-    statement_term: NALGrammar.Term.StatementTerm = j1.statement.get_subject_term() # S
-    result_statement = NALGrammar.Term.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
-                                            statement_term.get_copula())
+    statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
+    result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
+                                                      statement_term.get_copula())
 
 
-    if isinstance(j2, NALGrammar.Sentence.Judgment):
+    if isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Abduction(f1, c1, f2, c2)
-        result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentence.Question):
-        result = NALGrammar.Sentence.Question(result_statement)
+        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Sentences.Question):
+        result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -153,20 +153,20 @@ def ConditionalInduction(j1, j2):
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 =|> j2
-        result_statement = NALGrammar.Term.StatementTerm(j1_statement_term, j2_statement_term,
-                                                NALSyntax.Copula.ConcurrentImplication)
+        result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
+                                                          NALSyntax.Copula.ConcurrentImplication)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 =/> j2
-        result_statement = NALGrammar.Term.StatementTerm(j1_statement_term, j2_statement_term,
-                                                NALSyntax.Copula.PredictiveImplication)
+        result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
+                                                          NALSyntax.Copula.PredictiveImplication)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 =/> j1
-        result_statement = NALGrammar.Term.StatementTerm(j2_statement_term, j1_statement_term,
-                                                NALSyntax.Copula.PredictiveImplication)
+        result_statement = NALGrammar.Terms.StatementTerm(j2_statement_term, j1_statement_term,
+                                                          NALSyntax.Copula.PredictiveImplication)
 
     # calculate induction truth value
     result_truth = TruthValueFunctions.F_Induction(f1, c1, f2, c2)
-    result = NALGrammar.Sentence.Judgment(result_statement, result_truth)
+    result = NALGrammar.Sentences.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -202,20 +202,20 @@ def ConditionalComparison(j1, j2):
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # <|>
-        result_statement = NALGrammar.Term.StatementTerm(j1_statement_term, j2_statement_term,
-                                                NALSyntax.Copula.ConcurrentEquivalence)
+        result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
+                                                          NALSyntax.Copula.ConcurrentEquivalence)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 </> j2
-        result_statement = NALGrammar.Term.StatementTerm(j1_statement_term, j2_statement_term,
-                                                NALSyntax.Copula.PredictiveEquivalence)
+        result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
+                                                          NALSyntax.Copula.PredictiveEquivalence)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 </> j1
-        result_statement = NALGrammar.Term.StatementTerm(j2_statement_term, j1_statement_term,
-                                                NALSyntax.Copula.PredictiveEquivalence)
+        result_statement = NALGrammar.Terms.StatementTerm(j2_statement_term, j1_statement_term,
+                                                          NALSyntax.Copula.PredictiveEquivalence)
 
     # calculate induction truth value
     result_truth = TruthValueFunctions.F_Comparison(f1, c1, f2, c2)
-    result = NALGrammar.Sentence.Judgment(result_statement, result_truth)
+    result = NALGrammar.Sentences.Judgment(result_statement, result_truth)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -244,28 +244,28 @@ def ConditionalConjunctionalDeduction(j1, j2):
     NALGrammar.Asserts.assert_sentence(j1)
     NALGrammar.Asserts.assert_sentence(j2)
 
-    subject_term: NALGrammar.Term.CompoundTerm = j1.statement.get_subject_term()
+    subject_term: NALGrammar.Terms.CompoundTerm = j1.statement.get_subject_term()
 
     new_subterms = list(set(subject_term.subterms) - {j2.statement}) # subtract j2 from j1 subject subterms
 
     if len(new_subterms) > 1:
         # recreate the conjunctional compound with the new subterms
-        new_compound_subject_term = NALGrammar.Term.CompoundTerm(new_subterms, subject_term.connector)
+        new_compound_subject_term = NALGrammar.Terms.CompoundTerm(new_subterms, subject_term.connector)
     else:
         # only 1 subterm, no need to make it a compound
         new_compound_subject_term = new_subterms[0]
 
-    result_statement = NALGrammar.Term.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
-                                            j1.statement.get_copula())
+    result_statement = NALGrammar.Terms.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
+                                                      j1.statement.get_copula())
 
 
-    if isinstance(j2, NALGrammar.Sentence.Judgment):
+    if isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Deduction(f1, c1, f2, c2)
-        result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentence.Question):
-        result = NALGrammar.Sentence.Question(result_statement)
+        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Sentences.Question):
+        result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -302,17 +302,17 @@ def ConditionalConjunctionalAbduction(j1, j2):
 
     if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in set_difference_of_terms])
 
-    result_term: NALGrammar.Term.StatementTerm = set_difference_of_terms[0]
-    result_statement = NALGrammar.Term.StatementTerm(result_term.get_subject_term(), result_term.get_predicate_term(),
-                                            result_term.get_copula())
+    result_term: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
+    result_statement = NALGrammar.Terms.StatementTerm(result_term.get_subject_term(), result_term.get_predicate_term(),
+                                                      result_term.get_copula())
 
-    if isinstance(j2, NALGrammar.Sentence.Judgment):
+    if isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Abduction(f1, c1, f2, c2)
-        result = NALGrammar.Sentence.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentence.Question):
-        result = NALGrammar.Sentence.Question(result_statement)
+        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
+    elif isinstance(j2, NALGrammar.Sentences.Question):
+        result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)

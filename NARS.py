@@ -185,7 +185,7 @@ class NARS:
         # process task
         self.process_task(task_item.object)
 
-        if isinstance(task_item.object.sentence, NALGrammar.Sentence.Question):
+        if isinstance(task_item.object.sentence, NALGrammar.Sentences.Question):
             # decay priority
             task_item.decay()
 
@@ -201,7 +201,7 @@ class NARS:
         if concept_item is None:
             return  # nothing to ponder
 
-        if isinstance(concept_item.object.term, NALGrammar.Term.StatementTerm):
+        if isinstance(concept_item.object.term, NALGrammar.Terms.StatementTerm):
             # Concept is S --> P or S ==> P
             concept_to_consider = concept_item.object
         else:
@@ -230,12 +230,12 @@ class NARS:
         """
         NARSDataStructures.assert_task(task)
 
-        if isinstance(task.sentence, NALGrammar.Sentence.Judgment):
+        if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
             self.process_judgment_task(task)
-        elif isinstance(task.sentence, NALGrammar.Sentence.Question) \
+        elif isinstance(task.sentence, NALGrammar.Sentences.Question) \
                 or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement):
             self.process_question_task(task)
-        elif isinstance(task.sentence, NALGrammar.Sentence.Goal):
+        elif isinstance(task.sentence, NALGrammar.Sentences.Goal):
             self.process_goal_task(task)
 
     def process_judgment_task(self, task: NARSDataStructures.Task):
@@ -276,7 +276,7 @@ class NARS:
         # revise the judgment
         self.process_judgment_sentence(j1, statement_concept)
 
-    def process_judgment_sentence(self, j1: NALGrammar.Sentence.Goal, related_concept=None):
+    def process_judgment_sentence(self, j1: NALGrammar.Sentences.Goal, related_concept=None):
         """
             Continued processing for Judgment
 
@@ -306,7 +306,7 @@ class NARS:
         statement_concept = self.memory.peek_concept(statement_term)
 
         # get the best answer from concept belief table
-        best_answer: NALGrammar.Sentence.Judgment = statement_concept.belief_table.peek_max()
+        best_answer: NALGrammar.Sentences.Judgment = statement_concept.belief_table.peek_max()
         j1 = None
         if best_answer is not None:
             #
@@ -355,7 +355,7 @@ class NARS:
         """
         self.process_goal_sentence(j1, statement_concept)
 
-    def process_goal_sentence(self, j1: NALGrammar.Sentence.Goal, related_concept=None):
+    def process_goal_sentence(self, j1: NALGrammar.Sentences.Goal, related_concept=None):
         """
             Continued processing for Goal
 
@@ -402,16 +402,15 @@ class NARS:
                     return  # no related concepts! Should never happen, the concept is always semantically related to itself
 
                 # check for a belief we can interact with
-
                 for (belief, confidence) in related_concept.belief_table:
-                    if NALGrammar.Sentence.may_interact(j1, belief):
+                    if NALGrammar.Sentences.may_interact(j1, belief):
                         j2 = belief  # belief can interact with j1
                         break
 
                 number_of_attempts += 1
         else:
             for (belief, confidence) in related_concept.belief_table:
-                if NALGrammar.Sentence.may_interact(j1, belief):
+                if NALGrammar.Sentences.may_interact(j1, belief):
                     j2 = belief  # belief can interact with j1
                     break
 
@@ -435,6 +434,6 @@ class NARS:
         # full_operation_term.get_subject_term()
         operation = full_operation_statement.get_predicate_term()
         Global.Global.print_to_output("EXE: ^" + str(operation))
-        operation_event = NALGrammar.Sentence.Judgment(full_operation_statement, NALGrammar.TruthValue(),
-                                                       occurrence_time=Global.Global.get_current_cycle_number())
+        operation_event = NALGrammar.Sentences.Judgment(full_operation_statement, NALGrammar.TruthValue(),
+                                                        occurrence_time=Global.Global.get_current_cycle_number())
         self.event_buffer.put(NARSDataStructures.Task(operation_event))

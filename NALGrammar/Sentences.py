@@ -1,12 +1,12 @@
-from NALGrammar.Array import Array
+from NALGrammar.Arrays import Array
 import Config
 import Global
 import NALSyntax
 from NALGrammar.Asserts import assert_punctuation, assert_statement_term
 
-from NALGrammar.Term import StatementTerm
+from NALGrammar.Terms import StatementTerm
 
-from NALGrammar.Value import TruthValue, DesireValue
+from NALGrammar.Values import TruthValue, DesireValue
 import NALInferenceRules
 
 """

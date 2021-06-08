@@ -7,7 +7,7 @@ import enum
 
 import Global
 import NALSyntax
-from NALGrammar.Array import Array
+from NALGrammar.Arrays import Array
 
 import NALGrammar.Asserts
 
@@ -516,9 +516,16 @@ class ArrayTermElementTerm(AtomicTerm):
     def __init__(self, array_term, indices):
         self.array_term = array_term # the array term of which this is an element
         self.indices = indices
-
+        self.indices_string = ""
+        for idx in indices:
+            self.indices_string += str(idx)
     def get_formatted_string(self):
-        return self.array_term.get_formatted_string() + str(self.indices)
+
+
+        return self.array_term.get_formatted_string() \
+        + NALSyntax.StatementSyntax.ArrayElementIndexStart.value \
+        + self.indices_string \
+        + NALSyntax.StatementSyntax.ArrayElementIndexEnd.value
 
 def get_top_level_copula(string):
     """

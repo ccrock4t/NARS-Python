@@ -4,25 +4,25 @@
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
 import NALSyntax
-import NALGrammar.Sentence
-import NALGrammar.Term
-import NALGrammar.Value
+import NALGrammar.Sentences
+import NALGrammar.Terms
+import NALGrammar.Values
 
 
 def assert_term(t):
-    assert (isinstance(t, NALGrammar.Term.Term)), str(t) + " must be a Term"
+    assert (isinstance(t, NALGrammar.Terms.Term)), str(t) + " must be a Term"
 
 
 def assert_statement_term(t):
-    assert (isinstance(t, NALGrammar.Term.StatementTerm)), str(t) + " must be a Statement Term"
+    assert (isinstance(t, NALGrammar.Terms.StatementTerm)), str(t) + " must be a Statement Term"
 
 
 def assert_sentence(j):
-    assert (isinstance(j, NALGrammar.Sentence.Sentence)), str(j) + " must be a Sentence"
+    assert (isinstance(j, NALGrammar.Sentences.Sentence)), str(j) + " must be a Sentence"
 
 
 def assert_truth_value(j):
-    assert (isinstance(j, NALGrammar.Value.TruthValue)), str(j) + " must be a TruthValue"
+    assert (isinstance(j, NALGrammar.Values.TruthValue)), str(j) + " must be a TruthValue"
 
 
 def assert_punctuation(j):

@@ -55,13 +55,13 @@ def add_input_string(input_string: str):
                 sentence = process_visual_sensory_input(input_string[len(vision_sensor_keyword):])
             else:
                 # regular Narsese input
-                sentence = NALGrammar.Sentence.Sentence.new_sentence_from_string(input_string)
+                sentence = NALGrammar.Sentences.Sentence.new_sentence_from_string(input_string)
             add_input_sentence(sentence)
     except AssertionError as msg:
         Global.Global.print_to_output("INPUT REJECTED: " + str(msg))
 
 
-def add_input_sentence(sentence: NALGrammar.Sentence.Sentence):
+def add_input_sentence(sentence: NALGrammar.Sentences.Sentence):
     """
         Pend a sentence to be processed.
         :param sentence:
@@ -78,7 +78,7 @@ def process_next_pending_sentence():
         process_sentence(sentence)
 
 
-def process_sentence(sentence: NALGrammar.Sentence.Sentence):
+def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     """
         Given a Sentence, ingest it into NARS' experience buffer
         :param sentence:
@@ -149,7 +149,7 @@ def process_visual_sensory_input(input_string):
     input_string = input_string[1:-1]
 
     subject_str = "V" + str(Global.Global.NARS.memory.get_next_percept_id())
-    predicate_term = NALGrammar.Term.from_string("[BRIGHT]")
+    predicate_term = NALGrammar.Terms.Term.from_string("[BRIGHT]")
 
     x_length = 1
     y_length = 1
@@ -211,9 +211,9 @@ def process_visual_sensory_input(input_string):
             z_length = len(layer_strings)  # how many layers
             dim_lengths = (x_length, y_length, z_length)
 
-    atomic_array_term = NALGrammar.ArrayTerm(name=subject_str,
+    atomic_array_term = NALGrammar.Terms.ArrayTerm(name=subject_str,
                                              dimensions=dim_lengths)
-    statement_array_term = NALGrammar.StatementTerm(subject_term=NALGrammar.CompoundTerm(subterms=[atomic_array_term],
+    statement_array_term = NALGrammar.Terms.StatementTerm(subject_term=NALGrammar.Terms.CompoundTerm(subterms=[atomic_array_term],
                                                                                          term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
                                                     predicate_term=predicate_term,
                                                     copula=NALSyntax.Copula.Inheritance)
@@ -246,13 +246,13 @@ def process_visual_sensory_input(input_string):
             c = 0.99
         elif c <= 0.0:
             c = 0.0
-        return NALGrammar.TruthValue(frequency=f, confidence=c)
+        return NALGrammar.Values.TruthValue(frequency=f, confidence=c)
 
     func_vectorized = np.vectorize(create_truth_value_array)
     truth_value_list = np.fromfunction(function=func_vectorized, shape=dim_lengths)
 
-    default_truth_value = NALGrammar.TruthValue(frequency=Config.DEFAULT_JUDGMENT_FREQUENCY,
+    default_truth_value = NALGrammar.Values.TruthValue(frequency=Config.DEFAULT_JUDGMENT_FREQUENCY,
                                                 confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE)
 
-    return NALGrammar.Judgment(statement=statement_array_term,
+    return NALGrammar.Sentences.Judgment(statement=statement_array_term,
                                value=(default_truth_value, truth_value_list))

@@ -456,9 +456,9 @@ class NARSGUI:
                                           lambda event: self.listbox_sentence_item_click_callback(event,
                                                                                                  sentence_to_draw.stamp.interacted_sentences))
         MAX_IMAGE_SIZE = 2000
-        if isinstance(sentence_to_draw, NALGrammar.Array) \
+        if isinstance(sentence_to_draw, NALGrammar.Arrays.Array) \
                 and sentence_to_draw.is_array \
-                and not isinstance(sentence_to_draw, NALGrammar.Question):
+                and not isinstance(sentence_to_draw, NALGrammar.Sentences.Question):
             # Percept elements label
             label = tk.Label(item_info_window, text="Array Visualization (scroll to zoom in/out)", font=('bold'))
             label.grid(row=rownum, column=4, columnspan=2)

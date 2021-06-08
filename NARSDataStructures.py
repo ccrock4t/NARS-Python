@@ -5,7 +5,7 @@ import Config
 import random
 import Global
 import NALGrammar
-import NALGrammar.Sentence
+import NALGrammar.Sentences
 
 import NARSGUI
 import NARSMemory
@@ -109,7 +109,7 @@ class ItemContainer:
             priority = None
             quality = None
             if isinstance(object, Task):
-                if isinstance( object.sentence, NALGrammar.Sentence.Judgment):
+                if isinstance(object.sentence, NALGrammar.Sentences.Judgment):
                     priority = object.sentence.value.confidence
                 else:
                     priority = 0.95
@@ -117,7 +117,7 @@ class ItemContainer:
             elif isinstance(object, NARSMemory.Concept):
                 priority = 0.990# / object.term.syntactic_complexity
                 quality = 0.500
-            elif isinstance(object, NALGrammar.Sentence.Sentence):
+            elif isinstance(object, NALGrammar.Sentences.Sentence):
                 priority = object.value.confidence
                 quality = 0.500
 
@@ -142,7 +142,7 @@ class ItemContainer:
             key = None
             if isinstance(object, NARSMemory.Concept):
                 key = str(object.term)
-            elif isinstance(object, NALGrammar.Sentence.Sentence):
+            elif isinstance(object, NALGrammar.Sentences.Sentence):
                 key = str(object.stamp.id)
             else:
                 key = str(object)
@@ -552,12 +552,12 @@ class Table(Depq):
         It purges lowest-confidence items when it overflows.
     """
 
-    def __init__(self, item_type=NALGrammar.Sentence.Judgment, capacity=Config.TABLE_DEFAULT_CAPACITY):
+    def __init__(self, item_type=NALGrammar.Sentences.Judgment, capacity=Config.TABLE_DEFAULT_CAPACITY):
         self.item_type = item_type
         self.capacity = capacity
         Depq.__init__(self)
 
-    def put(self, sentence: NALGrammar.Sentence):
+    def put(self, sentence: NALGrammar.Sentences):
         """
             Insert a Sentence into the depq, sorted by confidence.
         """
