@@ -23,35 +23,45 @@ class Global:
     TERM_IMAGE_PLACEHOLDER = NALGrammar.Term.from_string("_")
 
     """
-    ID markers
+        ID markers
     """
     MARKER_ITEM_ID = "ItemID:"  # there are Sentence IDs and Bag Item IDs
     MARKER_SENTENCE_ID = "SentenceID:"
     MARKER_ID_END = ":ID "
 
-    # thread ready boolean
-    thread_ready_gui = False
-    thread_ready_input = False
-
-    # gui booleans
-    gui_use_internal_data = False
-    gui_use_interface = False
-
-    @classmethod
-    def set_paused(cls, paused):
-        """
-            Sets the Global paused parameter and changes the GUI button
-
-            Does nothing if GUI is not enabled
-        """
-        if not cls.gui_use_interface: return
-        cls.paused = paused
-        if cls.paused:
-            NARSGUI.NARSGUI.gui_play_pause_button.config(text="PLAY")
-        else:
-            NARSGUI.NARSGUI.gui_play_pause_button.config(text="PAUSE")
+    """
+        GUI
+    """
+    gui_use_internal_data = True
+    gui_use_interface = True
+    NARS_object_pipe = None
+    NARS_string_pipe = None
 
     @classmethod
     def get_current_cycle_number(cls):
         return cls.NARS.memory.current_cycle_number
+
+    @classmethod
+    def print_to_output(cls, msg, data_structure=None):
+        cls.NARS_string_pipe.send(("print", msg, str(data_structure)))
+
+    @classmethod
+    def clear_output_gui(cls, data_structure=None):
+        cls.NARS_string_pipe.send(("clear", "", str(data_structure)))
+
+    @classmethod
+    def remove_from_output(cls, msg, data_structure=None):
+        """
+            Remove a message from an output GUI box
+        """
+        cls.NARS_string_pipe.send(("remove", msg, str(data_structure)))
+
+    @classmethod
+    def set_paused(cls, paused):
+        """
+            Set global paused variable and GUI
+        """
+        cls.paused = paused
+        cls.NARS_string_pipe.send(("paused", paused, "guibox"))
+
 

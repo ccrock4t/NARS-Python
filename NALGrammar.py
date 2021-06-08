@@ -1,4 +1,7 @@
 import enum
+
+from PIL import Image
+
 import Config
 import Global
 import NALInferenceRules
@@ -38,9 +41,16 @@ class Array():
         for i in range(self.num_of_dimensions):
             self.offsets.append((dimensions[i] - 1) / 2.0)
 
+        # prepare to store an image if necessary
+        if isinstance(self, Judgment) or isinstance(self, Goal):
+            self.image = [] # image_array is used to visualize an array of judgments/goals activations
+        else:
+            self.image = None
+
+
         # create the array
         z_array = []
-        z_image_array = []
+        z_image_array = [] # and the image
         for z in np.linspace(-1.0, 1.0, num=dimensions[2]):
             y_array = []
             y_image_array = []
@@ -89,15 +99,23 @@ class Array():
                         element = Judgment(statement=statement_element,
                                            value=truth_value,
                                            occurrence_time=occurrence_time)
+                        x_image_array.append(truth_value.frequency * 255)
+                        self.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
                     elif isinstance(self, Question):
                         statement_element: StatementTerm = self.statement[formatted_indices]  # get atomic array element
                         element = Question(statement=statement_element)
+                        self.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
                     else:
                         element = ArrayTermElementTerm(array_term=self, indices=formatted_indices)
                     x_array.append(element)
+                if self.image is not None: y_image_array.append(x_image_array)
                 y_array.append(np.array(x_array))
 
             z_array.append(np.array(y_array))
+            if self.image is not None: z_image_array.append(y_image_array)
+        if self.image is not None:
+            if len(z_image_array) == 1: z_image_array = z_image_array[0]
+            self.image = z_image_array # create PIL image from array
 
         self.array = np.array(z_array)
 

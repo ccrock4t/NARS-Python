@@ -49,7 +49,7 @@ class ItemContainer:
         self.item_lookup_dict[item.key] = item
 
         if Global.Global.gui_use_internal_data:
-            NARSGUI.NARSGUI.print_to_output(str(item), data_structure=self)
+            Global.Global.print_to_output(str(item), data_structure=self)
 
     def _take_from_lookup_dict(self, key):
         """
@@ -62,7 +62,7 @@ class ItemContainer:
         item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
 
         if Global.Global.gui_use_internal_data:
-            NARSGUI.NARSGUI.remove_from_output(str(item), data_structure=self)
+            Global.Global.remove_from_output(str(item), data_structure=self)
 
         return item
 

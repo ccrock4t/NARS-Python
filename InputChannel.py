@@ -20,17 +20,24 @@ import NARSGUI
 input_queue = queue.Queue()
 vision_sensor_keyword = "vision:"
 
+def get_user_input():
+    userinput = ""
+    while userinput != "exit":
+        userinput = input("")
+        add_input_string(userinput)
+
+
 def add_input_string(input_string: str):
     input_string = input_string.replace(" ", "")  # remove all spaces
     try:
         NARS = Global.Global.NARS
         if input_string == "count":
-            NARSGUI.NARSGUI.print_to_output(
+            Global.Global.print_to_output(
                 "Memory count (concepts in memory): " + str(len(NARS.memory)))
-            NARSGUI.NARSGUI.print_to_output(
+            Global.Global.print_to_output(
                 "Buffer count (tasks in buffer): " + str(len(NARS.experience_task_buffer)))
         elif input_string == "cycle":
-            NARSGUI.NARSGUI.print_to_output("Current cycle: " + str(Global.Global.get_current_cycle_number()))
+            Global.Global.print_to_output("Current cycle: " + str(Global.Global.get_current_cycle_number()))
         elif input_string == "save":
             NARS.save_memory_to_disk()
         elif input_string == "load":
@@ -38,7 +45,7 @@ def add_input_string(input_string: str):
         elif input_string == "load_input":
             load_input()
         else:
-            while NARS is None:
+            while Global.Global.NARS is None:
                 print("Waiting for NARS to start up...")
                 time.sleep(1.0)
 
@@ -50,7 +57,7 @@ def add_input_string(input_string: str):
                 sentence = NALGrammar.Sentence.new_sentence_from_string(input_string)
             add_input_sentence(sentence)
     except AssertionError as msg:
-        NARSGUI.NARSGUI.print_to_output("INPUT REJECTED: " + str(msg))
+        Global.Global.print_to_output("INPUT REJECTED: " + str(msg))
 
 def add_input_sentence(sentence: NALGrammar.Sentence):
     """
@@ -74,7 +81,7 @@ def process_sentence(sentence: NALGrammar.Sentence):
         Given a Sentence, ingest it into NARS' experience buffer
         :param sentence:
     """
-    NARSGUI.NARSGUI.print_to_output("IN: " + sentence.get_formatted_string())
+    Global.Global.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Task(sentence, is_input_task=True)
 
@@ -91,12 +98,12 @@ def load_input(filename="input.nal"):
     """
     try:
         with open(filename, "r") as f:
-            NARSGUI.NARSGUI.print_to_output("LOADING INPUT FILE: " + filename)
+            Global.Global.print_to_output("LOADING INPUT FILE: " + filename)
             for line in f.readlines():
                 add_input_string(line)
-            NARSGUI.NARSGUI.print_to_output("LOAD INPUT SUCCESS")
+            Global.Global.print_to_output("LOAD INPUT SUCCESS")
     except:
-        NARSGUI.NARSGUI.print_to_output("LOAD INPUT FAIL")
+        Global.Global.print_to_output("LOAD INPUT FAIL")
 
 def is_sensory_input_string(input_string):
     return input_string[0:len(vision_sensor_keyword)] == vision_sensor_keyword

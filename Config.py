@@ -19,6 +19,11 @@ NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = 10 # The number 
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number of times to look for a semantically related belief to interact with
 
 """
+    GUI
+"""
+ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = True # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
+
+"""
     Bags
 """
 BAG_DEFAULT_CAPACITY = 5000 # default for how many items can fit in a bag

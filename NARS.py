@@ -1,5 +1,6 @@
 import pickle
 import random
+import threading
 import time
 
 import Config
@@ -36,9 +37,9 @@ class NARS:
             Save the NARS Memory instance to disk
         """
         with open(filename, "wb") as f:
-            NARSGUI.NARSGUI.print_to_output("SAVING SYSTEM MEMORY TO FILE: " + filename)
+            Global.Global.print_to_output("SAVING SYSTEM MEMORY TO FILE: " + filename)
             pickle.dump(self.memory, f, pickle.HIGHEST_PROTOCOL)
-            NARSGUI.NARSGUI.print_to_output("SAVE MEMORY SUCCESS")
+            Global.Global.print_to_output("SAVE MEMORY SUCCESS")
 
     def load_memory_from_disk(self, filename="memory.nars"):
         """
@@ -47,28 +48,29 @@ class NARS:
         """
         try:
             with open(filename, "rb") as f:
-                NARSGUI.NARSGUI.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
+                Global.Global.print_to_output("LOADING SYSTEM MEMORY FILE: " + filename)
                 # load memory from file
                 self.memory = pickle.load(f)
                 # Print memory contents to internal data GUI
                 if Global.Global.gui_use_internal_data:
-                    NARSGUI.NARSGUI.clear_output_gui(data_structure=self.memory.concepts_bag)
+                    Global.Global.clear_output_gui(data_structure=self.memory.concepts_bag)
                     for item in self.memory.concepts_bag:
                         if item not in self.memory.concepts_bag:
-                            NARSGUI.NARSGUI.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
+                            Global.Global.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
                 if Global.Global.gui_use_interface:
                     NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
 
-                NARSGUI.NARSGUI.print_to_output("LOAD MEMORY SUCCESS")
+                Global.Global.print_to_output("LOAD MEMORY SUCCESS")
         except:
-            NARSGUI.NARSGUI.print_to_output("LOAD MEMORY FAIL")
+            Global.Global.print_to_output("LOAD MEMORY FAIL")
 
     def run(self):
         """
             Infinite loop of working cycles
         """
         while True:
+            self.handle_gui_pipes()
             # global parameters
             if Global.Global.paused:
                 time.sleep(0.2)
@@ -79,13 +81,51 @@ class NARS:
 
             self.do_working_cycle()
 
+    def handle_gui_pipes(self):
+        while Global.Global.NARS_object_pipe.poll():
+            # for blocking communication only, when the sender expects a result.
+            # check for message request from GUI
+            (command, msg, data_structure_name) = Global.Global.NARS_object_pipe.recv()
+            if command == "getitem":
+                key = msg
+                data_structure = None
+                if data_structure_name == str(self.experience_task_buffer):
+                    data_structure = self.experience_task_buffer
+                elif data_structure_name == str(self.event_buffer):
+                    data_structure = self.event_buffer
+                elif data_structure_name == str(self.memory.concepts_bag):
+                    data_structure = self.memory.concepts_bag
+                if data_structure is not None:
+                    item = None
+                    while item is None:
+                        item = data_structure.peek(key)
+                    Global.Global.NARS_object_pipe.send(item)
+
+        while Global.Global.NARS_string_pipe.poll():
+            # this pipe can hold as many tasks as needed
+            (command, msg) = Global.Global.NARS_string_pipe.recv()
+
+            if command == "userinput":
+                if InputChannel.is_sensory_input_string(msg):
+                    # don't split by lines, this is an array input
+                    InputChannel.add_input_string(msg)
+                else:
+                    # treat each line as a separate input
+                    lines = msg.splitlines(False)
+                    for line in lines:
+                        InputChannel.add_input_string(line)
+            elif command == "delay":
+                self.delay = msg
+            elif command == "paused":
+                Global.Global.paused = msg
+
     def do_working_cycle(self):
         """
             Performs 1 working cycle.
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
         if Global.Global.gui_use_interface:
-            NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
+            Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None))
 
         InputChannel.process_next_pending_sentence() # process strings coming from input buffer
 
@@ -273,7 +313,7 @@ class NARS:
             # Answer the question
             #
             if task.is_from_input and task.needs_to_be_answered_in_output:
-                NARSGUI.NARSGUI.print_to_output("OUT: " + best_answer.get_formatted_string())
+                Global.Global.print_to_output("OUT: " + best_answer.get_formatted_string())
                 task.needs_to_be_answered_in_output = False
 
             # do inference between answer and a related belief
@@ -394,6 +434,6 @@ class NARS:
         #todo extract and use args
         # full_operation_term.get_subject_term()
         operation = full_operation_statement.get_predicate_term()
-        NARSGUI.NARSGUI.print_to_output("EXE: ^" + str(operation))
+        Global.Global.print_to_output("EXE: ^" + str(operation))
         operation_event = NALGrammar.Judgment(full_operation_statement, NALGrammar.TruthValue(), occurrence_time=Global.Global.get_current_cycle_number())
         self.event_buffer.put(NARSDataStructures.Task(operation_event))

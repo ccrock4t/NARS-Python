@@ -174,8 +174,8 @@ def intensional_composition():
         :- (M --> (S - P)).
         :- (M --> (P - S)).
     """
-    j1 = NALGrammar.Sentence.new_sentence_from_string("(M --> S). %1.0;0.9%")
-    j2 = NALGrammar.Sentence.new_sentence_from_string("(M --> P). %1.0;0.9%")
+    j1 = NALGrammar.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -319,7 +319,7 @@ def conditional_conjunctional_abduction():
         :- S %1.0;0.45%
     """
     j1 = NALGrammar.Sentence.new_sentence_from_string("((&&,(a-->b),(c-->d))==>(e-->f)). %1.0;0.9%")
-    j2 = NALGrammar.Sentence.new_sentence_from_string("((c-->d) ==> (e-->f)). %1.0;0.9%")
+    j2 = NALGrammar.Sentence.new_sentence_from_string("((c-->d)==>(e-->f)). %1.0;0.9%")
     output_q = run_test(j1, j2)
 
     success_criteria = []
