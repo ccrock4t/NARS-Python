@@ -242,17 +242,45 @@ def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_f
 
 
 
-def ReviseArray(array_to_iterate):
+def ReviseArray(truth_value_array):
     """
-         Performs a truth value function element-wise on the array
-         and revises it into a single truth-value
+         Revises a truth value array into a single truth-value
     """
     final_truth_value = None
-    for (coords), element in np.ndenumerate(array_to_iterate):
+    for (coords), element in np.ndenumerate(truth_value_array):
         if final_truth_value is None:
             final_truth_value = element
         else:
             wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
             wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(element.frequency, element.confidence)
             final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
+    return final_truth_value
+
+def TruthFunctionOnArrayAndRevise(truth_value_array_1, truth_value_array_2, truth_value_function):
+    """
+         Performs a truth value function element-wise on 1 or 2 arrays
+         and simultaneously revises it into a single truth-value.
+
+         Returns the single truth-value
+    """
+    final_truth_value = None
+    for (coords), element in np.ndenumerate(truth_value_array_1):
+        truth_value_1 = truth_value_array_1[coords]
+        if truth_value_array_2 is None:
+            # single truth value
+            truth_value = truth_value_function(truth_value_1.frequency,
+                                                        truth_value_1.confidence)
+        else:
+            truth_value_2 = truth_value_array_2[coords]
+            truth_value = truth_value_function(truth_value_1.frequency,
+                                                        truth_value_1.confidence,
+                                                        truth_value_2.frequency,
+                                                        truth_value_2.confidence)
+        if final_truth_value is None:
+            final_truth_value = truth_value
+        else:
+            wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
+            wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(truth_value.frequency, truth_value.confidence)
+            final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
+
     return final_truth_value
