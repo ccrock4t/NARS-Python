@@ -2,6 +2,8 @@
 
 NARS theory implemented in Python
 
+Build Instructions: `pyinstaller --onefile main.py`
+
 Architecture:
 
 ![alt text](https://raw.githubusercontent.com/ccrock4t/NARS-Python/main/Documentation/Diagram.png)
