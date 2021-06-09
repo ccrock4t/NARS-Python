@@ -51,7 +51,7 @@ class TruthValue(EvidentialValue):
 
     def get_formatted_string(self):
         return str(NALSyntax.StatementSyntax.TruthValMarker.value) \
-               + "{:.2f}".format(self.frequency) \
+               + str(self.frequency) \
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
-               + "{:.2f}".format(self.confidence) \
+               + str(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value)

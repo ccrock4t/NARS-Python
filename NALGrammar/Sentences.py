@@ -8,6 +8,7 @@ from NALGrammar.Terms import StatementTerm
 
 from NALGrammar.Values import TruthValue, DesireValue
 import NALInferenceRules
+import numpy as np
 
 """
     Author: Christian Hahm
@@ -120,19 +121,11 @@ class Sentence(Array):
                 conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
             truth_values = None
             if statement.is_array:
-                dims = list(statement.get_dimensions())
-                while len(dims) < 3:
-                    dims.append(1)
-                truth_values = []
-                for z in range(dims[2]):
-                    layer = []
-                    for y in range(dims[1]):
-                        row = []
-                        for x in range(dims[0]):
-                            element = TruthValue(freq, conf)
-                            row.append(element)
-                        layer.append(row)
-                    truth_values.append(layer)
+                def create_truth_value_array(*coord_vars):
+                    return TruthValue(freq, conf)
+
+                func_vectorized = np.vectorize(create_truth_value_array)
+                truth_values = np.fromfunction(function=func_vectorized, shape=statement.dim_lengths)
 
             sentence = Judgment(statement, (TruthValue(freq, conf),truth_values))
         elif punctuation == NALSyntax.Punctuation.Question:

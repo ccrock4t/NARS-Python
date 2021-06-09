@@ -147,6 +147,14 @@ def F_Comparison(f1, c1, f2, c2):
     f3, c3 = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.Values.TruthValue(f3, c3)
 
+def F_Array_Element_Comparison(f1, c1, f2, c2):
+    """
+        :return: F_array_com: Truth-Value (f,c)
+    """
+    # compute values of combined evidence
+    f3 = ExtendedBooleanOperators.bnot(abs(f1-f2))
+    c3 = ExtendedBooleanOperators.band(c1, c2)
+    return NALGrammar.Values.TruthValue(f3, c3)
 
 def F_Intersection(f1, c1, f2, c2):
     """
@@ -264,6 +272,7 @@ def TruthFunctionOnArrayAndRevise(truth_value_array_1, truth_value_array_2, trut
          Returns the single truth-value
     """
     final_truth_value = None
+    final_truth_value_array = np.empty(shape=truth_value_array_1.shape,dtype=NALGrammar.Values.TruthValue)
     for (coords), element in np.ndenumerate(truth_value_array_1):
         truth_value_1 = truth_value_array_1[coords]
         if truth_value_array_2 is None:
@@ -276,6 +285,7 @@ def TruthFunctionOnArrayAndRevise(truth_value_array_1, truth_value_array_2, trut
                                                         truth_value_1.confidence,
                                                         truth_value_2.frequency,
                                                         truth_value_2.confidence)
+        final_truth_value_array[coords] = truth_value
         if final_truth_value is None:
             final_truth_value = truth_value
         else:
@@ -283,4 +293,4 @@ def TruthFunctionOnArrayAndRevise(truth_value_array_1, truth_value_array_2, trut
             wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(truth_value.frequency, truth_value.confidence)
             final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
 
-    return final_truth_value
+    return final_truth_value,final_truth_value_array

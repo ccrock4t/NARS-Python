@@ -254,12 +254,12 @@ def Induction(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                       j1.statement.get_predicate_term(), j1.statement.get_copula())
 
-    if isinstance(j1, NALGrammar.Sentences.Judgment):
+    if isinstance(j1, NALGrammar.Sentences.Judgment) and isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Induction(f1, c1, f2, c2)
         result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Sentences.Question):
+    elif isinstance(j1, NALGrammar.Sentences.Question) or isinstance(j2, NALGrammar.Sentences.Question):
         result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -352,7 +352,9 @@ def Comparison(j1, j2):
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truths = None
         if j1.is_array and j2.is_array:
-            result_truth = TruthValueFunctions.TruthFunctionOnArrayAndRevise(j1.truth_values, j2.truth_values,truth_value_function=TruthValueFunctions.F_Comparison)
+            result_truth, result_truths = TruthValueFunctions.TruthFunctionOnArrayAndRevise(j1.truth_values,
+                                                                                            j2.truth_values,
+                                                                                            truth_value_function=TruthValueFunctions.F_Array_Element_Comparison)
         else:
             result_truths = None
             result_truth = TruthValueFunctions.F_Comparison(f1, c1, f2, c2)

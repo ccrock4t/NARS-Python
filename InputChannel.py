@@ -218,14 +218,6 @@ def process_visual_sensory_input(input_string):
                                                     predicate_term=predicate_term,
                                                     copula=NALSyntax.Copula.Inheritance)
 
-    dims = 0
-    if z_length == 1:
-        if y_length == 1:
-            dims = 1
-        else:
-            dims = 2
-    else:
-        dims = 3
 
     def create_truth_value_array(*coord_vars):
         coords = tuple([int(var) for var in coord_vars])
@@ -239,7 +231,7 @@ def process_visual_sensory_input(input_string):
         c = 0
         for coord in coords:
             c += (1.0 - abs(coord))
-        c /= dims
+        c /= len(dim_lengths)
 
         f = pixel_value / 255.0
         if c >= 1:

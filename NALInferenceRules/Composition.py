@@ -262,12 +262,12 @@ def ExtensionalDifference(j1, j2):
                                                       compound_term,
                                                       NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 
-    if isinstance(j1, NALGrammar.Sentences.Judgment):
+    if isinstance(j1, NALGrammar.Sentences.Judgment) and isinstance(j2, NALGrammar.Sentences.Judgment):
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth = TruthValueFunctions.F_Difference(f1, c1, f2, c2)
         result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Sentences.Question):
+    elif isinstance(j1, NALGrammar.Sentences.Question) or isinstance(j2, NALGrammar.Sentences.Judgment):
         result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
