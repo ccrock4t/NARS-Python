@@ -9,6 +9,7 @@ import numpy as np
 
 import Global
 import tkinter as tk
+import numpy as np
 """
     GUI code
     Runs on its own separate process, and communicate with the NARS process using commands.
@@ -458,6 +459,7 @@ class NARSGUI:
                 """
                     Array - Draw entire image (faster)
                 """
+                image_array = image_array.T
                 # create image frame
                 image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
                                        name="array image frame")
