@@ -86,9 +86,8 @@ class NARS:
         while Global.Global.NARS_object_pipe.poll():
             # for blocking communication only, when the sender expects a result.
             # check for message request from GUI
-            (command, msg, data_structure_name) = Global.Global.NARS_object_pipe.recv()
+            (command, key, data_structure_name) = Global.Global.NARS_object_pipe.recv()
             if command == "getitem":
-                key = msg
                 data_structure = None
                 if data_structure_name == str(self.experience_task_buffer):
                     data_structure = self.experience_task_buffer
@@ -99,26 +98,42 @@ class NARS:
                 if data_structure is not None:
                     item = None
                     while item is None:
-                        item = data_structure.peek(key)
-                    Global.Global.NARS_object_pipe.send(item)
+                        item: NARSDataStructures.ItemContainer.Item = data_structure.peek_from_item_archive(key)
+                    Global.Global.NARS_object_pipe.send(item.get_gui_info())
+            elif command == "getsentence":
+                sentence_string = key
+                start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
+                end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
+                statement_string = sentence_string[start_idx:end_idx+1].replace(" ","")
+                statement_term = NALGrammar.Terms.Term.from_string(statement_string)
+                concept = self.memory.peek_concept(statement_term)
+                if concept is None:
+                    Global.Global.NARS_object_pipe.send(None)
+                else:
+                    for belief_tuple in concept.belief_table:
+                        belief_sentence = belief_tuple[0]
+                        if sentence_string == str(belief_sentence):
+                            Global.Global.NARS_object_pipe.send(belief_sentence.get_gui_info())
+                            break
+
 
         while Global.Global.NARS_string_pipe.poll():
             # this pipe can hold as many tasks as needed
-            (command, msg) = Global.Global.NARS_string_pipe.recv()
+            (command, key) = Global.Global.NARS_string_pipe.recv()
 
             if command == "userinput":
-                if InputChannel.is_sensory_input_string(msg):
+                if InputChannel.is_sensory_input_string(key):
                     # don't split by lines, this is an array input
-                    InputChannel.add_input_string(msg)
+                    InputChannel.add_input_string(key)
                 else:
                     # treat each line as a separate input
-                    lines = msg.splitlines(False)
+                    lines = key.splitlines(False)
                     for line in lines:
                         InputChannel.add_input_string(line)
             elif command == "delay":
-                self.delay = msg
+                self.delay = key
             elif command == "paused":
-                Global.Global.paused = msg
+                Global.Global.paused = key
 
     def do_working_cycle(self):
         """
@@ -232,11 +247,12 @@ class NARS:
 
         if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
             self.process_judgment_task(task)
-        elif isinstance(task.sentence, NALGrammar.Sentences.Question) \
-                or NALGrammar.VariableTerm.QUERY_SYM in str(task.sentence.statement):
+        elif isinstance(task.sentence, NALGrammar.Sentences.Question):
             self.process_question_task(task)
         elif isinstance(task.sentence, NALGrammar.Sentences.Goal):
             self.process_goal_task(task)
+
+
 
     def process_judgment_task(self, task: NARSDataStructures.Task):
         """
@@ -422,7 +438,7 @@ class NARS:
             "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         for derived_sentence in derived_sentences:
-            self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+            self.experience_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
     def execute_operation(self, full_operation_statement):
         """
@@ -434,6 +450,6 @@ class NARS:
         # full_operation_term.get_subject_term()
         operation = full_operation_statement.get_predicate_term()
         Global.Global.print_to_output("EXE: ^" + str(operation))
-        operation_event = NALGrammar.Sentences.Judgment(full_operation_statement, NALGrammar.TruthValue(),
+        operation_event = NALGrammar.Sentences.Judgment(full_operation_statement, NALGrammar.Values.TruthValue(),
                                                         occurrence_time=Global.Global.get_current_cycle_number())
         self.event_buffer.put(NARSDataStructures.Task(operation_event))

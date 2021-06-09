@@ -149,8 +149,9 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                         j2=M-->S
                     # Induction
                     """
-                    derived_sentence = NALInferenceRules.Syllogistic.Induction(j1, j2)  # S-->P and P-->S
+                    derived_sentence = NALInferenceRules.Syllogistic.Induction(j1, j2)  # S-->P
                     stamp_and_print_inference_rule(inference_rule="Induction", sentence=derived_sentence)
+                    add_to_derived_sentences(derived_sentence, all_derived_sentences)
 
                     """
                     # Swapped Induction

@@ -66,8 +66,8 @@ def revision():
 
         :- (S-->P). %1.0;0.81%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(S-->P). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(S-->P). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -87,8 +87,8 @@ def first_order_deduction():
 
         :- (S-->P). %1.0;0.81%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(S-->M). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -108,8 +108,8 @@ def first_order_induction():
         :- (S-->P). %1.0;0.45%
         :- (P-->S). %1.0;0.45%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(M-->S). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(M-->P). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -130,8 +130,8 @@ def first_order_abduction():
         :- (S-->P). %1.0;0.45%
         :- (P-->S). %1.0;0.45%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(P-->M). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -151,8 +151,8 @@ def first_order_analogy():
 
         :- (chimp-->human). %1.0;0.81%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(chimp-->monkey). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(human<->monkey). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(chimp-->monkey). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(human<->monkey). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -174,8 +174,8 @@ def intensional_composition():
         :- (M --> (S - P)).
         :- (M --> (P - S)).
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(M-->S). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(M-->P). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(M-->S). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(M-->P). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -200,8 +200,8 @@ def extensional_composition():
         :- ((S ~ P) --> M).
         :- ((P ~ S) --> M).
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(S-->M). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(P-->M). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(S-->M). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(P-->M). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -240,8 +240,8 @@ def conditional_analogy():
 
         :- P %1.0;0.81%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(a-->b). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("((a-->b)<=>(c-->d)). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(a-->b). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("((a-->b)<=>(c-->d)). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -259,8 +259,8 @@ def conditional_deduction():
 
         :- P %1.0;0.81%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(a-->b). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(a-->b). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -278,8 +278,8 @@ def conditional_abduction():
 
         :- S %1.0;0.81%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(c-->d). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(c-->d). %1.0;0.9%")
 
     output_q = run_test(j1,j2)
 
@@ -299,8 +299,8 @@ def conditional_conjunctional_deduction():
     """
 
     # test removal of second element
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("((&&,(a-->b),(c-->d))==>(e-->f)). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("(c-->d). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("((&&,(a-->b),(c-->d))==>(e-->f)). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(c-->d). %1.0;0.9%")
     output_q = run_test(j1, j2)
 
     success_criteria = []
@@ -318,8 +318,8 @@ def conditional_conjunctional_abduction():
 
         :- S %1.0;0.45%
     """
-    j1 = NALGrammar.Sentences.Sentence.new_sentence_from_string("((&&,(a-->b),(c-->d))==>(e-->f)). %1.0;0.9%")
-    j2 = NALGrammar.Sentences.Sentence.new_sentence_from_string("((c-->d)==>(e-->f)). %1.0;0.9%")
+    j1 = NALGrammar.Sentences.new_sentence_from_string("((&&,(a-->b),(c-->d))==>(e-->f)). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("((c-->d)==>(e-->f)). %1.0;0.9%")
     output_q = run_test(j1, j2)
 
     success_criteria = []

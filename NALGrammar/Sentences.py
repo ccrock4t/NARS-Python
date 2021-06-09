@@ -74,86 +74,23 @@ class Sentence(Array):
         if self.value is not None: string = string + " " + self.value.get_formatted_string()
         return string
 
-    @classmethod
-    def new_sentence_from_string(cls, sentence_string: str):
-        """
-            :param sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
-
-            :returns Sentence parsed from sentence_string
-        """
-        # Find statement start and statement end
-        start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
-        assert (start_idx != -1), "Statement start character " + NALSyntax.StatementSyntax.Start.value + " not found."
-
-        end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
-        assert (end_idx != -1), "Statement end character " + NALSyntax.StatementSyntax.End.value + " not found."
-
-        # Find sentence punctuation
-        punctuation_idx = end_idx + 1
-        assert (punctuation_idx < len(sentence_string)), "No punctuation found."
-        punctuation_str = sentence_string[punctuation_idx]
-        punctuation = NALSyntax.Punctuation.get_punctuation_from_string(punctuation_str)
-        assert (punctuation is not None), punctuation_str + " is not punctuation."
-
-        # Find Truth Value, if it exists
-        start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
-        middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value, punctuation_idx)
-        end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
-
-        truth_value_found = not (start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx)
-        freq = None
-        conf = None
-        if truth_value_found:
-            # Parse truth value from string
-            freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
-            conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
-
-        # create the statement
-        statement_string = sentence_string[start_idx:end_idx + 1]
-
-        # create standard statement from string
-        statement = StatementTerm.from_string(statement_string)
-
-        if punctuation == NALSyntax.Punctuation.Judgment:
-            if freq is None:
-                # No truth value, use default truth value
-                freq = Config.DEFAULT_JUDGMENT_FREQUENCY
-                conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
-            truth_values = None
-            if statement.is_array:
-                def create_truth_value_array(*coord_vars):
-                    return TruthValue(freq, conf)
-
-                func_vectorized = np.vectorize(create_truth_value_array)
-                truth_values = np.fromfunction(function=func_vectorized, shape=statement.dim_lengths)
-
-            sentence = Judgment(statement, (TruthValue(freq, conf),truth_values))
-        elif punctuation == NALSyntax.Punctuation.Question:
-            sentence = Question(statement)
-        elif punctuation == NALSyntax.Punctuation.Goal:
-            if freq is None:
-                # No truth value, use default truth value
-                freq = Config.DEFAULT_GOAL_FREQUENCY
-                conf = Config.DEFAULT_GOAL_CONFIDENCE
-            sentence = Goal(statement, DesireValue(freq,conf))
-        else:
-            assert False,"Error: No Punctuation!"
-
-        # Find Tense, if it exists
-        # otherwise mark it as eternal
-        tense = NALSyntax.Tense.Eternal
-        for t in NALSyntax.Tense:
-            if t != NALSyntax.Tense.Eternal:
-                tense_idx = sentence_string.find(t.value)
-                if tense_idx != -1:  # found a tense
-                    tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
-                    break
-
-        if tense == NALSyntax.Tense.Present:
-            #Mark present tense event as happening right now!
-            sentence.stamp.occurrence_time = Global.Global.get_current_cycle_number()
-
-        return sentence
+    def get_gui_info(self):
+        dict = {}
+        dict["String"] = self.get_formatted_string()
+        dict["StringNoID"] = self.get_formatted_string_no_id()
+        dict["ID"] = str(self.stamp.id)
+        dict["OccurrenceTime"] = self.stamp.occurrence_time
+        dict["SentenceType"] = type(self).__name__
+        evidential_base_iterator = iter(self.stamp.evidential_base)
+        next(
+            evidential_base_iterator)  # skip the first element, which is just the sentence's ID so it' already displayed
+        dict["ListEvidentialBase"] = [str(evidence) for evidence in evidential_base_iterator]
+        dict["ListInteractedSentences"] = [str(interactedsentence) for interactedsentence in
+                                           self.stamp.interacted_sentences]
+        dict["IsArray"] = self.is_array
+        dict["ArrayImage"] = self.image_array if self.is_array and not isinstance(self,Question) else None
+        dict["ArrayElementStrings"] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
+        return dict
 
 
 class Judgment(Sentence):
@@ -289,3 +226,83 @@ def may_interact(j1,j2):
     if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
     if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
     return True
+
+def new_sentence_from_string(sentence_string: str):
+    """
+        :param sentence_string - String of NAL syntax <term copula term>punctuation %frequency;confidence%
+
+        :returns Sentence parsed from sentence_string
+    """
+    # Find statement start and statement end
+    start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
+    assert (start_idx != -1), "Statement start character " + NALSyntax.StatementSyntax.Start.value + " not found."
+
+    end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
+    assert (end_idx != -1), "Statement end character " + NALSyntax.StatementSyntax.End.value + " not found."
+
+    # Find sentence punctuation
+    punctuation_idx = end_idx + 1
+    assert (punctuation_idx < len(sentence_string)), "No punctuation found."
+    punctuation_str = sentence_string[punctuation_idx]
+    punctuation = NALSyntax.Punctuation.get_punctuation_from_string(punctuation_str)
+    assert (punctuation is not None), punctuation_str + " is not punctuation."
+
+    # Find Truth Value, if it exists
+    start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
+    middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value, punctuation_idx)
+    end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
+
+    truth_value_found = not (start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx)
+    freq = None
+    conf = None
+    if truth_value_found:
+        # Parse truth value from string
+        freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
+        conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
+
+    # create the statement
+    statement_string = sentence_string[start_idx:end_idx + 1]
+
+    # create standard statement from string
+    statement = StatementTerm.from_string(statement_string)
+
+    if punctuation == NALSyntax.Punctuation.Judgment:
+        if freq is None:
+            # No truth value, use default truth value
+            freq = Config.DEFAULT_JUDGMENT_FREQUENCY
+            conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
+        truth_values = None
+        if statement.is_array:
+            def create_truth_value_array(*coord_vars):
+                return TruthValue(freq, conf)
+
+            func_vectorized = np.vectorize(create_truth_value_array)
+            truth_values = np.fromfunction(function=func_vectorized, shape=statement.dim_lengths)
+
+        sentence = Judgment(statement, (TruthValue(freq, conf),truth_values))
+    elif punctuation == NALSyntax.Punctuation.Question:
+        sentence = Question(statement)
+    elif punctuation == NALSyntax.Punctuation.Goal:
+        if freq is None:
+            # No truth value, use default truth value
+            freq = Config.DEFAULT_GOAL_FREQUENCY
+            conf = Config.DEFAULT_GOAL_CONFIDENCE
+        sentence = Goal(statement, DesireValue(freq,conf))
+    else:
+        assert False,"Error: No Punctuation!"
+
+    # Find Tense, if it exists
+    # otherwise mark it as eternal
+    tense = NALSyntax.Tense.Eternal
+    for t in NALSyntax.Tense:
+        if t != NALSyntax.Tense.Eternal:
+            tense_idx = sentence_string.find(t.value)
+            if tense_idx != -1:  # found a tense
+                tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
+                break
+
+    if tense == NALSyntax.Tense.Present:
+        #Mark present tense event as happening right now!
+        sentence.stamp.occurrence_time = Global.Global.get_current_cycle_number()
+
+    return sentence

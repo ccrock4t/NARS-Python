@@ -55,7 +55,7 @@ def add_input_string(input_string: str):
                 sentence = process_visual_sensory_input(input_string[len(vision_sensor_keyword):])
             else:
                 # regular Narsese input
-                sentence = NALGrammar.Sentences.Sentence.new_sentence_from_string(input_string)
+                sentence = NALGrammar.Sentences.new_sentence_from_string(input_string)
             add_input_sentence(sentence)
     except AssertionError as msg:
         Global.Global.print_to_output("INPUT REJECTED: " + str(msg))

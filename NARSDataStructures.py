@@ -22,6 +22,8 @@ class ItemContainer:
 
         Examples of Item Containers include Bag and Buffer.
     """
+    item_archive = {}
+
     def __init__(self, item_type, capacity):
         self.item_type = item_type  # the class of the objects this Container stores (be wrapped in Item)
         self.item_lookup_dict = dict()  # for accessing Item by key
@@ -52,6 +54,7 @@ class ItemContainer:
 
         if Global.Global.gui_use_internal_data:
             Global.Global.print_to_output(str(item), data_structure=self)
+            ItemContainer.item_archive[item.key] = item
 
     def _take_from_lookup_dict(self, key):
         """
@@ -78,6 +81,11 @@ class ItemContainer:
     def get_next_item_id(self) -> int:
         self.next_item_id += 1
         return self.next_item_id - 1
+
+    @classmethod
+    def peek_from_item_archive(cls,key):
+        if key not in ItemContainer.item_archive: return None
+        return ItemContainer.item_archive[key]
 
     def peek_using_key(self,key=None):
         """
@@ -176,6 +184,30 @@ class ItemContainer:
             if new_priority < self.budget.quality: return # priority can't go below quality
             self.budget.priority = round(new_priority, 3)
 
+        def get_gui_info(self):
+            dict = {}
+            dict["Key"] = self.key
+            dict["ClassName"] = type(self.object).__name__
+            dict["ObjectString"] = str(self.object)
+            dict["TermType"] = type(self.object.get_term()).__name__
+            if isinstance(self.object, NARSMemory.Concept):
+                dict["ListBeliefs"] = [str(belief[0]) for belief in self.object.belief_table]
+                dict["ListDesires"] = [str(desire[0]) for desire in self.object.desire_table]
+                dict["ListTermLinks"] = [str(termlink) for termlink in self.object.term_links]
+                dict["ListPredictionLinks"] = [str(predictionlink) for predictionlink in self.object.prediction_links]
+                dict["ListExplanationLinks"] = [str(explanationlink) for explanationlink in self.object.explanation_links]
+                dict["CapacityBeliefs"] = str(self.object.belief_table.capacity)
+                dict["CapacityDesires"] = str(self.object.desire_table.capacity)
+                dict["CapacityTermLinks"] = str(self.object.term_links.capacity)
+                dict["CapacityPredictionLinks"] = str(self.object.prediction_links.capacity)
+                dict["CapacityExplanationLinks"] = str(self.object.explanation_links.capacity)
+            elif isinstance(self.object, Task):
+                dict["SentenceString"] = str(self.object.sentence)
+                dict["ListEvidentialBase"] = [str(evidence) for evidence in self.object.sentence.stamp.evidential_base]
+                dict["ListInteractedSentences"] = [str(interactedsentence) for interactedsentence in self.object.sentence.stamp.interacted_sentences]
+
+            return dict
+
         class Budget:
             """
                 Budget deciding the proportion of the system's time-space resources to allocate to a Bag Item.
@@ -185,6 +217,7 @@ class ItemContainer:
             def __init__(self, priority=0.99, quality=0.01):
                 self.priority = priority
                 self.quality = quality
+
 
 class Bag(ItemContainer):
     """
@@ -462,9 +495,6 @@ class Buffer(ItemContainer, Depq):
 
             :returns Item that was purged if the inserted item caused an overflow
         """
-        if not isinstance(item,ItemContainer.Item):
-            item = ItemContainer.Item(item, self.get_next_item_id())
-
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
         Depq._insert_object(self, item, item.budget.priority) # Depq

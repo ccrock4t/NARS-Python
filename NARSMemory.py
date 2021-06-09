@@ -73,6 +73,10 @@ class Memory:
               :return Concept named by the term
           """
         if isinstance(term, NALGrammar.Terms.VariableTerm): return None #todo created concepts for closed variable terms
+        if isinstance(term,NALGrammar.Terms.ArrayTermElementTerm) \
+                or (isinstance(term,NALGrammar.Terms.StatementTerm) \
+                and isinstance(term.get_subject_term(),NALGrammar.Terms.CompoundTerm)
+                and isinstance(term.get_subject_term().subterms[0], NALGrammar.Terms.ArrayTermElementTerm)): return None  # todo created concepts for closed variable terms
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
         concept_item: NARSDataStructures.ItemContainer.Item = self.concepts_bag.peek(concept_key)
         if concept_item is not None:

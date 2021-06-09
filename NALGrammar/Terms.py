@@ -77,7 +77,10 @@ class Term:
             # set term
             term = CompoundTerm.from_string(term_string)
         elif term_string[0] == NALSyntax.TermConnector.Array.value:
-            term = ArrayTerm.from_string(term_string)
+            if NALSyntax.StatementSyntax.ArrayElementIndexStart.value in term_string:
+                term = ArrayTermElementTerm.from_string(term_string)
+            else:
+                term = ArrayTerm.from_string(term_string)
         elif term_string[0] == VariableTerm.VARIABLE_SYM or term_string[0] == VariableTerm.QUERY_SYM:
             # variable term
             dependency_list_start_idx = term_string.find("(")
@@ -517,15 +520,27 @@ class ArrayTermElementTerm(AtomicTerm):
         self.array_term = array_term # the array term of which this is an element
         self.indices = indices
         self.indices_string = ""
-        for idx in indices:
-            self.indices_string += str(idx)
+        for i in range(len(indices)):
+            self.indices_string += str(indices[i])
+            if i != len(indices)-1:
+                #not the final element
+                self.indices_string += ", "
+
     def get_formatted_string(self):
-
-
         return self.array_term.get_formatted_string() \
         + NALSyntax.StatementSyntax.ArrayElementIndexStart.value \
         + self.indices_string \
         + NALSyntax.StatementSyntax.ArrayElementIndexEnd.value
+
+    @classmethod
+    def from_string(cls, term_string):
+        start_indices = term_string.find(NALSyntax.StatementSyntax.ArrayElementIndexStart.value)
+        end_indices = term_string.rfind(NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
+        array_term = ArrayTerm.from_string(term_string[0:start_indices])
+        indices = term_string[start_indices+1:end_indices].replace(" ","").split(",")
+        indices = [float(idx) for idx in indices]
+        return ArrayTermElementTerm(array_term=array_term,indices=indices)
+
 
 def get_top_level_copula(string):
     """

@@ -21,7 +21,7 @@ NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number o
 """
     GUI
 """
-ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = True # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
+ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
 
 """
     Bags

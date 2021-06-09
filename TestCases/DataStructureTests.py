@@ -52,7 +52,7 @@ def test_table_overflow_purge():
     items_added = 0
     max_capacity = NARS.Config.TABLE_DEFAULT_CAPACITY
     for i in range(0, max_capacity + 5):
-        test_data_structure.put(NALGrammar.Sentences.Sentence.new_sentence_from_string("(a-->b)."))
+        test_data_structure.put(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         items_added += 1
         if items_added <= max_capacity:
             assert len(test_data_structure) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"
@@ -132,7 +132,7 @@ def test_bag_overflow_purge():
     items_added = 0
     max_capacity = NARS.Config.BAG_DEFAULT_CAPACITY
     for i in range(0, max_capacity + 5):
-        test_data_structure.put_new(NALGrammar.Sentences.Sentence.new_sentence_from_string("(a-->b)."))
+        test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         items_added += 1
         if items_added <= max_capacity:
             assert len(test_data_structure) == items_added,"TEST FAILURE: Length of bag does not equal # of items added"

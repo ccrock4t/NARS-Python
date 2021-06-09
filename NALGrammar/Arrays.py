@@ -7,6 +7,7 @@
 import numpy as np
 
 import Config
+import Global
 import NALGrammar
 import NALSyntax
 
@@ -33,8 +34,11 @@ class Array():
             self.offsets.append((dimensions[i] - 1) / 2.0)
 
         # prepare to store an image if necessary
-        if not Config.ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS and (isinstance(self, NALGrammar.Sentences.Judgment) or isinstance(self, NALGrammar.Sentences.Goal)):
-            self.image_array = np.empty(shape=dimensions) # image_array is used to visualize an array of judgments/goals activations
+        self.element_string_array = None
+        if Global.Global.gui_use_internal_data and (isinstance(self, NALGrammar.Sentences.Judgment) or isinstance(self, NALGrammar.Sentences.Goal)):
+            self.image_array = np.empty(shape=dimensions,dtype=np.uint8) # image_array is used to visualize an array of judgments/goals activations
+            if Config.ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS:
+                self.element_string_array = np.empty(shape=dimensions,dtype=object)
         else:
             self.image_array = None
 
@@ -78,6 +82,8 @@ class Array():
                                                         value=truth_value,
                                                         occurrence_time=occurrence_time)
                 if self_obj.image_array is not None: self_obj.image_array[absolute_indices] = (np.uint8)(truth_value.frequency * 255)
+                if self_obj.element_string_array is not None:
+                    self_obj.element_string_array[absolute_indices] = element.get_formatted_string()
                 self_obj.stamp.evidential_base.merge_sentence_evidential_base_into_self(element)
             elif isinstance(self_obj, NALGrammar.Sentences.Question):
                 statement_element: NALGrammar.Terms.StatementTerm = self_obj.statement[absolute_indices]  # get atomic array element
