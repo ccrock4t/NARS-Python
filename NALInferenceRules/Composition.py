@@ -11,7 +11,7 @@
 """
 import NALGrammar
 import NALSyntax
-from NALInferenceRules import TruthValueFunctions
+from NALInferenceRules import TruthValueFunctions, HelperFunctions
 from NALInferenceRules.HelperFunctions import getevidentialvalues_from2sentences
 
 
@@ -62,7 +62,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
         copula = NALSyntax.Copula.Implication
 
     # Statement
-    result_truth = None
+    result_truth_function = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1: Sentence(T1 --> M < f1, c1 >)
         # j2: Sentence(T2 --> M < f2, c2 >)
@@ -74,9 +74,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                           copula)  # ((T1 | T2) --> M)
 
         if isinstance(j1, NALGrammar.Sentences.Judgment):
-            # Get Truth Value
-            (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = TruthValueFunctions.F_Intersection(f1, c1, f2, c2)
+            result_truth_function = TruthValueFunctions.F_Intersection
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1: Sentence(M --> T1 < f1, c1 >)
@@ -90,20 +88,11 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                           copula)  # (M --> (T1 | T2))
 
         if isinstance(j1, NALGrammar.Sentences.Judgment):
-            # Get Truth Value
-            (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = TruthValueFunctions.F_Union(f1, c1, f2, c2)
+            result_truth_function = TruthValueFunctions.F_Union
+    else:
+        assert False,"ERROR: Invalid inputs to Intensional Intersection"
 
-    if isinstance(j1, NALGrammar.Sentences.Judgment):
-        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Sentences.Question):
-        result = NALGrammar.Sentences.Question(result_statement)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, result_truth_function)
 
 
 def ExtensionalIntersectionOrConjunction(j1, j2):
@@ -152,7 +141,7 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
         connector = NALSyntax.TermConnector.Conjunction
         copula = NALSyntax.Copula.Implication
 
-    result_truth = None
+    result_truth_value = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1: Sentence(T1 --> M < f1, c1 >)
         # j2: Sentence(T2 --> M < f2, c2 >)
@@ -164,9 +153,7 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
                                                           copula)  # ((T1 & T2) --> M)
 
         if isinstance(j1, NALGrammar.Sentences.Judgment):
-            # Get Truth Value
-            (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = TruthValueFunctions.F_Union(f1, c1, f2, c2)
+            result_truth_value = TruthValueFunctions.F_Union
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1: Sentence(M --> T1 < f1, c1 >)
@@ -179,20 +166,11 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
                                                           copula)  # (M --> (T1 & T2))
 
         if isinstance(j1, NALGrammar.Sentences.Judgment):
-            # Get Truth Value
-            (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-            result_truth = TruthValueFunctions.F_Intersection(f1, c1, f2, c2)
+            result_truth_value = TruthValueFunctions.F_Intersection
+    else:
+        assert False, "ERROR: Invalid inputs to Extensional Intersection"
 
-    if isinstance(j1, NALGrammar.Sentences.Judgment):
-        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Sentences.Question):
-        result = NALGrammar.Sentences.Question(result_statement)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, result_truth_value)
 
 
 def IntensionalDifference(j1, j2):
@@ -222,19 +200,7 @@ def IntensionalDifference(j1, j2):
                                                       j1.statement.get_predicate_term(),
                                                       NALSyntax.Copula.Inheritance)  # ((T1 ~ T2) --> M)
 
-    if isinstance(j1, NALGrammar.Sentences.Judgment):
-        # Get Truth Value
-        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = TruthValueFunctions.F_Difference(f1, c1, f2, c2)
-        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Sentences.Question):
-        result = NALGrammar.Sentences.Question(result_statement)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Difference)
 
 
 def ExtensionalDifference(j1, j2):
@@ -262,16 +228,4 @@ def ExtensionalDifference(j1, j2):
                                                       compound_term,
                                                       NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 
-    if isinstance(j1, NALGrammar.Sentences.Judgment) and isinstance(j2, NALGrammar.Sentences.Judgment):
-        # Get Truth Value
-        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = TruthValueFunctions.F_Difference(f1, c1, f2, c2)
-        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
-    elif isinstance(j1, NALGrammar.Sentences.Question) or isinstance(j2, NALGrammar.Sentences.Judgment):
-        result = NALGrammar.Sentences.Question(result_statement)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Difference)

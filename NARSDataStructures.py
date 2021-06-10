@@ -186,25 +186,25 @@ class ItemContainer:
 
         def get_gui_info(self):
             dict = {}
-            dict["Key"] = self.key
-            dict["ClassName"] = type(self.object).__name__
-            dict["ObjectString"] = str(self.object)
-            dict["TermType"] = type(self.object.get_term()).__name__
+            dict[NARSGUI.NARSGUI.KEY_KEY] = self.key
+            dict[NARSGUI.NARSGUI.KEY_CLASS_NAME] = type(self.object).__name__
+            dict[NARSGUI.NARSGUI.KEY_OBJECT_STRING] = str(self.object)
+            dict[NARSGUI.NARSGUI.KEY_TERM_TYPE] = type(self.object.get_term()).__name__
             if isinstance(self.object, NARSMemory.Concept):
-                dict["ListBeliefs"] = [str(belief[0]) for belief in self.object.belief_table]
-                dict["ListDesires"] = [str(desire[0]) for desire in self.object.desire_table]
-                dict["ListTermLinks"] = [str(termlink) for termlink in self.object.term_links]
-                dict["ListPredictionLinks"] = [str(predictionlink) for predictionlink in self.object.prediction_links]
-                dict["ListExplanationLinks"] = [str(explanationlink) for explanationlink in self.object.explanation_links]
-                dict["CapacityBeliefs"] = str(self.object.belief_table.capacity)
-                dict["CapacityDesires"] = str(self.object.desire_table.capacity)
-                dict["CapacityTermLinks"] = str(self.object.term_links.capacity)
-                dict["CapacityPredictionLinks"] = str(self.object.prediction_links.capacity)
-                dict["CapacityExplanationLinks"] = str(self.object.explanation_links.capacity)
+                dict[NARSGUI.NARSGUI.KEY_LIST_BELIEFS] = [str(belief[0]) for belief in self.object.belief_table]
+                dict[NARSGUI.NARSGUI.KEY_LIST_DESIRES] = [str(desire[0]) for desire in self.object.desire_table]
+                dict[NARSGUI.NARSGUI.KEY_LIST_TERM_LINKS] = [str(termlink) for termlink in self.object.term_links]
+                dict[NARSGUI.NARSGUI.KEY_LIST_PREDICTION_LINKS] = [str(predictionlink) for predictionlink in self.object.prediction_links]
+                dict[NARSGUI.NARSGUI.KEY_LIST_EXPLANATION_LINKS] = [str(explanationlink) for explanationlink in self.object.explanation_links]
+                dict[NARSGUI.NARSGUI.KEY_CAPACITY_BELIEFS] = str(self.object.belief_table.capacity)
+                dict[NARSGUI.NARSGUI.KEY_CAPACITY_DESIRES] = str(self.object.desire_table.capacity)
+                dict[NARSGUI.NARSGUI.KEY_CAPACITY_TERM_LINKS] = str(self.object.term_links.capacity)
+                dict[NARSGUI.NARSGUI.KEY_CAPACITY_PREDICTION_LINKS] = str(self.object.prediction_links.capacity)
+                dict[NARSGUI.NARSGUI.KEY_CAPACITY_EXPLANATION_LINKS] = str(self.object.explanation_links.capacity)
             elif isinstance(self.object, Task):
-                dict["SentenceString"] = str(self.object.sentence)
-                dict["ListEvidentialBase"] = [str(evidence) for evidence in self.object.sentence.stamp.evidential_base]
-                dict["ListInteractedSentences"] = [str(interactedsentence) for interactedsentence in self.object.sentence.stamp.interacted_sentences]
+                dict[NARSGUI.NARSGUI.KEY_SENTENCE_STRING] = str(self.object.sentence)
+                dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in self.object.sentence.stamp.evidential_base]
+                dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [str(interactedsentence) for interactedsentence in self.object.sentence.stamp.interacted_sentences]
 
             return dict
 

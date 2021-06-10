@@ -10,6 +10,8 @@ from NALGrammar.Values import TruthValue, DesireValue
 import NALInferenceRules
 import numpy as np
 
+import NARSGUI
+
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -76,20 +78,21 @@ class Sentence(Array):
 
     def get_gui_info(self):
         dict = {}
-        dict["String"] = self.get_formatted_string()
-        dict["StringNoID"] = self.get_formatted_string_no_id()
-        dict["ID"] = str(self.stamp.id)
-        dict["OccurrenceTime"] = self.stamp.occurrence_time
-        dict["SentenceType"] = type(self).__name__
+        dict[NARSGUI.NARSGUI.KEY_STRING] = self.get_formatted_string()
+        dict[NARSGUI.NARSGUI.KEY_STRING_NOID] = self.get_formatted_string_no_id()
+        dict[NARSGUI.NARSGUI.KEY_ID] = str(self.stamp.id)
+        dict[NARSGUI.NARSGUI.KEY_OCCURRENCE_TIME] = self.stamp.occurrence_time
+        dict[NARSGUI.NARSGUI.KEY_SENTENCE_TYPE] = type(self).__name__
         evidential_base_iterator = iter(self.stamp.evidential_base)
         next(
             evidential_base_iterator)  # skip the first element, which is just the sentence's ID so it' already displayed
-        dict["ListEvidentialBase"] = [str(evidence) for evidence in evidential_base_iterator]
-        dict["ListInteractedSentences"] = [str(interactedsentence) for interactedsentence in
+        dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in evidential_base_iterator]
+        dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [str(interactedsentence) for interactedsentence in
                                            self.stamp.interacted_sentences]
-        dict["IsArray"] = self.is_array
-        dict["ArrayImage"] = self.image_array if self.is_array and not isinstance(self,Question) else None
-        dict["ArrayElementStrings"] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
+        dict[NARSGUI.NARSGUI.KEY_IS_ARRAY] = self.is_array
+        dict[NARSGUI.NARSGUI.KEY_ARRAY_IMAGE] = self.image_array if self.is_array and not isinstance(self,Question) else None
+        dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
+        dict[NARSGUI.NARSGUI.KEY_DERIVED_BY] = self.stamp.derived_by
         return dict
 
 

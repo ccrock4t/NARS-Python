@@ -13,6 +13,7 @@ import Global
 import NALGrammar
 import NALSyntax
 from NALInferenceRules import TruthValueFunctions
+from NALInferenceRules.HelperFunctions import create_resultant_sentence_one_premise
 
 
 def Negation(j):
@@ -27,21 +28,8 @@ def Negation(j):
          Returns:
     """
     NALGrammar.assert_sentence(j)
-
     result_statement = NALGrammar.StatementTerm(j.statement, statement_connector=NALSyntax.TermConnector.Negation)
-
-    occurrence_time = j.stamp.occurrence_time
-
-    if isinstance(j, NALGrammar.Judgment):
-        result_truth = TruthValueFunctions.F_Negation(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=occurrence_time)
-    elif isinstance(j, NALGrammar.Question):
-        assert "error"
-
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result.stamp.from_one_premise_inference = True
-
-    return result
+    return create_resultant_sentence_one_premise(j, result_statement, TruthValueFunctions.F_Negation)
 
 
 def Conversion(j):
@@ -68,20 +56,10 @@ def Conversion(j):
                                             j.statement.get_subject_term(),
                                             j.statement.get_copula())
 
-    occurrence_time = j.stamp.occurrence_time
 
-    if isinstance(j, NALGrammar.Judgment):
-        result_truth = TruthValueFunctions.F_Conversion(j.value.frequency, j.value.confidence)
-        truth_values = TruthValueFunctions.TruthFunctionOnArray(j.truth_values,None,truth_value_function=TruthValueFunctions.F_Conversion)
-        result = NALGrammar.Judgment(result_statement, (result_truth, truth_values), occurrence_time=occurrence_time)
-    elif isinstance(j, NALGrammar.Question):
-        result = NALGrammar.Question(result_statement)
+    truth_function = TruthValueFunctions.TruthValueFunctions.F_Conversion
 
-    # merge in the parent sentence's evidential base
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result.stamp.from_one_premise_inference = True
-
-    return result
+    return create_resultant_sentence_one_premise(j,result_statement,truth_function)
 
 
 def Contraposition(j):
@@ -106,17 +84,7 @@ def Contraposition(j):
                                             negated_subject_term,
                                             j.statement.get_copula())
 
-    if isinstance(j, NALGrammar.Judgment):
-        result_truth = TruthValueFunctions.F_Contraposition(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Judgment(result_statement, result_truth)
-    elif isinstance(j, NALGrammar.Question):
-        result = NALGrammar.Question(result_statement)
-
-    # merge in the parent sentence's evidential base
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result.stamp.from_one_premise_inference = True
-
-    return result
+    return create_resultant_sentence_one_premise(j, result_statement, TruthValueFunctions.F_Contraposition)
 
 
 def ExtensionalImage(j):
@@ -155,14 +123,7 @@ def ExtensionalImage(j):
                                                 image_term,
                                                 NALSyntax.Copula.Inheritance)
 
-        if isinstance(j, NALGrammar.Judgment):
-            result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
-            result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j.stamp.occurrence_time)
-        elif isinstance(j, NALGrammar.Question):
-            result = NALGrammar.Question(result_statement)
-
-        # merge in the parent sentence's evidential base
-        result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+        result = create_resultant_sentence_one_premise(j, result_statement, None)
         results.append(result)
 
     return results
@@ -204,14 +165,7 @@ def IntensionalImage(j):
                                                 subterm,
                                                 NALSyntax.Copula.Inheritance)
 
-        if isinstance(j, NALGrammar.Judgment):
-            result_truth = NALGrammar.TruthValue(j.value.frequency, j.value.confidence)
-            result = NALGrammar.Judgment(result_statement, result_truth, occurrence_time=j.stamp.occurrence_time)
-        elif isinstance(j, NALGrammar.Question):
-            result = NALGrammar.Question(result_statement)
-
-        # merge in the parent sentence's evidential base
-        result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+        result = create_resultant_sentence_one_premise(j, result_statement, None)
         results.append(result)
 
     return results

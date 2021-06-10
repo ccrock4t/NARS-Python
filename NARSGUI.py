@@ -48,6 +48,36 @@ class NARSGUI:
     gui_use_interface = None
     gui_use_internal_data = None
 
+    # Keys
+    KEY_STRING = "String"
+    KEY_IS_ARRAY = "IsArray"
+    KEY_STRING_NOID = "StringNoID"
+    KEY_ID = "ID"
+    KEY_OCCURRENCE_TIME = "OccurrenceTime"
+    KEY_SENTENCE_TYPE = "SentenceType"
+    KEY_DERIVED_BY = "DerivedBy"
+    KEY_LIST_EVIDENTIAL_BASE = "ListEvidentialBase"
+    KEY_LIST_INTERACTED_SENTENCES = "ListInteractedSentences"
+    KEY_ARRAY_IMAGE = "ArrayImage"
+    KEY_ARRAY_ELEMENT_STRINGS = "ArrayElementStrings"
+
+    KEY_KEY = "Key"
+    KEY_CLASS_NAME = "ClassName"
+    KEY_OBJECT_STRING = "ObjectString"
+    KEY_TERM_TYPE = "TermType"
+    KEY_LIST_BELIEFS = "ListBeliefs"
+    KEY_LIST_DESIRES = "ListDesires"
+    KEY_LIST_TERM_LINKS = "ListTermLinks"
+    KEY_LIST_PREDICTION_LINKS = "ListPredictionLinks"
+    KEY_LIST_EXPLANATION_LINKS = "ListExplanationLinks"
+    KEY_CAPACITY_BELIEFS = "CapacityBeliefs"
+    KEY_CAPACITY_DESIRES = "CapacityDesires"
+
+    KEY_CAPACITY_TERM_LINKS = "CapacityTermLinks"
+    KEY_CAPACITY_PREDICTION_LINKS = "CapacityPredictionLinks"
+    KEY_CAPACITY_EXPLANATION_LINKS = "CapacityExplanationLinks"
+    KEY_SENTENCE_STRING = "SentenceString"
+
 
     def __init__(self):
         pass
@@ -368,8 +398,8 @@ class NARSGUI:
 
     def draw_sentence_internal_data(self, sentence_to_draw):
         item_info_window = tk.Toplevel()
-        item_info_window.title("Sentence Internal Data: " + sentence_to_draw["String"])
-        is_array = sentence_to_draw['IsArray']
+        item_info_window.title("Sentence Internal Data: " + sentence_to_draw[NARSGUI.KEY_STRING])
+        is_array = sentence_to_draw[NARSGUI.KEY_IS_ARRAY]
         if is_array:
             item_info_window.geometry('1100x500')
         else:
@@ -384,7 +414,7 @@ class NARSGUI:
         label = tk.Label(item_info_window, text="Sentence: ")
         label.grid(row=rownum, column=0)
 
-        label = tk.Label(item_info_window, text=sentence_to_draw["StringNoID"])
+        label = tk.Label(item_info_window, text=sentence_to_draw[NARSGUI.KEY_STRING_NOID])
         label.grid(row=rownum, column=1)
 
         # sentence ID
@@ -392,7 +422,7 @@ class NARSGUI:
         label = tk.Label(item_info_window, text="Sentence ID: ")
         label.grid(row=rownum, column=0)
 
-        label = tk.Label(item_info_window, text=sentence_to_draw["ID"])
+        label = tk.Label(item_info_window, text=sentence_to_draw[NARSGUI.KEY_ID])
         label.grid(row=rownum, column=1)
 
         # sentence occurrence time
@@ -400,7 +430,7 @@ class NARSGUI:
         label = tk.Label(item_info_window, text="Occurrence Time: ")
         label.grid(row=rownum, column=0)
 
-        oc_time = sentence_to_draw["OccurrenceTime"]
+        oc_time = sentence_to_draw[NARSGUI.KEY_OCCURRENCE_TIME]
 
         label = tk.Label(item_info_window, text=str("Eternal" if oc_time is None else oc_time))
         label.grid(row=rownum, column=1)
@@ -410,7 +440,15 @@ class NARSGUI:
         label = tk.Label(item_info_window, text="Sentence Type: ")
         label.grid(row=rownum, column=0)
 
-        label = tk.Label(item_info_window, text=sentence_to_draw["SentenceType"])
+        label = tk.Label(item_info_window, text=sentence_to_draw[NARSGUI.KEY_SENTENCE_TYPE])
+        label.grid(row=rownum, column=1)
+
+        # sentence type
+        rownum += 1
+        label = tk.Label(item_info_window, text="Derived By: ")
+        label.grid(row=rownum, column=0)
+
+        label = tk.Label(item_info_window, text=sentence_to_draw[NARSGUI.KEY_DERIVED_BY])
         label.grid(row=rownum, column=1)
 
         # blank
@@ -431,7 +469,7 @@ class NARSGUI:
                                              width=object_listbox_width, font=('', 8))
         evidential_base_listbox.grid(row=rownum + 1, column=0, columnspan=2)
 
-        for sentence in sentence_to_draw["ListEvidentialBase"]:
+        for sentence in sentence_to_draw[NARSGUI.KEY_LIST_EVIDENTIAL_BASE]:
             evidential_base_listbox.insert(tk.END, str(sentence))
         evidential_base_listbox.bind("<<ListboxSelect>>",
                                      lambda event: self.listbox_sentence_item_click_callback(event))
@@ -440,12 +478,12 @@ class NARSGUI:
         interacted_sentences_listbox = tk.Listbox(item_info_window, height=object_listbox_height,
                                                   width=object_listbox_width, font=('', 8))
         interacted_sentences_listbox.grid(row=rownum + 1, column=2, columnspan=2)
-        for sentence in sentence_to_draw["ListInteractedSentences"]:
+        for sentence in sentence_to_draw[NARSGUI.KEY_LIST_INTERACTED_SENTENCES]:
             interacted_sentences_listbox.insert(tk.END, str(sentence))
         interacted_sentences_listbox.bind("<<ListboxSelect>>",
                                           lambda event: self.listbox_sentence_item_click_callback(event))
         MAX_IMAGE_SIZE = 2000
-        image_array = sentence_to_draw["ArrayImage"]
+        image_array = sentence_to_draw[NARSGUI.KEY_ARRAY_IMAGE]
         if is_array and image_array is not None:
             # reset image size to defaults
             self.gui_array_image_dimensions[0] = 300
@@ -524,7 +562,7 @@ class NARSGUI:
                         f.grid_propagate(0)
 
                         color = from_rgb_to_tkinter_color((pixel_value, pixel_value, pixel_value))
-                        element_string = sentence_to_draw["ArrayElementStrings"][x,y]
+                        element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][x,y]
                         button = tk.Button(f, bg=color,
                                            command=create_array_element_click_lambda(element_string))
                         button.config(relief='solid', borderwidth=0)
@@ -569,7 +607,7 @@ class NARSGUI:
                 self.print_to_output("ERROR: could not get item with key: " + ID)
                 return
 
-            classname = item["ClassName"]
+            classname = item[NARSGUI.KEY_CLASS_NAME]
             assert classname == NARSMemory.Concept.__name__ or classname == NARSDataStructures.Task.__name__, "ERROR: Data Structure clickback only defined for Concept and Task"
 
             # window
@@ -584,7 +622,7 @@ class NARSGUI:
             label = tk.Label(item_info_window, text=classname + " Name: ")
             label.grid(row=row_num, column=0)
 
-            label = tk.Label(item_info_window, text=item["ObjectString"])
+            label = tk.Label(item_info_window, text=item[NARSGUI.KEY_OBJECT_STRING])
             label.grid(row=row_num, column=1)
 
             # term type
@@ -592,7 +630,7 @@ class NARSGUI:
             label = tk.Label(item_info_window, text="Term Type: ")
             label.grid(row=row_num, column=0)
 
-            label = tk.Label(item_info_window, text=item["TermType"])
+            label = tk.Label(item_info_window, text=item[NARSGUI.KEY_TERM_TYPE])
             label.grid(row=row_num, column=1)
 
             object_listbox_width = 60
@@ -605,7 +643,7 @@ class NARSGUI:
 
                 # Row 1
                 # beliefs table listbox
-                beliefs_capacity_text = "("+str(len(item["ListBeliefs"])) + "/" + item["CapacityBeliefs"] +")"
+                beliefs_capacity_text = "("+str(len(item[NARSGUI.KEY_LIST_BELIEFS])) + "/" + item[NARSGUI.KEY_CAPACITY_BELIEFS] +")"
                 label = tk.Label(item_info_window, text="Beliefs " + beliefs_capacity_text, font=('bold'))
                 label.grid(row=row_num, column=0, columnspan=2)
 
@@ -618,25 +656,25 @@ class NARSGUI:
 
                 belief_listbox.bind("<<ListboxSelect>>", lambda event: self.listbox_sentence_item_click_callback(event))  # define callbac
                 # desires table listbox
-                desires_capacity_text = "("+str(len(item["ListDesires"])) + "/" + item["CapacityDesires"] +")"
+                desires_capacity_text = "("+str(len(item[NARSGUI.KEY_LIST_DESIRES])) + "/" + item[NARSGUI.KEY_CAPACITY_DESIRES] +")"
                 label = tk.Label(item_info_window, text="Desires " + desires_capacity_text, font=('bold'))
                 label.grid(row=row_num, column=2, columnspan=2)
 
                 desire_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
                                             font=('', 8))
                 desire_listbox.grid(row=row_num+1, column=2, columnspan=2)
-                for desire in item["ListDesires"]:
+                for desire in item[NARSGUI.KEY_LIST_DESIRES]:
                     desire_listbox.insert(tk.END, desire)
                 desire_listbox.bind("<<ListboxSelect>>", lambda event: self.listbox_sentence_item_click_callback(event))  # define callback
                 # Term Links listbox
-                term_links_text = "(" + str(len(item["ListTermLinks"])) + ")"
+                term_links_text = "(" + str(len(item[NARSGUI.KEY_LIST_TERM_LINKS])) + ")"
                 label = tk.Label(item_info_window, text="Term Links " + term_links_text, font=('bold'))
                 label.grid(row=row_num, column=4, columnspan=2)
 
                 termlinks_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
                                             font=('', 8))
                 termlinks_listbox.grid(row=row_num+1, column=4, columnspan=2)
-                for term_link in item["ListTermLinks"]:
+                for term_link in item[NARSGUI.KEY_LIST_TERM_LINKS]:
                     termlinks_listbox.insert(tk.END, term_link)
                 termlinks_listbox.bind("<<ListboxSelect>>", lambda event: self.listbox_datastructure_item_click_callback(event))
 
@@ -644,19 +682,19 @@ class NARSGUI:
                 row_num += 2
 
                 # Prediction Links Listbox
-                prediction_links_text = "(" + str(len(item["ListPredictionLinks"])) + ")"
+                prediction_links_text = "(" + str(len(item[NARSGUI.KEY_LIST_PREDICTION_LINKS])) + ")"
                 label = tk.Label(item_info_window, text="Prediction Links " + prediction_links_text, font=('bold'))
                 label.grid(row=row_num, column=0, columnspan=2)
 
                 predictionlinks_listbox = tk.Listbox(item_info_window, height=object_listbox_height, width=object_listbox_width,
                                             font=('', 8))
                 predictionlinks_listbox.grid(row=row_num+1, column=0, columnspan=2)
-                for prediction_link in item["ListPredictionLinks"]:
+                for prediction_link in item[NARSGUI.KEY_LIST_PREDICTION_LINKS]:
                     predictionlinks_listbox.insert(tk.END, prediction_link)
                 predictionlinks_listbox.bind("<<ListboxSelect>>", lambda event: self.listbox_datastructure_item_click_callback(event))
 
                 # Explanation Links Listbox
-                explanation_links_text = "(" + str(len(item["ListExplanationLinks"])) + ")"
+                explanation_links_text = "(" + str(len(item[NARSGUI.KEY_LIST_EXPLANATION_LINKS])) + ")"
                 label = tk.Label(item_info_window, text="Explanation Links " + explanation_links_text, font=('bold'))
                 label.grid(row=row_num, column=2, columnspan=2)
 
@@ -664,7 +702,7 @@ class NARSGUI:
                                                      width=object_listbox_width,
                                                      font=('', 8))
                 explanationlinks_listbox.grid(row=row_num+1, column=2, columnspan=2)
-                for explanation_link in item["ListExplanationLinks"]:
+                for explanation_link in item[NARSGUI.KEY_LIST_EXPLANATION_LINKS]:
                     explanationlinks_listbox.insert(tk.END, explanation_link)
                 explanationlinks_listbox.bind("<<ListboxSelect>>",
                                              lambda event: self.listbox_datastructure_item_click_callback(event))

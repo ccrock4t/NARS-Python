@@ -163,7 +163,7 @@ def first_order_analogy():
 
     assert success,"TEST FAILURE: First-order Analogy test failed: " + failed_criterion
 
-def intensional_composition():
+def first_order_intensional_composition():
     """
         Test Intensional Composition rules:
         j1: (M --> S). %1.0;0.9%
@@ -189,7 +189,7 @@ def intensional_composition():
 
     assert success,"TEST FAILURE: Intensional Composition test failed: " + failed_criterion
 
-def extensional_composition():
+def first_order_extensional_composition():
     """
         Test Extensional Composition rules:
         j1: (S-->M). %1.0;0.9%
@@ -213,6 +213,26 @@ def extensional_composition():
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion
+
+def first_order_exemplification():
+    """
+        Test Extensional Composition rules:
+        j1: (S-->M). %1.0;0.9%
+        j2: (P-->M). %1.0;0.9%
+
+        :- ((S | P) --> M).
+    """
+    j1 = NALGrammar.Sentences.new_sentence_from_string("(P-->M). %1.0;0.9%")
+    j2 = NALGrammar.Sentences.new_sentence_from_string("(M-->S). %1.0;0.9%")
+
+    output_q = run_test(j1,j2)
+
+    success_criteria = []
+    success_criteria.append(NALInferenceRules.Syllogistic.Exemplification(j1, j2).get_formatted_string_no_id())
+    success, failed_criterion = check_success(output_q, success_criteria)
+
+    assert success,"TEST FAILURE: Exemplification test failed: " + failed_criterion
+
 
 def extensional_image():
     """
@@ -339,12 +359,13 @@ def main():
     first_order_analogy()
     first_order_deduction()
     first_order_induction()
+    first_order_exemplification()
 
     """
         Composition
     """
-    extensional_composition()
-    intensional_composition()
+    first_order_extensional_composition()
+    first_order_intensional_composition()
 
     """
         Conditional Syllogism

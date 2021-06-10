@@ -1,4 +1,7 @@
 import Config
+import Global
+import NALGrammar
+from NALInferenceRules.TruthValueFunctions import TruthFunctionOnArrayAndRevise, TruthFunctionOnArray
 
 
 def get_truthvalue_from_evidence(wp, w):
@@ -75,3 +78,79 @@ def getevidence_from2sentences(j1, j2):
     """
     (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
     return get_evidence_fromfreqconf(f1, c1), get_evidence_fromfreqconf(f2, c2)
+
+def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_function):
+    """
+        Creates the resultant sentence between 2 premises, the resultant statement, and the truth function
+    :param j1:
+    :param j2:
+    :param result_statement:
+    :param truth_value_function:
+    :return:
+    """
+    result_type = premise_result_type(j1,j2)
+
+    if result_type == NALGrammar.Sentences.Judgment:
+        # Get Truth Value
+        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+        result_truth_array = None
+        if j1.is_array and j2.is_array:
+            result_truth, result_truth_array = TruthFunctionOnArrayAndRevise(j1.truth_values,
+                                                                        j2.truth_values,
+                                                                        truth_value_function=truth_value_function)
+        else:
+            result_truth = truth_value_function(f1, c1, f2, c2)
+        result = NALGrammar.Sentences.Judgment(result_statement, (result_truth,result_truth_array), occurrence_time=j1.stamp.occurrence_time)
+    elif result_type == NALGrammar.Sentences.Question:
+        result = NALGrammar.Sentences.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+    stamp_and_print_inference_rule(result, truth_value_function)
+
+    return result
+
+def create_resultant_sentence_one_premise(j, result_statement, truth_value_function):
+    """
+        Creates the resultant sentence for 1 premise, the resultant statement, and the truth function
+        if truth function is None, uses j's truth-value
+    :param j:
+    :param result_statement:
+    :param truth_value_function:
+    :return:
+    """
+    if type(j) == NALGrammar.Sentences.Judgment:
+        # Get Truth Value
+        result_truth_array = None
+        if truth_value_function is None:
+            result_truth = j.value
+        else:
+            if j.is_array:
+                result_truth_array = TruthFunctionOnArray(j.truth_values, None, truth_value_function)
+            result_truth = truth_value_function(j.value.frequency, j.value.confidence)
+        result = NALGrammar.Sentences.Judgment(result_statement, (result_truth,result_truth_array), occurrence_time=j.stamp.occurrence_time)
+    elif type(j) == NALGrammar.Sentences.Question:
+        result = NALGrammar.Sentences.Question(result_statement)
+
+    # merge in the parent sentences' evidential bases
+    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
+    result.stamp.from_one_premise_inference = True
+    stamp_and_print_inference_rule(result, truth_value_function)
+
+    return result
+
+def stamp_and_print_inference_rule(sentence, inference_rule):
+    sentence.stamp.derived_by = None if inference_rule is None else inference_rule.__name__
+    if Global.Global.DEBUG: print(inference_rule + " derived " + sentence.get_formatted_string())
+
+def premise_result_type(j1,j2):
+    """
+        Given 2 sentence premises, determines the type of the resultant sentence
+    """
+    if not isinstance(j1, NALGrammar.Sentences.Judgment):
+        return type(j1)
+    elif not isinstance(j2, NALGrammar.Sentences.Judgment):
+        return type(j2)
+    else:
+        return NALGrammar.Sentences.Judgment

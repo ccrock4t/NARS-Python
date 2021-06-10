@@ -11,7 +11,7 @@
 """
 import NALGrammar
 import NALSyntax
-from NALInferenceRules import TruthValueFunctions
+from NALInferenceRules import TruthValueFunctions, HelperFunctions
 from NALInferenceRules.HelperFunctions import getevidentialvalues_from2sentences
 
 
@@ -213,15 +213,7 @@ def ConditionalComparison(j1, j2):
         result_statement = NALGrammar.Terms.StatementTerm(j2_statement_term, j1_statement_term,
                                                           NALSyntax.Copula.PredictiveEquivalence)
 
-    # calculate induction truth value
-    result_truth = TruthValueFunctions.F_Comparison(f1, c1, f2, c2)
-    result = NALGrammar.Sentences.Judgment(result_statement, result_truth)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Comparison)
 
 """
     Conditional Conjunctional Rules
@@ -258,20 +250,7 @@ def ConditionalConjunctionalDeduction(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())
 
-
-    if isinstance(j2, NALGrammar.Sentences.Judgment):
-        # Get Truth Value
-        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = TruthValueFunctions.F_Deduction(f1, c1, f2, c2)
-        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentences.Question):
-        result = NALGrammar.Sentences.Question(result_statement)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Deduction)
 
 def ConditionalConjunctionalAbduction(j1, j2):
     """
@@ -306,16 +285,4 @@ def ConditionalConjunctionalAbduction(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(result_term.get_subject_term(), result_term.get_predicate_term(),
                                                       result_term.get_copula())
 
-    if isinstance(j2, NALGrammar.Sentences.Judgment):
-        # Get Truth Value
-        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-        result_truth = TruthValueFunctions.F_Abduction(f1, c1, f2, c2)
-        result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j2.stamp.occurrence_time)
-    elif isinstance(j2, NALGrammar.Sentences.Question):
-        result = NALGrammar.Sentences.Question(result_statement)
-
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Abduction)
