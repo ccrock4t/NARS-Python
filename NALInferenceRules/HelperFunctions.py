@@ -124,7 +124,7 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
         # Get Truth Value
         result_truth_array = None
         if truth_value_function is None:
-            result_truth = j.value
+            result_truth = NALGrammar.Values.TruthValue(j.value.frequency,j.value.confidence)
         else:
             if j.is_array:
                 result_truth_array = TruthFunctionOnArray(j.truth_values, None, truth_value_function)
