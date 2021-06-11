@@ -77,6 +77,8 @@ class Memory:
                 or (isinstance(term,NALGrammar.Terms.StatementTerm) \
                 and isinstance(term.get_subject_term(),NALGrammar.Terms.CompoundTerm)
                 and isinstance(term.get_subject_term().subterms[0], NALGrammar.Terms.ArrayTermElementTerm)): return None  # todo created concepts for closed variable terms
+
+        # try to find the existing concept
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
         concept_item: NARSDataStructures.ItemContainer.Item = self.concepts_bag.peek(concept_key)
         if concept_item is not None:
@@ -91,8 +93,7 @@ class Memory:
             for subterm in term.subterms:
                 # get/create subterm concepts
                 if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
-                    and not isinstance(subterm, NALGrammar.Terms.ArrayTermElementTerm) \
-                    and (not isinstance(subterm, NALGrammar.Terms.Array) or isinstance(subterm, NALGrammar.Terms.ArrayTerm)): # don't create concepts for variables or array elements
+                    and not isinstance(subterm, NALGrammar.Terms.ArrayTermElementTerm): # don't create concepts for variables or array elements
                     subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
                     concept.set_term_link(subconcept)

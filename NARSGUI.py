@@ -396,6 +396,196 @@ class NARSGUI:
             if sentence is not None:
                 self.draw_sentence_internal_data(sentence)
 
+    def listbox_concept_item_click_callback(self,event):
+        selection = event.widget.curselection()
+        if selection:
+            index = selection[0]
+            concept_term_string = event.widget.get(index)
+            self.gui_object_pipe.send(("getconcept", concept_term_string, None))
+            concept_item = self.gui_object_pipe.recv()
+            if concept_item is not None:
+                self.draw_concept_internal_data(concept_item,concept_term_string)
+
+    def listbox_datastructure_item_click_callback(self,event):
+        """
+            Presents a window describing the clicked data structure's item's internal data.
+            Locks the interface until the window is closed.
+
+            This function is called when the user clicks on an item in the internal data.
+        """
+        selection = event.widget.curselection()
+        if selection:
+            index = selection[0]
+            item_string = event.widget.get(index)
+
+            data_structure_name = ""
+            if event.widget is self.gui_memory_listbox:
+                ID = item_string[item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
+                    self.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
+                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
+            elif event.widget is self.gui_global_buffer_listbox:
+                ID = item_string[item_string.find(Global.Global.MARKER_ITEM_ID) + len(
+                    Global.Global.MARKER_ITEM_ID):item_string.rfind(Global.Global.MARKER_ID_END)]
+                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_global_buffer_listbox)
+                ID = int(ID)
+            else:
+                # clicked concept within another concept
+                ID = item_string
+                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
+            self.gui_object_pipe.send(("getitem", ID, data_structure_name))
+            item = self.gui_object_pipe.recv()
+
+            if item is None:
+                self.print_to_output("ERROR: could not get item with key: " + ID)
+                return
+
+            classname = item[NARSGUI.KEY_CLASS_NAME]
+            assert classname == NARSMemory.Concept.__name__ or classname == NARSDataStructures.Task.__name__, "ERROR: Data Structure clickback only defined for Concept and Task"
+
+            if classname == NARSMemory.Concept.__name__:
+                self.draw_concept_internal_data(item,item_string)
+            elif classname == NARSDataStructures.Task.__name__:
+                # window
+                item_info_window = tk.Toplevel()
+                item_info_window.title(classname + " Internal Data: " + item_string)
+                item_info_window.geometry('1100x700')
+                # item_info_window.grab_set()  # lock the other windows until this window is exited
+
+                row = 0
+                column = 0
+
+                # name
+                create_key_item_label(parent=item_info_window,
+                                      row=row,
+                                      column=column,
+                                      key_label=classname + " Name: ",
+                                      value_label=item[NARSGUI.KEY_OBJECT_STRING])
+
+                # term type
+                row += 1
+                create_key_item_label(parent=item_info_window,
+                                      row=row,
+                                      column=column,
+                                      key_label="Term Type: ",
+                                      value_label=item[NARSGUI.KEY_TERM_TYPE])
+
+                row += 1
+                create_key_item_label(parent=item_info_window,
+                                      row=row,
+                                      column=0,
+                                      key_label="Sentence: ",
+                                      value_label=item[NARSGUI.KEY_SENTENCE_STRING])
+
+                row += 1
+                label = tk.Label(item_info_window, text="", justify=tk.LEFT)
+                label.grid(row=row, column=column)
+
+                # Listboxes
+                row += 1
+                # Evidential base listbox
+                create_clickable_listbox(parent=item_info_window,
+                                         row=row,
+                                         column=column,
+                                         title_label="Sentence Evidential Base",
+                                         listbox_contents=item[NARSGUI.KEY_LIST_EVIDENTIAL_BASE],
+                                         content_click_callback=self.listbox_sentence_item_click_callback)
+
+                # Interacted sentences listbox
+                column += 2
+                create_clickable_listbox(parent=item_info_window,
+                                         row=row,
+                                         column=column,
+                                         title_label="Sentence Interacted Sentences",
+                                         listbox_contents=item[NARSGUI.KEY_LIST_INTERACTED_SENTENCES],
+                                         content_click_callback=self.listbox_sentence_item_click_callback)
+
+
+    def draw_concept_internal_data(self, item, item_string):
+        # window
+        classname = item[NARSGUI.KEY_CLASS_NAME]
+        item_info_window = tk.Toplevel()
+        item_info_window.title(classname + "Internal Data: " + item_string)
+        item_info_window.geometry('1100x700')
+        # item_info_window.grab_set()  # lock the other windows until this window is exited
+
+        row = 0
+        column = 0
+
+        # name
+        create_key_item_label(parent=item_info_window,
+                              row=row,
+                              column=column,
+                              key_label=classname + " Name: ",
+                              value_label=item[NARSGUI.KEY_OBJECT_STRING])
+
+        # term type
+        row += 1
+        create_key_item_label(parent=item_info_window,
+                              row=row,
+                              column=column,
+                              key_label="Term Type: ",
+                              value_label=item[NARSGUI.KEY_TERM_TYPE])
+
+        row += 1
+        if classname == NARSMemory.Concept.__name__:
+            label = tk.Label(item_info_window, text="", justify=tk.LEFT)
+            label.grid(row=row, column=column)
+
+            # Row 1
+            # beliefs table listbox
+            row += 1
+            beliefs_capacity_text = "Beliefs (" + str(len(item[NARSGUI.KEY_LIST_BELIEFS])) + "/" + item[
+                NARSGUI.KEY_CAPACITY_BELIEFS] + ")"
+            create_clickable_listbox(parent=item_info_window,
+                                     row=row,
+                                     column=column,
+                                     title_label=beliefs_capacity_text,
+                                     listbox_contents=item[NARSGUI.KEY_LIST_BELIEFS],
+                                     content_click_callback=self.listbox_sentence_item_click_callback)
+
+            # desires table listbox
+            column += 2
+            desires_capacity_text = "Desires (" + str(len(item[NARSGUI.KEY_LIST_DESIRES])) + "/" + item[
+                NARSGUI.KEY_CAPACITY_DESIRES] + ")"
+            create_clickable_listbox(parent=item_info_window,
+                                     row=row,
+                                     column=column,
+                                     title_label=desires_capacity_text,
+                                     listbox_contents=item[NARSGUI.KEY_LIST_DESIRES],
+                                     content_click_callback=self.listbox_sentence_item_click_callback)
+
+            # Term Links listbox
+            column += 2
+            term_links_text = "Term Links (" + str(len(item[NARSGUI.KEY_LIST_TERM_LINKS])) + ")"
+            create_clickable_listbox(parent=item_info_window,
+                                     row=row,
+                                     column=column,
+                                     title_label=term_links_text,
+                                     listbox_contents=item[NARSGUI.KEY_LIST_TERM_LINKS],
+                                     content_click_callback=self.listbox_concept_item_click_callback)
+
+            # Next row
+            column = 0
+            row += 2
+
+            # Prediction Links Listbox
+            prediction_links_text = "Prediction Links (" + str(len(item[NARSGUI.KEY_LIST_PREDICTION_LINKS])) + ")"
+            create_clickable_listbox(parent=item_info_window,
+                                     row=row,
+                                     column=column,
+                                     title_label=prediction_links_text,
+                                     listbox_contents=item[NARSGUI.KEY_LIST_PREDICTION_LINKS],
+                                     content_click_callback=self.listbox_concept_item_click_callback)
+
+            # Explanation Links Listbox
+            explanation_links_text = "Explanation Links (" + str(len(item[NARSGUI.KEY_LIST_EXPLANATION_LINKS])) + ")"
+            create_clickable_listbox(parent=item_info_window,
+                                     row=row,
+                                     column=column,
+                                     title_label=explanation_links_text,
+                                     listbox_contents=item[NARSGUI.KEY_LIST_EXPLANATION_LINKS],
+                                     content_click_callback=self.listbox_concept_item_click_callback)
+
     def draw_sentence_internal_data(self, sentence_to_draw):
         item_info_window = tk.Toplevel()
         item_info_window.title("Sentence Internal Data: " + sentence_to_draw[NARSGUI.KEY_STRING])
@@ -566,154 +756,6 @@ class NARSGUI:
                     pass
 
             self.gui_array_image_frame = image_frame
-
-    def listbox_datastructure_item_click_callback(self,event):
-        """
-            Presents a window describing the clicked data structure's item's internal data.
-            Locks the interface until the window is closed.
-
-            This function is called when the user clicks on an item in the internal data.
-        """
-        selection = event.widget.curselection()
-        if selection:
-            index = selection[0]
-            item_string = event.widget.get(index)
-
-            data_structure_name = ""
-            if event.widget is self.gui_memory_listbox:
-                ID = item_string[item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
-                    self.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
-                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
-            elif event.widget is self.gui_global_buffer_listbox:
-                ID = item_string[item_string.find(Global.Global.MARKER_ITEM_ID) + len(
-                    Global.Global.MARKER_ITEM_ID):item_string.rfind(Global.Global.MARKER_ID_END)]
-                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_global_buffer_listbox)
-                ID = int(ID)
-            else:
-                # clicked concept within another concept
-                ID = item_string
-                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
-            self.gui_object_pipe.send(("getitem", ID, data_structure_name))
-            item = self.gui_object_pipe.recv()
-
-            if item is None:
-                self.print_to_output("ERROR: could not get item with key: " + ID)
-                return
-
-            classname = item[NARSGUI.KEY_CLASS_NAME]
-            assert classname == NARSMemory.Concept.__name__ or classname == NARSDataStructures.Task.__name__, "ERROR: Data Structure clickback only defined for Concept and Task"
-
-            # window
-            item_info_window = tk.Toplevel()
-            item_info_window.title(classname + " Internal Data: " + item_string)
-            item_info_window.geometry('1100x700')
-            #item_info_window.grab_set()  # lock the other windows until this window is exited
-
-            row = 0
-            column = 0
-
-            # name
-            create_key_item_label(parent=item_info_window,
-                                  row=row,
-                                  column=column,
-                                  key_label=classname + " Name: ",
-                                  value_label=item[NARSGUI.KEY_OBJECT_STRING])
-
-            # term type
-            row += 1
-            create_key_item_label(parent=item_info_window,
-                                  row=row,
-                                  column=column,
-                                  key_label="Term Type: ",
-                                  value_label=item[NARSGUI.KEY_TERM_TYPE])
-
-            row += 1
-            if classname == NARSMemory.Concept.__name__:
-                label = tk.Label(item_info_window, text="", justify=tk.LEFT)
-                label.grid(row=row, column=column)
-
-                # Row 1
-                # beliefs table listbox
-                row += 1
-                beliefs_capacity_text = "Beliefs ("+str(len(item[NARSGUI.KEY_LIST_BELIEFS])) + "/" + item[NARSGUI.KEY_CAPACITY_BELIEFS] +")"
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label=beliefs_capacity_text,
-                                         listbox_contents=item[NARSGUI.KEY_LIST_BELIEFS],
-                                         content_click_callback=self.listbox_sentence_item_click_callback)
-
-                # desires table listbox
-                column += 2
-                desires_capacity_text = "Desires ("+str(len(item[NARSGUI.KEY_LIST_DESIRES])) + "/" + item[NARSGUI.KEY_CAPACITY_DESIRES] +")"
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label=desires_capacity_text,
-                                         listbox_contents=item[NARSGUI.KEY_LIST_DESIRES],
-                                         content_click_callback=self.listbox_datastructure_item_click_callback)
-
-                # Term Links listbox
-                column += 2
-                term_links_text = "Term Links (" + str(len(item[NARSGUI.KEY_LIST_TERM_LINKS])) + ")"
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label=term_links_text,
-                                         listbox_contents=item[NARSGUI.KEY_LIST_TERM_LINKS],
-                                         content_click_callback=self.listbox_datastructure_item_click_callback)
-
-                # Next row
-                column = 0
-                row += 2
-
-                # Prediction Links Listbox
-                prediction_links_text = "Prediction Links (" + str(len(item[NARSGUI.KEY_LIST_PREDICTION_LINKS])) + ")"
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label=prediction_links_text,
-                                         listbox_contents=item[NARSGUI.KEY_LIST_PREDICTION_LINKS],
-                                         content_click_callback=self.listbox_datastructure_item_click_callback)
-
-                # Explanation Links Listbox
-                explanation_links_text = "Explanation Links (" + str(len(item[NARSGUI.KEY_LIST_EXPLANATION_LINKS])) + ")"
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label=explanation_links_text,
-                                         listbox_contents=item[NARSGUI.KEY_LIST_EXPLANATION_LINKS],
-                                         content_click_callback=self.listbox_datastructure_item_click_callback)
-
-            elif classname == NARSDataStructures.Task.__name__:
-                create_key_item_label(parent=item_info_window,
-                                      row=row,
-                                      column=0,
-                                      key_label="Sentence: ",
-                                      value_label=item[NARSGUI.KEY_SENTENCE_STRING])
-
-                row += 1
-                label = tk.Label(item_info_window, text="", justify=tk.LEFT)
-                label.grid(row=row, column=column)
-
-                # Listboxes
-                row += 1
-                # Evidential base listbox
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label="Sentence Evidential Base",
-                                         listbox_contents=item[NARSGUI.KEY_LIST_EVIDENTIAL_BASE],
-                                         content_click_callback=self.listbox_sentence_item_click_callback)
-
-                # Interacted sentences listbox
-                column += 2
-                create_clickable_listbox(parent=item_info_window,
-                                         row=row,
-                                         column=column,
-                                         title_label="Sentence Interacted Sentences",
-                                         listbox_contents=item[NARSGUI.KEY_LIST_INTERACTED_SENTENCES],
-                                         content_click_callback=self.listbox_sentence_item_click_callback)
 
     def get_data_structure_name_from_listbox(self,listbox):
         keys = list(self.dict_listboxes.keys())

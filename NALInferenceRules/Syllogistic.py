@@ -246,17 +246,19 @@ def Comparison(j1, j2):
     Asserts.assert_sentence_asymmetric(j1)
     Asserts.assert_sentence_asymmetric(j2)
 
+    copula = NALSyntax.Copula.Similarity if NALSyntax.Copula.is_first_order(j1) else NALSyntax.Copula.Equivalence
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # M --> P and M --> S
+
         result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                           j1.statement.get_predicate_term(),
-                                                          NALSyntax.Copula.Similarity)
+                                                          copula)
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # P --> M and S --> M
         result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_subject_term(),
                                                           j1.statement.get_subject_term(),
-                                                          NALSyntax.Copula.Similarity)
+                                                          copula)
     else:
         assert (
             False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()

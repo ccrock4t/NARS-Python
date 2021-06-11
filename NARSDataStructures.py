@@ -195,9 +195,9 @@ class ItemContainer:
             if isinstance(self.object, NARSMemory.Concept):
                 dict[NARSGUI.NARSGUI.KEY_LIST_BELIEFS] = [str(belief[0]) for belief in self.object.belief_table]
                 dict[NARSGUI.NARSGUI.KEY_LIST_DESIRES] = [str(desire[0]) for desire in self.object.desire_table]
-                dict[NARSGUI.NARSGUI.KEY_LIST_TERM_LINKS] = [str(termlink) for termlink in self.object.term_links]
-                dict[NARSGUI.NARSGUI.KEY_LIST_PREDICTION_LINKS] = [str(predictionlink) for predictionlink in self.object.prediction_links]
-                dict[NARSGUI.NARSGUI.KEY_LIST_EXPLANATION_LINKS] = [str(explanationlink) for explanationlink in self.object.explanation_links]
+                dict[NARSGUI.NARSGUI.KEY_LIST_TERM_LINKS] = [str(termlink.object) for termlink in self.object.term_links]
+                dict[NARSGUI.NARSGUI.KEY_LIST_PREDICTION_LINKS] = [str(predictionlink.object) for predictionlink in self.object.prediction_links]
+                dict[NARSGUI.NARSGUI.KEY_LIST_EXPLANATION_LINKS] = [str(explanationlink.object) for explanationlink in self.object.explanation_links]
                 dict[NARSGUI.NARSGUI.KEY_CAPACITY_BELIEFS] = str(self.object.belief_table.capacity)
                 dict[NARSGUI.NARSGUI.KEY_CAPACITY_DESIRES] = str(self.object.desire_table.capacity)
                 dict[NARSGUI.NARSGUI.KEY_CAPACITY_TERM_LINKS] = str(self.object.term_links.capacity)

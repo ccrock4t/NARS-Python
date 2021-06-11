@@ -111,12 +111,17 @@ class NARS:
                 if concept is None:
                     Global.Global.NARS_object_pipe.send(None)
                 else:
-                    for belief_tuple in concept.belief_table:
-                        belief_sentence = belief_tuple[0]
-                        if sentence_string == str(belief_sentence):
-                            Global.Global.NARS_object_pipe.send(belief_sentence.get_gui_info())
+                    table = concept.belief_table if sentence_string[end_idx] == NALSyntax.Punctuation.Judgment else concept.desire_table
+                    for knowledge_tuple in table:
+                        knowledge_sentence = knowledge_tuple[0]
+                        if sentence_string == str(knowledge_sentence):
+                            Global.Global.NARS_object_pipe.send(knowledge_sentence.get_gui_info())
                             break
-
+            elif command == "getconcept":
+                item = None
+                while item is None:
+                    item: NARSDataStructures.ItemContainer.Item = self.memory.concepts_bag.peek(key)
+                Global.Global.NARS_object_pipe.send(item.get_gui_info())
 
         while Global.Global.NARS_string_pipe.poll():
             # this pipe can hold as many tasks as needed
