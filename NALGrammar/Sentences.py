@@ -2,7 +2,7 @@ from NALGrammar.Arrays import Array
 import Config
 import Global
 import NALSyntax
-from NALGrammar.Asserts import assert_punctuation, assert_statement_term
+import Asserts
 
 from NALGrammar.Terms import StatementTerm
 
@@ -31,7 +31,7 @@ class Sentence(Array):
         :param occurrence_time:
         :param array_truth_values:
         """
-        assert_punctuation(punctuation)
+        Asserts.assert_punctuation(punctuation)
         assert isinstance(statement,StatementTerm),"ERROR: Judgment needs a statement"
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
@@ -123,7 +123,7 @@ class Question(Sentence):
     """
 
     def __init__(self, statement):
-        assert_statement_term(statement)
+        Asserts.assert_statement_term(statement)
         Sentence.__init__(self,statement, None, NALSyntax.Punctuation.Question)
 
 
@@ -133,7 +133,7 @@ class Goal(Sentence):
     """
 
     def __init__(self, statement, value):
-        assert_statement_term(statement)
+        Asserts.assert_statement_term(statement)
         Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Goal)
 
 class Stamp:

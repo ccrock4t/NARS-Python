@@ -1,6 +1,8 @@
 import queue
 
 import depq
+
+import Asserts
 import Config
 import random
 import Global
@@ -614,7 +616,7 @@ class Task:
     """
 
     def __init__(self, sentence, is_input_task=False):
-        NALGrammar.Asserts.assert_sentence(sentence)
+        Asserts.assert_sentence(sentence)
         self.sentence = sentence
         self.creation_timestamp: int = Global.Global.get_current_cycle_number()  # save the task's creation time
         self.is_from_input: bool = is_input_task
@@ -628,7 +630,3 @@ class Task:
         return self.sentence.get_formatted_string_no_id()
 
 
-
-# Asserts
-def assert_task(j):
-    assert (isinstance(j, Task)), str(j) + " must be a Task"

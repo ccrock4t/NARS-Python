@@ -9,10 +9,10 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import Asserts
 import NALGrammar
 import NALSyntax
 from NALInferenceRules import TruthValueFunctions, HelperFunctions
-from NALInferenceRules.HelperFunctions import getevidentialvalues_from2sentences
 
 
 def IntensionalIntersectionOrDisjunction(j1, j2):
@@ -44,8 +44,8 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
             OR
             :- Sentence (M --> (T1 | T2)) (Sentence (M --> (T1 || T2)))
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
 
     j1_copula = j1.statement.get_copula()
     j2_copula = j2.statement.get_copula()
@@ -124,8 +124,8 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
             OR
             :- Sentence (M --> (T1 & T2)) (Sentence (M ==> (T1 && T2)))
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
 
     j1_copula = j1.statement.get_copula()
     j2_copula = j2.statement.get_copula()
@@ -189,8 +189,8 @@ def IntensionalDifference(j1, j2):
         Returns:
             :- Sentence ((T1 ~ T2) --> M)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
     assert j1.statement.get_predicate_term() == j2.statement.get_predicate_term()
 
     compound_term = NALGrammar.Terms.CompoundTerm([j1.statement.get_subject_term(),
@@ -218,8 +218,8 @@ def ExtensionalDifference(j1, j2):
         Returns:
             :- Sentence (M --> (T1 - T2))
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
 
     compound_term = NALGrammar.Terms.CompoundTerm([j1.statement.get_predicate_term(),
                                                    j2.statement.get_predicate_term()],

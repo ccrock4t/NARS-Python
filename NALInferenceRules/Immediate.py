@@ -9,11 +9,11 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import Asserts
 import Global
 import NALGrammar
 import NALSyntax
-from NALInferenceRules import TruthValueFunctions
-from NALInferenceRules.HelperFunctions import create_resultant_sentence_one_premise
+import NALInferenceRules
 
 
 def Negation(j):
@@ -27,9 +27,9 @@ def Negation(j):
 
          Returns:
     """
-    NALGrammar.assert_sentence(j)
-    result_statement = NALGrammar.StatementTerm(j.statement, statement_connector=NALSyntax.TermConnector.Negation)
-    return create_resultant_sentence_one_premise(j, result_statement, TruthValueFunctions.F_Negation)
+    Asserts.assert_sentence(j)
+    result_statement = NALGrammar.Terms.StatementTerm(j.statement, statement_connector=NALSyntax.TermConnector.Negation)
+    return NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j, result_statement, NALInferenceRules.TruthValueFunctions.F_Negation)
 
 
 def Conversion(j):
@@ -50,16 +50,17 @@ def Conversion(j):
         Returns:
             :- Sentence (P --> S <f2, c2>)
     """
-    NALGrammar.assert_sentence(j)
+    Asserts.assert_sentence_asymmetric(j)
+
     # Statement
-    result_statement = NALGrammar.StatementTerm(j.statement.get_predicate_term(),
+    result_statement = NALGrammar.Terms.StatementTerm(j.statement.get_predicate_term(),
                                             j.statement.get_subject_term(),
                                             j.statement.get_copula())
 
 
-    truth_function = TruthValueFunctions.TruthValueFunctions.F_Conversion
+    truth_function = NALInferenceRules.TruthValueFunctions.F_Conversion
 
-    return create_resultant_sentence_one_premise(j,result_statement,truth_function)
+    return NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j,result_statement,truth_function)
 
 
 def Contraposition(j):
@@ -73,18 +74,18 @@ def Contraposition(j):
     :param j:
     :return: ((--,P) ==> (--,S))
     """
-    NALGrammar.assert_sentence(j)
+    Asserts.assert_sentence_forward_implication(j)
     # Statement
-    negated_predicate_term = NALGrammar.CompoundTerm([j.statement.get_predicate_term()],
+    negated_predicate_term = NALGrammar.Terms.CompoundTerm([j.statement.get_predicate_term()],
                                                      NALSyntax.TermConnector.Negation)
-    negated_subject_term = NALGrammar.CompoundTerm([j.statement.get_subject_term()],
+    negated_subject_term = NALGrammar.Terms.CompoundTerm([j.statement.get_subject_term()],
                                                    NALSyntax.TermConnector.Negation)
 
-    result_statement = NALGrammar.StatementTerm(negated_predicate_term,
+    result_statement = NALGrammar.Terms.StatementTerm(negated_predicate_term,
                                             negated_subject_term,
                                             j.statement.get_copula())
 
-    return create_resultant_sentence_one_premise(j, result_statement, TruthValueFunctions.F_Contraposition)
+    return NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j, result_statement, NALInferenceRules.TruthValueFunctions.F_Contraposition)
 
 
 def ExtensionalImage(j):
@@ -99,7 +100,7 @@ def ExtensionalImage(j):
     (P --> (/,R,S,...,_))
     ...
     """
-    NALGrammar.assert_sentence(j)
+    Asserts.assert_sentence_inheritance(j)
 
     results = []
     # Statement
@@ -116,14 +117,14 @@ def ExtensionalImage(j):
             elif i1 == i2:
                 image_subterms.append(Global.Global.TERM_IMAGE_PLACEHOLDER)
 
-        image_term = NALGrammar.CompoundTerm(image_subterms,
+        image_term = NALGrammar.Terms.CompoundTerm(image_subterms,
                                              NALSyntax.TermConnector.ExtensionalImage)
 
-        result_statement = NALGrammar.StatementTerm(subterm,
+        result_statement = NALGrammar.Terms.StatementTerm(subterm,
                                                 image_term,
                                                 NALSyntax.Copula.Inheritance)
 
-        result = create_resultant_sentence_one_premise(j, result_statement, None)
+        result = NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j, result_statement, None)
         results.append(result)
 
     return results
@@ -141,7 +142,7 @@ def IntensionalImage(j):
     and
     ((/,R,S,_) --> P)
     """
-    NALGrammar.assert_sentence(j)
+    Asserts.assert_sentence_inheritance(j)
 
     results = []
     # Statement
@@ -158,14 +159,14 @@ def IntensionalImage(j):
             elif i1 == i2:
                 image_subterms.append(Global.Global.TERM_IMAGE_PLACEHOLDER)
 
-        image_term = NALGrammar.CompoundTerm(image_subterms,
+        image_term = NALGrammar.Terms.CompoundTerm(image_subterms,
                                              NALSyntax.TermConnector.ExtensionalImage)
 
-        result_statement = NALGrammar.StatementTerm(image_term,
+        result_statement = NALGrammar.Terms.StatementTerm(image_term,
                                                 subterm,
                                                 NALSyntax.Copula.Inheritance)
 
-        result = create_resultant_sentence_one_premise(j, result_statement, None)
+        result = NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j, result_statement, None)
         results.append(result)
 
     return results

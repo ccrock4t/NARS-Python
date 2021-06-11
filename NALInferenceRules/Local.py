@@ -9,6 +9,7 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import Asserts
 import Config
 import NALGrammar
 from NALInferenceRules import HelperFunctions, TruthValueFunctions
@@ -30,8 +31,8 @@ def Revision(j1, j2):
         Returns:
           :- Sentence (Statement <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence(j1)
+    Asserts.assert_sentence(j2)
     assert (
             j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
@@ -72,8 +73,8 @@ def Choice(j1, j2):
          Returns:
            j1 or j2, depending on which is better according to the choice rule
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence(j1)
+    Asserts.assert_sentence(j2)
     # Subject Predicate
     subjpred1 = j1.subject_predicate
     subjpred2 = j2.subject_predicate
@@ -122,7 +123,7 @@ def Eternalization(j):
         :param j:
         :return: Eternalized form of j
     """
-    NALGrammar.Asserts.assert_sentence(j)
+    Asserts.assert_sentence(j)
 
     if isinstance(j, NALGrammar.Sentences.Judgment):
         result_truth = TruthValueFunctions.F_Eternalization(j.value.frequency, j.value.confidence)
@@ -141,7 +142,7 @@ def Projection(j, occurrence_time):
         :param occurrence_time: occurrence time to project j to
         :return: Projected form of j
     """
-    NALGrammar.Asserts.assert_sentence(j)
+    Asserts.assert_sentence(j)
 
     if isinstance(j, NALGrammar.Sentences.Judgment):
         result_truth = TruthValueFunctions.F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)

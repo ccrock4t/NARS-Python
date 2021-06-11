@@ -3,6 +3,7 @@
     Created: March 8, 2021
     Purpose: Given premises, performs proper inference and returns the resultant sentences as Tasks.
 """
+import Asserts
 import Global
 import NALGrammar
 import NALInferenceRules.Immediate
@@ -26,8 +27,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
         :returns An array of the derived Tasks, or an empty array if the inputs have evidential overlap
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence(j1)
+    Asserts.assert_sentence(j2)
 
     if j1.statement.connector is not None or j2.statement.connector is not None:
         return []
@@ -409,12 +410,12 @@ def do_inference_one_premise(j):
 
     if j.statement.get_statement_connector() is not None: return derived_sentences
 
-    if isinstance(j, NALGrammar.Judgment):
+    if isinstance(j, NALGrammar.Sentences.Judgment):
         # Negation (--,(S-->P))
         derived_sentence = NALInferenceRules.Immediate.Negation(j)
         derived_sentences.append(derived_sentence)
 
-        # Conversion (P --> S)
+        # Conversion (P --> S) or (P ==> S)
         if not j.stamp.from_one_premise_inference \
                 and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
                 and j.value.frequency > 0:
@@ -427,12 +428,12 @@ def do_inference_one_premise(j):
             derived_sentences.append(derived_sentence)
 
         # Image
-        if isinstance(j.statement.get_subject_term(), NALGrammar.CompoundTerm) \
+        if isinstance(j.statement.get_subject_term(), NALGrammar.Terms.CompoundTerm) \
             and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product:
             derived_sentence_list = NALInferenceRules.Immediate.ExtensionalImage(j)
             for derived_sentence in derived_sentence_list:
                 derived_sentences.append(derived_sentence)
-        elif isinstance(j.statement.get_predicate_term(), NALGrammar.CompoundTerm) \
+        elif isinstance(j.statement.get_predicate_term(), NALGrammar.Terms.CompoundTerm) \
             and j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Product:
             derived_sentence_list = NALInferenceRules.Immediate.IntensionalImage(j)
             for derived_sentence in derived_sentence_list:

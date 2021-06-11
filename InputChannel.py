@@ -36,7 +36,7 @@ def add_input_string(input_string: str):
             Global.Global.print_to_output(
                 "Memory count (concepts in memory): " + str(len(NARS.memory)))
             Global.Global.print_to_output(
-                "Buffer count (tasks in buffer): " + str(len(NARS.experience_task_buffer)))
+                "Buffer count (tasks in buffer): " + str(len(NARS.global_task_buffer)))
         elif input_string == "cycle":
             Global.Global.print_to_output("Current cycle: " + str(Global.Global.get_current_cycle_number()))
         elif input_string == "save":
@@ -80,7 +80,7 @@ def process_next_pending_sentence():
 
 def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     """
-        Given a Sentence, ingest it into NARS' experience buffer
+        Given a Sentence, ingest it into NARS
         :param sentence:
     """
     Global.Global.print_to_output("IN: " + sentence.get_formatted_string())
@@ -89,7 +89,7 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
 
     if sentence.stamp.get_tense() is NALSyntax.Tense.Eternal:
         # eternal experience
-        Global.Global.NARS.experience_task_buffer.put_new(task)
+        Global.Global.NARS.global_task_buffer.put_new(task)
     else:
         # temporal experience
         Global.Global.NARS.event_buffer.put_new(task)

@@ -3,6 +3,7 @@ import random
 import threading
 import time
 
+import Asserts
 import Config
 import InputChannel
 import NALInferenceRules
@@ -28,7 +29,7 @@ class NARS:
     """
 
     def __init__(self):
-        self.experience_task_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
+        self.global_task_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
         self.event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task, capacity=10)
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
@@ -89,8 +90,8 @@ class NARS:
             (command, key, data_structure_name) = Global.Global.NARS_object_pipe.recv()
             if command == "getitem":
                 data_structure = None
-                if data_structure_name == str(self.experience_task_buffer):
-                    data_structure = self.experience_task_buffer
+                if data_structure_name == str(self.global_task_buffer):
+                    data_structure = self.global_task_buffer
                 elif data_structure_name == str(self.event_buffer):
                     data_structure = self.event_buffer
                 elif data_structure_name == str(self.memory.concepts_bag):
@@ -145,12 +146,12 @@ class NARS:
 
         InputChannel.process_next_pending_sentence()  # process strings coming from input buffer
 
-        self.Process_Event_Buffer()  # process events from the event buffer
+        self.process_event_buffer()  # process events from the event buffer
 
         # now do something with tasks from experience buffer and/or knowledge from memory
         for _ in range(3):
             rand = random.random()
-            if rand < Config.MINDFULNESS and len(self.experience_task_buffer) > 0:
+            if rand < Config.MINDFULNESS and len(self.global_task_buffer) > 0:
                 # OBSERVE
                 self.Observe()
             else:
@@ -166,7 +167,7 @@ class NARS:
         for i in range(cycles):
             self.do_working_cycle()
 
-    def Process_Event_Buffer(self):
+    def process_event_buffer(self):
         """
             Process events into the experience buffer
         """
@@ -178,21 +179,21 @@ class NARS:
             event_B = event_task_B.sentence
 
             # insert the events
-            self.experience_task_buffer.put_new(event_task_A)
-            self.experience_task_buffer.put_new(event_task_B)
+            self.global_task_buffer.put_new(event_task_A)
+            self.global_task_buffer.put_new(event_task_B)
 
             # do temporal inference
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 
             # insert the derived knowledge
             for derived_sentence in derived_sentences:
-                self.experience_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+                self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
     def Observe(self):
         """
             Process a task from the experience buffer
         """
-        task_item = self.experience_task_buffer.take()
+        task_item = self.global_task_buffer.take()
 
         if task_item is None:
             return  # nothing to observe
@@ -205,7 +206,7 @@ class NARS:
             task_item.decay()
 
             # return task to buffer
-            self.experience_task_buffer.put(task_item)
+            self.global_task_buffer.put(task_item)
 
     def Consider(self):
         """
@@ -243,7 +244,9 @@ class NARS:
         """
             Processes any Narsese task
         """
-        NARSDataStructures.assert_task(task)
+        Asserts.assert_task(task)
+
+        if task.sentence.statement.contains_variable(): return  # todo handle variables
 
         if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
             self.process_judgment_task(task)
@@ -257,26 +260,20 @@ class NARS:
     def process_judgment_task(self, task: NARSDataStructures.Task):
         """
             Processes a Narsese Judgment Task
+            Insert it into the belief table and revise it with another belief
 
             :param Judgment Task to process
         """
-        NARSDataStructures.assert_task(task)
+        Asserts.assert_task(task)
 
         j1 = task.sentence
 
         # get terms from sentence
         statement_term = j1.statement
 
-        if statement_term.contains_variable(): return  # todo handle variables
-
-        """
-            Initial Processing
-
-            Revise this judgment with the most confident belief, then insert it into the belief table
-        """
-        # derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
-        # for derived_sentence in derived_sentences:
-        #    self.experience_task_buffer.put(NARSDataStructures.Task(derived_sentence))
+        derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+        for derived_sentence in derived_sentences:
+           self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
@@ -284,11 +281,6 @@ class NARS:
         # add the judgment itself into concept's belief table
         statement_concept.belief_table.put(j1)
 
-        """
-            Continued processing
-
-            Do local/forward inference on a related belief
-        """
         # revise the judgment
         self.process_judgment_sentence(j1, statement_concept)
 
@@ -311,12 +303,10 @@ class NARS:
             #todo handle variables
             #todo handle tenses
         """
-        NARSDataStructures.assert_task(task)
+        Asserts.assert_task(task)
 
         # get terms from sentence
         statement_term = task.sentence.statement
-
-        if statement_term.contains_variable(): return  # todo handle variables
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
@@ -346,14 +336,12 @@ class NARS:
 
             :param Goal Task to process
         """
-        NARSDataStructures.assert_task(task)
+        Asserts.assert_task(task)
 
         j1 = task.sentence
 
         # get terms from sentence
         statement_term = j1.statement
-
-        if statement_term.contains_variable(): return  # todo handle variables
 
         """
             Initial Processing
@@ -400,45 +388,37 @@ class NARS:
             :param related_concept - (Optional) concept to process the sentence with
 
             #todo handle variables
-            #todo handle tenses
         """
         if Global.Global.DEBUG: print("Processing: " + j1.get_formatted_string())
         statement_term = j1.statement
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
 
-        if statement_term.contains_variable(): return
         j2 = None
-        if related_concept is None:
-            number_of_attempts = 0
-            while j2 is None and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF:  # try searching a maximum of 3 concepts
-                related_concept = self.memory.get_semantically_related_concept(statement_concept)
-                if related_concept is None:
-                    if Global.Global.DEBUG: print("No related concepts?")
-                    return  # no related concepts! Should never happen, the concept is always semantically related to itself
+        number_of_attempts = 0
+        while j2 is None and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF:  # try searching a maximum of 3 concepts
+            related_concept = self.memory.get_semantically_related_concept(statement_concept)
+            if related_concept is None:
+                if Global.Global.DEBUG: print("No related concepts?")
+                return  # no related concepts! Should never happen, the concept is always semantically related to itself
 
-                # check for a belief we can interact with
-                for (belief, confidence) in related_concept.belief_table:
-                    if NALGrammar.Sentences.may_interact(j1, belief):
-                        j2 = belief  # belief can interact with j1
-                        break
-
-                number_of_attempts += 1
-        else:
+            # check for a belief we can interact with
             for (belief, confidence) in related_concept.belief_table:
                 if NALGrammar.Sentences.may_interact(j1, belief):
                     j2 = belief  # belief can interact with j1
                     break
 
+            number_of_attempts += 1
+
         if j2 is None:
-            if Global.Global.DEBUG: print('No related belief for ' + j1.get_formatted_string())
+            if Global.Global.DEBUG: print('No related belief found for ' + j1.get_formatted_string())
             return  # done if can't interact
 
         if Global.Global.DEBUG: print(
             "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         for derived_sentence in derived_sentences:
-            self.experience_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+            self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
     def execute_operation(self, full_operation_statement):
         """

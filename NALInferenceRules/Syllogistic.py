@@ -9,10 +9,10 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import Asserts
 import NALGrammar
 import NALSyntax
 from NALInferenceRules import TruthValueFunctions, HelperFunctions
-from NALInferenceRules.HelperFunctions import getevidentialvalues_from2sentences
 
 
 def Deduction(j1, j2):
@@ -31,8 +31,8 @@ def Deduction(j1, j2):
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
 
     # Statement
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_subject_term(),
@@ -56,17 +56,15 @@ def Analogy(j1, j2):
 
             j2: Sentence (S <-> M <f2, c2>)
         Truth Val:
-            f: and(f1,f2)
-
-            c: and(f2,c1,c2)
+            F_ana
         Returns: (depending on j1)
             :- Sentence (S --> P <f3, c3>)
                 or
             :- Sentence (P --> S <f3, c3>)
 
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_symmetric(j2)
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
@@ -113,15 +111,13 @@ def Resemblance(j1, j2):
                 or
             j2: Sentence (M <-> S <f2, c2>)
         Truth Val:
-            f: and(f1,f2)
-
-            c: and(or(f1,f2),c1,c2)
+            F_res
         Returns:
             :- Sentence (S <-> P <f3, c3>)
     """
+    Asserts.assert_sentence_symmetric(j1)
+    Asserts.assert_sentence_symmetric(j2)
 
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_predicate_term():
         # j1=M<->P, j2=S<->M
@@ -162,16 +158,12 @@ def Abduction(j1, j2):
 
             j2: Sentence (S --> M <f2, c2>)
         Evidence:
-            w+: and(f1,f2,c1,c2)
-
-            w-: and(f1,c1,not(f2),c2)
-
-            w: and(f1,c1,c2)
+            F_abd
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
 
     # Statement
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_subject_term(),
@@ -193,16 +185,13 @@ def Induction(j1, j2):
 
             j2: Sentence (M --> S <f2, c2>)
         Evidence:
-            w+: and(f1,f2,c1,c2)
-
-            w-: and(f2,c2,not(f1),c1)
-
-            w: and(f2,c1,c2)
+            F_ind
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
+
     # Statement
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                       j1.statement.get_predicate_term(), j1.statement.get_copula())
@@ -221,16 +210,13 @@ def Exemplification(j1, j2):
 
             j2: Sentence (M --> S <f2, c2>)
         Evidence:
-            w+: and(f1,c1,f2,c2)
-
-            w-: 0
-
-            w: w+
+            F_exe
         Returns:
             :- Sentence (S --> P <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
+
     # Statement
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                       j1.statement.get_subject_term(), j1.statement.get_copula())
@@ -253,21 +239,21 @@ def Comparison(j1, j2):
             j1: Sentence (P --> M <f1, c1>)
             j2: Sentence (S --> M <f2, c2>)
         Evidence:
-            w+: and(f1,c1,f2,c2)
-
-            w: and(or(f1,f2),c1,c2)
+            F_com
         Returns:
             :- Sentence (S <-> P <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_asymmetric(j1)
+    Asserts.assert_sentence_asymmetric(j2)
 
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_subject_term():
+        # M --> P and M --> S
         result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                           j1.statement.get_predicate_term(),
                                                           NALSyntax.Copula.Similarity)
     elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
+        # P --> M and S --> M
         result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_subject_term(),
                                                           j1.statement.get_subject_term(),
                                                           NALSyntax.Copula.Similarity)

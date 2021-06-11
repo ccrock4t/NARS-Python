@@ -25,13 +25,13 @@ class NARSGUI:
 
     # Internal Data vars
     # listboxes
-    gui_experience_buffer_listbox = None  # output for tasks in experience buffer
+    gui_global_buffer_listbox = None  # output for tasks in global buffer
     gui_memory_listbox = None  # output for concepts in memory bag
     gui_event_buffer_listbox = None # output for tasks in event buffer
 
     # labels
     gui_event_buffer_output_label = None
-    gui_experience_buffer_output_label = None
+    gui_global_buffer_output_label = None
     gui_concepts_bag_output_label = None
     GUI_BUDGET_SYMBOL = "$"
 
@@ -151,9 +151,9 @@ class NARSGUI:
         label = None
 
         listbox = self.dict_listboxes[data_structure_name]
-        if listbox is self.gui_experience_buffer_listbox:
-            label_txt = "Experience Task "
-            label = self.gui_experience_buffer_output_label
+        if listbox is self.gui_global_buffer_listbox:
+            label_txt = "Global Task "
+            label = self.gui_global_buffer_output_label
         elif listbox is self.gui_memory_listbox:
             label_txt = "Memory - Concepts "
             label = self.gui_concepts_bag_output_label
@@ -250,7 +250,7 @@ class NARSGUI:
         listbox_height = 30
         listbox_width = 80
 
-        (experience_task_buffer_name, event_buffer_name, memory_bag_name) = data_structure_names
+        (global_task_buffer_name, event_buffer_name, memory_bag_name) = data_structure_names
         """
             Event buffer internal contents GUI
         """
@@ -267,19 +267,19 @@ class NARSGUI:
         self.dict_listboxes[event_buffer_name] = self.gui_event_buffer_listbox
 
         """
-            Experience Buffer internal contents GUI
+            Global Buffer internal contents GUI
         """
-        self.gui_experience_buffer_output_label = tk.Label(window)
-        self.gui_experience_buffer_output_label.grid(row=2, column=0, sticky='w')
+        self.gui_global_buffer_output_label = tk.Label(window)
+        self.gui_global_buffer_output_label.grid(row=2, column=0, sticky='w')
 
         buffer_scrollbar = tk.Scrollbar(window)
         buffer_scrollbar.grid(row=3, column=2, sticky='ns')
-        self.gui_experience_buffer_listbox = tk.Listbox(window,
-                                                       height=2*listbox_height//3,
-                                                       width=listbox_width, font=('', 8),
-                                                       yscrollcommand=buffer_scrollbar.set)
-        self.gui_experience_buffer_listbox.grid(row=3, column=0, columnspan=1)
-        self.dict_listboxes[experience_task_buffer_name] = self.gui_experience_buffer_listbox
+        self.gui_global_buffer_listbox = tk.Listbox(window,
+                                                    height=2*listbox_height//3,
+                                                    width=listbox_width, font=('', 8),
+                                                    yscrollcommand=buffer_scrollbar.set)
+        self.gui_global_buffer_listbox.grid(row=3, column=0, columnspan=1)
+        self.dict_listboxes[global_task_buffer_name] = self.gui_global_buffer_listbox
 
         """
             Memory internal contents GUI
@@ -307,7 +307,7 @@ class NARSGUI:
 
         # define callbacks when clicking items in any box
         self.gui_memory_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
-        self.gui_experience_buffer_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
+        self.gui_global_buffer_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
 
         for i,name in enumerate(data_structure_names):
             self.dict_listboxes[name + "capacity"] = data_structure_capacities[i]
@@ -584,10 +584,10 @@ class NARSGUI:
                 ID = item_string[item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
                     self.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
                 data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
-            elif event.widget is self.gui_experience_buffer_listbox:
+            elif event.widget is self.gui_global_buffer_listbox:
                 ID = item_string[item_string.find(Global.Global.MARKER_ITEM_ID) + len(
                     Global.Global.MARKER_ITEM_ID):item_string.rfind(Global.Global.MARKER_ID_END)]
-                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_experience_buffer_listbox)
+                data_structure_name = self.get_data_structure_name_from_listbox(self.gui_global_buffer_listbox)
                 ID = int(ID)
             else:
                 # clicked concept within another concept

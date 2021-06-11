@@ -9,7 +9,7 @@ import Global
 import NALSyntax
 from NALGrammar.Arrays import Array
 
-import NALGrammar.Asserts
+import Asserts
 
 
 class Term:
@@ -362,10 +362,10 @@ class StatementTerm(CompoundTerm,Array):
     """
 
     def __init__(self, subject_term: Term, predicate_term = None, copula=None, statement_connector = None):
-        NALGrammar.Asserts.assert_term(subject_term)
+        Asserts.assert_term(subject_term)
 
         if predicate_term is None:
-            NALGrammar.Asserts.assert_statement_term(subject_term)
+            Asserts.assert_statement_term(subject_term)
             subterms = [subject_term]
         else:
             subterms = [subject_term, predicate_term]

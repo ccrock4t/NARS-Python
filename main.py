@@ -55,15 +55,15 @@ if sys.platform.startswith('win'):
 class GUIProcess(multiprocessing.Process):
     def __init__(self):
         NARS_object = Global.Global.NARS
-        experience_task_buffer_name = str(NARS_object.experience_task_buffer)
-        experience_task_buffer_capacity = NARS_object.experience_task_buffer.capacity
+        global_task_buffer_name = str(NARS_object.global_task_buffer)
+        global_task_buffer_capacity = NARS_object.global_task_buffer.capacity
         event_buffer_name = str(NARS_object.event_buffer)
         event_buffer_capacity = NARS_object.event_buffer.capacity
         memory_bag_name = str(NARS_object.memory.concepts_bag)
         memory_bag_capacity = NARS_object.memory.concepts_bag.capacity
 
-        data_structure_names = (experience_task_buffer_name, event_buffer_name, memory_bag_name)
-        data_structure_capacities = (experience_task_buffer_capacity, event_buffer_capacity, memory_bag_capacity)
+        data_structure_names = (global_task_buffer_name, event_buffer_name, memory_bag_name)
+        data_structure_capacities = (global_task_buffer_capacity, event_buffer_capacity, memory_bag_capacity)
 
         # multiprocess pipe to pass objects between NARS and GUI Processes
         pipe_gui_objects, pipe_NARS_objects = multiprocessing.Pipe()  # 2-way object request pipe

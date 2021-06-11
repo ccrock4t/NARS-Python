@@ -1,7 +1,7 @@
 import random
 
+import Asserts
 import Config
-import Global
 import NALGrammar
 import NALSyntax
 import NARSDataStructures
@@ -46,7 +46,7 @@ class Memory:
             :param term: The term naming the concept to create
             :returns New Concept created from the term
         """
-        NALGrammar.Asserts.assert_term(term)
+        Asserts.assert_term(term)
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
         assert (self.concepts_bag.peek(concept_key) is None), "Cannot create new concept. Concept already exists."
         # create new concept
@@ -229,7 +229,7 @@ class Concept:
         NARS Concept
     """
     def __init__(self, term):
-        NALGrammar.Asserts.assert_term(term)
+        Asserts.assert_term(term)
         self.term = term  # concept's unique term
         self.term_links = NARSDataStructures.Bag(item_type=Concept)  # Bag of related concepts (related by term)
         self.belief_table = NARSDataStructures.Table(NALGrammar.Sentences.Judgment)

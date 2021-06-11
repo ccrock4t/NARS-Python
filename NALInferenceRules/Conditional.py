@@ -9,10 +9,10 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import Asserts
 import NALGrammar
 import NALSyntax
 from NALInferenceRules import TruthValueFunctions, HelperFunctions
-from NALInferenceRules.HelperFunctions import getevidentialvalues_from2sentences
 
 
 def ConditionalAnalogy(j1, j2):
@@ -28,8 +28,8 @@ def ConditionalAnalogy(j1, j2):
         Returns:
             :- Sentence (P <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_inheritance(j1)
+    Asserts.assert_sentence_equivalence(j2)
 
     # Statement
     if j1.statement == j2.statement.get_subject_term():
@@ -50,7 +50,7 @@ def ConditionalDeduction(j1, j2):
         Conditional Deduction
 
         Input:
-            j1: Equivalence Statement (S ==> P) <f2, c2>
+            j1: Implication Statement (S ==> P) <f2, c2>
 
             j2: Statement (S) <f1, c1> {tense}
         Evidence:
@@ -58,8 +58,8 @@ def ConditionalDeduction(j1, j2):
         Returns:
             :- P <f3, c3>
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_forward_implication(j1)
+    Asserts.assert_sentence_inheritance(j2)
 
     statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
     result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
@@ -73,16 +73,16 @@ def ConditionalAbduction(j1, j2):
         Conditional Abduction
 
         Input:
-            j1: Equivalence Statement (S ==> P) <f2, c2>
+            j1: Implication Statement (S ==> P) <f2, c2>
 
             j2: Event (P) <f1, c1> {tense}
         Evidence:
-            F_deduction
+            F_abduction
         Returns:
             :- P <f3, c3>
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_forward_implication(j1)
+    Asserts.assert_sentence_inheritance(j2)
 
     statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
     result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
@@ -100,19 +100,14 @@ def ConditionalInduction(j1, j2):
 
             j2: Event P <f2, c2> {tense}
         Evidence:
-            w+: and(f1,f2,c1,c2)
-
-            w-: and(f2,c2,not(f1),c1)
-
-            w: and(f2,c1,c2)
+            F_induction
         Returns:
             :- Sentence (S =|> P <f3, c3>)
             :- or Sentence (S =/> P <f3, c3>)
             :- or Sentence (P =/> S <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
-    (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+    Asserts.assert_sentence_inheritance(j1)
+    Asserts.assert_sentence_inheritance(j2)
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
@@ -142,19 +137,16 @@ def ConditionalComparison(j1, j2):
 
             B: Event P <f2, c2> {tense}
         Evidence:
-            w+: and(f1,f2,c1,c2)
-
-            w-: and(f2,c2,not(f1),c1)
-
-            w: and(f2,c1,c2)
+            F_comparison
         Returns:
             :- Sentence (S <|> P <f3, c3>)
             :- or Sentence (S </> P <f3, c3>)
             :- or Sentence (P </> S <f3, c3>)
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
-    (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+    Asserts.assert_sentence_inheritance(j1)
+    Asserts.assert_sentence_inheritance(j2)
+
+
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
@@ -185,14 +177,14 @@ def ConditionalConjunctionalDeduction(j1, j2):
         Input:
             j1: Implication Statement ((C1 && C2 && ... CN && S) ==> P) <f2, c2>
 
-            j2: Implication Statement (S) <f1, c1> {tense}
+            j2: Statement (S) <f1, c1> {tense}
         Evidence:
             F_deduction
         Returns:
             :-  ((C1 && C2 && ... CN) ==> P)  <f3, c3>
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_forward_implication(j1)
+    Asserts.assert_sentence_inheritance(j2)
 
     subject_term: NALGrammar.Terms.CompoundTerm = j1.statement.get_subject_term()
 
@@ -223,8 +215,8 @@ def ConditionalConjunctionalAbduction(j1, j2):
         Returns:
             :-  S  <f3, c3>
     """
-    NALGrammar.Asserts.assert_sentence(j1)
-    NALGrammar.Asserts.assert_sentence(j2)
+    Asserts.assert_sentence_forward_implication(j1)
+    Asserts.assert_sentence_forward_implication(j2)
 
     j1_subject_term = j1.statement.get_subject_term()
     j2_subject_term = j2.statement.get_subject_term()
