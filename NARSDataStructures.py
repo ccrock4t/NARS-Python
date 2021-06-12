@@ -237,7 +237,7 @@ class Bag(ItemContainer):
         self.current_bucket_number = 0  # keeps track of the Bag's current bucket number
         self.count = 0
 
-        # initialize buckets
+        # initialize buckets between 0 and number-of-buckets minus 1
         for i in range(0, self.number_of_buckets):
             self.buckets[i] = []
 
@@ -252,10 +252,8 @@ class Bag(ItemContainer):
     def put(self, item):
         """
             Place an Item into the bag.
-            If it's new, wraps it in the Item object and places it into the lookup table
 
             :param Bag Item to place into the Bag
-
             :returns Item purged from the Bag if the inserted item causes an overflow
         """
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
@@ -279,7 +277,7 @@ class Bag(ItemContainer):
             Peek an object from the bag using its key.
             If key is None, peeks probabilistically
 
-            :returns An item peeked from the Bag; None if item could not be taken from the Bag
+            :returns An item peeked from the Bag; None if item could not be peeked from the Bag
         """
         if self.count == 0: return None  # no items
 
@@ -297,7 +295,7 @@ class Bag(ItemContainer):
             Returns None if Bag is empty
         """
         if self.count == 0: return None
-        self._move_to_max_nonempty_bucket()
+        self._move_up_to_max_nonempty_bucket()
         item, _ = self._peek_random_item_from_current_bucket()
         return item
 
@@ -392,16 +390,15 @@ class Bag(ItemContainer):
         while len(self.buckets[self.current_bucket_number]) == 0:
             self._move_upward_to_next_bucket()
 
-    def _move_to_max_nonempty_bucket(self):
+    def _move_up_to_max_nonempty_bucket(self):
         """
             Select the highest value non-empty bucket
 
         """
         assert self.count > 0,"Cannot select non-empty bucket in empty Bag"
-        self.current_bucket_number = self.number_of_buckets - 1
-        self._move_downward_to_next_bucket()
+        self.current_bucket_number = self.number_of_buckets - 1 # first check highest bucket
         while len(self.buckets[self.current_bucket_number]) == 0:
-            self._move_downward_to_next_bucket()
+            self._move_down_to_next_bucket()
 
     def _move_to_min_nonempty_bucket(self):
         """
@@ -413,7 +410,7 @@ class Bag(ItemContainer):
         self.current_bucket_number = 0
         self._move_to_next_nonempty_bucket()
 
-    def _move_downward_to_next_bucket(self):
+    def _move_down_to_next_bucket(self):
         """
             Select the next bucket below the currently selected bucket
         """

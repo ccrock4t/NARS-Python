@@ -43,6 +43,12 @@ class Array():
             self.image_array = None
 
         def index_function(*coord_vars, self_obj=None):
+            """
+                Populate a numpy array with the appropriate type of array element
+            :param coord_vars:
+            :param self_obj:
+            :return:
+            """
             absolute_indices = tuple([int(var) for var in coord_vars])
 
             if isinstance(self_obj, NALGrammar.Terms.StatementTerm):
@@ -75,12 +81,16 @@ class Array():
                                                                                                           term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
                                                              copula=self_obj.get_copula())
 
-            elif isinstance(self_obj, NALGrammar.Sentences.Judgment):
+            elif isinstance(self_obj, NALGrammar.Sentences.Judgment) or isinstance(self_obj, NALGrammar.Sentences.Goal):
                 truth_value: NALGrammar.Values.TruthValue = self_obj.truth_values[absolute_indices]
                 statement_element: NALGrammar.Terms.StatementTerm = self_obj.statement[absolute_indices]  # get atomic array element
-                element = NALGrammar.Sentences.Judgment(statement=statement_element,
-                                                        value=truth_value,
-                                                        occurrence_time=occurrence_time)
+                if isinstance(self_obj, NALGrammar.Sentences.Judgment):
+                    element = NALGrammar.Sentences.Judgment(statement=statement_element,
+                                                            value=truth_value,
+                                                            occurrence_time=occurrence_time)
+                elif isinstance(self_obj, NALGrammar.Sentences.Goal):
+                    element = NALGrammar.Sentences.Goal(statement=statement_element,
+                                                            value=truth_value)
                 if self_obj.image_array is not None: self_obj.image_array[absolute_indices] = (np.uint8)(truth_value.frequency * 255)
                 if self_obj.element_string_array is not None:
                     self_obj.element_string_array[absolute_indices] = element.get_formatted_string()

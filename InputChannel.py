@@ -246,5 +246,5 @@ def process_visual_sensory_input(input_string):
     default_truth_value = NALGrammar.Values.TruthValue(frequency=Config.DEFAULT_JUDGMENT_FREQUENCY,
                                                 confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE)
 
-    return NALGrammar.Sentences.Judgment(statement=statement_array_term,
+    return NALGrammar.Sentences.Goal(statement=statement_array_term,
                                value=(default_truth_value, truth_value_list))

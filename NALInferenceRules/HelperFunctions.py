@@ -90,7 +90,10 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     """
     result_type = premise_result_type(j1,j2)
 
-    if result_type == NALGrammar.Sentences.Judgment:
+    if result_type == NALGrammar.Sentences.Question:
+        result = NALGrammar.Sentences.Question(result_statement)
+    else:
+        # Judgment or Goal
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
         result_truth_array = None
@@ -100,9 +103,16 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
                                                                         truth_value_function=truth_value_function)
         else:
             result_truth = truth_value_function(f1, c1, f2, c2)
-        result = NALGrammar.Sentences.Judgment(result_statement, (result_truth,result_truth_array), occurrence_time=j1.stamp.occurrence_time)
-    elif result_type == NALGrammar.Sentences.Question:
-        result = NALGrammar.Sentences.Question(result_statement)
+
+
+        if result_type == NALGrammar.Sentences.Judgment:
+            result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
+                                                   occurrence_time=j1.stamp.occurrence_time)
+        elif result_type == NALGrammar.Sentences.Goal:
+            result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array))
+
+
+
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
