@@ -8,7 +8,7 @@ import NALGrammar
 
 
 class Global:
-    DEBUG = False # set to true for useful debug statements
+    DEBUG = True # set to true for useful debug statements
 
     """
         NARS vars

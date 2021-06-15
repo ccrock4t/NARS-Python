@@ -36,23 +36,12 @@ def Revision(j1, j2):
     assert (
             j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
-    # todo handle occurrence_time
-    occurrence_time = None
-
-    # Get Truth Value
-    (wp1, w1, wn1), (wp2, w2, wn2) = HelperFunctions.getevidence_from2sentences(j1, j2)
-    result_truth = TruthValueFunctions.F_Revision(wp1=wp1, wn1=wn1, wp2=wp2, wn2=wn2)
-
     result_statement = NALGrammar.Terms.StatementTerm(j1.statement.get_subject_term(),
                                                       j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())
-    result = NALGrammar.Sentences.Judgment(result_statement, result_truth, occurrence_time=j1.stamp.occurrence_time)
+    truth_function = TruthValueFunctions.F_Revision
 
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,j2,result_statement,truth_function)
 
 
 def Choice(j1, j2):

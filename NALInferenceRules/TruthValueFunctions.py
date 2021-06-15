@@ -16,10 +16,12 @@ import NALInferenceRules
 from NALInferenceRules import ExtendedBooleanOperators
 import numpy as np
 
-def F_Revision(wp1, wn1, wp2, wn2):
+def F_Revision(f1,c1,f2,c2):
     """
         :return: F_rev: Truth-Value (f,c)
     """
+    wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(f1,c1)
+    wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(f2,c2)
     # compute values of combined evidence
     wp = wp1 + wp2
     wn = wn1 + wn2
@@ -259,9 +261,7 @@ def ReviseArray(truth_value_array):
         if final_truth_value is None:
             final_truth_value = element
         else:
-            wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
-            wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(element.frequency, element.confidence)
-            final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
+            final_truth_value = F_Revision(final_truth_value.frequency,final_truth_value.confidence,element.frequency,element.confidence)
     return final_truth_value
 
 def TruthFunctionOnArrayAndRevise(truth_value_array_1, truth_value_array_2, truth_value_function):
@@ -289,8 +289,9 @@ def TruthFunctionOnArrayAndRevise(truth_value_array_1, truth_value_array_2, trut
         if final_truth_value is None:
             final_truth_value = truth_value
         else:
-            wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(final_truth_value.frequency, final_truth_value.confidence)
-            wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(truth_value.frequency, truth_value.confidence)
-            final_truth_value = F_Revision(wp1,wn1,wp2,wn2)
+            final_truth_value = F_Revision(final_truth_value.frequency,
+                                           final_truth_value.confidence,
+                                           truth_value.frequency,
+                                           truth_value.confidence)
 
     return final_truth_value,final_truth_value_array

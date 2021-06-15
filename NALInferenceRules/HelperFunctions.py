@@ -90,9 +90,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     """
     result_type = premise_result_type(j1,j2)
 
-    if result_type == NALGrammar.Sentences.Question:
-        result = NALGrammar.Sentences.Question(result_statement)
-    else:
+    if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal :
         # Judgment or Goal
         # Get Truth Value
         (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
@@ -104,15 +102,13 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
         else:
             result_truth = truth_value_function(f1, c1, f2, c2)
 
-
         if result_type == NALGrammar.Sentences.Judgment:
             result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
                                                    occurrence_time=j1.stamp.occurrence_time)
         elif result_type == NALGrammar.Sentences.Goal:
             result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array))
-
-
-
+    elif result_type == NALGrammar.Sentences.Question:
+        result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
@@ -130,7 +126,8 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
     :param truth_value_function:
     :return:
     """
-    if type(j) == NALGrammar.Sentences.Judgment:
+    result_type = type(j)
+    if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal:
         # Get Truth Value
         result_truth_array = None
         if truth_value_function is None:
@@ -139,8 +136,12 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
             if j.is_array:
                 result_truth_array = TruthFunctionOnArray(j.truth_values, None, truth_value_function)
             result_truth = truth_value_function(j.value.frequency, j.value.confidence)
-        result = NALGrammar.Sentences.Judgment(result_statement, (result_truth,result_truth_array), occurrence_time=j.stamp.occurrence_time)
-    elif type(j) == NALGrammar.Sentences.Question:
+        if result_type == NALGrammar.Sentences.Judgment:
+            result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
+                                                   occurrence_time=j.stamp.occurrence_time)
+        elif result_type == NALGrammar.Sentences.Goal:
+            result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array))
+    elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
 
     # merge in the parent sentences' evidential bases
@@ -152,7 +153,7 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
 
 def stamp_and_print_inference_rule(sentence, inference_rule):
     sentence.stamp.derived_by = None if inference_rule is None else inference_rule.__name__
-    if Global.Global.DEBUG: print(inference_rule + " derived " + sentence.get_formatted_string())
+    if Global.Global.DEBUG: print(sentence.stamp.derived_by  + " derived " + sentence.get_formatted_string())
 
 def premise_result_type(j1,j2):
     """

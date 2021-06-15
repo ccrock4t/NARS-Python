@@ -123,13 +123,17 @@ class Memory:
         if len(statement_concept.term_links) == 0: return statement_concept
         related_concept_item = statement_concept.term_links.peek()
         initial_related_concept: Concept = related_concept_item.object
-        related_concept = None
+        related_concept = initial_related_concept
 
         if isinstance(initial_related_concept.term, NALGrammar.Terms.AtomicTerm):
             related_concept_item = initial_related_concept.term_links.peek()
             related_concept = related_concept_item.object
         else:
             # the initially related concept is compound, not atomic
+            if isinstance(related_concept, NALGrammar.Terms.StatementTerm):
+                check_another = random.randint(0,1)
+                if check_another == 0: return related_concept
+            # not a statement, so peek a related concept
             attempts = 0
             while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
                 and (related_concept is None \

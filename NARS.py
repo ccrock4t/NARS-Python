@@ -287,7 +287,8 @@ class NARS:
         statement_concept.belief_table.put(j1)
 
         # revise the judgment
-        self.process_judgment_sentence(j1, statement_concept)
+
+        self.process_judgment_sentence(j1)
 
     def process_judgment_sentence(self, j1: NALGrammar.Sentences.Goal, related_concept=None):
         """
@@ -296,6 +297,26 @@ class NARS:
             :param j1: Judgment
             :param related_concept: concept related to judgment with which to perform semantic inference
         """
+
+        # get terms from sentence
+        statement_term = j1.statement
+
+        # get (or create if necessary) statement concept, and sub-term concepts recursively
+        statement_concept = self.memory.peek_concept(statement_term)
+
+        j2 = None
+        for (belief, confidence) in statement_concept.belief_table:
+            if NALGrammar.Sentences.may_interact(j1, belief):
+                j2 = belief  # belief can interact with j1
+                break
+
+        if j2 is not None:
+            if Global.Global.DEBUG: print(
+                "Revising belief: " + j1.get_formatted_string())
+            derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
+            for derived_sentence in derived_sentences:
+                self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+
         self.process_sentence_semantic_inference(j1, related_concept)
 
     def process_question_task(self, task):
@@ -371,14 +392,28 @@ class NARS:
             :param j1: Goal
             :param related_concept: concept related to goal with which to perform semantic inference
         """
+        statement_term = j1.statement
+        statement_concept = self.memory.peek_concept(statement_term)
+
+        j2 = None
+        for (desire, confidence) in statement_concept.desire_table:
+            if NALGrammar.Sentences.may_interact(j1, desire):
+                j2 = desire  # belief can interact with j1
+                break
+
+        if j2 is not None:
+            if Global.Global.DEBUG: print(
+                "Revising desire: " + j1.get_formatted_string())
+            derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
+            for derived_sentence in derived_sentences:
+                self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+
+
         should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
         if not should_pursue: return  # Failed decision-making rule
 
-        statement_term = j1.statement
-
-        statement_concept = self.memory.peek_concept(statement_term)
-        belief = statement_concept.belief_table.peek()
-        if belief is not None and belief.is_positive(): return  # Goal is already achieved
+        desire = statement_concept.belief_table.peek()
+        if desire is not None and desire.is_positive(): return  # Goal is already achieved
 
         if statement_term.is_operation():
             self.execute_operation(j1.statement)
