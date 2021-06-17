@@ -108,10 +108,17 @@ class NARS:
                 statement_string = sentence_string[start_idx:end_idx+1].replace(" ","")
                 statement_term = NALGrammar.Terms.Term.from_string(statement_string)
                 concept = self.memory.peek_concept(statement_term)
+
                 if concept is None:
                     Global.Global.NARS_object_pipe.send(None)
                 else:
-                    table = concept.belief_table if sentence_string[end_idx] == NALSyntax.Punctuation.Judgment else concept.desire_table
+                    punctuation_str = sentence_string[end_idx + 1]
+                    if punctuation_str == NALSyntax.Punctuation.Judgment.value:
+                        table = concept.belief_table
+                    elif punctuation_str == NALSyntax.Punctuation.Goal.value:
+                        table = concept.desire_table
+                    else:
+                        assert False,"ERROR: Could not parse GUI sentence fetch"
                     for knowledge_tuple in table:
                         knowledge_sentence = knowledge_tuple[0]
                         if sentence_string == str(knowledge_sentence):

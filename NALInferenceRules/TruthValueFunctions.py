@@ -230,7 +230,7 @@ def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_f
     :return:
     """
     if truth_value_array_1 is None and truth_value_array_2 is None: return None
-    assert truth_value_array_1.shape == truth_value_array_2.shape,"ERROR: Truth value arrays must be the same shape"
+    if truth_value_array_1 is not None and truth_value_array_2 is not None: assert truth_value_array_1.shape == truth_value_array_2.shape,"ERROR: Truth value arrays must be the same shape"
 
     def function(*coord_vars):
         coords = tuple([int(var) for var in coord_vars])

@@ -57,10 +57,7 @@ def Conversion(j):
                                             j.statement.get_subject_term(),
                                             j.statement.get_copula())
 
-
-    truth_function = NALInferenceRules.TruthValueFunctions.F_Conversion
-
-    return NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j,result_statement,truth_function)
+    return NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j,result_statement,NALInferenceRules.TruthValueFunctions.F_Conversion)
 
 
 def Contraposition(j):

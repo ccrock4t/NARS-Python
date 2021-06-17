@@ -59,6 +59,7 @@ class NARSGUI:
     KEY_LIST_EVIDENTIAL_BASE = "ListEvidentialBase"
     KEY_LIST_INTERACTED_SENTENCES = "ListInteractedSentences"
     KEY_ARRAY_IMAGE = "ArrayImage"
+    KEY_ARRAY_ALPHA_IMAGE = "ArrayAlphaImage"
     KEY_ARRAY_ELEMENT_STRINGS = "ArrayElementStrings"
 
     KEY_KEY = "Key"
@@ -388,6 +389,7 @@ class NARSGUI:
 
     def listbox_sentence_item_click_callback(self,event):
         selection = event.widget.curselection()
+
         if selection:
             index = selection[0]
             sentence_string = event.widget.get(index)
@@ -666,6 +668,7 @@ class NARSGUI:
 
         MAX_IMAGE_SIZE = 2000
         image_array = sentence_to_draw[NARSGUI.KEY_ARRAY_IMAGE]
+        image_alpha_array = sentence_to_draw[NARSGUI.KEY_ARRAY_ALPHA_IMAGE]
         if is_array and image_array is not None:
             column += 2
             # reset image size to defaults
@@ -681,6 +684,8 @@ class NARSGUI:
                     Array - Draw entire image (faster)
                 """
                 image_array = image_array.T
+                image_alpha_array = image_alpha_array.T
+
                 # create image frame
                 image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
                                        name="array image frame")
@@ -700,6 +705,10 @@ class NARSGUI:
                     else:
                         offset = 3 if event.delta > 0 else -3
                     pil_image = Image.fromarray(image_array)
+                    pil_alpha = Image.fromarray(image_alpha_array,mode="L")
+                    pil_image.putalpha(pil_alpha)
+                    pil_image = pil_image.convert(mode="RGBA")
+
                     gui_array_image_dimensions[0] += offset
                     if gui_array_image_dimensions[0] < 1: gui_array_image_dimensions[0] = 1
                     gui_array_image_dimensions[1] += offset
@@ -715,7 +724,7 @@ class NARSGUI:
                 """
                     Array - Draw Individual Cells (slower)
                 """
-                PIXEL_SIZE_PER_ELEMENT = 300 / image_array.shape[0]
+                PIXEL_SIZE_PER_ELEMENT = int(300 / image_array.shape[0])
                 if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1  # minimum size 1 pixel
 
                 image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
@@ -744,10 +753,37 @@ class NARSGUI:
                         f.columnconfigure(0, weight=1)
                         f.grid_propagate(0)
 
-                        color = from_rgb_to_tkinter_color((pixel_value, pixel_value, pixel_value))
                         element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][x,y]
-                        button = tk.Button(f, bg=color,
+                        img_array = np.array([
+                            [
+                                [
+                                    [pixel_value]
+                                ]
+                            ],
+                            [
+                                [
+                                    [pixel_value]
+                                ]
+                            ],
+                            [
+                                [
+                                    [pixel_value]
+                                ]
+                            ],
+                            [
+                                [
+                                    [image_alpha_array[(x, y)]]
+                                ]
+                            ]
+                        ])
+                        img_array = img_array.T
+                        img = Image.fromarray(img_array,mode="RGBA")
+                        img = img.resize((PIXEL_SIZE_PER_ELEMENT,PIXEL_SIZE_PER_ELEMENT),Image.NEAREST)
+                        button = tk.Button(f,
                                            command=create_array_element_click_lambda(element_string))
+                        render = ImageTk.PhotoImage(img)
+                        button.config(image=render)
+                        button.image = render
                         button.config(relief='solid', borderwidth=0)
                         button.grid(sticky="NWSE")
                         CreateToolTip(button, text=(element_string))

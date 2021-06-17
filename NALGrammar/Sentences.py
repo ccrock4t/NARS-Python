@@ -91,6 +91,7 @@ class Sentence(Array):
                                            self.stamp.interacted_sentences]
         dict[NARSGUI.NARSGUI.KEY_IS_ARRAY] = self.is_array
         dict[NARSGUI.NARSGUI.KEY_ARRAY_IMAGE] = self.image_array if self.is_array and not isinstance(self,Question) else None
+        dict[NARSGUI.NARSGUI.KEY_ARRAY_ALPHA_IMAGE] = self.image_alpha_array if self.is_array and not isinstance(self,Question) else None
         dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
         dict[NARSGUI.NARSGUI.KEY_DERIVED_BY] = self.stamp.derived_by
         return dict
