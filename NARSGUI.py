@@ -35,11 +35,6 @@ class NARSGUI:
     gui_concepts_bag_output_label = None
     GUI_BUDGET_SYMBOL = "$"
 
-    # array visualization
-    gui_array_image_frame = None
-    gui_array_image_dimensions = [300,300]
-    gui_array_use_confidence_opacity = True
-
     # dictionary of data structure name to listbox
     dict_listboxes = {}
     gui_object_pipe = None # two-way object request communication
@@ -672,9 +667,10 @@ class NARSGUI:
         image_alpha_array = sentence_to_draw[NARSGUI.KEY_ARRAY_ALPHA_IMAGE]
         if is_array and image_array is not None:
             column += 2
-            # reset image size to defaults
-            self.gui_array_image_dimensions[0] = 300
-            self.gui_array_image_dimensions[1] = 300
+
+            # set image defaults
+            gui_array_image_dimensions = [300, 300]
+            gui_array_use_confidence_opacity = [True]
 
             # Percept elements label
             label = tk.Label(item_info_window, text="Array Visualization (scroll to zoom in/out)", font=('bold'))
@@ -692,21 +688,18 @@ class NARSGUI:
                                        name="array image frame")
                 image_frame.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
 
-                # create image
-                gui_array_image_dimensions = self.gui_array_image_dimensions
-
-                # render = ImageTk.PhotoImage()
+                # create image container
                 img_container = tk.Label(image_frame, image=None)
                 img_container.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
 
-                def zoom_image_array(event,self):
+                def zoom_image_array(event):
                     # zoom the image array depending on how the user scrolled
                     if event is None:
                         offset = 0  # initialize
                     else:
                         offset = 3 if event.delta > 0 else -3
                     pil_image = Image.fromarray(image_array)
-                    if self.gui_array_use_confidence_opacity:
+                    if gui_array_use_confidence_opacity[0]:
                         pil_alpha = Image.fromarray(image_alpha_array,mode="L")
                         pil_image.putalpha(pil_alpha)
                         pil_image = pil_image.convert(mode="RGBA")
@@ -720,6 +713,8 @@ class NARSGUI:
                     img_container.config(image=render)
                     img_container.image = render
 
+                image_frame.bind_all("<MouseWheel>", zoom_image_array)
+                zoom_image_array(None)
             else:
                 """
                     Array - Draw Individual Cells (slower)
@@ -727,24 +722,24 @@ class NARSGUI:
                 PIXELS_PER_ELEMENT = [int(300 / image_array.shape[0])] # use an array to keep a pointer of the integer
                 if PIXELS_PER_ELEMENT[0] < 1: PIXELS_PER_ELEMENT[0] = 1  # minimum size 1 pixel
 
-                image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
-                                       name="array image frame")
-                image_frame.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
-
                 def create_array_element_click_lambda(sentence):
-                    return None #lambda: self.draw_sentence_inter5al_data(sentence) #todo
+                    return None #lambda: self.draw_sentence_internal_data(sentence) #todo
 
-                def create_image_array(self):
-                    if self.gui_array_image_frame is not None:
-                        self.gui_array_image_frame.destroy()
-                        image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
-                                               name="array image frame")
-                        image_frame.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
+                image_frame = [None]
+                def create_image_array():
+                    if image_frame[0] is not None:
+                        image_frame[0].destroy()
+
+                    image_frame[0] = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
+                                           name="array image frame")
+                    image_frame[0].grid(row=row, column=column, columnspan=2, rowspan=2)
+
+                    image_frame[0].bind_all("<MouseWheel>", zoom_image_array)
 
                     # iterate over each element and draw a pixel for it
                     if len(image_array.shape) == 2:
                         for (x, y), pixel_value in np.ndenumerate(image_array):
-                            f = tk.Frame(image_frame, width=PIXELS_PER_ELEMENT[0],
+                            f = tk.Frame(image_frame[0], width=PIXELS_PER_ELEMENT[0],
                                          height=PIXELS_PER_ELEMENT[0])
                             f.grid(row=y, column=x, columnspan=1, rowspan=1)
                             f.rowconfigure(0, weight=1)
@@ -776,7 +771,7 @@ class NARSGUI:
                             ])
                             img_array = img_array.T
                             img = Image.fromarray(img_array, mode="RGBA")
-                            if not self.gui_array_use_confidence_opacity:
+                            if not gui_array_use_confidence_opacity[0]:
                                 img = img.convert(mode="RGB")
 
                             img = img.resize((PIXELS_PER_ELEMENT[0], PIXELS_PER_ELEMENT[0]), Image.NEAREST)
@@ -792,28 +787,24 @@ class NARSGUI:
                         # todo draw rgb
                         pass
 
-                def zoom_image_array(event, self):
+                def zoom_image_array(event):
                     # zoom the image array depending on how the user scrolled
                     if event is not None:
                         if event.delta > 0:
                             PIXELS_PER_ELEMENT[0] += 1
                         else:
                             PIXELS_PER_ELEMENT[0] -= 1
-                    create_image_array(self)
-
-                self.gui_array_image_frame = image_frame
-
-            image_frame.bind_all("<MouseWheel>", lambda event: zoom_image_array(event,self))
-            zoom_image_array(None, self)
+                    create_image_array()
 
             # checkbox to toggle array confidence opacity
-            def toggle_confidence_opacity(self):
-                self.gui_array_use_confidence_opacity = not self.gui_array_use_confidence_opacity
-                zoom_image_array(None,self)
+            def toggle_confidence_opacity():
+                gui_array_use_confidence_opacity[0] = not gui_array_use_confidence_opacity[0]
+                zoom_image_array(None)
 
+            check_var = tk.Variable()
             row += 1
-            checkbutton = tk.Checkbutton(item_info_window, text='Visualize confidence using pixel opacity', onvalue=1, offvalue=0, command=lambda: toggle_confidence_opacity(self))
-            checkbutton.select()
+            checkbutton = tk.Checkbutton(item_info_window, text='Visualize confidence using pixel opacity', onvalue=1, offvalue=0, variable=check_var, command=toggle_confidence_opacity)
+            checkbutton.invoke()
             checkbutton.grid(row=row, column=column+2)
 
     def get_data_structure_name_from_listbox(self,listbox):
@@ -869,14 +860,13 @@ class ToolTip(object):
 
     def __init__(self, widget):
         self.widget = widget
-        self.color = widget.cget('bg')
         self.tipwindow = None
         self.id = None
         self.x = self.y = 0
 
     def showtip(self, text):
         "Display text in tooltip window"
-        self.widget.config(fg="yellow",borderwidth=2)
+        self.widget.config(relief="groove",borderwidth=2)
         self.text = text
         if self.tipwindow or not self.text:
             return
@@ -892,7 +882,7 @@ class ToolTip(object):
         label.pack(ipadx=1)
 
     def hidetip(self):
-        self.widget.config(fg=self.color, borderwidth=0)
+        self.widget.config( relief="solid",borderwidth=0)
         tw = self.tipwindow
         self.tipwindow = None
         if tw:
