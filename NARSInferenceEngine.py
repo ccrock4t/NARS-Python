@@ -60,7 +60,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                  (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula)))) # S<->P and S-->P
 
     if tautology:
-        if Global.Global.DEBUG: print("tautology")
+        if Config.DEBUG: print("tautology")
         return [] # can't do inference, it will result in tautology
 
 

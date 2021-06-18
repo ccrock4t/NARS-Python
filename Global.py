@@ -8,8 +8,6 @@ import NALGrammar
 
 
 class Global:
-    DEBUG = True # set to true for useful debug statements
-
     """
         NARS vars
     """

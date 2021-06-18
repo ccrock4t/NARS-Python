@@ -7,13 +7,13 @@
     System Parameters
 """
 k = 1 # evidential horizon
-T = 0.25 # decision rule (goal decision-making) threshold
+T = 0.5 # decision rule (goal decision-making) threshold
 
 POSITIVE_THRESHOLD = 2.0/3.0 # frequency must be above this value to be considered "true"
 NEGATIVE_THRESHOLD = 1.0/3.0 # frequency must be below this value to be considered "false"
 
 MINDFULNESS = 0.80 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
-MEMORY_CONCEPT_CAPACITY = 50000 # how many concepts can this NARS have?
+MEMORY_CONCEPT_CAPACITY = 10000 # how many concepts can this NARS have?
 PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = 10 # The number of times to look for a semantically related concept
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number of times to look for a semantically related belief to interact with
@@ -21,6 +21,7 @@ NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number o
 """
     GUI
 """
+DEBUG = False # set to true for useful debug statements
 ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
 
 """

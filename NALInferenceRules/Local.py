@@ -104,7 +104,7 @@ def Decision(f, c):
            True or false, whether to pursue the goal
     """
     desirability = TruthValueFunctions.Expectation(f, c)
-    return abs(desirability - 0.5) > Config.T
+    return desirability > Config.T
 
 def Eternalization(j):
     """

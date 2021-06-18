@@ -246,7 +246,7 @@ def Comparison(j1, j2):
     Asserts.assert_sentence_asymmetric(j1)
     Asserts.assert_sentence_asymmetric(j2)
 
-    copula = NALSyntax.Copula.Similarity if NALSyntax.Copula.is_first_order(j1) else NALSyntax.Copula.Equivalence
+    copula = NALSyntax.Copula.Similarity if NALSyntax.Copula.is_first_order(j1.statement.get_copula()) else NALSyntax.Copula.Equivalence
     # Statement
     if j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # M --> P and M --> S

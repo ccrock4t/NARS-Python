@@ -38,6 +38,7 @@ class NARSGUI:
     # array visualization
     gui_array_image_frame = None
     gui_array_image_dimensions = [300,300]
+    gui_array_use_confidence_opacity = True
 
     # dictionary of data structure name to listbox
     dict_listboxes = {}
@@ -593,7 +594,7 @@ class NARSGUI:
         item_info_window.title("Sentence Internal Data: " + sentence_to_draw[NARSGUI.KEY_STRING])
         is_array = sentence_to_draw[NARSGUI.KEY_IS_ARRAY]
         if is_array:
-            item_info_window.geometry('1100x500')
+            item_info_window.geometry('1300x500')
         else:
             item_info_window.geometry('1000x500')
 
@@ -698,16 +699,17 @@ class NARSGUI:
                 img_container = tk.Label(image_frame, image=None)
                 img_container.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
 
-                def zoom_image_array(event):
+                def zoom_image_array(event,self):
                     # zoom the image array depending on how the user scrolled
                     if event is None:
                         offset = 0  # initialize
                     else:
                         offset = 3 if event.delta > 0 else -3
                     pil_image = Image.fromarray(image_array)
-                    pil_alpha = Image.fromarray(image_alpha_array,mode="L")
-                    pil_image.putalpha(pil_alpha)
-                    pil_image = pil_image.convert(mode="RGBA")
+                    if self.gui_array_use_confidence_opacity:
+                        pil_alpha = Image.fromarray(image_alpha_array,mode="L")
+                        pil_image.putalpha(pil_alpha)
+                        pil_image = pil_image.convert(mode="RGBA")
 
                     gui_array_image_dimensions[0] += offset
                     if gui_array_image_dimensions[0] < 1: gui_array_image_dimensions[0] = 1
@@ -718,80 +720,101 @@ class NARSGUI:
                     img_container.config(image=render)
                     img_container.image = render
 
-                image_frame.bind_all("<MouseWheel>", zoom_image_array)
-                zoom_image_array(None)
             else:
                 """
                     Array - Draw Individual Cells (slower)
                 """
-                PIXEL_SIZE_PER_ELEMENT = int(300 / image_array.shape[0])
-                if PIXEL_SIZE_PER_ELEMENT < 1: PIXEL_SIZE_PER_ELEMENT = 1  # minimum size 1 pixel
+                PIXELS_PER_ELEMENT = [int(300 / image_array.shape[0])] # use an array to keep a pointer of the integer
+                if PIXELS_PER_ELEMENT[0] < 1: PIXELS_PER_ELEMENT[0] = 1  # minimum size 1 pixel
 
                 image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
                                        name="array image frame")
                 image_frame.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
 
-                def zoom_image_array(event):
-                    # zoom the image array depending on how the user scrolled
-                    offset = 1 if event.delta > 0 else -1
-                    for child in image_frame.winfo_children():
-                        child.config(width=child.winfo_width() + offset,
-                                     height=child.winfo_height() + offset)
-
-                image_frame.bind_all("<MouseWheel>", zoom_image_array)
-
                 def create_array_element_click_lambda(sentence):
-                    return None #lambda: self.draw_sentence_internal_data(sentence) #todo
+                    return None #lambda: self.draw_sentence_inter5al_data(sentence) #todo
 
-                # iterate over each element and draw a pixel for it
-                if len(image_array.shape) == 2:
-                    for (x,y), pixel_value in np.ndenumerate(image_array):
-                        f = tk.Frame(image_frame, width=PIXEL_SIZE_PER_ELEMENT,
-                                     height=PIXEL_SIZE_PER_ELEMENT)
-                        f.grid(row=y, column=x, columnspan=1, rowspan=1)
-                        f.rowconfigure(0, weight=1)
-                        f.columnconfigure(0, weight=1)
-                        f.grid_propagate(0)
+                def create_image_array(self):
+                    if self.gui_array_image_frame is not None:
+                        self.gui_array_image_frame.destroy()
+                        image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
+                                               name="array image frame")
+                        image_frame.grid(row=row + 1, column=column, columnspan=2, rowspan=2)
 
-                        element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][x,y]
-                        img_array = np.array([
-                            [
-                                [
-                                    [pixel_value]
-                                ]
-                            ],
-                            [
-                                [
-                                    [pixel_value]
-                                ]
-                            ],
-                            [
-                                [
-                                    [pixel_value]
-                                ]
-                            ],
-                            [
-                                [
-                                    [image_alpha_array[(x, y)]]
-                                ]
-                            ]
-                        ])
-                        img_array = img_array.T
-                        img = Image.fromarray(img_array,mode="RGBA")
-                        img = img.resize((PIXEL_SIZE_PER_ELEMENT,PIXEL_SIZE_PER_ELEMENT),Image.NEAREST)
-                        button = tk.Button(f,
-                                           command=create_array_element_click_lambda(element_string))
-                        render = ImageTk.PhotoImage(img)
-                        button.config(image=render)
-                        button.image = render
-                        button.config(relief='solid', borderwidth=0)
-                        button.grid(sticky="NWSE")
-                        CreateToolTip(button, text=(element_string))
-                if len(image_array.shape) == 3:
-                    #todo draw rgb
-                    pass
+                    # iterate over each element and draw a pixel for it
+                    if len(image_array.shape) == 2:
+                        for (x, y), pixel_value in np.ndenumerate(image_array):
+                            f = tk.Frame(image_frame, width=PIXELS_PER_ELEMENT[0],
+                                         height=PIXELS_PER_ELEMENT[0])
+                            f.grid(row=y, column=x, columnspan=1, rowspan=1)
+                            f.rowconfigure(0, weight=1)
+                            f.columnconfigure(0, weight=1)
+                            f.grid_propagate(0)
 
-            self.gui_array_image_frame = image_frame
+                            element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][x, y]
+                            img_array = np.array([
+                                [
+                                    [
+                                        [pixel_value]
+                                    ]
+                                ],
+                                [
+                                    [
+                                        [pixel_value]
+                                    ]
+                                ],
+                                [
+                                    [
+                                        [pixel_value]
+                                    ]
+                                ],
+                                [
+                                    [
+                                        [image_alpha_array[(x, y)]]
+                                    ]
+                                ]
+                            ])
+                            img_array = img_array.T
+                            img = Image.fromarray(img_array, mode="RGBA")
+                            if not self.gui_array_use_confidence_opacity:
+                                img = img.convert(mode="RGB")
+
+                            img = img.resize((PIXELS_PER_ELEMENT[0], PIXELS_PER_ELEMENT[0]), Image.NEAREST)
+                            button = tk.Button(f,
+                                               command=create_array_element_click_lambda(element_string))
+                            render = ImageTk.PhotoImage(img)
+                            button.config(image=render)
+                            button.image = render
+                            button.config(relief='solid', borderwidth=0)
+                            button.grid(sticky="NWSE")
+                            CreateToolTip(button, text=(element_string))
+                    if len(image_array.shape) == 3:
+                        # todo draw rgb
+                        pass
+
+                def zoom_image_array(event, self):
+                    # zoom the image array depending on how the user scrolled
+                    if event is not None:
+                        if event.delta > 0:
+                            PIXELS_PER_ELEMENT[0] += 1
+                        else:
+                            PIXELS_PER_ELEMENT[0] -= 1
+                    create_image_array(self)
+
+                self.gui_array_image_frame = image_frame
+
+            image_frame.bind_all("<MouseWheel>", lambda event: zoom_image_array(event,self))
+            zoom_image_array(None, self)
+
+            # checkbox to toggle array confidence opacity
+            def toggle_confidence_opacity(self):
+                self.gui_array_use_confidence_opacity = not self.gui_array_use_confidence_opacity
+                zoom_image_array(None,self)
+
+            row += 1
+            checkbutton = tk.Checkbutton(item_info_window, text='Visualize confidence using pixel opacity', onvalue=1, offvalue=0, command=lambda: toggle_confidence_opacity(self))
+            checkbutton.select()
+            checkbutton.grid(row=row, column=column+2)
 
     def get_data_structure_name_from_listbox(self,listbox):
         keys = list(self.dict_listboxes.keys())
@@ -853,7 +876,7 @@ class ToolTip(object):
 
     def showtip(self, text):
         "Display text in tooltip window"
-        self.widget.config(bg="yellow",borderwidth=1)
+        self.widget.config(fg="yellow",borderwidth=2)
         self.text = text
         if self.tipwindow or not self.text:
             return
@@ -869,7 +892,7 @@ class ToolTip(object):
         label.pack(ipadx=1)
 
     def hidetip(self):
-        self.widget.config(bg=self.color, borderwidth=0)
+        self.widget.config(fg=self.color, borderwidth=0)
         tw = self.tipwindow
         self.tipwindow = None
         if tw:

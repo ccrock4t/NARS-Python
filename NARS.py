@@ -318,7 +318,7 @@ class NARS:
                 break
 
         if j2 is not None:
-            if Global.Global.DEBUG: print(
+            if Config.DEBUG: print(
                 "Revising belief: " + j1.get_formatted_string())
             derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
             for derived_sentence in derived_sentences:
@@ -409,7 +409,7 @@ class NARS:
                 break
 
         if j2 is not None:
-            if Global.Global.DEBUG: print(
+            if Config.DEBUG: print(
                 "Revising desire: " + j1.get_formatted_string())
             derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
             for derived_sentence in derived_sentences:
@@ -436,7 +436,7 @@ class NARS:
 
             #todo handle variables
         """
-        if Global.Global.DEBUG: print("Processing: " + j1.get_formatted_string())
+        if Config.DEBUG: print("Processing: " + j1.get_formatted_string())
         statement_term = j1.statement
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept(statement_term)
@@ -446,7 +446,7 @@ class NARS:
         while j2 is None and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF:  # try searching a maximum of 3 concepts
             related_concept = self.memory.get_semantically_related_concept(statement_concept)
             if related_concept is None:
-                if Global.Global.DEBUG: print("No related concepts?")
+                if Config.DEBUG: print("No related concepts?")
                 return  # no related concepts! Should never happen, the concept is always semantically related to itself
 
             # check for a belief we can interact with
@@ -458,10 +458,10 @@ class NARS:
             number_of_attempts += 1
 
         if j2 is None:
-            if Global.Global.DEBUG: print('No related belief found for ' + j1.get_formatted_string())
+            if Config.DEBUG: print('No related belief found for ' + j1.get_formatted_string())
             return  # done if can't interact
 
-        if Global.Global.DEBUG: print(
+        if Config.DEBUG: print(
             "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
         derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
         for derived_sentence in derived_sentences:
