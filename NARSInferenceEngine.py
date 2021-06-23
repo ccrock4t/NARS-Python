@@ -50,6 +50,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     j2_predicate_term = j2.statement.get_predicate_term()
     j1_copula = j1.statement.get_copula()
     j2_copula = j2.statement.get_copula()
+    j1_is_array = j1.is_array()
+    j2_is_array = j2.is_array()
 
     # check if the result will lead to tautology
     tautology = (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) or\
@@ -114,72 +116,78 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     """
                     # swap sentences
                     j1, j2 = j2, j1
+                    j1_is_array, j2_is_array = j2_is_array, j1_is_array
                     j1_statement, j2_statement, j1_subject_term, j2_subject_term = j2_statement, j1_statement, j2_subject_term, j1_subject_term
                     j1_predicate_term, j2_predicate_term, j1_copula, j2_copula = j2_predicate_term, j1_predicate_term, j2_copula, j1_copula
                     swapped = True
-                """
-                # Deduction
-                """
 
-                derived_sentence = NALInferenceRules.Syllogistic.Deduction(j1, j2)  # S-->P or P-->S
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                if not j1_is_array and not j2_is_array:
+                    """
+                    # Deduction
+                    """
 
-                """
-                # Swapped Exemplification
-                """
-                derived_sentence = NALInferenceRules.Syllogistic.Exemplification(j2, j1)  # P-->S or S-->P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    derived_sentence = NALInferenceRules.Syllogistic.Deduction(j1, j2)  # S-->P or P-->S
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+
+                    """
+                    # Swapped Exemplification
+                    """
+                    derived_sentence = NALInferenceRules.Syllogistic.Exemplification(j2, j1)  # P-->S or S-->P
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
             elif j1_subject_term == j2_subject_term:
                 """
                     j1=M-->P
                     j2=M-->S
-                # Induction
                 """
-                derived_sentence = NALInferenceRules.Syllogistic.Induction(j1, j2)  # S-->P
-                add_to_derived_sentences(derived_sentence, all_derived_sentences)
+                if not j1_is_array and not j2_is_array:
+                    """
+                    # Induction
+                    """
+                    derived_sentence = NALInferenceRules.Syllogistic.Induction(j1, j2)  # S-->P
+                    add_to_derived_sentences(derived_sentence, all_derived_sentences)
 
-                """
-                # Swapped Induction
-                """
-                derived_sentence = NALInferenceRules.Syllogistic.Induction(j2, j1)  # P-->S
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    """
+                    # Swapped Induction
+                    """
+                    derived_sentence = NALInferenceRules.Syllogistic.Induction(j2, j1)  # P-->S
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                """
-                # Comparison
-                """
-                derived_sentence = NALInferenceRules.Syllogistic.Comparison(j1, j2)  # S<->P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    """
+                    # Comparison
+                    """
+                    derived_sentence = NALInferenceRules.Syllogistic.Comparison(j1, j2)  # S<->P
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                """
-                # Intensional Intersection or Disjunction
-                """
-                derived_sentence = NALInferenceRules.Composition.IntensionalIntersectionOrDisjunction(j1, j2)  # M --> (S | P)
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    """
+                    # Intensional Intersection or Disjunction
+                    """
+                    derived_sentence = NALInferenceRules.Composition.IntensionalIntersectionOrDisjunction(j1, j2)  # M --> (S | P)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                """
-                # Extensional Intersection or Conjunction
-                """
-                derived_sentence = NALInferenceRules.Composition.ExtensionalIntersectionOrConjunction(j1, j2)  # M --> (S & P)
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    """
+                    # Extensional Intersection or Conjunction
+                    """
+                    derived_sentence = NALInferenceRules.Composition.ExtensionalIntersectionOrConjunction(j1, j2)  # M --> (S & P)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                """
-                # Extensional Difference
-                """
-                derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j1, j2)  # M --> (S - P)
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    """
+                    # Extensional Difference
+                    """
+                    derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j1, j2)  # M --> (S - P)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                """
-                # Swapped Extensional Difference
-                """
-                derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)  # M --> (P - S)
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    """
+                    # Swapped Extensional Difference
+                    """
+                    derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)  # M --> (P - S)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
             elif j1_predicate_term == j2_predicate_term:
                 """
                     j1 = P-->M
                     j2 = S-->M
                 """
-                if not j1.is_array and not j2.is_array:
+                if not j1_is_array and not j2_is_array:
                     """
                     # Abduction
                     """
@@ -286,6 +294,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             """
             # swap sentences
             j1, j2 = j2, j1
+            j1_is_array, j2_is_array = j2_is_array, j1_is_array
             j1_statement, j2_statement,j1_subject_term, j2_subject_term  = j2_statement, j1_statement,j2_subject_term, j1_subject_term
             j1_predicate_term, j2_predicate_term,j1_copula, j2_copula = j2_predicate_term, j1_predicate_term,j2_copula, j1_copula
             swapped = True
@@ -329,6 +338,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
         if swapped:
             # restore sentences
             j1, j2 = j2, j1
+            j1_is_array, j2_is_array = j2_is_array, j1_is_array
             j1_statement, j2_statement,j1_subject_term, j2_subject_term = j2_statement, j1_statement,j2_subject_term, j1_subject_term
             j1_predicate_term, j2_predicate_term,j1_copula, j2_copula = j2_predicate_term, j1_predicate_term,j2_copula, j1_copula
             swapped = False
