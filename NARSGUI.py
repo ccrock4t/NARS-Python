@@ -1,11 +1,9 @@
 
 import Config
-import NALGrammar
 import NARSDataStructures
 import NARSMemory
 
 from PIL import Image, ImageTk
-import numpy as np
 
 import Global
 import tkinter as tk
@@ -79,14 +77,15 @@ class NARSGUI:
     def __init__(self):
         pass
 
-    def print_to_output(self, msg, data_structure_name=None):
+    def print_to_output(self, msg, data_structure_info=None, length=0):
         """
              Print a message to an output GUI box
          """
         listbox = None
-        if data_structure_name is not None and data_structure_name in self.dict_listboxes:
-            listbox = self.dict_listboxes[data_structure_name]
-        elif data_structure_name is None:
+        if data_structure_info is not None and data_structure_info[0] in self.dict_listboxes:
+            data_structure_id, data_structure_name = data_structure_info
+            listbox = self.dict_listboxes[data_structure_id]
+        elif data_structure_info is None:
             # output to interface or shell
             if self.gui_use_interface:
                 self.gui_output_textbox.insert(tk.END, msg + "\n")
@@ -113,16 +112,18 @@ class NARSGUI:
                     i += 1
 
             listbox.insert(idx_to_insert, msg)
-            self.update_datastructure_labels(data_structure_name)
+            self.update_datastructure_labels(data_structure_info, length=length)
 
-    def remove_from_output(self, msg, data_structure_name=None):
+    def remove_from_output(self, msg, data_structure_info=None, length=0):
         """
             Remove a message from an output GUI box
         """
-        if data_structure_name is not None and data_structure_name in self.dict_listboxes:
-            listbox = self.dict_listboxes[data_structure_name]
+
+        if data_structure_info is not None and data_structure_info[0] in self.dict_listboxes:
+            data_structure_id, data_structure_name = data_structure_info
+            listbox = self.dict_listboxes[data_structure_id]
         else:
-            assert False,'ERROR: Data structure name invalid ' + data_structure_name
+            assert False,'ERROR: Data structure name invalid ' + str(data_structure_info)
 
         string_list = listbox.get(0, tk.END)
         msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
@@ -140,14 +141,15 @@ class NARSGUI:
             assert False, "GUI Error: cannot find msg to remove: " + msg
 
         listbox.delete(idx_to_remove)
-        self.update_datastructure_labels(data_structure_name)
+        self.update_datastructure_labels(data_structure_info, length=length)
 
-    def update_datastructure_labels(self, data_structure_name, length=0):
-        assert data_structure_name is not None, "Cannot update label for Null data structure!"
+    def update_datastructure_labels(self, data_structure_info, length=0):
+        assert data_structure_info is not None, "Cannot update label for Null data structure!"
+        data_structure_id, data_structure_name = data_structure_info
         label_txt = ""
         label = None
 
-        listbox = self.dict_listboxes[data_structure_name]
+        listbox = self.dict_listboxes[data_structure_id]
         if listbox is self.gui_global_buffer_listbox:
             label_txt = "Global Task "
             label = self.gui_global_buffer_output_label
@@ -159,14 +161,14 @@ class NARSGUI:
 
         if label is None: return
         label.config(
-            text=(label_txt + type(data_structure_name).__name__ + ": " + str(length) + " / " + str(
-                self.dict_listboxes[data_structure_name + "capacity"])))
+            text=(label_txt + data_structure_name + ": " + str(length) + " / " + str(
+                self.dict_listboxes[data_structure_id + "capacity"])))
 
     def clear_output_gui(self, data_structure_name=None):
         if self.dict_listboxes[data_structure_name] == self.gui_memory_listbox:
             self.gui_memory_listbox.delete(0, tk.END)
 
-    def execute_gui(self,gui_use_interface,gui_use_internal_data,data_structure_names,data_structure_capacities,pipe_gui_objects,pipe_gui_strings):
+    def execute_gui(self, gui_use_interface, gui_use_internal_data, data_structure_IDs, data_structure_capacities, pipe_gui_objects, pipe_gui_strings):
         """
             Setup and run 2 windows on a single thread
         """
@@ -188,7 +190,7 @@ class NARSGUI:
                 toplevel = tk.Toplevel()
                 toplevel.title("NARS in Python - Internal Data")
                 toplevel.geometry(internal_data_dimensions)
-                self.execute_internal_gui(toplevel,data_structure_names,data_structure_capacities)
+                self.execute_internal_gui(toplevel, data_structure_IDs, data_structure_capacities)
         elif not self.gui_use_interface and self.gui_use_internal_data:
             # launch GUI
             window = tk.Tk()
@@ -199,13 +201,13 @@ class NARSGUI:
         # main GUI loop
         def handle_pipes(self):
             while self.gui_string_pipe.poll():  # check if there are messages to be received
-                (command, msg, data_structure_name) = self.gui_string_pipe.recv()
+                (command, msg, data_structure_info, data_structure_length) = self.gui_string_pipe.recv()
                 if command == "print":
-                    self.print_to_output(msg=msg, data_structure_name=data_structure_name)
+                    self.print_to_output(msg=msg, data_structure_info=data_structure_info, length=data_structure_length)
                 elif command == "remove":
-                    self.remove_from_output(msg=msg, data_structure_name=data_structure_name)
+                    self.remove_from_output(msg=msg, data_structure_info=data_structure_info, length=data_structure_length)
                 elif command == "clear":
-                    self.clear_output_gui(data_structure_name=data_structure_name)
+                    self.clear_output_gui(data_structure_name=data_structure_info)
                 elif command == "paused":
                     self.set_paused(msg)
                 elif command == "cycles":
@@ -240,14 +242,14 @@ class NARSGUI:
         self.set_paused(not self.paused)
         self.gui_string_pipe.send(("paused", self.paused))
 
-    def execute_internal_gui(self,window,data_structure_names,data_structure_capacities):
+    def execute_internal_gui(self, window, data_structure_IDs, data_structure_capacities):
         """
             Setup the internal GUI window, displaying the system's buffers and memory
         """
         listbox_height = 30
         listbox_width = 80
 
-        (global_task_buffer_name, event_buffer_name, memory_bag_name) = data_structure_names
+        ((global_task_buffer_ID,_), (event_buffer_ID,_), (memory_bag_ID,_)) = data_structure_IDs
         """
             Event buffer internal contents GUI
         """
@@ -261,7 +263,7 @@ class NARSGUI:
                                                   width=listbox_width, font=('', 8),
                                                   yscrollcommand=buffer_scrollbar.set)
         self.gui_event_buffer_listbox.grid(row=1, column=0, columnspan=1)
-        self.dict_listboxes[event_buffer_name] = self.gui_event_buffer_listbox
+        self.dict_listboxes[event_buffer_ID] = self.gui_event_buffer_listbox
 
         """
             Global Buffer internal contents GUI
@@ -276,7 +278,7 @@ class NARSGUI:
                                                     width=listbox_width, font=('', 8),
                                                     yscrollcommand=buffer_scrollbar.set)
         self.gui_global_buffer_listbox.grid(row=3, column=0, columnspan=1)
-        self.dict_listboxes[global_task_buffer_name] = self.gui_global_buffer_listbox
+        self.dict_listboxes[global_task_buffer_ID] = self.gui_global_buffer_listbox
 
         """
             Memory internal contents GUI
@@ -300,20 +302,20 @@ class NARSGUI:
                                     column=3,
                                     columnspan=1,
                                     rowspan=4)
-        self.dict_listboxes[memory_bag_name] = self.gui_memory_listbox
+        self.dict_listboxes[memory_bag_ID] = self.gui_memory_listbox
 
         # define callbacks when clicking items in any box
         self.gui_memory_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
         self.gui_global_buffer_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
 
-        for i,name in enumerate(data_structure_names):
-            self.dict_listboxes[name + "capacity"] = data_structure_capacities[i]
-            if i == len(data_structure_names) - 1:
+        for i,(id,name) in enumerate(data_structure_IDs):
+            self.dict_listboxes[id + "capacity"] = data_structure_capacities[i]
+            if i == len(data_structure_IDs) - 1:
                 # final name is the memory
                 length = 1 # system starts with self concept
             else:
                 length = 0
-            self.update_datastructure_labels(name,length)
+            self.update_datastructure_labels((id,name),length)
 
 
     def execute_interface_gui(self,window):
@@ -840,13 +842,13 @@ def create_clickable_listbox(parent, row, column, title_label, listbox_contents,
     listbox.bind("<<ListboxSelect>>",
                  lambda event: content_click_callback(event))
 
-def start_gui(gui_use_internal_data, gui_use_interface, data_structure_names,data_structure_capacities,pipe_gui_objects,
-                                            pipe_gui_strings):
+def start_gui(gui_use_internal_data, gui_use_interface, data_structure_IDs, data_structure_capacities, pipe_gui_objects,
+              pipe_gui_strings):
     gui = NARSGUI()
-    gui.execute_gui(gui_use_internal_data, gui_use_interface, data_structure_names,
-                                            data_structure_capacities,
-                                            pipe_gui_objects,
-                                           pipe_gui_strings)
+    gui.execute_gui(gui_use_internal_data, gui_use_interface, data_structure_IDs,
+                    data_structure_capacities,
+                    pipe_gui_objects,
+                    pipe_gui_strings)
 
 
 def from_rgb_to_tkinter_color(rgb):

@@ -65,6 +65,15 @@ class Sentence(Array):
     def is_event(self):
         return self.stamp.get_tense() != NALSyntax.Tense.Eternal
 
+    def get_value_projected_to_current_time(self):
+        """
+            If this is an event, project its value to the current time
+        """
+        return NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
+                                                       self.value.confidence,
+                                                       self.stamp.occurrence_time,
+                                                       Global.Global.get_current_cycle_number())
+
     def get_formatted_string(self):
         string = self.get_formatted_string_no_id()
         string = Global.Global.MARKER_SENTENCE_ID + str(self.stamp.id) + Global.Global.MARKER_ID_END + string
@@ -109,7 +118,12 @@ class Judgment(Sentence):
         """
             :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
         """
-        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
+        if self.is_event():
+            time_projected_truth_value = self.get_value_projected_to_current_time()
+            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
+                                                                     time_projected_truth_value.confidence) >= Config.POSITIVE_THRESHOLD
+        else:
+            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
 
     def is_negative(self):
         """

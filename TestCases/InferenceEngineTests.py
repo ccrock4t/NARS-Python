@@ -180,8 +180,8 @@ def first_order_intensional_composition():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Composition.ExtensionalIntersectionOrConjunction(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.IntensionalIntersectionOrDisjunction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.Composition.ExtensionalDifference(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.Composition.ExtensionalDifference(j2, j1).get_formatted_string_no_id())
 
@@ -206,8 +206,8 @@ def first_order_extensional_composition():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Composition.ExtensionalIntersectionOrConjunction(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.IntensionalIntersectionOrDisjunction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.Composition.IntensionalDifference(j1, j2).get_formatted_string_no_id())
     success_criteria.append(NALInferenceRules.Composition.IntensionalDifference(j2, j1).get_formatted_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)

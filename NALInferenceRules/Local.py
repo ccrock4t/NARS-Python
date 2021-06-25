@@ -126,7 +126,10 @@ def Eternalization(j):
 
 def Projection(j, occurrence_time):
     """
-        Projection
+        Projection.
+
+        Returns j projected to the given occurrence time.
+
         :param j:
         :param occurrence_time: occurrence time to project j to
         :return: Projected form of j

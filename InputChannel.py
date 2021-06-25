@@ -9,8 +9,6 @@ import NALSyntax
 import NARSDataStructures
 import queue
 
-import NARSGUI
-
 """
     Author: Christian Hahm
     Created: October 9, 2020

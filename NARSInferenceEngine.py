@@ -4,6 +4,7 @@
     Purpose: Given premises, performs proper inference and returns the resultant sentences as Tasks.
 """
 import Asserts
+import Config
 import Global
 import NALGrammar
 import NALInferenceRules.Immediate
@@ -50,8 +51,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     j2_predicate_term = j2.statement.get_predicate_term()
     j1_copula = j1.statement.get_copula()
     j2_copula = j2.statement.get_copula()
-    j1_is_array = j1.is_array()
-    j2_is_array = j2.is_array()
+    j1_is_array = j1.is_array
+    j2_is_array = j2.is_array
 
     # check if the result will lead to tautology
     tautology = (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) or\
@@ -162,13 +163,13 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     """
                     # Intensional Intersection or Disjunction
                     """
-                    derived_sentence = NALInferenceRules.Composition.IntensionalIntersectionOrDisjunction(j1, j2)  # M --> (S | P)
+                    derived_sentence = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)  # M --> (S | P)
                     add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
                     """
                     # Extensional Intersection or Conjunction
                     """
-                    derived_sentence = NALInferenceRules.Composition.ExtensionalIntersectionOrConjunction(j1, j2)  # M --> (S & P)
+                    derived_sentence = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)  # M --> (S & P)
                     add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
                     """
@@ -229,13 +230,13 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     """
                     # Intensional Intersection Disjunction
                     """
-                    derived_sentence = NALInferenceRules.Composition.IntensionalIntersectionOrDisjunction(j1, j2)  # (P | S) --> M
+                    derived_sentence = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)  # (P | S) --> M
                     add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
                     """
                     # Extensional Intersection Conjunction
                     """
-                    derived_sentence = NALInferenceRules.Composition.ExtensionalIntersectionOrConjunction(j1, j2)  # (P & S) --> M
+                    derived_sentence = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)  # (P & S) --> M
                     add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
                     """

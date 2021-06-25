@@ -15,7 +15,7 @@ import NALSyntax
 from NALInferenceRules import TruthValueFunctions, HelperFunctions
 
 
-def IntensionalIntersectionOrDisjunction(j1, j2):
+def DisjunctionOrIntensionalIntersection(j1, j2):
     """
         First Order: Intensional Intersection (Strong Inference)
         Higher Order: Disjunction
@@ -73,7 +73,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                           j1.statement.get_predicate_term(),
                                                           copula)  # ((T1 | T2) --> M)
 
-        if isinstance(j1, NALGrammar.Sentences.Judgment):
+        if not isinstance(j1, NALGrammar.Sentences.Question):
             result_truth_function = TruthValueFunctions.F_Intersection
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
@@ -87,7 +87,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
                                                           compound_term,
                                                           copula)  # (M --> (T1 | T2))
 
-        if isinstance(j1, NALGrammar.Sentences.Judgment):
+        if not isinstance(j1, NALGrammar.Sentences.Question):
             result_truth_function = TruthValueFunctions.F_Union
     else:
         assert False,"ERROR: Invalid inputs to Intensional Intersection"
@@ -95,7 +95,7 @@ def IntensionalIntersectionOrDisjunction(j1, j2):
     return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, result_truth_function)
 
 
-def ExtensionalIntersectionOrConjunction(j1, j2):
+def ConjunctionOrExtensionalIntersection(j1, j2):
     """
         First-Order: Extensional Intersection (Strong Inference)
         Higher-Order: Conjunction
@@ -133,12 +133,12 @@ def ExtensionalIntersectionOrConjunction(j1, j2):
     connector = None
     copula = None
     if NALSyntax.Copula.is_first_order(j1_copula) and NALSyntax.Copula.is_first_order(j2_copula):
-        connector = NALSyntax.TermConnector.ExtensionalIntersection
+        connector = NALSyntax.TermConnector.ExtensionalIntersection # &
         copula = NALSyntax.Copula.Inheritance
     else:
         # higher-order, could be temporal
         # todo temporal conjunction
-        connector = NALSyntax.TermConnector.Conjunction
+        connector = NALSyntax.TermConnector.Conjunction # &&
         copula = NALSyntax.Copula.Implication
 
     result_truth_value = None

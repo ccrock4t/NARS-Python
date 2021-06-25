@@ -84,7 +84,6 @@ def F_Analogy(f1, c1, f2, c2):
 
         :return: F_ana: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     f_ana = ExtendedBooleanOperators.band(f1, f2)
     c_ana = ExtendedBooleanOperators.band(f2, c1, c2)
     return NALGrammar.Values.TruthValue(f_ana, c_ana)
@@ -110,7 +109,6 @@ def F_Abduction(f1, c1, f2, c2):
 
         :return: F_abd: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(f1, c1, c2)
     f_abd, c_abd = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
@@ -121,7 +119,6 @@ def F_Induction(f1, c1, f2, c2):
     """
     :return: F_ind: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(f2, c1, c2)
     f_ind, c_ind = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
@@ -132,7 +129,6 @@ def F_Exemplification(f1, c1, f2, c2):
     """
     :return: F_exe: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = wp
     f_exe, c_exe = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
@@ -143,7 +139,6 @@ def F_Comparison(f1, c1, f2, c2):
     """
         :return: F_com: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     wp = ExtendedBooleanOperators.band(f1, f2, c1, c2)
     w = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bor(f1, f2), c1, c2)
     f3, c3 = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
@@ -153,7 +148,6 @@ def F_Array_Element_Comparison(f1, c1, f2, c2):
     """
         :return: F_array_com: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     f3 = ExtendedBooleanOperators.bnot(abs(f1-f2))
     c3 = ExtendedBooleanOperators.band(c1, c2)
     return NALGrammar.Values.TruthValue(f3, c3)
@@ -162,7 +156,6 @@ def F_Intersection(f1, c1, f2, c2):
     """
     :return: F_int: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     f_int = ExtendedBooleanOperators.band(f1, f2)
     c_int = ExtendedBooleanOperators.band(c1, c2)
     return NALGrammar.Values.TruthValue(f_int, c_int)
@@ -172,7 +165,6 @@ def F_Union(f1, c1, f2, c2):
     """
     :return: F_uni: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     f3 = ExtendedBooleanOperators.bor(f1, f2)
     c3 = ExtendedBooleanOperators.band(c1, c2)
     return NALGrammar.Values.TruthValue(f3, c3)
@@ -182,7 +174,6 @@ def F_Difference(f1, c1, f2, c2):
     """
     :return: F_dif: Truth-Value (f,c)
     """
-    # compute values of combined evidence
     f3 = ExtendedBooleanOperators.band(f1, ExtendedBooleanOperators.bnot(f2))
     c3 = ExtendedBooleanOperators.band(c1, c2)
     return NALGrammar.Values.TruthValue(f3, c3)
