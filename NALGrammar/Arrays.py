@@ -22,7 +22,7 @@ class Array():
         self.is_array = dimensions is not None
         self.truth_values = None
         if not self.is_array: return
-        self.truth_values = np.array(truth_values)
+        self.truth_values = truth_values
         self.dimensions = dimensions
         self.num_of_dimensions = len(dimensions)
         assert self.num_of_dimensions <= 3, "ERROR: Does not support more than 3 dimensions"
@@ -37,7 +37,7 @@ class Array():
         self.element_string_array = None
         if Global.Global.gui_use_internal_data and (isinstance(self, NALGrammar.Sentences.Judgment) or isinstance(self, NALGrammar.Sentences.Goal)):
             self.image_array = np.empty(shape=dimensions,dtype=np.uint8) # image_array is used to visualize an array of judgments/goals activations
-            self.image_alpha_array = np.empty(shape=dimensions,
+            self.image_alpha_array = np.empty(shape=(dimensions[0], dimensions[1]) if len(dimensions) > 1 else dimensions[0],
                                         dtype=np.uint8)  # image_array is used to visualize an array of judgments/goals activations
             if Config.ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS:
                 self.element_string_array = np.empty(shape=dimensions,dtype=object)
@@ -145,7 +145,7 @@ def array_index_function(*coord_vars, self_obj=None,occurrence_time=None):
         if self_obj.image_array is not None:
             self_obj.image_array[absolute_indices] = (np.uint8)(
                 truth_value.frequency * 255)  # Intensity
-            self_obj.image_alpha_array[absolute_indices] = (np.uint8)(
+            self_obj.image_alpha_array[(absolute_indices[0],absolute_indices[1]) if len(absolute_indices) > 1 else absolute_indices[0]] = (np.uint8)(
                 truth_value.confidence * 255)  # Alpha
 
         if self_obj.element_string_array is not None:

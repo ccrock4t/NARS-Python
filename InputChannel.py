@@ -156,58 +156,75 @@ def process_visual_sensory_input(input_string):
     array_idx_start_marker = NALSyntax.StatementSyntax.ArrayElementIndexStart.value
     array_idx_end_marker = NALSyntax.StatementSyntax.ArrayElementIndexEnd.value
 
-    pixel_value_array = []
-
-    if input_string[0] != array_idx_start_marker:
+    def parse_1D_array(input_string):
         # 1D array
         pixel_value_array = input_string.split(",")
         x_length = len(pixel_value_array)
         dim_lengths = (x_length,)  # how many elements in a row
-    else:
-        if input_string[1] != array_idx_start_marker:
-            # 2D array
-            depth = 0
-            piece = ""
-            for i in range(len(input_string)):
-                c = input_string[i]
-                if depth == 0 and c == ",":
-                    pixel_value_array.append(piece.split(","))
-                    piece = ""
-                else:
-                    if c == array_idx_start_marker:
-                        depth += 1
-                    elif c == array_idx_end_marker:
-                        depth -= 1
-                    else:
-                        piece += c
+        return pixel_value_array, dim_lengths
 
-            pixel_value_array.append(piece.split(","))
-
-            x_length = len(pixel_value_array[0])  # how many elements in a row
-            y_length = len(pixel_value_array)  # how many rows
-
-            dim_lengths = (x_length, y_length)
-        else:
-            # TODO
-            # 3D array
-            layer_strings = []
-            depth = 0
-            piece = ""
-            for i in range(len(input_string)):
-                c = input_string[i]
-                if depth == 0 and c == ",":
-                    layer_strings.append(piece)
-                    piece = ""
+    def parse_2D_array(input_string):
+        # 2D array
+        pixel_value_array = []
+        depth = 0
+        piece = ""
+        for i in range(len(input_string)):
+            c = input_string[i]
+            if depth == 0 and c == ",":
+                pixel_value_array.append(parse_1D_array(piece)[0])
+                piece = ""
+            else:
+                if c == array_idx_start_marker:
+                    depth += 1
+                elif c == array_idx_end_marker:
+                    depth -= 1
                 else:
                     piece += c
-                    if c == array_idx_start_marker:
-                        depth += 1
-                    elif c == array_idx_end_marker:
-                        depth -= 1
-            x_length = len(layer_strings[0][0])  # how many elements in a row
-            y_length = len(layer_strings[0])  # how many rows
-            z_length = len(layer_strings)  # how many layers
-            dim_lengths = (x_length, y_length, z_length)
+
+        pixel_value_array.append(parse_1D_array(piece)[0])
+
+        x_length = len(pixel_value_array[0])  # how many elements in a row
+        y_length = len(pixel_value_array)  # how many rows
+
+        dim_lengths = (x_length, y_length)
+        return pixel_value_array, dim_lengths
+
+    def parse_3D_array(input_string):
+        # 3D array
+        pixel_value_array = []
+        depth = 0
+        piece = ""
+        for i in range(len(input_string)):
+            c = input_string[i]
+            if depth == 0 and c == ",":
+                pixel_value_array.append(parse_2D_array(piece)[0])
+                piece = ""
+            else:
+                if c == array_idx_start_marker:
+                    if depth == 1: piece += c
+                    depth += 1
+                elif c == array_idx_end_marker:
+                    if depth == 2: piece += c
+                    depth -= 1
+                else:
+                    piece += c
+
+        pixel_value_array.append(parse_2D_array(piece)[0])
+
+        x_length = len(pixel_value_array[0][0])  # how many elements in a row
+        y_length = len(pixel_value_array[0])  # how many rows
+        z_length = len(pixel_value_array)  # how many layers
+        dim_lengths = (x_length, y_length, z_length)
+
+        return pixel_value_array, dim_lengths
+
+    if input_string[0] != array_idx_start_marker:
+        pixel_value_array, dim_lengths = parse_1D_array(input_string)
+    else:
+        if input_string[1] != array_idx_start_marker:
+            pixel_value_array, dim_lengths = parse_2D_array(input_string)
+        else:
+            pixel_value_array, dim_lengths = parse_3D_array(input_string)
 
     atomic_array_term = NALGrammar.Terms.ArrayTerm(name=subject_str,
                                              dimensions=dim_lengths)

@@ -3,7 +3,7 @@ import Config
 import NARSDataStructures
 import NARSMemory
 
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 
 import Global
 import tkinter as tk
@@ -682,8 +682,6 @@ class NARSGUI:
                 """
                     Array - Draw entire image (faster)
                 """
-                image_array = image_array.T
-                image_alpha_array = image_alpha_array.T
 
                 # create image frame
                 image_frame = tk.Frame(item_info_window, width=MAX_IMAGE_SIZE, height=MAX_IMAGE_SIZE,
@@ -700,7 +698,8 @@ class NARSGUI:
                         offset = 0  # initialize
                     else:
                         offset = 3 if event.delta > 0 else -3
-                    pil_image = Image.fromarray(image_array)
+                    pil_image = Image.fromarray(np.swapaxes(image_array,axis1=0,axis2=1))
+                    #pil_image = ImageOps.flip(pil_image).rotate(angle=90)
                     if gui_array_use_confidence_opacity[0]:
                         pil_alpha = Image.fromarray(image_alpha_array,mode="L")
                         pil_image.putalpha(pil_alpha)
@@ -771,6 +770,7 @@ class NARSGUI:
                                     ]
                                 ]
                             ])
+
                             img_array = img_array.T
                             img = Image.fromarray(img_array, mode="RGBA")
                             if not gui_array_use_confidence_opacity[0]:
@@ -785,9 +785,55 @@ class NARSGUI:
                             button.config(relief='solid', borderwidth=0)
                             button.grid(sticky="NWSE")
                             CreateToolTip(button, text=(element_string))
+
                     if len(image_array.shape) == 3:
-                        # todo draw rgb
-                        pass
+                        for (x, y, z), pixel_value in np.ndenumerate(image_array):
+                            if z > 0: continue # only iterate through first layer
+                            f = tk.Frame(image_frame[0], width=PIXELS_PER_ELEMENT[0],
+                                         height=PIXELS_PER_ELEMENT[0])
+                            f.grid(row=y, column=x, columnspan=1, rowspan=1)
+                            f.rowconfigure(0, weight=1)
+                            f.columnconfigure(0, weight=1)
+                            f.grid_propagate(0)
+
+                            element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][x, y,z]
+                            img_array = np.array([
+                                [
+                                    [
+                                        [image_array[x,y,0]]
+                                    ]
+                                ],
+                                [
+                                    [
+                                        [image_array[x,y,1]]
+                                    ]
+                                ],
+                                [
+                                    [
+                                        [image_array[x,y,2]]
+                                    ]
+                                ],
+                                [
+                                    [
+                                        [image_alpha_array[(x, y)]]
+                                    ]
+                                ]
+                            ])
+
+                            img_array = img_array.T
+                            img = Image.fromarray(img_array, mode="RGBA")
+                            if not gui_array_use_confidence_opacity[0]:
+                                img = img.convert(mode="RGB")
+
+                            img = img.resize((PIXELS_PER_ELEMENT[0], PIXELS_PER_ELEMENT[0]), Image.NEAREST)
+                            button = tk.Button(f,
+                                               command=create_array_element_click_lambda(element_string))
+                            render = ImageTk.PhotoImage(img)
+                            button.config(image=render)
+                            button.image = render
+                            button.config(relief='solid', borderwidth=0)
+                            button.grid(sticky="NWSE")
+                            CreateToolTip(button, text=(element_string))
 
                 def zoom_image_array(event):
                     # zoom the image array depending on how the user scrolled
