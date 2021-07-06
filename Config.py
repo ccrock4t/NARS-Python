@@ -24,7 +24,7 @@ TASKS_PER_CYCLE = 3
 """
     GUI
 """
-DEBUG = False # set to true for useful debug statements
+DEBUG = True # set to true for useful debug statements
 ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
 
 """
@@ -36,6 +36,7 @@ BAG_NUMBER_OF_BUCKETS = 100 # how many probability buckets are there? e.g. 100 a
 """
     Buffers
 """
+EVENT_BUFFER_DEFAULT_CAPACITY = 10
 BUFFER_DEFAULT_CAPACITY = 60
 
 """

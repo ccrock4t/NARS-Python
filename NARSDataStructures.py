@@ -541,7 +541,7 @@ class EventBuffer(ItemContainer):
     """
         FIFO that performs temporal composition
     """
-    def __init__(self,item_type,capacity=Config.BUFFER_DEFAULT_CAPACITY):
+    def __init__(self,item_type,capacity=Config.EVENT_BUFFER_DEFAULT_CAPACITY):
         ItemContainer.__init__(self,item_type=item_type,capacity=capacity)
         self.fifo = queue.Queue()
 

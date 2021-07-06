@@ -578,6 +578,7 @@ class NARSGUI:
                                      content_click_callback=self.listbox_concept_item_click_callback)
 
             # Explanation Links Listbox
+            column += 2
             explanation_links_text = "Explanation Links (" + str(len(item[NARSGUI.KEY_LIST_EXPLANATION_LINKS])) + ")"
             create_clickable_listbox(parent=item_info_window,
                                      row=row,

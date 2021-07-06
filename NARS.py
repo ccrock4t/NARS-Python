@@ -29,7 +29,7 @@ class NARS:
 
     def __init__(self):
         self.global_task_buffer = NARSDataStructures.Buffer(item_type=NARSDataStructures.Task)
-        self.event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task, capacity=10)
+        self.event_buffer = NARSDataStructures.EventBuffer(item_type=NARSDataStructures.Task)
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
 

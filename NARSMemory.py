@@ -131,21 +131,23 @@ class Memory:
             related_concept = related_concept_item.object
         else:
             # the initially related concept is compound, not atomic
-            if isinstance(related_concept, NALGrammar.Terms.StatementTerm):
+            if isinstance(related_concept.term, NALGrammar.Terms.StatementTerm):
+                # return this first-order statement concept or alternatively try for a higher-order concept
+                if len(related_concept.belief_table) > 0:
+                    check_another = random.randint(0,1)
+                    if check_another == 0:
+                        return related_concept
+                return related_concept.term_links.peek().object  # peek term links for higher-order statement concept
+            else:
+                # not a statement, so peek a related concept
+                attempts = 0
+                while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
+                    and (related_concept is None \
+                    or not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm)):
+                    related_concept_item = self.get_random_link(initial_related_concept)
 
-                # use this concept or alternatively try another
-                check_another = random.randint(0,1)
-                if check_another == 0: return related_concept
-
-            # not a statement, so peek a related concept
-            attempts = 0
-            while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
-                and (related_concept is None \
-                or not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm)):
-                related_concept_item = self.get_random_link(initial_related_concept)
-
-                if related_concept_item is not None: related_concept = related_concept_item.object
-                attempts += 1
+                    if related_concept_item is not None: related_concept = related_concept_item.object
+                    attempts += 1
 
         if related_concept is not None and not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm): related_concept = None # only return statement concepts
 
