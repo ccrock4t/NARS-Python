@@ -178,6 +178,12 @@ class ItemContainer:
             """
             return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100
 
+        def strengthen(self):
+            """
+                Increase this item's priority to a high value
+            """
+            self.budget.priority = Config.PRIORITY_STRENGTHEN_VALUE
+
         def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):
             """
                 Decay this item's priority
@@ -270,6 +276,7 @@ class Bag(ItemContainer):
         purged_item = None
         if len(self) > self.capacity:
             purged_item = self._take_min()
+
         return purged_item
 
     def peek(self, key=None):

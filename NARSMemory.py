@@ -27,7 +27,7 @@ class Memory:
     def __len__(self):
         return self.get_number_of_concepts()
 
-    def get_concept(self):
+    def get_random_concept(self):
         """
             Probabilistically peek the concepts
         """
@@ -44,7 +44,7 @@ class Memory:
             Create a new concept from a term and add it to the bag
 
             :param term: The term naming the concept to create
-            :returns New Concept created from the term
+            :returns New Concept item created from the term
         """
         Asserts.assert_term(term)
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
@@ -58,9 +58,9 @@ class Memory:
         if purged_item is not None:
             purged_concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(purged_item.object)
 
-        return new_concept
+        return self.concepts_bag.peek(concept_key)
 
-    def peek_concept(self, term):
+    def peek_concept_item(self, term):
         """
               Peek the concept from memory using its term,
               AND create it if it doesn't exist.
@@ -82,34 +82,34 @@ class Memory:
         concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
         concept_item: NARSDataStructures.ItemContainer.Item = self.concepts_bag.peek(concept_key)
         if concept_item is not None:
-            return concept_item.object  # return if it already exists
+            return concept_item  # return if it already exists
 
         # it doesn't exist
         # it must be created along with its sub-concepts if necessary
         if not isinstance(term, NALGrammar.Terms.VariableTerm):
-            concept = self.conceptualize_term(term)
+            concept_item = self.conceptualize_term(term)
 
-        if isinstance(term, NALGrammar.Terms.CompoundTerm):
-            for subterm in term.subterms:
-                # get/create subterm concepts
-                if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
-                    and not isinstance(subterm, NALGrammar.Terms.ArrayTermElementTerm): # don't create concepts for variables or array elements
-                    subconcept = self.peek_concept(subterm)
-                    # do term linking with subterms
-                    concept.set_term_link(subconcept)
+            if isinstance(term, NALGrammar.Terms.CompoundTerm):
+                for subterm in term.subterms:
+                    # get/create subterm concepts
+                    if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
+                        and not isinstance(subterm, NALGrammar.Terms.ArrayTermElementTerm): # don't create concepts for variables or array elements
+                        subconcept = self.peek_concept_item(subterm).object
+                        # do term linking with subterms
+                        concept_item.object.set_term_link(subconcept)
 
-        if isinstance(term, NALGrammar.Terms.StatementTerm) and \
-                term.copula is not None and\
-                not NALSyntax.Copula.is_first_order(term.get_copula()):
-            # implication statement
-            subject_concept = self.peek_concept(term.get_subject_term())
-            predicate_concept = self.peek_concept(term.get_predicate_term())
+            if isinstance(term, NALGrammar.Terms.StatementTerm) and \
+                    term.copula is not None and\
+                    not NALSyntax.Copula.is_first_order(term.get_copula()):
+                # implication statement
+                subject_concept = self.peek_concept_item(term.get_subject_term()).object
+                predicate_concept = self.peek_concept_item(term.get_predicate_term()).object
 
-            # do prediction/explanation linking with subterms
-            subject_concept.set_prediction_link(predicate_concept)
-            predicate_concept.set_explanation_link(subject_concept)
+                # do prediction/explanation linking with subterms
+                subject_concept.set_prediction_link(predicate_concept)
+                predicate_concept.set_explanation_link(subject_concept)
 
-        return concept
+        return concept_item
 
     def get_semantically_related_concept(self, statement_concept):
         """
@@ -126,13 +126,17 @@ class Memory:
         related_concept = initial_related_concept
 
         if isinstance(initial_related_concept.term, NALGrammar.Terms.AtomicTerm):
-            related_concept_item = initial_related_concept.term_links.peek()
+            # atomic term concept
+            related_concept_item = initial_related_concept.term_links.peek() # peek term links
             related_concept = related_concept_item.object
         else:
             # the initially related concept is compound, not atomic
             if isinstance(related_concept, NALGrammar.Terms.StatementTerm):
+
+                # use this concept or alternatively try another
                 check_another = random.randint(0,1)
                 if check_another == 0: return related_concept
+
             # not a statement, so peek a related concept
             attempts = 0
             while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \

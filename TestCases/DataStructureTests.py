@@ -104,9 +104,9 @@ def test_concept_termlinking():
         Test if term links can be added and removed properly from a concept
     """
     memory = NARSMemory.Memory()
-    statement_concept = memory.peek_concept(NALGrammar.Terms.Term.from_string("(A-->B)"))
-    conceptA = memory.peek_concept(NALGrammar.Terms.Term.from_string("A"))
-    conceptB = memory.peek_concept(NALGrammar.Terms.Term.from_string("B"))
+    statement_concept = memory.peek_concept_item(NALGrammar.Terms.Term.from_string("(A-->B)")).object
+    conceptA = memory.peek_concept_item(NALGrammar.Terms.Term.from_string("A")).object
+    conceptB = memory.peek_concept_item(NALGrammar.Terms.Term.from_string("B")).object
 
     assert (statement_concept.term_links.count == 2), "TEST FAILURE: Concept " + str(statement_concept) + " does not have 2 termlinks"
     assert (conceptA.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptA) + " does not have 1 termlink. Has: " + str(conceptA.term_links.count)
