@@ -188,68 +188,68 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     j1 = P-->M
                     j2 = S-->M
                 """
-                if not j1_is_array and not j2_is_array:
-                    """
-                    # Abduction
-                    """
-                    derived_sentence = NALInferenceRules.Syllogistic.Abduction(j1, j2)  # S-->P or S==>P
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                    """
-                    # Swapped Abduction
-                    """
-                    derived_sentence = NALInferenceRules.Syllogistic.Abduction(j2, j1)  # P-->S or P==>S
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                """
+                # Abduction
+                """
+                derived_sentence = NALInferenceRules.Syllogistic.Abduction(j1, j2)  # S-->P or S==>P
+                add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                    if not NALSyntax.Copula.is_first_order(j1_copula):
-                        # two implication statements
-                        if NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector) or \
-                                NALSyntax.TermConnector.is_conjunction(j2_subject_term.connector):
-                            j1_subject_statement_terms = j1_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
-                                j1_subject_term.connector) else [j1_subject_term]
+                """
+                # Swapped Abduction
+                """
+                derived_sentence = NALInferenceRules.Syllogistic.Abduction(j2, j1)  # P-->S or P==>S
+                add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                            j2_subject_statement_terms = j2_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
-                                j2_subject_term.connector) else [j2_subject_term]
+                if not NALSyntax.Copula.is_first_order(j1_copula):
+                    # two implication statements
+                    if NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector) or \
+                            NALSyntax.TermConnector.is_conjunction(j2_subject_term.connector):
+                        j1_subject_statement_terms = j1_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
+                            j1_subject_term.connector) else [j1_subject_term]
 
+                        j2_subject_statement_terms = j2_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
+                            j2_subject_term.connector) else [j2_subject_term]
+
+                        if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
+                            difference_of_subterms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
+                        else:
+                            difference_of_subterms = list(set(j2_subject_statement_terms) - set(j1_subject_statement_terms))
+
+                        if len(difference_of_subterms) == 1:
+                            """
+                               At least one of the statement's subjects is conjunctive and differs from the
+                               other statement's subject by 1 term
+                            """
                             if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
-                                difference_of_subterms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
+                                derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1,j2)  # S
                             else:
-                                difference_of_subterms = list(set(j2_subject_statement_terms) - set(j1_subject_statement_terms))
+                                derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j2,j1)  # S
+                            add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                            if len(difference_of_subterms) == 1:
-                                """
-                                   At least one of the statement's subjects is conjunctive and differs from the
-                                   other statement's subject by 1 term
-                                """
-                                if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
-                                    derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1,j2)  # S
-                                else:
-                                    derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j2,j1)  # S
-                                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                """
+                # Intensional Intersection Disjunction
+                """
+                derived_sentence = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)  # (P | S) --> M
+                add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                    """
-                    # Intensional Intersection Disjunction
-                    """
-                    derived_sentence = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)  # (P | S) --> M
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                """
+                # Extensional Intersection Conjunction
+                """
+                derived_sentence = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)  # (P & S) --> M
+                add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                    """
-                    # Extensional Intersection Conjunction
-                    """
-                    derived_sentence = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)  # (P & S) --> M
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                """
+                # Intensional Difference
+                """
+                derived_sentence = NALInferenceRules.Composition.IntensionalDifference(j1, j2)  # (P ~ S) --> M
+                add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
-                    """
-                    # Intensional Difference
-                    """
-                    derived_sentence = NALInferenceRules.Composition.IntensionalDifference(j1, j2)  # (P ~ S) --> M
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
-
-                    """
-                    # Swapped Intensional Difference
-                    """
-                    derived_sentence = NALInferenceRules.Composition.IntensionalDifference(j2, j1)  # (S ~ P) --> M
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                """
+                # Swapped Intensional Difference
+                """
+                derived_sentence = NALInferenceRules.Composition.IntensionalDifference(j2, j1)  # (S ~ P) --> M
+                add_to_derived_sentences(derived_sentence,all_derived_sentences)
                 """
                 # Comparison
                 """

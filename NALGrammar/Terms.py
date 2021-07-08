@@ -12,16 +12,17 @@ from NALGrammar.Arrays import Array
 import Asserts
 
 
-class Term:
+class Term(Array):
     """
         Base class for all terms.
     """
     term_dict = {} # a dictionary of existing terms to prevent duplicate term creation. Key: term string ; Value: term
 
-    def __init__(self, term_string):
+    def __init__(self, term_string,dimensions=None):
         assert isinstance(term_string, str), term_string + " must be a str"
         self.string = term_string
         self.syntactic_complexity = self._calculate_syntactic_complexity()
+        Array.__init__(self, dimensions=dimensions)
 
     def get_formatted_string(self):
         return self.string
@@ -209,7 +210,7 @@ class CompoundTerm(Term):
         (Connector T1, T2, ..., Tn)
     """
 
-    def __init__(self, subterms: [Term], term_connector: NALSyntax.TermConnector = None):
+    def __init__(self, subterms: [Term], term_connector: NALSyntax.TermConnector = None,dimensions=None):
         """
         Input:
             subterms: array of immediate subterms
@@ -249,7 +250,13 @@ class CompoundTerm(Term):
 
         self.subterms: [Term] = subterms
 
-        Term.__init__(self,term_string=self.get_formatted_string())
+        if dimensions is None:
+            # get number of dimensions from subterm
+            for subterm in self.subterms:
+                if subterm.is_array:
+                    dimensions = subterm.get_dimensions()
+
+        Term.__init__(self,term_string=self.get_formatted_string(),dimensions=dimensions)
 
     def is_intensional_set(self):
         return self.connector == NALSyntax.TermConnector.IntensionalSetStart
@@ -348,7 +355,7 @@ class CompoundTerm(Term):
 
 
 
-class StatementTerm(CompoundTerm,Array):
+class StatementTerm(CompoundTerm):
     """
         <subject><copula><predicate>
 
@@ -357,7 +364,7 @@ class StatementTerm(CompoundTerm,Array):
 
         (P --> Q)
 
-        May also represent a single-statement compound, like negation (--,(P-->Q))
+        May also represent a statement compounds that can have truth values, like negation (--,(P-->Q))
         in which case the non-negated statement is stored in subject and predicate is None.
     """
 
@@ -377,25 +384,6 @@ class StatementTerm(CompoundTerm,Array):
                 subterms.sort(key=lambda t: str(t))  # sort alphabetically
 
         CompoundTerm.__init__(self,subterms, statement_connector)
-
-        subject_is_array_term = isinstance(subject_term, CompoundTerm) \
-                             and subject_term.is_extensional_set() \
-                             and isinstance(subject_term.subterms[0], Array) \
-                             and subject_term.subterms[0].is_array
-        predicate_is_array_term = isinstance(predicate_term, CompoundTerm) \
-                             and predicate_term.is_extensional_set() \
-                             and isinstance(predicate_term.subterms[0], Array) \
-                             and predicate_term.subterms[0].is_array
-
-        dimensions = None
-        if subject_is_array_term and predicate_is_array_term:
-            dimensions = subject_term.subterms[0].get_dimensions()
-        elif subject_is_array_term:
-            dimensions = subject_term.subterms[0].get_dimensions()
-        elif predicate_is_array_term:
-            dimensions = predicate_term.subterms[0].get_dimensions()
-
-        Array.__init__(self, dimensions=dimensions)
 
 
     @classmethod
@@ -476,7 +464,7 @@ class StatementTerm(CompoundTerm,Array):
             and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF # product and first term is self means this is an operation
 
 
-class ArrayTerm(CompoundTerm,Array):
+class ArrayTerm(CompoundTerm):
     """
         A N-dimensional array term that can be indexed. (N between 1 and 3)
 
@@ -490,7 +478,7 @@ class ArrayTerm(CompoundTerm,Array):
         """
         self.name = name
         Array.__init__(self, dimensions)
-        CompoundTerm.__init__(self, subterms=self.array.flatten(), term_connector=NALSyntax.TermConnector.Array)
+        CompoundTerm.__init__(self, subterms=self.array.flatten(), term_connector=NALSyntax.TermConnector.Array, dimensions=dimensions)
 
     def get_formatted_string(self):
         return NALSyntax.TermConnector.Array.value + self.name
@@ -509,7 +497,7 @@ class ArrayTerm(CompoundTerm,Array):
             return cls(name, dimensions)
 
 
-class ArrayTermElementTerm(AtomicTerm):
+class ArrayTermElementTerm(Term):
     """
         A term that is an element of an array term.
         It is simply the array term with attached indices
@@ -526,6 +514,8 @@ class ArrayTermElementTerm(AtomicTerm):
                 #not the final element
                 self.indices_string += ", "
 
+        Term.__init__(self,term_string=self.get_formatted_string())
+
     def get_formatted_string(self):
         return self.array_term.get_formatted_string() \
         + NALSyntax.StatementSyntax.ArrayElementIndexStart.value \
@@ -540,6 +530,9 @@ class ArrayTermElementTerm(AtomicTerm):
         indices = term_string[start_indices+1:end_indices].replace(" ","").split(",")
         indices = [float(idx) for idx in indices]
         return ArrayTermElementTerm(array_term=array_term,indices=indices)
+
+    def _calculate_syntactic_complexity(self):
+        return 1
 
 
 def get_top_level_copula(string):

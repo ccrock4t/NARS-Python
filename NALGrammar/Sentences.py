@@ -65,6 +65,30 @@ class Sentence(Array):
     def is_event(self):
         return self.stamp.get_tense() != NALSyntax.Tense.Eternal
 
+    def is_positive(self):
+        """
+            :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
+        """
+        assert not isinstance(self,Question),"ERROR: Question cannot be positive."
+        if self.is_event():
+            time_projected_truth_value = self.get_value_projected_to_current_time()
+            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
+                                                                     time_projected_truth_value.confidence) >= Config.POSITIVE_THRESHOLD
+        else:
+            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
+
+    def is_negative(self):
+        """
+            :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
+        """
+        assert not isinstance(self,Question),"ERROR: Question cannot be negative."
+        if self.is_event():
+            time_projected_truth_value = self.get_value_projected_to_current_time()
+            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
+                                                                     time_projected_truth_value.confidence) < Config.NEGATIVE_THRESHOLD
+        else:
+            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
+
     def get_value_projected_to_current_time(self):
         """
             If this is an event, project its value to the current time
@@ -113,23 +137,6 @@ class Judgment(Sentence):
 
     def __init__(self, statement, value,occurrence_time=None):
         Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
-
-    def is_positive(self):
-        """
-            :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
-        """
-        if self.is_event():
-            time_projected_truth_value = self.get_value_projected_to_current_time()
-            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
-                                                                     time_projected_truth_value.confidence) >= Config.POSITIVE_THRESHOLD
-        else:
-            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
-
-    def is_negative(self):
-        """
-            :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
-        """
-        return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
 
 
 class Question(Sentence):

@@ -136,6 +136,7 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
             if j.is_array:
                 result_truth_array = TruthFunctionOnArray(j.truth_values, None, truth_value_function)
             result_truth = truth_value_function(j.value.frequency, j.value.confidence)
+
         if result_type == NALGrammar.Sentences.Judgment:
             result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
                                                    occurrence_time=j.stamp.occurrence_time)

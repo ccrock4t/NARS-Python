@@ -97,38 +97,44 @@ def array_index_function(*coord_vars, self_obj=None,occurrence_time=None):
     absolute_indices = tuple([int(var) for var in coord_vars])
 
     if isinstance(self_obj, NALGrammar.Terms.StatementTerm):
-        subject_is_array = isinstance(self_obj.get_subject_term(), NALGrammar.Terms.CompoundTerm) and isinstance(
-            self_obj.get_subject_term().subterms[0], NALGrammar.Terms.ArrayTerm)
-        predicate_is_array = isinstance(self_obj.get_predicate_term(),
-                                        NALGrammar.Terms.CompoundTerm) and isinstance(
-            self_obj.get_predicate_term().subterms[0], NALGrammar.Terms.ArrayTerm)
-        if subject_is_array and predicate_is_array:
-            subject_array_term = self_obj.get_subject_term().subterms[0]
-            subject_atomic_element = subject_array_term[absolute_indices]  # get atomic array element
-            predicate_array_term = self_obj.get_predicate_term().subterms[0]
-            predicate_atomic_element = predicate_array_term[absolute_indices]  # get atomic array element
-            element = NALGrammar.Terms.StatementTerm(
-                subject_term=NALGrammar.Terms.CompoundTerm(subterms=[subject_atomic_element],
-                                                           term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                predicate_term=NALGrammar.Terms.CompoundTerm(subterms=[predicate_atomic_element],
+        subject_is_array = self_obj.get_subject_term().is_array
+        if self_obj.connector is None:
+            predicate_is_array = self_obj.get_predicate_term().is_array
+
+            if subject_is_array and predicate_is_array:
+                subject_array_term = self_obj.get_subject_term()
+                subject_atomic_element = subject_array_term[absolute_indices]  # get atomic array element
+
+                predicate_array_term = self_obj.get_predicate_term()
+                predicate_atomic_element = predicate_array_term[absolute_indices]  # get atomic array element
+
+                element = NALGrammar.Terms.StatementTerm(
+                    subject_term=NALGrammar.Terms.CompoundTerm(subterms=[subject_atomic_element],
+                                                               term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                    predicate_term=NALGrammar.Terms.CompoundTerm(subterms=[predicate_atomic_element],
+                                                                 term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                    copula=self_obj.get_copula())
+            elif subject_is_array:
+                array_term = self_obj.get_subject_term()
+                atomic_element = array_term[absolute_indices]  # get atomic array element
+                element = NALGrammar.Terms.StatementTerm(
+                    subject_term=NALGrammar.Terms.CompoundTerm(subterms=[atomic_element],
+                                                               term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
+                    predicate_term=self_obj.get_predicate_term(),
+                    copula=self_obj.get_copula())
+            elif predicate_is_array:
+                array_term = self_obj.get_predicate_term()
+                atomic_element = array_term[absolute_indices]  # get atomic array element
+                element = NALGrammar.Terms.StatementTerm(subject_term=self_obj.get_subject_term(),
+                                                         predicate_term=NALGrammar.Terms.CompoundTerm(
+                                                             subterms=[atomic_element],
                                                              term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                copula=self_obj.get_copula())
-        elif subject_is_array:
-            array_term = self_obj.get_subject_term().subterms[0]
-            atomic_element = array_term[absolute_indices]  # get atomic array element
-            element = NALGrammar.Terms.StatementTerm(
-                subject_term=NALGrammar.Terms.CompoundTerm(subterms=[atomic_element],
-                                                           term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                predicate_term=self_obj.get_predicate_term(),
-                copula=self_obj.get_copula())
-        elif predicate_is_array:
-            array_term = self_obj.get_predicate_term().subterms[0]
-            atomic_element = array_term[absolute_indices]  # get atomic array element
-            element = NALGrammar.Terms.StatementTerm(subject_term=self_obj.get_subject_term(),
-                                                     predicate_term=NALGrammar.Terms.CompoundTerm(
-                                                         subterms=[atomic_element],
-                                                         term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                     copula=self_obj.get_copula())
+                                                         copula=self_obj.get_copula())
+        else:
+            if subject_is_array:
+                array_term = self_obj.get_subject_term()
+                atomic_element = array_term[absolute_indices]  # get atomic array element
+                element = NALGrammar.Terms.StatementTerm(atomic_element,statement_connector=NALSyntax.TermConnector.Array)
 
     elif isinstance(self_obj, NALGrammar.Sentences.Judgment) or isinstance(self_obj, NALGrammar.Sentences.Goal):
         truth_value: NALGrammar.Values.TruthValue = self_obj.truth_values[absolute_indices]
