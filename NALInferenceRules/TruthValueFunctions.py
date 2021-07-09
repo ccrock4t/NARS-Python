@@ -186,6 +186,7 @@ def F_Projection(frequency, confidence, t_B, t_T):
         Project the occurrence time of a belief (t_B)
         to another occurrence time (t_T)
     """
+    if t_B == t_T: return NALGrammar.Values.TruthValue(frequency, confidence)
     T_c = Global.Global.get_current_cycle_number()
     k_c = abs(t_B - t_T) / (abs(t_B - T_c) + abs(t_T - T_c))
     projected_confidence = (1 - k_c) * confidence

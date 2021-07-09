@@ -111,47 +111,54 @@ class Memory:
 
         return concept_item
 
-    def get_semantically_related_concept(self, statement_concept):
+    def get_semantically_related_concepts(self, statement_concept):
         """
-            Get a concept (named by a Statement Term) that is semantically related to the given concept by a term.
-            This can return the given concept in rare cases where no other semantically related concept is found
+            Get concepts (named by a Statement Term) that are semantically related to the given concept.
+
+            Using term-links, returns a concept with the same copula order; one for the subject and one for the predicate.
+
+            For a first-order statement, will also try to return higher-order concepts based on implication links
 
             :param statement_concept - Statement-Term Concept for which to find a semantically related Statement-Term concept
 
-            :return Statement-Term Concept semantically related to param: `concept`; None if couldn't find any such statement concept
+            :return Statement-Term Concepts semantically related to param: `statement_concept`
         """
-        if len(statement_concept.term_links) == 0: return statement_concept
-        related_concept_item = statement_concept.term_links.peek()
-        initial_related_concept: Concept = related_concept_item.object
-        related_concept = initial_related_concept
+        related_concepts = [statement_concept] # a concept is related to itself
 
-        if isinstance(initial_related_concept.term, NALGrammar.Terms.AtomicTerm):
-            # atomic term concept
-            related_concept_item = initial_related_concept.term_links.peek() # peek term links
-            related_concept = related_concept_item.object
-        else:
-            # the initially related concept is compound, not atomic
-            if isinstance(related_concept.term, NALGrammar.Terms.StatementTerm):
-                # return this first-order statement concept or alternatively try for a higher-order concept
-                if len(related_concept.belief_table) > 0:
-                    check_another = random.randint(0,1)
-                    if check_another == 0:
-                        return related_concept
-                return related_concept.term_links.peek().object  # peek term links for higher-order statement concept
+        if len(statement_concept.term_links) != 0:
+            term_linked_concept = statement_concept.term_links.peek().object
+
+            if isinstance(term_linked_concept.term, NALGrammar.Terms.AtomicTerm):
+                # atomic term concept
+                related_statement_concept = term_linked_concept.term_links.peek().object # peek additional term links to get another statement term
+
+                related_concepts.append(related_statement_concept)
             else:
-                # not a statement, so peek a related concept
+                if isinstance(term_linked_concept.term, NALGrammar.Terms.StatementTerm):
+                    # the term-linked sentence is a first-order or high-order statement concept
+                    # return this statement concept
+                    related_concepts.append(term_linked_concept)
+
+                    # and if it's first-order, that means the original concept is higher-order
+                    # so also try for a related higher-order concept below
+                    if not NALSyntax.Copula.is_first_order(term_linked_concept.term.copula): return related_concepts
+
+                # the initially related concept is compound, not atomic, so we can't just peek the term links once
+                # we need to search until we find a statement concept
+                related_concept = None
                 attempts = 0
                 while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
                     and (related_concept is None \
                     or not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm)):
-                    related_concept_item = self.get_random_link(initial_related_concept)
+                    related_concept_item = term_linked_concept.term_links.peek()
 
                     if related_concept_item is not None: related_concept = related_concept_item.object
                     attempts += 1
+                if related_concept is not None and isinstance(related_concept.term,
+                                                                  NALGrammar.Terms.StatementTerm): related_concepts.append(related_concept)
 
-        if related_concept is not None and not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm): related_concept = None # only return statement concepts
 
-        return related_concept
+        return related_concepts
 
     def get_random_link(self, concept):
         """

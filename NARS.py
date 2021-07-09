@@ -131,7 +131,10 @@ class NARS:
 
         if not isinstance(concept_item.object.term, NALGrammar.Terms.StatementTerm):
             # Concept is not named by a statement, get a related statement concept
-            concept_to_consider = self.memory.get_semantically_related_concept(concept_item.object)
+            if len(concept_to_consider.term_links) > 0:
+                concept_to_consider = concept_to_consider.term_links.peek().object
+            else:
+                concept_to_consider = None
 
         if concept_to_consider is not None:
             #process a belief and desire
@@ -430,25 +433,20 @@ class NARS:
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept_item(statement_term).object
 
+        j2s = []
         if related_concept is None:
-            j2 = None
-            number_of_attempts = 0
-            while j2 is None and number_of_attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF:  # try searching a maximum of 3 concepts
-                related_concept = self.memory.get_semantically_related_concept(statement_concept)
-                if related_concept is None:
-                    if Config.DEBUG: print("No related concepts?")
-                    return  # no related concepts! Should never happen, the concept is always semantically related to itself
+            related_concepts = self.memory.get_semantically_related_concepts(statement_concept)
 
-                # check for a belief we can interact with
+            # check for a belief we can interact with
+            for related_concept in related_concepts:
                 for (belief, confidence) in related_concept.belief_table:
                     if NALGrammar.Sentences.may_interact(j1, belief):
-                        j2 = belief  # belief can interact with j1
+                        j2s.append(belief)  # belief can interact with j1, store it and move onto next related concept
                         break
 
-                number_of_attempts += 1
 
-            if j2 is None:
-                if Config.DEBUG: print('No related belief found for ' + j1.get_formatted_string())
+            if len(j2s) == 0:
+                if Config.DEBUG: print('No related beliefs found for ' + j1.get_formatted_string())
                 return  # done if can't interact
         else:
             j2 = related_concept.belief_table.peek()
@@ -457,11 +455,14 @@ class NARS:
                 if Config.DEBUG: print('Given concept had no beliefs.')
                 return  # done if can't interact
 
-        if Config.DEBUG: print(
-            "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
-        derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-        for derived_sentence in derived_sentences:
-            self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+            j2s.append(j2)
+
+        for j2 in j2s:
+            if Config.DEBUG: print(
+                "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
+            derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
+            for derived_sentence in derived_sentences:
+                self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
     def execute_operation(self, full_operation_statement):
         """
