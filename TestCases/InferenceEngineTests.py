@@ -11,6 +11,7 @@ import NARSInferenceEngine
     Author: Christian Hahm
     Created: March 23, 2021
     Purpose: Unit Testing for the Narsese Inference Engine.
+        Tests if the inference engine returns all expected inference results for the given premises.
 """
 
 
@@ -376,7 +377,7 @@ def main():
     conditional_conjunctional_deduction()
     conditional_conjunctional_abduction()
 
-    print("All Inference Tests successfully passed.")
+    print("All Inference Engine Tests successfully passed.")
 
 if __name__ == "__main__":
     main()

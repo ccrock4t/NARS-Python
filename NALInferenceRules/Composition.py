@@ -68,7 +68,7 @@ def DisjunctionOrIntensionalIntersection(j1, j2):
         # j2: Sentence(T2 --> M < f2, c2 >)
         compound_term = NALGrammar.Terms.CompoundTerm([j1.statement.get_subject_term(),
                                                        j2.statement.get_subject_term()],
-                                                      term_connector=connector)  # (T1 & T2)
+                                                      term_connector=connector)  # (T1 | T2)
         result_statement = NALGrammar.Terms.StatementTerm(compound_term,
                                                           j1.statement.get_predicate_term(),
                                                           copula)  # ((T1 | T2) --> M)
@@ -81,7 +81,7 @@ def DisjunctionOrIntensionalIntersection(j1, j2):
         # j2: Sentence(M --> T2 < f2, c2 >)
         compound_term = NALGrammar.Terms.CompoundTerm([j1.statement.get_predicate_term(),
                                                        j2.statement.get_predicate_term()],
-                                                      term_connector=connector)  # (T1 & T2)
+                                                      term_connector=connector)  # (T1 | T2)
 
         result_statement = NALGrammar.Terms.StatementTerm(j1.statement.get_subject_term(),
                                                           compound_term,
@@ -120,9 +120,11 @@ def ConjunctionOrExtensionalIntersection(j1, j2):
 
             F_int
         Returns:
-            :- Sentence ((T1 & T2) --> M) (Sentence ((T1 && T2) ==> M))
-            OR
-            :- Sentence (M --> (T1 & T2)) (Sentence (M ==> (T1 && T2)))
+            Sentence ((T1 & T2) --> M) or Sentence ((T1 && T2) ==> M)
+
+            or
+
+            Sentence (M --> (T1 & T2)) or Sentence (M ==> (T1 && T2))
     """
     Asserts.assert_sentence_asymmetric(j1)
     Asserts.assert_sentence_asymmetric(j2)

@@ -78,6 +78,10 @@ class TermConnector(enum.Enum):
 
     @classmethod
     def is_first_order(cls, connector):
+        """
+            First order connectors are Term Connectors
+            Higher order connectors are Statement Connectors
+        """
         return not (connector is cls.Negation or
                     connector is cls.Conjunction or
                     connector is cls.Disjunction or
@@ -99,6 +103,7 @@ class TermConnector(enum.Enum):
         return (connector is cls.Conjunction or
                 connector is cls.SequentialConjunction or
                 connector is cls.ParallelConjunction)
+
 
     @classmethod
     def get_set_end_connector_from_set_start_connector(cls, start_connector):
