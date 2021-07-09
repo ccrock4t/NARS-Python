@@ -204,27 +204,35 @@ class NARS:
                     Global.Global.NARS_object_pipe.send(item.get_gui_info())
             elif command == "getsentence":
                 sentence_string = key
-                start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
-                end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
-                statement_string = sentence_string[start_idx:end_idx+1].replace(" ","")
+                statement_start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
+                statement_end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
+                statement_string = sentence_string[statement_start_idx:statement_end_idx+1].replace(" ","")
                 statement_term = NALGrammar.Terms.Term.from_string(statement_string)
                 concept = self.memory.peek_concept_item(statement_term).object
 
                 if concept is None:
                     Global.Global.NARS_object_pipe.send(None)
                 else:
-                    punctuation_str = sentence_string[end_idx + 1]
+                    punctuation_str = sentence_string[statement_end_idx + 1]
                     if punctuation_str == NALSyntax.Punctuation.Judgment.value:
                         table = concept.belief_table
                     elif punctuation_str == NALSyntax.Punctuation.Goal.value:
                         table = concept.desire_table
                     else:
                         assert False,"ERROR: Could not parse GUI sentence fetch"
+                    ID = sentence_string[sentence_string.find(Global.Global.MARKER_ITEM_ID) + len(
+                        Global.Global.MARKER_ITEM_ID):sentence_string.rfind(Global.Global.MARKER_ID_END)]
+                    sent = False
                     for knowledge_tuple in table:
                         knowledge_sentence = knowledge_tuple[0]
-                        if sentence_string == str(knowledge_sentence):
+                        knowledge_sentence_str = str(knowledge_sentence)
+                        knowledge_sentence_ID = knowledge_sentence_str[knowledge_sentence_str.find(Global.Global.MARKER_ITEM_ID) + len(
+                            Global.Global.MARKER_ITEM_ID):knowledge_sentence_str.rfind(Global.Global.MARKER_ID_END)]
+                        if ID == knowledge_sentence_ID:
                             Global.Global.NARS_object_pipe.send(knowledge_sentence.get_gui_info())
+                            sent = True
                             break
+                    if not sent: Global.Global.NARS_object_pipe.send(None) # couldn't get sentence, maybe it was purged
             elif command == "getconcept":
                 item = None
                 while item is None:
