@@ -16,7 +16,7 @@ def assert_sentence_forward_implication(j):
     :return:
     """
     assert_sentence(j)
-    assert not NALSyntax.Copula.is_symmetric(j.statement.copula) and not NALSyntax.Copula.is_first_order(j.statement.copula), str(j) + " must be a forward implication statement"
+    assert not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) and not NALSyntax.Copula.is_first_order(j.statement.get_copula()), str(j) + " must be a forward implication statement"
 
 def assert_sentence_asymmetric(j):
     """
@@ -25,7 +25,7 @@ def assert_sentence_asymmetric(j):
     :return:
     """
     assert_sentence(j)
-    assert not NALSyntax.Copula.is_symmetric(j.statement.copula), str(j) + " must be asymmetric"
+    assert not NALSyntax.Copula.is_symmetric(j.statement.get_copula()), str(j) + " must be asymmetric"
 
 def assert_sentence_symmetric(j):
     """
@@ -34,7 +34,7 @@ def assert_sentence_symmetric(j):
     :return:
     """
     assert_sentence(j)
-    assert NALSyntax.Copula.is_symmetric(j.statement.copula), str(j) + " must be symmetric"
+    assert NALSyntax.Copula.is_symmetric(j.statement.get_copula()), str(j) + " must be symmetric"
 
 def assert_sentence_equivalence(j):
     """
@@ -43,7 +43,7 @@ def assert_sentence_equivalence(j):
     :return:
     """
     assert_sentence(j)
-    assert NALSyntax.Copula.is_symmetric(j.statement.copula) and not NALSyntax.Copula.is_first_order(j.statement.copula), str(j) + " must be an equivalence statement"
+    assert NALSyntax.Copula.is_symmetric(j.statement.get_copula()) and not NALSyntax.Copula.is_first_order(j.statement.get_copula()), str(j) + " must be an equivalence statement"
 
 def assert_sentence_similarity(j):
     """
@@ -52,7 +52,7 @@ def assert_sentence_similarity(j):
     :return:
     """
     assert_sentence(j)
-    assert j.statement.copula == NALSyntax.Copula.Similarity, str(j) + " must be a similarity statement"
+    assert j.statement.get_copula() == NALSyntax.Copula.Similarity, str(j) + " must be a similarity statement"
 
 def assert_sentence_inheritance(j):
     """
@@ -61,7 +61,7 @@ def assert_sentence_inheritance(j):
     :return:
     """
     assert_sentence(j)
-    assert j.statement.copula == NALSyntax.Copula.Inheritance, str(j) + " must be an inheritance statement"
+    assert j.statement.get_copula() == NALSyntax.Copula.Inheritance, str(j) + " must be an inheritance statement"
 
 def assert_term(t):
     assert (isinstance(t, NALGrammar.Terms.Term)), str(t) + " must be a Term"

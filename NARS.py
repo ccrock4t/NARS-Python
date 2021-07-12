@@ -295,9 +295,10 @@ class NARS:
 
         j1 = task.sentence
 
-        derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
-        for derived_sentence in derived_sentences:
-           self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
+        # commented out because it floods the system
+        #derived_sentences = NARSInferenceEngine.do_inference_one_premise(j1)
+        #for derived_sentence in derived_sentences:
+        #   self.global_task_buffer.put_new(NARSDataStructures.Task(derived_sentence))
 
         # add the judgment itself into concept's belief table
         task_statement_concept.belief_table.put(j1)

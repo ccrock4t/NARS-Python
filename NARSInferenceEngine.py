@@ -419,7 +419,8 @@ def do_inference_one_premise(j):
 
         # Image
         if isinstance(j.statement.get_subject_term(), NALGrammar.Terms.CompoundTerm) \
-            and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product:
+            and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product\
+                and j.statement.get_copula() == NALSyntax.Copula.Inheritance:
             derived_sentence_list = NALInferenceRules.Immediate.ExtensionalImage(j)
             for derived_sentence in derived_sentence_list:
                 derived_sentences.append(derived_sentence)

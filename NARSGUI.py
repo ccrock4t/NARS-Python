@@ -1,5 +1,6 @@
 
 import Config
+import NALSyntax
 import NARSDataStructures
 import NARSMemory
 
@@ -20,12 +21,18 @@ class NARSGUI:
     gui_total_cycles_lbl = None
     gui_total_cycles_stringvar = None
     gui_play_pause_button = None
+    gui_show_atomic_concepts = False
 
     # Internal Data vars
     # listboxes
     gui_global_buffer_listbox = None  # output for tasks in global buffer
     gui_memory_listbox = None  # output for concepts in memory bag
     gui_event_buffer_listbox = None # output for tasks in event buffer
+
+    # arrays
+    gui_global_buffer_full_contents = []
+    gui_memory_full_contents = []
+    gui_event_buffer_listbox_full_contents = []
 
     # labels
     gui_event_buffer_output_label = None
@@ -34,7 +41,7 @@ class NARSGUI:
     GUI_BUDGET_SYMBOL = "$"
 
     # dictionary of data structure name to listbox
-    dict_listboxes = {}
+    dict_listbox_from_id = {}
     gui_object_pipe = None # two-way object request communication
     gui_string_pipe = None # one way string communication
 
@@ -73,7 +80,6 @@ class NARSGUI:
     KEY_CAPACITY_EXPLANATION_LINKS = "CapacityExplanationLinks"
     KEY_SENTENCE_STRING = "SentenceString"
 
-
     def __init__(self):
         pass
 
@@ -82,9 +88,9 @@ class NARSGUI:
              Print a message to an output GUI box
          """
         listbox = None
-        if data_structure_info is not None and data_structure_info[0] in self.dict_listboxes:
+        if data_structure_info is not None and data_structure_info[0] in self.dict_listbox_from_id:
             data_structure_id, data_structure_name = data_structure_info
-            listbox = self.dict_listboxes[data_structure_id]
+            listbox = self.dict_listbox_from_id[data_structure_id]
         elif data_structure_info is None:
             # output to interface or shell
             if self.gui_use_interface:
@@ -111,7 +117,19 @@ class NARSGUI:
                         break
                     i += 1
 
-            listbox.insert(idx_to_insert, msg)
+
+            if listbox is self.gui_global_buffer_listbox:
+                self.gui_global_buffer_full_contents.insert(len(self.gui_global_buffer_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
+                listbox.insert(idx_to_insert, msg)
+            elif listbox is self.gui_memory_listbox:
+                self.gui_memory_full_contents.insert(len(self.gui_memory_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
+                is_atomic = not NALSyntax.Copula.contains_copula(msg)
+                if (not is_atomic) or (is_atomic and self.gui_show_atomic_concepts):
+                    listbox.insert(idx_to_insert, msg)
+            elif listbox is self.gui_event_buffer_listbox:
+                self.gui_event_buffer_listbox_full_contents.insert(len(self.gui_event_buffer_listbox_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
+                listbox.insert(idx_to_insert, msg)
+
             self.update_datastructure_labels(data_structure_info, length=length)
 
     def remove_from_output(self, msg, data_structure_info=None, length=0):
@@ -119,11 +137,18 @@ class NARSGUI:
             Remove a message from an output GUI box
         """
 
-        if data_structure_info is not None and data_structure_info[0] in self.dict_listboxes:
+        if data_structure_info is not None and data_structure_info[0] in self.dict_listbox_from_id:
             data_structure_id, data_structure_name = data_structure_info
-            listbox = self.dict_listboxes[data_structure_id]
+            listbox = self.dict_listbox_from_id[data_structure_id]
         else:
             assert False,'ERROR: Data structure name invalid ' + str(data_structure_info)
+
+        if listbox is self.gui_memory_listbox and \
+                not NALSyntax.Copula.contains_copula(msg) and \
+                not self.gui_show_atomic_concepts:
+            # if memory listbox, atomic concept, and not showing atomic concepts
+            self.gui_memory_full_contents.remove(msg) # remove it from memory contents
+            return # don't bother trying to remove it from GUI output
 
         string_list = listbox.get(0, tk.END)
         msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
@@ -141,6 +166,13 @@ class NARSGUI:
             assert False, "GUI Error: cannot find msg to remove: " + msg
 
         listbox.delete(idx_to_remove)
+        if listbox is self.gui_global_buffer_listbox:
+            self.gui_global_buffer_full_contents.remove(msg)
+        elif listbox is self.gui_memory_listbox:
+            self.gui_memory_full_contents.remove(msg)
+        elif listbox is self.gui_event_buffer_listbox:
+            self.gui_event_buffer_listbox_full_contents.remove(msg)
+
         self.update_datastructure_labels(data_structure_info, length=length)
 
     def update_datastructure_labels(self, data_structure_info, length=0):
@@ -149,7 +181,7 @@ class NARSGUI:
         label_txt = ""
         label = None
 
-        listbox = self.dict_listboxes[data_structure_id]
+        listbox = self.dict_listbox_from_id[data_structure_id]
         if listbox is self.gui_global_buffer_listbox:
             label_txt = "Global Task "
             label = self.gui_global_buffer_output_label
@@ -162,17 +194,33 @@ class NARSGUI:
         if label is None: return
         label.config(
             text=(label_txt + data_structure_name + ": " + str(length) + " / " + str(
-                self.dict_listboxes[data_structure_id + "capacity"])))
+                self.dict_listbox_from_id[data_structure_id + "capacity"])))
 
-    def clear_output_gui(self, data_structure_name=None):
-        if self.dict_listboxes[data_structure_name] == self.gui_memory_listbox:
-            self.gui_memory_listbox.delete(0, tk.END)
+    def clear_listbox(self, listbox=None):
+        listbox.delete(0, tk.END)
+
+    def toggle_atomic_concepts(self):
+        """
+            Toggles showing atomic concepts in the memory listbox
+        :return:
+        """
+        self.gui_show_atomic_concepts = not self.gui_show_atomic_concepts
+        self.clear_listbox(self.gui_memory_listbox)
+        if self.gui_show_atomic_concepts:
+            for concept_string in self.gui_memory_full_contents:
+                self.gui_memory_listbox.insert(tk.END, concept_string)
+        else:
+            self.clear_listbox(self.gui_memory_listbox)
+            for concept_string in self.gui_memory_full_contents:
+                if NALSyntax.Copula.contains_copula(concept_string):
+                    self.gui_memory_listbox.insert(tk.END, concept_string)
+
 
     def execute_gui(self, gui_use_interface, gui_use_internal_data, data_structure_IDs, data_structure_capacities, pipe_gui_objects, pipe_gui_strings):
         """
             Setup and run 2 windows on a single thread
         """
-        internal_data_dimensions = "1000x500"
+        internal_data_dimensions = "1250x500"
         self.gui_object_pipe = pipe_gui_objects
         self.gui_string_pipe = pipe_gui_strings
         self.gui_use_interface = gui_use_interface
@@ -207,7 +255,7 @@ class NARSGUI:
                 elif command == "remove":
                     self.remove_from_output(msg=msg, data_structure_info=data_structure_info, length=data_structure_length)
                 elif command == "clear":
-                    self.clear_output_gui(data_structure_name=data_structure_info)
+                    self.clear_listbox(data_structure_id=data_structure_info)
                 elif command == "paused":
                     self.set_paused(msg)
                 elif command == "cycles":
@@ -253,43 +301,49 @@ class NARSGUI:
         """
             Event buffer internal contents GUI
         """
+        row = 0
         self.gui_event_buffer_output_label = tk.Label(window)
-        self.gui_event_buffer_output_label.grid(row=0, column=0, sticky='w')
+        self.gui_event_buffer_output_label.grid(row=row, column=0, sticky='w')
 
+        row += 1
         buffer_scrollbar = tk.Scrollbar(window)
-        buffer_scrollbar.grid(row=1, column=2, sticky='ns')
+        buffer_scrollbar.grid(row=row, column=2, sticky='ns')
         self.gui_event_buffer_listbox = tk.Listbox(window,
                                                   height=listbox_height//3,
                                                   width=listbox_width, font=('', 8),
                                                   yscrollcommand=buffer_scrollbar.set)
-        self.gui_event_buffer_listbox.grid(row=1, column=0, columnspan=1)
-        self.dict_listboxes[event_buffer_ID] = self.gui_event_buffer_listbox
+        self.gui_event_buffer_listbox.grid(row=row, column=0, columnspan=1)
+        self.dict_listbox_from_id[event_buffer_ID] = self.gui_event_buffer_listbox
 
         """
             Global Buffer internal contents GUI
         """
+        row += 1
         self.gui_global_buffer_output_label = tk.Label(window)
-        self.gui_global_buffer_output_label.grid(row=2, column=0, sticky='w')
+        self.gui_global_buffer_output_label.grid(row=row, column=0, sticky='w')
 
+        row += 1
         buffer_scrollbar = tk.Scrollbar(window)
-        buffer_scrollbar.grid(row=3, column=2, sticky='ns')
+        buffer_scrollbar.grid(row=row , column=2, sticky='ns')
         self.gui_global_buffer_listbox = tk.Listbox(window,
                                                     height=2*listbox_height//3,
                                                     width=listbox_width, font=('', 8),
                                                     yscrollcommand=buffer_scrollbar.set)
-        self.gui_global_buffer_listbox.grid(row=3, column=0, columnspan=1)
-        self.dict_listboxes[global_task_buffer_ID] = self.gui_global_buffer_listbox
+        self.gui_global_buffer_listbox.grid(row=row , column=0, columnspan=1)
+        self.dict_listbox_from_id[global_task_buffer_ID] = self.gui_global_buffer_listbox
 
         """
             Memory internal contents GUI
         """
+        row = 0
         self.gui_concepts_bag_output_label = tk.Label(window)
-        self.gui_concepts_bag_output_label.grid(row=0,
+        self.gui_concepts_bag_output_label.grid(row=row,
                                                 column=3,
                                                 sticky='w')
 
+        row += 1
         concept_bag_scrollbar = tk.Scrollbar(window)
-        concept_bag_scrollbar.grid(row=1,
+        concept_bag_scrollbar.grid(row=row,
                                    column=5,
                                    rowspan=4,
                                    sticky='ns')
@@ -298,18 +352,22 @@ class NARSGUI:
                                             width=listbox_width,
                                             font=('', 8),
                                             yscrollcommand=concept_bag_scrollbar.set)
-        self.gui_memory_listbox.grid(row=1,
+        self.gui_memory_listbox.grid(row=row,
                                     column=3,
                                     columnspan=1,
                                     rowspan=4)
-        self.dict_listboxes[memory_bag_ID] = self.gui_memory_listbox
+        self.dict_listbox_from_id[memory_bag_ID] = self.gui_memory_listbox
+
+        checkbutton = tk.Checkbutton(window, text='Show atomic concepts', onvalue=1,
+                                     offvalue=0, command=self.toggle_atomic_concepts)
+        checkbutton.grid(row=row, column=6)
 
         # define callbacks when clicking items in any box
         self.gui_memory_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
         self.gui_global_buffer_listbox.bind("<<ListboxSelect>>", self.listbox_datastructure_item_click_callback)
 
         for i,(id,name) in enumerate(data_structure_IDs):
-            self.dict_listboxes[id + "capacity"] = data_structure_capacities[i]
+            self.dict_listbox_from_id[id + "capacity"] = data_structure_capacities[i]
             if i == len(data_structure_IDs) - 1:
                 # final name is the memory
                 length = 1 # system starts with self concept
@@ -857,8 +915,8 @@ class NARSGUI:
             checkbutton.grid(row=row, column=column+2)
 
     def get_data_structure_name_from_listbox(self,listbox):
-        keys = list(self.dict_listboxes.keys())
-        values = list(self.dict_listboxes.values())
+        keys = list(self.dict_listbox_from_id.keys())
+        values = list(self.dict_listbox_from_id.values())
         return keys[values.index(listbox)]
 
 def create_key_item_label(parent,row,column,key_label,value_label):

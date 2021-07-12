@@ -179,6 +179,13 @@ class Copula(enum.Enum):
 
         return None
 
+    @classmethod
+    def contains_copula(cls, string):
+        for copula in cls:
+            if copula.value in string:
+                return True
+        return False
+
 
 class Punctuation(enum.Enum):
     Judgment = "."

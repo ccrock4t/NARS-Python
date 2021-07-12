@@ -109,7 +109,7 @@ class Term(Array):
         elif isinstance(term, StatementTerm):
             simplified_subject_term = Term.simplify(term.get_subject_term())
             simplified_predicate_term = Term.simplify(term.get_predicate_term())
-            return StatementTerm(subject_term=simplified_subject_term, predicate_term=simplified_predicate_term, copula=term.copula)
+            return StatementTerm(subject_term=simplified_subject_term, predicate_term=simplified_predicate_term, copula=term.get_copula())
         elif isinstance(term, CompoundTerm):
             if term.connector is NALSyntax.TermConnector.Negation:
                 if len(term.subterms) == 1:

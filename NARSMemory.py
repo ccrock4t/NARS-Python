@@ -99,7 +99,7 @@ class Memory:
                         concept_item.object.set_term_link(subconcept)
 
             if isinstance(term, NALGrammar.Terms.StatementTerm) and \
-                    term.copula is not None and\
+                    term.get_copula() is not None and\
                     not NALSyntax.Copula.is_first_order(term.get_copula()):
                 # implication statement
                 subject_concept = self.peek_concept_item(term.get_subject_term()).object
@@ -141,7 +141,7 @@ class Memory:
 
                     # and if it's first-order, that means the original concept is higher-order
                     # so also try for a related higher-order concept below
-                    if not NALSyntax.Copula.is_first_order(term_linked_concept.term.copula): return related_concepts
+                    if not NALSyntax.Copula.is_first_order(term_linked_concept.term.get_copula()): return related_concepts
 
                 # the initially related concept is compound, not atomic, so we can't just peek the term links once
                 # we need to search until we find a statement concept

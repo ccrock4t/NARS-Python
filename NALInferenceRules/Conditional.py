@@ -28,7 +28,6 @@ def ConditionalAnalogy(j1, j2):
         Returns:
             :- Sentence (P <f3, c3>)
     """
-    Asserts.assert_sentence_inheritance(j1)
     Asserts.assert_sentence_equivalence(j2)
 
     # Statement
@@ -59,7 +58,6 @@ def ConditionalDeduction(j1, j2):
             :- P <f3, c3>
     """
     Asserts.assert_sentence_forward_implication(j1)
-    Asserts.assert_sentence_inheritance(j2)
 
     statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
     result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
@@ -82,7 +80,6 @@ def ConditionalAbduction(j1, j2):
             :- P <f3, c3>
     """
     Asserts.assert_sentence_forward_implication(j1)
-    Asserts.assert_sentence_inheritance(j2)
 
     statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
     result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
@@ -106,8 +103,6 @@ def ConditionalInduction(j1, j2):
             :- or Sentence (S =/> P <f3, c3>)
             :- or Sentence (P =/> S <f3, c3>)
     """
-    Asserts.assert_sentence_inheritance(j1)
-    Asserts.assert_sentence_inheritance(j2)
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
@@ -143,10 +138,6 @@ def ConditionalComparison(j1, j2):
             :- or Sentence (S </> P <f3, c3>)
             :- or Sentence (P </> S <f3, c3>)
     """
-    Asserts.assert_sentence_inheritance(j1)
-    Asserts.assert_sentence_inheritance(j2)
-
-
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
@@ -184,7 +175,6 @@ def ConditionalConjunctionalDeduction(j1, j2):
             :-  ((C1 && C2 && ... CN) ==> P)  <f3, c3>
     """
     Asserts.assert_sentence_forward_implication(j1)
-    Asserts.assert_sentence_inheritance(j2)
 
     subject_term: NALGrammar.Terms.CompoundTerm = j1.statement.get_subject_term()
 
