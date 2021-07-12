@@ -21,7 +21,7 @@ class NARSGUI:
     gui_total_cycles_lbl = None
     gui_total_cycles_stringvar = None
     gui_play_pause_button = None
-    gui_show_atomic_concepts = False
+    gui_show_non_statement_concepts = False
 
     # Internal Data vars
     # listboxes
@@ -123,8 +123,8 @@ class NARSGUI:
                 listbox.insert(idx_to_insert, msg)
             elif listbox is self.gui_memory_listbox:
                 self.gui_memory_full_contents.insert(len(self.gui_memory_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
-                is_atomic = not NALSyntax.Copula.contains_copula(msg)
-                if (not is_atomic) or (is_atomic and self.gui_show_atomic_concepts):
+                is_statement = NALSyntax.Copula.contains_copula(msg)
+                if (is_statement) or (not is_statement and self.gui_show_non_statement_concepts):
                     listbox.insert(idx_to_insert, msg)
             elif listbox is self.gui_event_buffer_listbox:
                 self.gui_event_buffer_listbox_full_contents.insert(len(self.gui_event_buffer_listbox_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
@@ -143,16 +143,24 @@ class NARSGUI:
         else:
             assert False,'ERROR: Data structure name invalid ' + str(data_structure_info)
 
-        if listbox is self.gui_memory_listbox and \
-                not NALSyntax.Copula.contains_copula(msg) and \
-                not self.gui_show_atomic_concepts:
-            # if memory listbox, atomic concept, and not showing atomic concepts
-            self.gui_memory_full_contents.remove(msg) # remove it from memory contents
-            return # don't bother trying to remove it from GUI output
-
-        string_list = listbox.get(0, tk.END)
         msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
             Global.Global.MARKER_ID_END)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
+
+        if listbox is self.gui_memory_listbox:
+            # if memory listbox, non-statement concept
+            # remove it from memory contents
+            i = 0
+            for row in self.gui_memory_full_contents:
+                row_id = row[len(Global.Global.MARKER_ITEM_ID):row.rfind(Global.Global.MARKER_ID_END)]
+                if msg_id == row_id:
+                    break
+                i = i + 1
+            del self.gui_memory_full_contents[i]
+
+        # if non-statement and not showing non-statements, don't bother trying to remove it from GUI output
+        if not NALSyntax.Copula.contains_copula(msg) and not self.gui_show_non_statement_concepts: return
+
+        string_list = listbox.get(0, tk.END)
         idx_to_remove = -1
         i = 0
         for row in string_list:
@@ -166,12 +174,16 @@ class NARSGUI:
             assert False, "GUI Error: cannot find msg to remove: " + msg
 
         listbox.delete(idx_to_remove)
+
+        contents = None
         if listbox is self.gui_global_buffer_listbox:
-            self.gui_global_buffer_full_contents.remove(msg)
+            contents = self.gui_global_buffer_full_contents
         elif listbox is self.gui_memory_listbox:
-            self.gui_memory_full_contents.remove(msg)
+            contents = None # already removed at beginning of function
         elif listbox is self.gui_event_buffer_listbox:
-            self.gui_event_buffer_listbox_full_contents.remove(msg)
+            contents = self.gui_event_buffer_listbox_full_contents
+
+        if contents is not None: contents.pop(idx_to_remove)
 
         self.update_datastructure_labels(data_structure_info, length=length)
 
@@ -199,14 +211,14 @@ class NARSGUI:
     def clear_listbox(self, listbox=None):
         listbox.delete(0, tk.END)
 
-    def toggle_atomic_concepts(self):
+    def toggle_non_statement_concepts(self):
         """
             Toggles showing atomic concepts in the memory listbox
         :return:
         """
-        self.gui_show_atomic_concepts = not self.gui_show_atomic_concepts
+        self.gui_show_non_statement_concepts = not self.gui_show_non_statement_concepts
         self.clear_listbox(self.gui_memory_listbox)
-        if self.gui_show_atomic_concepts:
+        if self.gui_show_non_statement_concepts:
             for concept_string in self.gui_memory_full_contents:
                 self.gui_memory_listbox.insert(tk.END, concept_string)
         else:
@@ -261,9 +273,9 @@ class NARSGUI:
                 elif command == "cycles":
                     self.gui_total_cycles_stringvar.set(msg)
 
-            window.after(1, handle_pipes,self)  # todo call multiple times
+            window.after(1, handle_pipes,self)
 
-        window.after(1, handle_pipes,self) #todo call multiple times
+        window.after(1, handle_pipes,self)
         pipe_gui_objects.send('ready')
         window.mainloop()
 
@@ -359,7 +371,7 @@ class NARSGUI:
         self.dict_listbox_from_id[memory_bag_ID] = self.gui_memory_listbox
 
         checkbutton = tk.Checkbutton(window, text='Show atomic concepts', onvalue=1,
-                                     offvalue=0, command=self.toggle_atomic_concepts)
+                                     offvalue=0, command=self.toggle_non_statement_concepts)
         checkbutton.grid(row=row, column=6)
 
         # define callbacks when clicking items in any box

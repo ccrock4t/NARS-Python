@@ -24,7 +24,7 @@ TASKS_PER_CYCLE = 3
 """
     GUI
 """
-DEBUG = True # set to true for useful debug statements
+DEBUG = False # set to true for useful debug statements
 ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
 
 """
