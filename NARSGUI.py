@@ -3,6 +3,7 @@ import Config
 import NALSyntax
 import NARSDataStructures
 import NARSMemory
+import NALInferenceRules
 
 from PIL import Image, ImageTk, ImageOps
 
@@ -51,6 +52,8 @@ class NARSGUI:
 
     # Keys
     KEY_STRING = "String"
+    KEY_TRUTH_VALUE = "TruthValue"
+    KEY_TIME_PROJECTED_TRUTH_VALUE = "TimeProjectedTruthValue"
     KEY_IS_ARRAY = "IsArray"
     KEY_STRING_NOID = "StringNoID"
     KEY_ID = "ID"
@@ -211,7 +214,7 @@ class NARSGUI:
     def clear_listbox(self, listbox=None):
         listbox.delete(0, tk.END)
 
-    def toggle_non_statement_concepts(self):
+    def toggle_show_non_statement_concepts(self):
         """
             Toggles showing atomic concepts in the memory listbox
         :return:
@@ -371,7 +374,7 @@ class NARSGUI:
         self.dict_listbox_from_id[memory_bag_ID] = self.gui_memory_listbox
 
         checkbutton = tk.Checkbutton(window, text='Show non-statement concepts', onvalue=1,
-                                     offvalue=0, command=self.toggle_non_statement_concepts)
+                                     offvalue=0, command=self.toggle_show_non_statement_concepts)
         checkbutton.grid(row=row, column=6)
 
         # define callbacks when clicking items in any box
@@ -692,6 +695,13 @@ class NARSGUI:
                               column=column,
                               key_label="Occurrence Time: ",
                               value_label=str("Eternal" if oc_time is None else oc_time))
+
+        if oc_time is not None:
+            create_key_item_label(parent=item_info_window,
+                                  row=row,
+                                  column=column,
+                                  key_label="Time projected Truth Value: ",
+                                  value_label=sentence_to_draw[NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE])
 
         # sentence type
         row += 1

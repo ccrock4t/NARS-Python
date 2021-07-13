@@ -112,6 +112,8 @@ class Sentence(Array):
     def get_gui_info(self):
         dict = {}
         dict[NARSGUI.NARSGUI.KEY_STRING] = self.get_formatted_string()
+        dict[NARSGUI.NARSGUI.KEY_TRUTH_VALUE] = str(self.value)
+        dict[NARSGUI.NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE] = str(self.get_value_projected_to_current_time())
         dict[NARSGUI.NARSGUI.KEY_STRING_NOID] = self.get_formatted_string_no_id()
         dict[NARSGUI.NARSGUI.KEY_ID] = str(self.stamp.id)
         dict[NARSGUI.NARSGUI.KEY_OCCURRENCE_TIME] = self.stamp.occurrence_time

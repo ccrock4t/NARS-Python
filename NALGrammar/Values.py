@@ -21,6 +21,9 @@ class EvidentialValue:
     def get_formatted_string(self):
         assert False, "Formatted string not defined for Evidential Value base class"
 
+    def __str__(self):
+        return self.get_formatted_string()
+
 
 class DesireValue(EvidentialValue):
     """
@@ -31,13 +34,14 @@ class DesireValue(EvidentialValue):
 
     def __init__(self, frequency, confidence):
         super().__init__(frequency=frequency, confidence=confidence)
-
-    def get_formatted_string(self):
-        return str(NALSyntax.StatementSyntax.TruthValMarker.value) \
+        self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + "{:.2f}".format(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value)
+
+    def get_formatted_string(self):
+        return self.formatted_string
 
 
 class TruthValue(EvidentialValue):
@@ -48,10 +52,11 @@ class TruthValue(EvidentialValue):
 
     def __init__(self, frequency=Config.DEFAULT_JUDGMENT_FREQUENCY, confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE):
         super().__init__(frequency=frequency, confidence=confidence)
-
-    def get_formatted_string(self):
-        return str(NALSyntax.StatementSyntax.TruthValMarker.value) \
+        self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + str(self.frequency) \
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + str(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value)
+
+    def get_formatted_string(self):
+        return self.formatted_string
