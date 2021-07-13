@@ -1,5 +1,4 @@
 import Config
-import Global
 import NALGrammar
 import NALSyntax
 from NALInferenceRules.TruthValueFunctions import TruthFunctionOnArrayAndRevise, TruthFunctionOnArray
@@ -89,6 +88,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     :param truth_value_function:
     :return:
     """
+    result_statement = NALGrammar.Terms.simplify_term(result_statement)
     result_type = premise_result_type(j1,j2)
 
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal :

@@ -326,7 +326,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 """
                 derived_sentence = NALInferenceRules.Conditional.ConditionalAbduction(j1, j2)  # S
                 add_to_derived_sentences(derived_sentence,all_derived_sentences)
-            elif NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector):
+            elif NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector) and not NALSyntax.Copula.is_symmetric(j1_copula):
                 """
                     j1 = (C1 && C2 && ..CN && S) ==> P
                     j2 = S

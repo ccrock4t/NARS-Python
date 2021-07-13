@@ -418,7 +418,7 @@ class NARS:
             for derived_sentence in derived_sentences:
                 self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
-        should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
+        should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence,j1.stamp.creation_time)
         if not should_pursue: return  # Failed decision-making rule
 
         desire_event = statement_concept.belief_table.peek()

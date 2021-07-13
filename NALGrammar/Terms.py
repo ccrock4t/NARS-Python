@@ -225,8 +225,8 @@ class CompoundTerm(Term):
                 # order doesn't matter, alphabetize so the system can recognize the same term
                 subterms.sort(key=lambda t: str(t))
 
-            is_extensional_set = (term_connector.value == NALSyntax.TermConnector.ExtensionalSetStart.value)
-            is_intensional_set = (term_connector.value == NALSyntax.TermConnector.IntensionalSetStart.value)
+            is_extensional_set = (term_connector == NALSyntax.TermConnector.ExtensionalSetStart)
+            is_intensional_set = (term_connector == NALSyntax.TermConnector.IntensionalSetStart)
 
             is_set = is_extensional_set or is_intensional_set
 
@@ -303,7 +303,7 @@ class CompoundTerm(Term):
             Create a compound term from a string representing a compound term
         """
         subterms, connector = cls.parse_toplevel_subterms_and_connector(compound_term_string)
-        return cls(subterms, connector)
+        return simplify_term(cls(subterms, connector))
 
     @classmethod
     def parse_toplevel_subterms_and_connector(cls, compound_term_string):
@@ -360,22 +360,14 @@ class StatementTerm(CompoundTerm):
         <subject><copula><predicate>
 
         A special kind of compound term with a subject, predicate, and copula.
-        Statement connector is `None` for regular statements
 
         (P --> Q)
-
-        May also represent a statement compounds that can have truth values, like negation (--,(P-->Q))
-        in which case the non-negated statement is stored in subject and predicate is None.
     """
 
-    def __init__(self, subject_term: Term, predicate_term = None, copula=None, statement_connector = None):
+    def __init__(self, subject_term: Term, predicate_term = None, copula=None):
         Asserts.assert_term(subject_term)
 
-        if predicate_term is None:
-            Asserts.assert_statement_term(subject_term)
-            subterms = [subject_term]
-        else:
-            subterms = [subject_term, predicate_term]
+        subterms = [subject_term, predicate_term]
 
         self.copula = None
         if copula is not None:
@@ -383,7 +375,7 @@ class StatementTerm(CompoundTerm):
             if NALSyntax.Copula.is_symmetric(copula):
                 subterms.sort(key=lambda t: str(t))  # sort alphabetically
 
-        CompoundTerm.__init__(self,subterms, statement_connector)
+        CompoundTerm.__init__(self,subterms=subterms)
 
 
     @classmethod
@@ -393,14 +385,6 @@ class StatementTerm(CompoundTerm):
 
             Returns: top-level subject term, predicate term, copula, copula index
         """
-        statement_connector = None
-
-        if NALSyntax.TermConnector.get_term_connector_from_string(
-                statement_string[1:3]) == NALSyntax.TermConnector.Negation:
-            # found a negation statement connector
-            statement_connector = NALSyntax.TermConnector.Negation
-            statement_string = statement_string[4:-1]
-
         # get copula
         copula, copula_idx = NALSyntax.Copula.get_top_level_copula(statement_string)
         assert (copula is not None), "Copula not found. Exiting.."
@@ -409,8 +393,9 @@ class StatementTerm(CompoundTerm):
         predicate_str = statement_string[
                         copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
 
-        return StatementTerm(subject_term=Term.from_string(subject_str), predicate_term=Term.from_string(predicate_str),
-                              copula=copula, statement_connector=statement_connector)
+        return simplify_term(StatementTerm(subject_term=Term.from_string(subject_str),
+                                           predicate_term=Term.from_string(predicate_str),
+                                           copula=copula))
 
 
 
@@ -431,7 +416,7 @@ class StatementTerm(CompoundTerm):
     def get_subject_term(self) -> Term:
         return self.subterms[0]
 
-    def get_predicate_term(self) -> Term:
+    def get_predicate_term(self):
         return self.subterms[1]
 
     def get_copula(self):
@@ -447,15 +432,11 @@ class StatementTerm(CompoundTerm):
         """
             returns: (Subject copula Predicate)
         """
-        if len(self.subterms) > 1:
-            string = NALSyntax.StatementSyntax.Start.value + \
-               self.get_subject_term().get_formatted_string() + \
-               " " + self.get_copula_string() + " " + \
-               self.get_predicate_term().get_formatted_string() \
-               + NALSyntax.StatementSyntax.End.value
-        else:
-            string = CompoundTerm.get_formatted_string(self)
-
+        string = NALSyntax.StatementSyntax.Start.value + \
+           self.get_subject_term().get_formatted_string() + \
+           " " + self.get_copula_string() + " " + \
+           self.get_predicate_term().get_formatted_string() \
+           + NALSyntax.StatementSyntax.End.value
         return string
 
     def is_operation(self):
@@ -533,3 +514,55 @@ class ArrayTermElementTerm(Term):
 
     def _calculate_syntactic_complexity(self):
         return 1
+
+
+
+
+"""
+Helper Functions
+"""
+def simplify_term(term):
+    """
+        Simplifies a term and its subterms,
+        using NAL Theorems.
+
+        :returns The simplified term
+    """
+    simplified_term = None
+    if isinstance(term, ArrayTerm):
+        simplified_term = term
+    elif isinstance(term,StatementTerm):
+        simplified_term = StatementTerm(subject_term=simplify_term(term.get_subject_term()),
+                             predicate_term=simplify_term(term.get_predicate_term()),
+                             copula=term.get_copula())
+    elif isinstance(term,CompoundTerm):
+        simplified_subterms = []
+        if term.connector == NALSyntax.TermConnector.Negation and \
+            len(term.subterms) == 1 and \
+            isinstance(term.subterms[0],CompoundTerm) and \
+            term.subterms[0].connector == NALSyntax.TermConnector.Negation :
+            # (--,(--,(S --> P)) <====> (S --> P)
+            # Double negation theorem. 2 Negations cancel out
+            term = term.subterms[0].subterms[0] # get the inner statement
+        for subterm in term.subterms:
+            simplified_subterms.append(simplify_term(subterm))
+
+        if isinstance(term,StatementTerm):
+            simplified_term = StatementTerm(subject_term=simplified_subterms[0],
+                                            predicate_term=simplified_subterms[1],
+                                            copula=term.get_copula())
+        elif isinstance(term, CompoundTerm):
+            if not NALSyntax.TermConnector.is_first_order(term.connector) and \
+                    len(simplified_subterms) == 1:
+                # higher order compounds can't have 1 component, so just return the term
+                # without any connector
+                simplified_term = simplified_subterms[0]
+            else:
+                # first order compounds can have 1 component
+                simplified_term = CompoundTerm(subterms=simplified_subterms,
+                                    term_connector=term.connector)
+
+    else:
+        simplified_term = term
+
+    return simplified_term

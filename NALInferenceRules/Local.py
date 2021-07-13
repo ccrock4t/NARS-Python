@@ -11,6 +11,7 @@
 """
 import Asserts
 import Config
+import Global
 import NALGrammar
 from NALInferenceRules import HelperFunctions, TruthValueFunctions
 
@@ -88,7 +89,7 @@ def Choice(j1, j2):
     return best
 
 
-def Decision(f, c):
+def Decision(f, c, derived_time):
     """
          Decision Rule
 
@@ -103,7 +104,8 @@ def Decision(f, c):
          Returns:
            True or false, whether to pursue the goal
     """
-    desirability = TruthValueFunctions.Expectation(f, c)
+    time_prj = TruthValueFunctions.F_Projection(f,c,derived_time,Global.Global.get_current_cycle_number())
+    desirability = TruthValueFunctions.Expectation(time_prj.frequency, time_prj.confidence)
     return desirability > Config.T
 
 def Eternalization(j):
