@@ -123,7 +123,7 @@ class NARSGUI:
                 listbox.insert(idx_to_insert, msg)
             elif listbox is self.gui_memory_listbox:
                 self.gui_memory_full_contents.insert(len(self.gui_memory_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
-                is_statement = NALSyntax.Copula.contains_copula(msg)
+                is_statement = NALSyntax.Copula.contains_top_level_copula(msg)
                 if (is_statement) or (not is_statement and self.gui_show_non_statement_concepts):
                     listbox.insert(idx_to_insert, msg)
             elif listbox is self.gui_event_buffer_listbox:
@@ -158,7 +158,7 @@ class NARSGUI:
             del self.gui_memory_full_contents[i]
 
         # if non-statement and not showing non-statements, don't bother trying to remove it from GUI output
-        if not NALSyntax.Copula.contains_copula(msg) and not self.gui_show_non_statement_concepts: return
+        if not NALSyntax.Copula.contains_top_level_copula(msg) and not self.gui_show_non_statement_concepts: return
 
         string_list = listbox.get(0, tk.END)
         idx_to_remove = -1
@@ -224,7 +224,7 @@ class NARSGUI:
         else:
             self.clear_listbox(self.gui_memory_listbox)
             for concept_string in self.gui_memory_full_contents:
-                if NALSyntax.Copula.contains_copula(concept_string):
+                if NALSyntax.Copula.contains_top_level_copula(concept_string):
                     self.gui_memory_listbox.insert(tk.END, concept_string)
 
 
@@ -370,7 +370,7 @@ class NARSGUI:
                                     rowspan=4)
         self.dict_listbox_from_id[memory_bag_ID] = self.gui_memory_listbox
 
-        checkbutton = tk.Checkbutton(window, text='Show atomic concepts', onvalue=1,
+        checkbutton = tk.Checkbutton(window, text='Show non-statement concepts', onvalue=1,
                                      offvalue=0, command=self.toggle_non_statement_concepts)
         checkbutton.grid(row=row, column=6)
 

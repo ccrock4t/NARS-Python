@@ -4,7 +4,7 @@ import Global
 import NALSyntax
 import Asserts
 
-from NALGrammar.Terms import StatementTerm
+from NALGrammar.Terms import StatementTerm, CompoundTerm
 
 from NALGrammar.Values import TruthValue, DesireValue
 import NALInferenceRules
@@ -32,7 +32,7 @@ class Sentence(Array):
         :param array_truth_values:
         """
         Asserts.assert_punctuation(punctuation)
-        assert isinstance(statement,StatementTerm),"ERROR: Judgment needs a statement"
+        assert isinstance(statement,StatementTerm) or isinstance(statement,CompoundTerm),"ERROR: Judgment needs a statement"
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
@@ -238,16 +238,18 @@ class EvidentialBase:
 def may_interact(j1,j2):
     """
         2 Sentences may interact if:
-            #1. Neither is "None"
-            #2. They are not the same Sentence
-            #3. One is not in the other's evidential base
-            #4. They do not have overlapping evidential base
+            # Neither is "None"
+            # They are not the same Sentence
+            # They have not previously interacted
+            # One is not in the other's evidential base
+            # They do not have overlapping evidential base
     :param j1:
     :param j2:
     :return: Are the sentence allowed to interact for inference
     """
     if j1 is None or j2 is None: return False
     if j1.stamp.id == j2.stamp.id: return False
+    if j1 in j2.stamp.interacted_sentences or j2 in j1.stamp.interacted_sentences: return False
     if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
     if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
     return True

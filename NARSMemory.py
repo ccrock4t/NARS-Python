@@ -139,9 +139,10 @@ class Memory:
                     # return this statement concept
                     related_concepts.append(term_linked_concept)
 
-                    # and if it's first-order, that means the original concept is higher-order
-                    # so also try for a related higher-order concept below
                     if not NALSyntax.Copula.is_first_order(term_linked_concept.term.get_copula()): return related_concepts
+
+                    # if it's first-order, that means the original concept is higher-order
+                    # so also try for a related higher-order concept below
 
                 # the initially related concept is compound, not atomic, so we can't just peek the term links once
                 # we need to search until we find a statement concept

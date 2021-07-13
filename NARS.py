@@ -425,7 +425,7 @@ class NARS:
             self.execute_operation(j1.statement)
         else:
             if len(statement_concept.explanation_links) > 0:
-                related_concept = statement_concept.explanation_links.peek()
+                related_concept = statement_concept.explanation_links.peek().object
                 self.process_sentence_semantic_inference(j1, related_concept=related_concept)
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):

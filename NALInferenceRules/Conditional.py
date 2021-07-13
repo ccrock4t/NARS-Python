@@ -20,26 +20,24 @@ def ConditionalAnalogy(j1, j2):
         Conditional Analogy
 
         Input:
-            j1: Statement (S) <f2, c2>
+            j1: Statement (S) <f1, c1> {tense}
 
-            j2: Equivalence Statement (S <=> P)  <f1, c1> {tense}
+            j2: Equivalence Statement (S <=> P)  <f2, c2>
         Evidence:
             F_analogy
         Returns:
             :- Sentence (P <f3, c3>)
     """
     Asserts.assert_sentence_equivalence(j2)
+    Asserts.assert_sentence(j2)
 
     # Statement
     if j1.statement == j2.statement.get_subject_term():
-        statement_term: NALGrammar.Terms.StatementTerm = j2.statement.get_predicate_term()
+        result_statement: NALGrammar.Terms.StatementTerm = j2.statement.get_predicate_term()
     elif j1.statement == j2.statement.get_predicate_term():
-        statement_term: NALGrammar.Terms.StatementTerm  = j2.statement.get_subject_term()
+        result_statement: NALGrammar.Terms.StatementTerm = j2.statement.get_subject_term()
     else:
         assert False, "Error: Invalid inputs to Conditional Analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
-
-    result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
-                                                      statement_term.get_copula())
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
                                                                  TruthValueFunctions.F_Analogy)
@@ -58,10 +56,8 @@ def ConditionalDeduction(j1, j2):
             :- P <f3, c3>
     """
     Asserts.assert_sentence_forward_implication(j1)
-
-    statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
-    result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
-                                                      statement_term.get_copula())
+    assert j2.statement == j1.statement.get_subject_term(), "Error: Invalid inputs to Conditional Deduction: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+    result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
                                                                  TruthValueFunctions.F_Deduction)
@@ -77,13 +73,12 @@ def ConditionalAbduction(j1, j2):
         Evidence:
             F_abduction
         Returns:
-            :- P <f3, c3>
+            :- S <f3, c3>
     """
     Asserts.assert_sentence_forward_implication(j1)
+    assert j2.statement == j1.statement.get_predicate_term(), "Error: Invalid inputs to Conditional Abduction: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    statement_term: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
-    result_statement = NALGrammar.Terms.StatementTerm(statement_term.get_subject_term(), statement_term.get_predicate_term(),
-                                                      statement_term.get_copula())
+    result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
                                                                  TruthValueFunctions.F_Abduction)
@@ -183,9 +178,11 @@ def ConditionalConjunctionalDeduction(j1, j2):
     if len(new_subterms) > 1:
         # recreate the conjunctional compound with the new subterms
         new_compound_subject_term = NALGrammar.Terms.CompoundTerm(new_subterms, subject_term.connector)
-    else:
+    elif len(new_subterms) == 1:
         # only 1 subterm, no need to make it a compound
         new_compound_subject_term = new_subterms[0]
+    else:
+        assert False,"ERROR: Invalid inputs to Conditional Conjunctional Deduction " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     result_statement = NALGrammar.Terms.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())

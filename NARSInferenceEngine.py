@@ -303,10 +303,10 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
         """
             j1 = S==>P or S<=>P
         """
-        if NALSyntax.Copula.is_symmetric(j1_copula):
+        if NALSyntax.Copula.is_symmetric(j1_copula) and (j2_statement == j1_subject_term or j2_statement == j1_predicate_term) :
             """
                 j1 = S<=>P
-                j2 = S  (e.g A-->B)
+                j2 = S (e.g A-->B)
             """
             derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j2, j1)  # P
             add_to_derived_sentences(derived_sentence,all_derived_sentences)
@@ -315,7 +315,6 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 j1 = S==>P
                 j2 = S or P (e.g A-->B)
             """
-
             if j2_statement == j1_subject_term:
                 """
                     j2 = S

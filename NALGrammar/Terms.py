@@ -68,7 +68,7 @@ class Term(Array):
             """
             assert (term_string[-1] == NALSyntax.StatementSyntax.End.value), "Compound/Statement term must have ending parenthesis: " + term_string
 
-            copula, copula_idx = get_top_level_copula(term_string)
+            copula, copula_idx = NALSyntax.Copula.get_top_level_copula(term_string)
             if copula is None:
                 # compound term
                 term = CompoundTerm.from_string(term_string)
@@ -402,7 +402,7 @@ class StatementTerm(CompoundTerm):
             statement_string = statement_string[4:-1]
 
         # get copula
-        copula, copula_idx = get_top_level_copula(statement_string)
+        copula, copula_idx = NALSyntax.Copula.get_top_level_copula(statement_string)
         assert (copula is not None), "Copula not found. Exiting.."
 
         subject_str = statement_string[1:copula_idx]  # get subject string
@@ -533,25 +533,3 @@ class ArrayTermElementTerm(Term):
 
     def _calculate_syntactic_complexity(self):
         return 1
-
-
-def get_top_level_copula(string):
-    """
-        Searches for top-level copula in the string.
-
-        :returns copula and index if it exists,
-        :returns none and -1 otherwise
-    """
-    copula = None
-    copula_idx = -1
-
-    depth = 0
-    for i, v in enumerate(string):
-        if v == NALSyntax.StatementSyntax.Start.value:
-            depth += 1
-        elif v == NALSyntax.StatementSyntax.End.value:
-            depth -= 1
-        elif depth == 1 and i + 3 <= len(string) and NALSyntax.Copula.is_string_a_copula(string[i:i + 3]):
-            copula, copula_idx = NALSyntax.Copula.get_copula_from_string(string[i:i + 3]), i
-
-    return copula, copula_idx

@@ -186,6 +186,33 @@ class Copula(enum.Enum):
                 return True
         return False
 
+    @classmethod
+    def contains_top_level_copula(cls,string):
+        copula, _ = cls.get_top_level_copula(string)
+        return copula is not None
+
+    @classmethod
+    def get_top_level_copula(cls,string):
+        """
+            Searches for top-level copula in the string.
+
+            :returns copula and index if it exists,
+            :returns none and -1 otherwise
+        """
+        copula = None
+        copula_idx = -1
+
+        depth = 0
+        for i, v in enumerate(string):
+            if v == StatementSyntax.Start.value:
+                depth += 1
+            elif v == StatementSyntax.End.value:
+                depth -= 1
+            elif depth == 1 and i + 3 <= len(string) and Copula.is_string_a_copula(string[i:i + 3]):
+                copula, copula_idx = Copula.get_copula_from_string(string[i:i + 3]), i
+
+        return copula, copula_idx
+
 
 class Punctuation(enum.Enum):
     Judgment = "."

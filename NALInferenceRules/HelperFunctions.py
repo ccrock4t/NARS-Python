@@ -1,6 +1,7 @@
 import Config
 import Global
 import NALGrammar
+import NALSyntax
 from NALInferenceRules.TruthValueFunctions import TruthFunctionOnArrayAndRevise, TruthFunctionOnArray
 
 
@@ -103,8 +104,13 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
             result_truth = truth_value_function(f1, c1, f2, c2)
 
         if result_type == NALGrammar.Sentences.Judgment:
+            occurrence_time = None
+            if isinstance(result_statement, NALGrammar.Terms.StatementTerm) \
+                and NALSyntax.Copula.is_first_order(result_statement.get_copula()):
+                occurrence_time = j1.stamp.occurrence_time
+
             result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
-                                                   occurrence_time=j1.stamp.occurrence_time)
+                                                   occurrence_time=occurrence_time)
         elif result_type == NALGrammar.Sentences.Goal:
             result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array))
     elif result_type == NALGrammar.Sentences.Question:
