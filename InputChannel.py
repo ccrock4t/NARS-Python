@@ -85,12 +85,13 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-    if sentence.stamp.get_tense() is NALSyntax.Tense.Eternal:
-        # eternal experience
-        Global.Global.NARS.global_task_buffer.put_new(task)
-    else:
+    if sentence.is_event():
         # temporal experience
         Global.Global.NARS.event_buffer.put_new(task)
+    else:
+        # eternal experience
+        Global.Global.NARS.global_task_buffer.put_new(task)
+
 
 
 def load_input(filename="input.nal"):

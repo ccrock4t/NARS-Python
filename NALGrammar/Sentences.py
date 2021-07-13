@@ -93,10 +93,13 @@ class Sentence(Array):
         """
             If this is an event, project its value to the current time
         """
-        return NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
-                                                       self.value.confidence,
-                                                       self.stamp.occurrence_time,
-                                                       Global.Global.get_current_cycle_number())
+        if self.is_event():
+            return NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
+                                                           self.value.confidence,
+                                                           self.stamp.occurrence_time,
+                                                           Global.Global.get_current_cycle_number())
+        else:
+            return self.value
 
     def get_formatted_string(self):
         string = self.get_formatted_string_no_id()
@@ -105,8 +108,8 @@ class Sentence(Array):
 
     def get_formatted_string_no_id(self):
         string = self.statement.get_formatted_string() + str(self.punctuation.value)
-        if self.stamp.get_tense() != NALSyntax.Tense.Eternal: string = string + " " + self.stamp.get_tense().value
-        if self.value is not None: string = string + " " + self.value.get_formatted_string()
+        if self.is_event(): string = string + " " + self.stamp.get_tense().value
+        if self.value is not None: string = string + " " + self.get_value_projected_to_current_time().get_formatted_string()
         return string
 
     def get_gui_info(self):

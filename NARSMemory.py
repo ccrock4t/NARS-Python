@@ -107,8 +107,8 @@ class Memory:
                 predicate_concept = self.peek_concept_item(term.get_predicate_term()).object
 
                 # do prediction/explanation linking with subterms
-                subject_concept.set_prediction_link(predicate_concept)
-                predicate_concept.set_explanation_link(subject_concept)
+                subject_concept.set_prediction_link(concept_item.object)
+                predicate_concept.set_explanation_link(concept_item.object)
 
         return concept_item
 
@@ -268,8 +268,7 @@ class Concept:
 
     def set_term_link(self, concept):
         """
-            Set a bidirectional term link between 2 concepts, by placing the concept into
-            the term links bag.
+            Set a bidirectional term link between 2 concepts
             Does nothing if the link already exists
         """
         assert_concept(concept)
@@ -289,14 +288,12 @@ class Concept:
 
     def set_prediction_link(self, concept):
         """
-            Set a bidirectional term link between 2 concepts, by placing the concept into
-            the term links bag.
+            Set a prediction link between 2 concepts
             Does nothing if the link already exists
         """
         assert_concept(concept)
         if concept in self.prediction_links: return  # already linked
         self.prediction_links.put_new(concept)
-        concept.prediction_links.put_new(self)
 
     def remove_prediction_link(self, concept):
         """
@@ -306,18 +303,15 @@ class Concept:
         assert_concept(concept)
         assert (concept in self.prediction_links), concept + "must be in prediction links."
         self.prediction_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
-        concept.prediction_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
 
     def set_explanation_link(self, concept):
         """
-            Set a bidirectional term link between 2 concepts, by placing the concept into
-            the term links bag.
+            Set an explanation between 2 concepts
             Does nothing if the link already exists
         """
         assert_concept(concept)
         if concept in self.explanation_links: return  # already linked
         self.explanation_links.put_new(concept)
-        concept.explanation_links.put_new(self)
 
     def remove_explanation_link(self, concept):
         """
@@ -327,7 +321,6 @@ class Concept:
         assert_concept(concept)
         assert (concept in self.explanation_links), concept + "must be in prediction links."
         self.explanation_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
-        concept.explanation_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
 
     def get_formatted_string(self):
         """

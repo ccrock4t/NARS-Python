@@ -187,14 +187,12 @@ def F_Projection(frequency, confidence, t_B, t_T):
         to another occurrence time (t_T)
     """
     if t_B == t_T: return NALGrammar.Values.TruthValue(frequency, confidence)
-    T_c = Global.Global.get_current_cycle_number()
-    k_c = abs(t_B - t_T) / (abs(t_B - T_c) + abs(t_T - T_c))
-    projected_confidence = (1 - k_c) * confidence
+    projected_confidence = confidence * (Config.TRUTH_PROJECTION_DECAY ** abs(t_B - t_T))
     return NALGrammar.Values.TruthValue(frequency, projected_confidence)
 
 
 def F_Eternalization(temporal_frequency, temporal_confidence):
-    eternal_confidence = 1.0 / (Config.k + temporal_confidence)
+    eternal_confidence = temporal_confidence/ (Config.k + temporal_confidence)
     return NALGrammar.Values.TruthValue(temporal_frequency, eternal_confidence)
 
 def Expectation(f, c):

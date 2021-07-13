@@ -685,6 +685,13 @@ class NARSGUI:
                               column=column,
                               key_label="Sentence ID: ",
                               value_label=sentence_to_draw[NARSGUI.KEY_ID])
+        # original truth value
+        row += 1
+        create_key_item_label(parent=item_info_window,
+                              row=row,
+                              column=column,
+                              key_label="Truth Value: ",
+                              value_label=sentence_to_draw[NARSGUI.KEY_TRUTH_VALUE])
 
         # sentence occurrence time
         row += 1

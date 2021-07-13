@@ -28,6 +28,11 @@ DEBUG = False # set to true for useful debug statements
 ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
 
 """
+    Inference
+"""
+TRUTH_PROJECTION_DECAY = 0.8
+
+"""
     Bags
 """
 BAG_DEFAULT_CAPACITY = 5000 # default for how many items can fit in a bag
@@ -45,9 +50,8 @@ BUFFER_DEFAULT_CAPACITY = 60
 TABLE_DEFAULT_CAPACITY = 30
 
 """
-    Others
+    Other Structures
 """
-TRUTH_EPSILON = 0.01 # minimum size that truth-value can be incremented/decremented
 MAX_EVIDENTIAL_BASE_LENGTH = 20000 # maximum IDs to store documenting evidential base
 MAX_INTERACTED_SENTENCES_LENGTH = 20000
 

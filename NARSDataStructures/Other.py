@@ -3,6 +3,9 @@ import NALGrammar
 import Config
 import Global
 import depq
+import NALInferenceRules
+
+import NALSyntax
 
 """
     Author: Christian Hahm
@@ -78,24 +81,35 @@ class Table(Depq):
         self.capacity = capacity
         Depq.__init__(self)
 
-    def put(self, sentence: NALGrammar.Sentences):
+    def put(self, sentence: NALGrammar.Sentences.Sentence):
         """
-            Insert a Sentence into the depq, sorted by confidence.
+            Insert a Sentence into the depq, sorted by confidence (time-projected confidence if it's an event).
         """
         assert (isinstance(sentence,self.item_type)), "Cannot insert sentence into a Table of different punctuation"
-        Depq._insert_object(self, sentence, sentence.value.confidence)
+
+        confidence = sentence.value.confidence
+        if sentence.is_event():
+            confidence = sentence.get_value_projected_to_current_time().confidence
+
+        Depq._insert_object(self, sentence, confidence)
 
         if len(self) > self.capacity:
             Depq._extract_min(self)
 
+    def take(self):
+        """
+            Take item with highest confidence from the depq
+            O(1)
+        """
+        return Depq._extract_max(self)
+
     def peek(self):
         """
-            Peek item with highest priority from the depq
+            Peek item with highest confidence from the depq
             O(1)
 
             Returns None if depq is empty
         """
-        if len(self) == 0: return None
         return Depq.peek_max(self)
 
 

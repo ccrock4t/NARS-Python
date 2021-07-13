@@ -89,7 +89,7 @@ def Choice(j1, j2):
     return best
 
 
-def Decision(f, c, derived_time):
+def Decision(f, c):
     """
          Decision Rule
 
@@ -104,8 +104,7 @@ def Decision(f, c, derived_time):
          Returns:
            True or false, whether to pursue the goal
     """
-    time_prj = TruthValueFunctions.F_Projection(f,c,derived_time,Global.Global.get_current_cycle_number())
-    desirability = TruthValueFunctions.Expectation(time_prj.frequency, time_prj.confidence)
+    desirability = TruthValueFunctions.Expectation(f, c)
     return desirability > Config.T
 
 def Eternalization(j):

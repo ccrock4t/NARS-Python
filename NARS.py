@@ -126,11 +126,11 @@ class NARS:
         """
             Process a random concept in memory
         """
-        concept_item = self.memory.get_random_concept()
+        concept_item= self.memory.get_random_concept()
 
         if concept_item is None: return  # nothing to ponder
 
-        concept_to_consider = concept_item.object
+        concept_to_consider: NARSMemory.Concept  = concept_item.object
 
         if not isinstance(concept_item.object.term, NALGrammar.Terms.StatementTerm):
             # Concept is not named by a statement, get a related statement concept
@@ -142,14 +142,16 @@ class NARS:
         if concept_to_consider is not None:
             #process a belief and desire
             if len(concept_to_consider.belief_table) > 0:
-                sentence = concept_to_consider.belief_table.peek()  # get most confident belief
+                sentence = concept_to_consider.belief_table.take()  # get most confident belief
                 self.process_judgment_sentence(sentence)
+                concept_to_consider.belief_table.put(sentence)
 
             if len(concept_to_consider.desire_table) > 0:
-                sentence = concept_to_consider.desire_table.peek()  # get most confident goal
+                sentence = concept_to_consider.desire_table.take()  # get most confident goal
                 self.process_goal_sentence(sentence)
+                concept_to_consider.desire_table.put(sentence)
 
-        # decay priority; take concept out of bag and replace
+                # decay priority; take concept out of bag and replace
         concept_item = self.memory.concepts_bag.take_using_key(concept_item.key)
         concept_item.decay()
         self.memory.concepts_bag.put(concept_item)
@@ -393,8 +395,6 @@ class NARS:
 
         self.process_sentence_semantic_inference(j1, related_concept)
 
-
-
     def process_goal_sentence(self, j1: NALGrammar.Sentences.Goal, related_concept=None):
         """
             Continued processing for Goal
@@ -403,7 +403,7 @@ class NARS:
             :param related_concept: concept related to goal with which to perform semantic inference
         """
         statement_term = j1.statement
-        statement_concept = self.memory.peek_concept_item(statement_term).object
+        statement_concept: NARSMemory.Concept = self.memory.peek_concept_item(statement_term).object
 
         j2 = None
         for (desire, confidence) in statement_concept.desire_table:
@@ -418,15 +418,20 @@ class NARS:
             for derived_sentence in derived_sentences:
                 self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
-        should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence,j1.stamp.creation_time)
+        should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
         if not should_pursue: return  # Failed decision-making rule
 
-        desire_event = statement_concept.belief_table.peek()
-        if desire_event is not None and desire_event.is_positive(): return  # Goal is already achieved
+        desire_event = statement_concept.belief_table.take()
+        if desire_event is not None:
+            statement_concept.belief_table.put(desire_event) #re-insert into table
+            if desire_event.is_positive(): return  # Return if goal is already achieved
 
         if statement_term.is_operation():
             self.execute_operation(j1.statement)
         else:
+            if related_concept is not None: self.process_sentence_semantic_inference(j1, related_concept=related_concept)
+
+            # Process with an explanation
             if len(statement_concept.explanation_links) > 0:
                 related_concept = statement_concept.explanation_links.peek().object
                 self.process_sentence_semantic_inference(j1, related_concept=related_concept)
@@ -466,7 +471,8 @@ class NARS:
             if j2 is None:
                 if Config.DEBUG: print('Given concept had no beliefs.')
                 return  # done if can't interact
-
+            j2 = related_concept.belief_table.take()
+            related_concept.belief_table.put(j2)
             j2s.append(j2)
 
         for j2 in j2s:
