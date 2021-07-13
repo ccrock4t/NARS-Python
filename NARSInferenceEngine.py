@@ -5,17 +5,16 @@
 """
 import Asserts
 import Config
-import Global
 import NALGrammar
 import NALInferenceRules.Immediate
 import NALInferenceRules.Syllogistic
 import NALInferenceRules.Composition
 import NALInferenceRules.Local
 import NALInferenceRules.Conditional
-import NARSDataStructures
+import NARSDataStructures.Other
 import NALSyntax
 
-def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Task]:
+def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
@@ -365,7 +364,7 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array):
     if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
     derived_sentence_array.append(derived_sentence)
 
-def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Task]:
+def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     derived_sentences = []
 
     derived_sentence = NALInferenceRules.Conditional.ConditionalInduction(A, B) # A =|> B or A =/> B or B =/> A

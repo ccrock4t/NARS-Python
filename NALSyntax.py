@@ -13,6 +13,7 @@ class StatementSyntax(enum.Enum):
     TruthValMarker = "%"
     TruthValDivider = ";"
     TermDivider = ","
+    BudgetMarker = "$"
 
     ArrayElementIndexStart = "["
     ArrayElementIndexEnd = "]"

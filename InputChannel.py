@@ -83,7 +83,7 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     """
     Global.Global.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
-    task = NARSDataStructures.Task(sentence, is_input_task=True)
+    task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
     if sentence.stamp.get_tense() is NALSyntax.Tense.Eternal:
         # eternal experience

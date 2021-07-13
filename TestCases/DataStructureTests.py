@@ -15,7 +15,7 @@ def test_table_removemax():
     """
         Test if the Table can successfully remove its maximum value
     """
-    table = NARSDataStructures.Table(item_type=NALGrammar.Sentences.Judgment)
+    table = NARSDataStructures.Other.Table(item_type=NALGrammar.Sentences.Judgment)
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(confidences)
     for c in confidences:
@@ -31,7 +31,7 @@ def test_table_removemin():
     """
         Test if the Table can successfully remove its minimum value
     """
-    table = NARSDataStructures.Table(item_type=NALGrammar.Sentences.Judgment)
+    table = NARSDataStructures.Other.Table(item_type=NALGrammar.Sentences.Judgment)
     confidences = [0.6, 0.2, 0.99, 0.5, 0.9]
     minimum = min(confidences)
     for c in confidences:
@@ -48,7 +48,7 @@ def test_table_overflow_purge():
     """
         Test if table stays within capacity when it overflows.
     """
-    test_data_structure = NARSDataStructures.Table(item_type=NALGrammar.Sentences.Judgment)
+    test_data_structure = NARSDataStructures.Other.Table(item_type=NALGrammar.Sentences.Judgment)
     items_added = 0
     max_capacity = NARS.Config.TABLE_DEFAULT_CAPACITY
     for i in range(0, max_capacity + 5):
@@ -64,14 +64,14 @@ def test_buffer_removemax():
     """
         Test if the Table can successfully remove its maximum value
     """
-    buffer = NARSDataStructures.Buffer(NALGrammar.Sentences.Sentence)
+    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence)
     priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(priorities)
     for p in priorities:
         sentence = NALGrammar.Sentences.Judgment(
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
-        item = NARSDataStructures.ItemContainer.Item(sentence,-1)
+        item = NARSDataStructures.ItemContainers.Item(sentence,-1)
         item.budget.priority = p
         buffer.put(item)
     buffermax = buffer._extract_max().budget.priority
@@ -82,7 +82,7 @@ def test_buffer_removemin():
     """
         Test if the Table can successfully remove its minimum value
     """
-    buffer = NARSDataStructures.Buffer(NALGrammar.Sentences.Sentence)
+    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence)
     priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
     minimum = min(priorities)
     for p in priorities:
@@ -90,7 +90,7 @@ def test_buffer_removemin():
         sentence = NALGrammar.Sentences.Judgment(
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
-        item = NARSDataStructures.ItemContainer.Item(sentence,-1)
+        item = NARSDataStructures.ItemContainers.Item(sentence,-1)
         item.budget.priority = p
         buffer.put(item)
 
@@ -118,7 +118,7 @@ def test_concept_termlinking():
     assert (conceptA.term_links.count == 0), "TEST FAILURE: Concept " + str(conceptA) + " does not have 0 termlinks"
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept " + str(conceptB) + " does not have 1 termlink"
 
-    take = statement_concept.term_links.take_using_key(NARSDataStructures.ItemContainer.Item.get_key_from_object(conceptB)).object # take out the only remaining concept (concept B)
+    take = statement_concept.term_links.take_using_key(NARSDataStructures.ItemContainers.Item.get_key_from_object(conceptB)).object # take out the only remaining concept (concept B)
 
     assert (take == conceptB), "TEST FAILURE: Removed concept was not Concept 'B'"
     assert (conceptB.term_links.count == 1), "TEST FAILURE: Concept does not have 1 termlink"
@@ -128,7 +128,7 @@ def test_bag_overflow_purge():
     """
         Test if bag stays within capacity when it overflows.
     """
-    test_data_structure = NARSDataStructures.Bag(item_type=NALGrammar.Sentences.Sentence)
+    test_data_structure = NARSDataStructures.Bag.Bag(item_type=NALGrammar.Sentences.Sentence)
     items_added = 0
     max_capacity = NARS.Config.BAG_DEFAULT_CAPACITY
     for i in range(0, max_capacity + 5):

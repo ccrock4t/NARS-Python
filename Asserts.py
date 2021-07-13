@@ -87,5 +87,5 @@ def assert_copula(j):
     assert (isinstance(j, NALSyntax.Copula)), str(j) + " must be a Copula"
 
 def assert_task(j):
-    assert (isinstance(j, NARSDataStructures.Task)), str(j) + " must be a Task"
+    assert (isinstance(j, NARSDataStructures.Other.Task)), str(j) + " must be a Task"
 

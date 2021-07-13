@@ -218,8 +218,6 @@ def ConditionalConjunctionalAbduction(j1, j2):
 
     if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in set_difference_of_terms])
 
-    result_term: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
-    result_statement = NALGrammar.Terms.StatementTerm(result_term.get_subject_term(), result_term.get_predicate_term(),
-                                                      result_term.get_copula())
+    result_statement: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Abduction)

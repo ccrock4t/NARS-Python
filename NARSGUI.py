@@ -39,7 +39,6 @@ class NARSGUI:
     gui_event_buffer_output_label = None
     gui_global_buffer_output_label = None
     gui_concepts_bag_output_label = None
-    GUI_BUDGET_SYMBOL = "$"
 
     # dictionary of data structure name to listbox
     dict_listbox_from_id = {}
@@ -108,13 +107,13 @@ class NARSGUI:
                 idx_to_insert = tk.END
             else:
                 string_list = listbox.get(0, tk.END)  # get all items in the listbox
-                msg_priority = msg[msg.find(self.GUI_BUDGET_SYMBOL) + 1:msg.rfind(
-                    self.GUI_BUDGET_SYMBOL)]
+                msg_priority = msg[msg.find(NALSyntax.StatementSyntax.BudgetMarker.value) + 1:msg.rfind(
+                    NALSyntax.StatementSyntax.BudgetMarker.value)]
                 idx_to_insert = tk.END  # by default insert at the end
                 i = 0
                 for row in string_list:
-                    row_priority = row[row.find(self.GUI_BUDGET_SYMBOL) + 1:row.rfind(
-                        self.GUI_BUDGET_SYMBOL)]
+                    row_priority = row[row.find(NALSyntax.StatementSyntax.BudgetMarker.value) + 1:row.rfind(
+                        NALSyntax.StatementSyntax.BudgetMarker.value)]
                     if float(msg_priority) > float(row_priority):
                         idx_to_insert = i
                         break
@@ -494,7 +493,7 @@ class NARSGUI:
             data_structure_name = ""
             if event.widget is self.gui_memory_listbox:
                 ID = item_string[item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
-                    self.GUI_BUDGET_SYMBOL) - 1]  # remove ID and priority, concept term string is the key
+                    NALSyntax.StatementSyntax.BudgetMarker.value) - 1]  # remove ID and priority, concept term string is the key
                 data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
             elif event.widget is self.gui_global_buffer_listbox:
                 ID = item_string[item_string.find(Global.Global.MARKER_ITEM_ID) + len(
@@ -513,11 +512,11 @@ class NARSGUI:
                 return
 
             classname = item[NARSGUI.KEY_CLASS_NAME]
-            assert classname == NARSMemory.Concept.__name__ or classname == NARSDataStructures.Task.__name__, "ERROR: Data Structure clickback only defined for Concept and Task"
+            assert classname == NARSMemory.Concept.__name__ or classname == NARSDataStructures.Other.Task.__name__, "ERROR: Data Structure clickback only defined for Concept and Task"
 
             if classname == NARSMemory.Concept.__name__:
                 self.draw_concept_internal_data(item,item_string)
-            elif classname == NARSDataStructures.Task.__name__:
+            elif classname == NARSDataStructures.Other.Task.__name__:
                 # window
                 item_info_window = tk.Toplevel()
                 item_info_window.title(classname + " Internal Data: " + item_string)

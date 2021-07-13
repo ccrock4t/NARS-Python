@@ -4,8 +4,9 @@ import Asserts
 import Config
 import NALGrammar
 import NALSyntax
-import NARSDataStructures
-
+import NARSDataStructures.Bag
+import NARSDataStructures.Other
+import NARSDataStructures.ItemContainers
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -21,7 +22,7 @@ class Memory:
     next_percept_id = 0
 
     def __init__(self):
-        self.concepts_bag = NARSDataStructures.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
+        self.concepts_bag = NARSDataStructures.Bag.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
         self.current_cycle_number = 0
 
     def __len__(self):
@@ -47,7 +48,7 @@ class Memory:
             :returns New Concept item created from the term
         """
         Asserts.assert_term(term)
-        concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
+        concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
         assert (self.concepts_bag.peek(concept_key) is None), "Cannot create new concept. Concept already exists."
         # create new concept
         new_concept = Concept(term)
@@ -56,7 +57,7 @@ class Memory:
         purged_item = self.concepts_bag.put_new(new_concept)
 
         if purged_item is not None:
-            purged_concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(purged_item.object)
+            purged_concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(purged_item.object)
 
         return self.concepts_bag.peek(concept_key)
 
@@ -79,8 +80,8 @@ class Memory:
                 and isinstance(term.get_subject_term().subterms[0], NALGrammar.Terms.ArrayTermElementTerm)): return None  # todo created concepts for closed variable terms
 
         # try to find the existing concept
-        concept_key = NARSDataStructures.ItemContainer.Item.get_key_from_object(term)
-        concept_item: NARSDataStructures.ItemContainer.Item = self.concepts_bag.peek(concept_key)
+        concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
+        concept_item: NARSDataStructures.ItemContainers.Item = self.concepts_bag.peek(concept_key)
         if concept_item is not None:
             return concept_item  # return if it already exists
 
@@ -250,11 +251,11 @@ class Concept:
     def __init__(self, term):
         Asserts.assert_term(term)
         self.term = term  # concept's unique term
-        self.term_links = NARSDataStructures.Bag(item_type=Concept)  # Bag of related concepts (related by term)
-        self.belief_table = NARSDataStructures.Table(NALGrammar.Sentences.Judgment)
-        self.desire_table = NARSDataStructures.Table(NALGrammar.Sentences.Goal)
-        self.prediction_links = NARSDataStructures.Bag(item_type=Concept)
-        self.explanation_links = NARSDataStructures.Bag(item_type=Concept)
+        self.term_links = NARSDataStructures.Bag.Bag(item_type=Concept)  # Bag of related concepts (related by term)
+        self.belief_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Judgment)
+        self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal)
+        self.prediction_links = NARSDataStructures.Bag.Bag(item_type=Concept)
+        self.explanation_links = NARSDataStructures.Bag.Bag(item_type=Concept)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -283,8 +284,8 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.term_links), concept + "must be in term links."
-        self.term_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
-        concept.term_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(self))
+        self.term_links.take_using_key(key=NARSDataStructures.ItemContainers.Item.get_key_from_object(concept))
+        concept.term_links.take_using_key(key=NARSDataStructures.ItemContainers.Item.get_key_from_object(self))
 
     def set_prediction_link(self, concept):
         """
