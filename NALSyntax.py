@@ -83,6 +83,7 @@ class TermConnector(enum.Enum):
             First order connectors are Term Connectors
             Higher order connectors are Statement Connectors
         """
+        assert connector is not None,"ERROR: None is not a term connector"
         return not (connector is cls.Negation or
                     connector is cls.Conjunction or
                     connector is cls.Disjunction or
@@ -91,6 +92,7 @@ class TermConnector(enum.Enum):
 
     @classmethod
     def is_order_invariant(cls, connector):
+        assert connector is not None, "ERROR: None is not a term connector"
         return (connector is cls.ExtensionalIntersection or
                 connector is cls.IntensionalIntersection or
                 connector is cls.ExtensionalSetStart or
@@ -101,6 +103,7 @@ class TermConnector(enum.Enum):
 
     @classmethod
     def is_conjunction(cls, connector):
+        assert connector is not None, "ERROR: None is not a term connector"
         return (connector is cls.Conjunction or
                 connector is cls.SequentialConjunction or
                 connector is cls.ParallelConjunction)
@@ -110,7 +113,7 @@ class TermConnector(enum.Enum):
     def get_set_end_connector_from_set_start_connector(cls, start_connector):
         if start_connector == TermConnector.ExtensionalSetStart: return TermConnector.ExtensionalSetEnd
         if start_connector == TermConnector.IntensionalSetStart: return TermConnector.IntensionalSetEnd
-        return None
+        assert False,"ERROR: Invalid start connector"
 
     @classmethod
     def is_set_bracket_start(cls, bracket):
@@ -119,6 +122,7 @@ class TermConnector(enum.Enum):
         :param bracket:
         :return:
         """
+        assert bracket is not None, "ERROR: None is not a term connector"
         return (bracket == TermConnector.IntensionalSetStart.value) or (
                 bracket == TermConnector.ExtensionalSetStart.value)
 
@@ -129,6 +133,7 @@ class TermConnector(enum.Enum):
         :param bracket:
         :return:
         """
+        assert bracket is not None, "ERROR: None is not a term connector"
         return (bracket == TermConnector.IntensionalSetEnd.value) or (
                 bracket == TermConnector.ExtensionalSetEnd.value)
 

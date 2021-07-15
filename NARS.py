@@ -364,9 +364,9 @@ class NARS:
             Continued processing
         """
         # revision
-        self.process_goal_sentence(j1, task_statement_concept)
+        self.process_goal_sentence(j1)
 
-    def process_judgment_sentence(self, j1: NALGrammar.Sentences.Goal, related_concept=None):
+    def process_judgment_sentence(self, j1: NALGrammar.Sentences.Judgment, related_concept=None):
         """
             Continued processing for Judgment
 
@@ -381,17 +381,20 @@ class NARS:
         statement_concept = self.memory.peek_concept_item(statement_term).object
 
         j2 = None
-        for (belief, confidence) in statement_concept.belief_table:
-            if NALGrammar.Sentences.may_interact(j1, belief):
-                j2 = belief  # belief can interact with j1
-                break
 
-        if j2 is not None:
-            if Config.DEBUG: print(
-                "Revising belief: " + j1.get_formatted_string())
-            derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-            for derived_sentence in derived_sentences:
-                self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+        if not j1.is_event():
+            # revise if not event. Don't revise events
+            for (belief, confidence) in statement_concept.belief_table:
+                if NALGrammar.Sentences.may_interact(j1, belief):
+                    j2 = belief  # belief can interact with j1
+                    break
+
+            if j2 is not None:
+                if Config.DEBUG: print(
+                    "Revising belief: " + j1.get_formatted_string())
+                derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
+                for derived_sentence in derived_sentences:
+                    self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
         self.process_sentence_semantic_inference(j1, related_concept)
 
@@ -405,6 +408,7 @@ class NARS:
         statement_term = j1.statement
         statement_concept: NARSMemory.Concept = self.memory.peek_concept_item(statement_term).object
 
+        # Do a Revision
         j2 = None
         for (desire, confidence) in statement_concept.desire_table:
             if NALGrammar.Sentences.may_interact(j1, desire):
@@ -418,6 +422,7 @@ class NARS:
             for derived_sentence in derived_sentences:
                 self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
+        # now see if it should be pursued
         should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
         if not should_pursue: return  # Failed decision-making rule
 
@@ -430,11 +435,6 @@ class NARS:
             self.execute_operation(j1.statement)
         else:
             if related_concept is not None: self.process_sentence_semantic_inference(j1, related_concept=related_concept)
-
-            # Process with an explanation
-            if len(statement_concept.explanation_links) > 0:
-                related_concept = statement_concept.explanation_links.peek().object
-                self.process_sentence_semantic_inference(j1, related_concept=related_concept)
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):
         """
@@ -453,27 +453,19 @@ class NARS:
         j2s = []
         if related_concept is None:
             related_concepts = self.memory.get_semantically_related_concepts(statement_concept)
-
-            # check for a belief we can interact with
-            for related_concept in related_concepts:
-                for (belief, confidence) in related_concept.belief_table:
-                    if NALGrammar.Sentences.may_interact(j1, belief):
-                        j2s.append(belief)  # belief can interact with j1, store it and move onto next related concept
-                        break
-
-
-            if len(j2s) == 0:
-                if Config.DEBUG: print('No related beliefs found for ' + j1.get_formatted_string())
-                return  # done if can't interact
         else:
-            j2 = related_concept.belief_table.peek()
+            related_concepts = [related_concept]
 
-            if j2 is None:
-                if Config.DEBUG: print('Given concept had no beliefs.')
-                return  # done if can't interact
-            j2 = related_concept.belief_table.take()
-            related_concept.belief_table.put(j2)
-            j2s.append(j2)
+        # check for a belief we can interact with
+        for related_concept in related_concepts:
+            for (belief, confidence) in related_concept.belief_table:
+                if NALGrammar.Sentences.may_interact(j1, belief):
+                    j2s.append(belief)  # belief can interact with j1, store it and move onto next related concept
+                    break
+
+        if len(j2s) == 0:
+            if Config.DEBUG: print('No related beliefs found for ' + j1.get_formatted_string())
+            return  # done if can't interact
 
         for j2 in j2s:
             if Config.DEBUG: print(

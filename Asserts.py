@@ -66,10 +66,19 @@ def assert_sentence_inheritance(j):
 def assert_term(t):
     assert (isinstance(t, NALGrammar.Terms.Term)), str(t) + " must be a Term"
 
+def assert_compound_term(t):
+    assert (isinstance(t, NALGrammar.Terms.CompoundTerm)), str(t) + " must be a Compound Term"
+
+def assert_valid_statement(t):
+    """
+        A valid statement is either a statementTerm or a higher order compound term (a compound of statements)
+    :param t:
+    :return:
+    """
+    assert (isinstance(t, NALGrammar.Terms.StatementTerm)) or (isinstance(t, NALGrammar.Terms.CompoundTerm) and not NALSyntax.TermConnector.is_first_order(t.connector)), str(t) + " must be a Higher Order Compound Term"
 
 def assert_statement_term(t):
     assert (isinstance(t, NALGrammar.Terms.StatementTerm)), str(t) + " must be a Statement Term"
-
 
 def assert_sentence(j):
     assert (isinstance(j, NALGrammar.Sentences.Sentence)), str(j) + " must be a Sentence"

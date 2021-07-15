@@ -112,6 +112,15 @@ class Sentence(Array):
         if self.value is not None: string = string + " " + self.get_value_projected_to_current_time().get_formatted_string()
         return string
 
+    def mutually_add_to_interacted_sentences(self, other_sentence):
+        self.stamp.interacted_sentences.append(other_sentence)
+        if len(self.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+            self.stamp.interacted_sentences.pop(0)
+
+        other_sentence.stamp.interacted_sentences.append(self)
+        if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
+            other_sentence.stamp.interacted_sentences.pop(0)
+
     def get_gui_info(self):
         dict = {}
         dict[NARSGUI.NARSGUI.KEY_STRING] = self.get_formatted_string()
@@ -141,6 +150,7 @@ class Judgment(Sentence):
     """
 
     def __init__(self, statement, value,occurrence_time=None):
+        Asserts.assert_valid_statement(statement)
         Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
 
 
@@ -150,7 +160,7 @@ class Question(Sentence):
     """
 
     def __init__(self, statement):
-        Asserts.assert_statement_term(statement)
+        Asserts.assert_valid_statement(statement)
         Sentence.__init__(self,statement, None, NALSyntax.Punctuation.Question)
 
 
@@ -160,7 +170,7 @@ class Goal(Sentence):
     """
 
     def __init__(self, statement, value):
-        Asserts.assert_statement_term(statement)
+        Asserts.assert_valid_statement(statement)
         Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Goal)
 
 class Stamp:
@@ -190,15 +200,6 @@ class Stamp:
             return NALSyntax.Tense.Present
         elif self.occurrence_time > current_cycle:
             return NALSyntax.Tense.Future
-
-    def mutually_add_to_interacted_sentences(self, other_sentence):
-        self.interacted_sentences.append(other_sentence)
-        if len(self.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-            self.interacted_sentences.pop(0)
-
-        other_sentence.stamp.interacted_sentences.append(self.sentence)
-        if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-            other_sentence.stamp.interacted_sentences.pop(0)
 
 
 
