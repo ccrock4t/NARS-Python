@@ -241,7 +241,7 @@ class NARS:
             elif command == "getconcept":
                 item = None
                 while item is None:
-                    item: NARSDataStructures.ItemContainer.Item = self.memory.concepts_bag.peek(key)
+                    item: NARSDataStructures.ItemContainers.Item = self.memory.concepts_bag.peek(key)
                 Global.Global.NARS_object_pipe.send(item.get_gui_info())
 
         while Global.Global.NARS_string_pipe.poll():

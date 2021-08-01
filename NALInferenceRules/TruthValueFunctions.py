@@ -20,12 +20,11 @@ def F_Revision(f1,c1,f2,c2):
     """
         :return: F_rev: Truth-Value (f,c)
     """
-    wp1, w1, wn1 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(f1,c1)
-    wp2, w2, wn2 = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(f2,c2)
+    wp1, w1, _ = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(f1,c1)
+    wp2, w2, _ = NALInferenceRules.HelperFunctions.get_evidence_fromfreqconf(f2,c2)
     # compute values of combined evidence
     wp = wp1 + wp2
-    wn = wn1 + wn2
-    w = wp + wn
+    w = w1 + w2
     f_rev, c_rev = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.Values.TruthValue(f_rev, c_rev)
 

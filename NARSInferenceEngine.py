@@ -103,36 +103,38 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
         elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
             if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
                 """
-                # j1 = M-->P, j2 = S-->M
-                # or j1 = M-->S, j2 = P-->M
-                # OR swapped premises
-                # j1 = S-->M, j2 = M-->P
-                # or j1 = P-->M, j2 = M-->S
+                    j1 = M-->P, j2 = S-->M
+                OR swapped premises
+                    j1 = S-->M, j2 = M-->P
                 """
                 if j1_subject_term != j2_predicate_term:
                     """
                         j1=S-->M, j2=M-->P
-                        or j1=P-->M, j2=M-->S
+                        
+                        Swap these premises
                     """
-                    # swap sentences
+
                     j1, j2 = j2, j1
                     j1_is_array, j2_is_array = j2_is_array, j1_is_array
                     j1_statement, j2_statement, j1_subject_term, j2_subject_term = j2_statement, j1_statement, j2_subject_term, j1_subject_term
                     j1_predicate_term, j2_predicate_term, j1_copula, j2_copula = j2_predicate_term, j1_predicate_term, j2_copula, j1_copula
                     swapped = True
 
+                """
+                    j1 = M-->P, j2 = S-->M
+                """
                 if not j1_is_array and not j2_is_array:
                     """
                     # Deduction
                     """
 
-                    derived_sentence = NALInferenceRules.Syllogistic.Deduction(j1, j2)  # S-->P or P-->S
+                    derived_sentence = NALInferenceRules.Syllogistic.Deduction(j1, j2)  # S-->P
                     add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
                     """
                     # Swapped Exemplification
                     """
-                    derived_sentence = NALInferenceRules.Syllogistic.Exemplification(j2, j1)  # P-->S or S-->P
+                    derived_sentence = NALInferenceRules.Syllogistic.Exemplification(j2, j1)  # P-->S
                     add_to_derived_sentences(derived_sentence,all_derived_sentences)
 
             elif j1_subject_term == j2_subject_term:
@@ -281,11 +283,11 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     else:
         # They do not have the same-order copula
         """
-            j1 = S==>P or S<=>P
-            j2 = A-->B or A<->B
+                j1 = S==>P or S<=>P
+                j2 = A-->B or A<->B
             OR
-            j1 = A-->B or A<->B
-            j2 = S==>P or S<=>P
+                j1 = A-->B or A<->B
+                j2 = S==>P or S<=>P
         """
         if NALSyntax.Copula.is_first_order(j1_copula):
             """
@@ -380,7 +382,6 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sen
     ===============================================
     ===============================================
     """
-
 
     return derived_sentences
 
