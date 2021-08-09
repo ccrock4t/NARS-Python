@@ -31,7 +31,7 @@ class NARS:
     """
 
     def __init__(self):
-        self.global_task_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task)
+        self.global_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task)
         self.event_buffer = NARSDataStructures.Buffers.EventBuffer(item_type=NARSDataStructures.Other.Task)
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
@@ -66,7 +66,7 @@ class NARS:
         # now do something with tasks from experience buffer and/or knowledge from memory
         for _ in range(Config.TASKS_PER_CYCLE):
             rand = random.random()
-            if rand < Config.MINDFULNESS and len(self.global_task_buffer) > 0:
+            if rand < Config.MINDFULNESS and len(self.global_buffer) > 0:
                 # OBSERVE
                 self.Observe()
             else:
@@ -94,21 +94,21 @@ class NARS:
             event_B = event_task_B.sentence
 
             # insert both events into the next buffer
-            self.global_task_buffer.put_new(event_task_A)
-            self.global_task_buffer.put_new(event_task_B)
+            self.global_buffer.put_new(event_task_A)
+            self.global_buffer.put_new(event_task_B)
 
             # do temporal inference
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 
             # insert the derived knowledge into the next buffer
             for derived_sentence in derived_sentences:
-                self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+                self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
     def Observe(self):
         """
             Process a task from the experience buffer
         """
-        task_item = self.global_task_buffer.take()
+        task_item = self.global_buffer.take()
 
         if task_item is None: return  # nothing to observe
 
@@ -120,7 +120,7 @@ class NARS:
             task_item.decay()
 
             # return task to buffer
-            self.global_task_buffer.put(task_item)
+            self.global_buffer.put(task_item)
 
     def Consider(self):
         """
@@ -196,8 +196,8 @@ class NARS:
             (command, key, data_structure_id) = Global.Global.NARS_object_pipe.recv()
             if command == "getitem":
                 data_structure = None
-                if data_structure_id == str(self.global_task_buffer):
-                    data_structure = self.global_task_buffer
+                if data_structure_id == str(self.global_buffer):
+                    data_structure = self.global_buffer
                 elif data_structure_id == str(self.event_buffer):
                     data_structure = self.event_buffer
                 elif data_structure_id == str(self.memory.concepts_bag):
@@ -394,7 +394,7 @@ class NARS:
                     "Revising belief: " + j1.get_formatted_string())
                 derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
                 for derived_sentence in derived_sentences:
-                    self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+                    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
         self.process_sentence_semantic_inference(j1, related_concept)
 
@@ -420,7 +420,7 @@ class NARS:
                 "Revising desire: " + j1.get_formatted_string())
             derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
             for derived_sentence in derived_sentences:
-                self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+                self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
         # now see if it should be pursued
         should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
@@ -472,7 +472,7 @@ class NARS:
                 "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
             derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
             for derived_sentence in derived_sentences:
-                self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+                self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
     def execute_operation(self, full_operation_statement):
         """
