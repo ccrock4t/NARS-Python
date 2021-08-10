@@ -251,11 +251,11 @@ class Concept:
     def __init__(self, term):
         Asserts.assert_term(term)
         self.term = term  # concept's unique term
-        self.term_links = NARSDataStructures.Bag.Bag(item_type=Concept)  # Bag of related concepts (related by term)
+        self.term_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)  # Bag of related concepts (related by term)
         self.belief_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Judgment)
         self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal)
-        self.prediction_links = NARSDataStructures.Bag.Bag(item_type=Concept)
-        self.explanation_links = NARSDataStructures.Bag.Bag(item_type=Concept)
+        self.prediction_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
+        self.explanation_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
 
     def __str__(self):
         return self.get_formatted_string()

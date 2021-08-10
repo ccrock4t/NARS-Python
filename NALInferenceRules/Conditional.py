@@ -182,7 +182,13 @@ def ConditionalConjunctionalDeduction(j1, j2):
         # only 1 subterm, no need to make it a compound
         new_compound_subject_term = new_subterms[0]
     else:
-        assert False,"ERROR: Invalid inputs to Conditional Conjunctional Deduction " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+        # 0 new subterms
+        if len(subject_term.subterms) > 1:
+            new_subterms = subject_term.subterms.copy()
+            new_subterms.pop()
+            new_compound_subject_term = NALGrammar.Terms.CompoundTerm(new_subterms, subject_term.connector)
+        else:
+            assert False,"ERROR: Invalid inputs to Conditional Conjunctional Deduction " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     result_statement = NALGrammar.Terms.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())

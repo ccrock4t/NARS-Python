@@ -364,6 +364,7 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array):
     :return:
     """
     if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
+    if derived_sentence is None: return # inference result was not useful
     derived_sentence_array.append(derived_sentence)
 
 def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
@@ -372,8 +373,8 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sen
     derived_sentence = NALInferenceRules.Conditional.ConditionalInduction(A, B) # A =|> B or A =/> B or B =/> A
     derived_sentences.append(derived_sentence)
 
-    derived_sentence = NALInferenceRules.Conditional.ConditionalComparison(A, B) # A <|> B or  A </> B or B </> A
-    derived_sentences.append(derived_sentence)
+    # derived_sentence = NALInferenceRules.Conditional.ConditionalComparison(A, B) # A <|> B or  A </> B or B </> A
+    # derived_sentences.append(derived_sentence)
 
     """
     ===============================================

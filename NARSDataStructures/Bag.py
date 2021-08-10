@@ -18,7 +18,7 @@ class Bag(ItemContainer):
         (e.g. 100 buckets, bucket 1 - hold items with 0.01 priority,  bucket 50 - hold items with 0.50 priority)
     """
 
-    def __init__(self, item_type, capacity=Config.BAG_DEFAULT_CAPACITY):
+    def __init__(self, item_type, capacity):
         self.number_of_buckets = Config.BAG_NUMBER_OF_BUCKETS  # number of buckets in the bag (the bag's granularity)
         self.buckets = dict()  # for accessing items by priority
         self.current_bucket_number = 0  # keeps track of the Bag's current bucket number

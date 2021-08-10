@@ -139,7 +139,6 @@ def ConjunctionOrExtensionalIntersection(j1, j2):
         copula = NALSyntax.Copula.Inheritance
     else:
         # higher-order, could be temporal
-        # todo temporal conjunction
         connector = NALSyntax.TermConnector.Conjunction # &&
         copula = NALSyntax.Copula.Implication
 

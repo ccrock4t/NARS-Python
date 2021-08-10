@@ -59,6 +59,7 @@ class NARSGUI:
     KEY_OCCURRENCE_TIME = "OccurrenceTime"
     KEY_SENTENCE_TYPE = "SentenceType"
     KEY_DERIVED_BY = "DerivedBy"
+    KEY_PARENT_PREMISES = "ParentPremises"
     KEY_LIST_EVIDENTIAL_BASE = "ListEvidentialBase"
     KEY_LIST_INTERACTED_SENTENCES = "ListInteractedSentences"
     KEY_ARRAY_IMAGE = "ArrayImage"
@@ -421,7 +422,7 @@ class NARSGUI:
         self.gui_play_pause_button.grid(row=3, column=4, sticky='s')
 
         max_delay = 1000  # in milliseconds
-        gui_delay_slider = tk.Scale(window, from_=max_delay, to=0)
+        gui_delay_slider = tk.Scale(window, from_=max_delay, to=1)
         self.gui_delay_slider = gui_delay_slider
         self.gui_delay_slider.grid(row=3, column=5, sticky='ns')
 
@@ -725,6 +726,13 @@ class NARSGUI:
                               key_label="Derived By: ",
                               value_label=sentence_to_draw[NARSGUI.KEY_DERIVED_BY])
 
+        row += 1
+        create_key_item_label(parent=item_info_window,
+                              row=row,
+                              column=column,
+                              key_label="Parent Premises: ",
+                              value_label=sentence_to_draw[NARSGUI.KEY_PARENT_PREMISES])
+
         # blank
         row += 1
         label = tk.Label(item_info_window, text="")
@@ -951,11 +959,11 @@ def create_key_item_label(parent,row,column,key_label,value_label):
     """
         Dimensions: 1 row; 2 columns
     """
-    label = tk.Label(parent, text=key_label)
-    label.grid(row=row, column=column)
+    label = tk.Label(parent, text=key_label, borderwidth=2, relief="raised", bg="white")
+    label.grid(row=row, column=column, sticky='e')
 
-    label = tk.Label(parent, text=value_label)
-    label.grid(row=row, column=column+1)
+    label = tk.Label(parent, text=value_label, borderwidth=2, relief="sunken", bg="white")
+    label.grid(row=row, column=column + 1, columnspan=3, sticky='w')
 
 def create_clickable_listbox(parent, row, column, title_label, listbox_contents, content_click_callback):
     """

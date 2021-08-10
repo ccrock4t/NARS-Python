@@ -12,7 +12,7 @@ class Buffer(ItemContainer, Depq):
     """
         Priority-Queue
     """
-    def __init__(self, item_type, capacity=Config.BUFFER_DEFAULT_CAPACITY):
+    def __init__(self, item_type, capacity):
         self.capacity=capacity
         ItemContainer.__init__(self, item_type=item_type,capacity=capacity) # Item Container
         Depq.__init__(self) #Depq
@@ -44,7 +44,6 @@ class Buffer(ItemContainer, Depq):
         if len(self) == 0: return None
         item = Depq._extract_max(self)
         self._take_from_lookup_dict(item.key)
-
         return item
 
     def peek(self, key):
@@ -64,16 +63,22 @@ class EventBuffer(ItemContainer):
     """
         FIFO that performs temporal composition
     """
-    def __init__(self,item_type,capacity=Config.EVENT_BUFFER_DEFAULT_CAPACITY):
+    def __init__(self, item_type, capacity):
         ItemContainer.__init__(self,item_type=item_type,capacity=capacity)
-        self.fifo = queue.Queue()
+        self.fifo = []
 
     def __len__(self):
-        return self.fifo.qsize()
+        return len(self.fifo)
+
+    def __iter__(self):
+        return iter(self.fifo)
+
+    def __getitem__(self, index):
+        return self.fifo[index]
 
     def put(self, item):
         """
-            Insert an Item into the Buffer, sorted by priority.
+            Put the newest item onto the end of the buffer.
 
             :returns Item that was purged if the inserted item caused an overflow
         """
@@ -82,23 +87,28 @@ class EventBuffer(ItemContainer):
 
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        self.fifo.put(item)
+        self.fifo.append(item)
         ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
         purged_item = None
         if len(self) > self.capacity:
-            purged_item = self.fifo.get()
-            self._take_from_lookup_dict(purged_item.key)
+            purged_item = self.take()
 
         return purged_item
 
     def take(self):
         """
-            Take the max item from the Buffer
+            Take the oldest item from the Buffer
             :return:
         """
         if len(self) == 0: return None
-        item = self.fifo.get()
+        item = self.fifo.pop(0)
         self._take_from_lookup_dict(item.key)
-
         return item
+
+    def clear(self):
+        """
+            Empty the buffer.
+        """
+        while len(self) > 0:
+            self.take()

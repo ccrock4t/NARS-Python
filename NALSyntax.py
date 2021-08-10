@@ -103,7 +103,7 @@ class TermConnector(enum.Enum):
 
     @classmethod
     def is_conjunction(cls, connector):
-        assert connector is not None, "ERROR: None is not a term connector"
+        #assert connector is not None, "ERROR: None is not a term connector"
         return (connector is cls.Conjunction or
                 connector is cls.SequentialConjunction or
                 connector is cls.ParallelConjunction)

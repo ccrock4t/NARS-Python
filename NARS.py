@@ -31,8 +31,8 @@ class NARS:
     """
 
     def __init__(self):
-        self.global_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task)
-        self.event_buffer = NARSDataStructures.Buffers.EventBuffer(item_type=NARSDataStructures.Other.Task)
+        self.global_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task, capacity=Config.GLOBAL_BUFFER_CAPACITY)
+        self.event_buffer = NARSDataStructures.Buffers.EventBuffer(item_type=NARSDataStructures.Other.Task, capacity=Config.EVENT_BUFFER_CAPACITY)
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
 
@@ -61,7 +61,7 @@ class NARS:
 
         InputChannel.process_next_pending_sentence()  # process strings coming from input buffer
 
-        self.process_event_buffer_into_experience_buffer()  # process events from the event buffer
+        self.process_event_buffer()  # process events from the event buffer
 
         # now do something with tasks from experience buffer and/or knowledge from memory
         for _ in range(Config.TASKS_PER_CYCLE):
@@ -82,27 +82,25 @@ class NARS:
         for i in range(cycles):
             self.do_working_cycle()
 
-    def process_event_buffer_into_experience_buffer(self):
+    def process_event_buffer(self):
         """
             Process events into the experience buffer
         """
-        if len(self.event_buffer) > 1:  # need multiple events to process implications
-            event_task_A = self.event_buffer.take().object  # take an event from the event buffer
+        if len(self.event_buffer) < self.event_buffer.capacity: return # don't process until full
+
+        # produce all possible forward-combinations of event using temporal induction
+        for i in range(self.event_buffer.capacity): # iterate through all events
+            event_task_A = self.event_buffer[i].object
             event_A = event_task_A.sentence
-
-            event_task_B = self.event_buffer.take().object  # take another event from the event buffer
-            event_B = event_task_B.sentence
-
-            # insert both events into the next buffer
+            for j in range(i+1, self.event_buffer.capacity): # and do induction with events occurring afterward
+                event_task_B = self.event_buffer[j].object
+                event_B = event_task_B.sentence
+                derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
+                for derived_sentence in derived_sentences:
+                    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
             self.global_buffer.put_new(event_task_A)
-            self.global_buffer.put_new(event_task_B)
 
-            # do temporal inference
-            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
-
-            # insert the derived knowledge into the next buffer
-            for derived_sentence in derived_sentences:
-                self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+        self.event_buffer.clear()
 
     def Observe(self):
         """
@@ -126,7 +124,7 @@ class NARS:
         """
             Process a random concept in memory
         """
-        concept_item= self.memory.get_random_concept()
+        concept_item = self.memory.get_random_concept()
 
         if concept_item is None: return  # nothing to ponder
 
@@ -239,10 +237,11 @@ class NARS:
                             break
                     if not sent: Global.Global.NARS_object_pipe.send(None) # couldn't get sentence, maybe it was purged
             elif command == "getconcept":
-                item = None
-                while item is None:
-                    item: NARSDataStructures.ItemContainers.Item = self.memory.concepts_bag.peek(key)
-                Global.Global.NARS_object_pipe.send(item.get_gui_info())
+                item = self.memory.concepts_bag.peek(key)
+                if item is not None:
+                    Global.Global.NARS_object_pipe.send(item.get_gui_info())
+                else:
+                    Global.Global.NARS_object_pipe.send(None)  # couldn't get concept, maybe it was purged
 
         while Global.Global.NARS_string_pipe.poll():
             # this pipe can hold as many tasks as needed

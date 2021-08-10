@@ -364,7 +364,7 @@ class StatementTerm(CompoundTerm):
         (P --> Q)
     """
 
-    def __init__(self, subject_term: Term, predicate_term = None, copula=None):
+    def __init__(self, subject_term: Term, predicate_term, copula):
         Asserts.assert_term(subject_term)
 
         subterms = [subject_term, predicate_term]

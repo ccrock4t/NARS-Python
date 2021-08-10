@@ -141,6 +141,7 @@ class Sentence(Array):
         dict[NARSGUI.NARSGUI.KEY_ARRAY_ALPHA_IMAGE] = self.image_alpha_array if self.is_array and not isinstance(self,Question) else None
         dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
         dict[NARSGUI.NARSGUI.KEY_DERIVED_BY] = self.stamp.derived_by
+        dict[NARSGUI.NARSGUI.KEY_PARENT_PREMISES] = self.stamp.parent_premises
         return dict
 
 
@@ -179,14 +180,15 @@ class Stamp:
         when it was created, its occurrence time (when is its truth value valid),
         evidential base, etc.
     """
-    def __init__(self, self_sentence, occurrence_time=None, derived_by=None):
+    def __init__(self, self_sentence, occurrence_time=None):
         self.id = Global.Global.NARS.memory.get_next_stamp_id()
         self.creation_time = Global.Global.get_current_cycle_number()  # when was this stamp created (in inference cycles)?
         self.occurrence_time = occurrence_time
         self.sentence = self_sentence
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
         self.interacted_sentences = []  # list of sentence this sentence has already interacted with
-        self.derived_by = derived_by
+        self.derived_by = None
+        self.parent_premises = []
         self.from_one_premise_inference = False # is this sentence derived from one-premise inference?
 
     def get_tense(self):

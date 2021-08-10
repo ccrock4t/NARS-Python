@@ -85,11 +85,11 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-    if sentence.is_event():
+    if isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.is_event():
         # temporal experience
         Global.Global.NARS.event_buffer.put_new(task)
     else:
-        # eternal experience
+        # goals, questions, eternal beliefs,
         Global.Global.NARS.global_buffer.put_new(task)
 
 

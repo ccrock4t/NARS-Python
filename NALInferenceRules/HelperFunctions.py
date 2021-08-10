@@ -119,7 +119,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
-    stamp_and_print_inference_rule(result, truth_value_function)
+    stamp_and_print_inference_rule(result, truth_value_function, [j1.get_formatted_string(),j2.get_formatted_string()])
 
     return result
 
@@ -154,12 +154,13 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
     # merge in the parent sentences' evidential bases
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
     result.stamp.from_one_premise_inference = True
-    stamp_and_print_inference_rule(result, truth_value_function)
+    stamp_and_print_inference_rule(result, truth_value_function, [j.get_formatted_string()])
 
     return result
 
-def stamp_and_print_inference_rule(sentence, inference_rule):
-    sentence.stamp.derived_by = "Immediate Inference" if inference_rule is None else inference_rule.__name__
+def stamp_and_print_inference_rule(sentence, inference_rule, parent_premises):
+    sentence.stamp.derived_by = "Structural Transformation" if inference_rule is None else inference_rule.__name__
+    sentence.stamp.parent_premises = parent_premises
     if Config.DEBUG: print(sentence.stamp.derived_by + " derived " + sentence.get_formatted_string())
 
 def premise_result_type(j1,j2):

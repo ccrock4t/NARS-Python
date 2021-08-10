@@ -53,9 +53,9 @@ class TruthValue(EvidentialValue):
     def __init__(self, frequency=Config.DEFAULT_JUDGMENT_FREQUENCY, confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE):
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
-               + str(self.frequency) \
+               + '{0:.2f}'.format(self.frequency) \
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
-               + str(self.confidence) \
+               + '{0:.2f}'.format(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value)
 
     def get_formatted_string(self):

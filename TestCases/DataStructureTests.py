@@ -62,9 +62,9 @@ def test_table_overflow_purge():
 
 def test_buffer_removemax():
     """
-        Test if the Table can successfully remove its maximum value
+        Test if the Buffer can successfully remove its maximum value
     """
-    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence)
+    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence, capacity=10)
     priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(priorities)
     for p in priorities:
@@ -82,7 +82,7 @@ def test_buffer_removemin():
     """
         Test if the Table can successfully remove its minimum value
     """
-    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence)
+    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence, capacity=10)
     priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
     minimum = min(priorities)
     for p in priorities:
@@ -128,9 +128,10 @@ def test_bag_overflow_purge():
     """
         Test if bag stays within capacity when it overflows.
     """
-    test_data_structure = NARSDataStructures.Bag.Bag(item_type=NALGrammar.Sentences.Sentence)
+    max_capacity = 10
+    test_data_structure = NARSDataStructures.Bag.Bag(item_type=NALGrammar.Sentences.Sentence, capacity=max_capacity)
     items_added = 0
-    max_capacity = NARS.Config.BAG_DEFAULT_CAPACITY
+
     for i in range(0, max_capacity + 5):
         test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         items_added += 1
