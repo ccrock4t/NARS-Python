@@ -149,6 +149,7 @@ class NARSGUI:
         msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
             Global.Global.MARKER_ID_END)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
 
+        print('removing ID ' + str(msg_id) + ' from ' + str(listbox))
         if listbox is self.gui_memory_listbox:
             # if memory listbox, non-statement concept
             # remove it from memory contents
@@ -159,9 +160,8 @@ class NARSGUI:
                     break
                 i = i + 1
             del self.gui_memory_full_contents[i]
-
-        # if non-statement and not showing non-statements, don't bother trying to remove it from GUI output
-        if not NALSyntax.Copula.contains_top_level_copula(msg) and not self.gui_show_non_statement_concepts: return
+            # if non-statement and not showing non-statements, don't bother trying to remove it from memory GUI output
+            if not NALSyntax.Copula.contains_top_level_copula(msg) and not self.gui_show_non_statement_concepts: return
 
         string_list = listbox.get(0, tk.END)
         idx_to_remove = -1

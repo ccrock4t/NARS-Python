@@ -21,7 +21,7 @@ NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = 10 # The number 
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number of times to look for a semantically related belief to interact with
 PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
 PRIORITY_STRENGTHEN_VALUE = 0.95 # priority value in [0,1] to set when strengthening priority
-TASKS_PER_CYCLE = 3
+TASKS_PER_CYCLE = 5
 
 
 """

@@ -11,6 +11,7 @@ import NALInferenceRules.Syllogistic
 import NALInferenceRules.Composition
 import NALInferenceRules.Local
 import NALInferenceRules.Conditional
+import NALInferenceRules.Temporal
 import NARSDataStructures.Other
 import NALSyntax
 
@@ -370,11 +371,11 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array):
 def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     derived_sentences = []
 
-    derived_sentence = NALInferenceRules.Conditional.ConditionalInduction(A, B) # A =|> B or A =/> B or B =/> A
+    derived_sentence = NALInferenceRules.Temporal.TemporalInduction(A, B) # A =|> B or A =/> B or B =/> A
     derived_sentences.append(derived_sentence)
 
-    # derived_sentence = NALInferenceRules.Conditional.ConditionalComparison(A, B) # A <|> B or  A </> B or B </> A
-    # derived_sentences.append(derived_sentence)
+    derived_sentence = NALInferenceRules.Temporal.TemporalIntersection(A, B) # A &/ B or  A &/ B or B &/ A
+    derived_sentences.append(derived_sentence)
 
     """
     ===============================================

@@ -366,6 +366,7 @@ class StatementTerm(CompoundTerm):
 
     def __init__(self, subject_term: Term, predicate_term, copula):
         Asserts.assert_term(subject_term)
+        Asserts.assert_term(predicate_term)
 
         subterms = [subject_term, predicate_term]
 
