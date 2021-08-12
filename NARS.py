@@ -64,7 +64,7 @@ class NARS:
         self.process_event_buffer()  # process events from the event buffer
 
         # now do something with tasks from experience buffer and/or knowledge from memory
-        for _ in range(Config.TASKS_PER_CYCLE):
+        for _ in range(Config.ACTIONS_PER_CYCLE):
             rand = random.random()
             if rand < Config.MINDFULNESS and len(self.global_buffer) > 0:
                 # OBSERVE
@@ -84,49 +84,12 @@ class NARS:
 
     def process_event_buffer(self):
         """
-            Process events into the experience buffer
+            Process events into the global buffer
         """
         if len(self.event_buffer) < self.event_buffer.capacity: return # don't process until full
-
-        # produce all possible forward implication statements using temporal induction and intersection
-        # A &/ B,
-        # A =/> B
-        # and
-        # (A &/ B) =/> C
-        counter = 0
-        for i in range(self.event_buffer.capacity): # iterate through all events except the last
-            event_task_A = self.event_buffer[i].object
-            event_A = event_task_A.sentence
-            for j in range(i+1, self.event_buffer.capacity): # and do induction with events occurring afterward
-                event_task_B = self.event_buffer[j].object
-                event_B = event_task_B.sentence
-
-                # produce statements (A =/> B) and (A &/ B)
-                derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
-
-                compound_event = None
-                for derived_sentence in derived_sentences:
-                    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
-                    if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
-                        compound_event = derived_sentence
-                    counter += 1
-
-                # produce statements (A &/ B) =/> C
-                for k in range(j+1, self.event_buffer.capacity):
-                    # event A must be at least 3rd to last, and event B must be at least 2nd to last
-                    # the edge case during which event C is the last event
-                    if i < self.event_buffer.capacity-2 and j < self.event_buffer.capacity-1:
-                        event_task_C = self.event_buffer[k].object
-                        event_C = event_task_C.sentence
-
-                        derived_sentence = NALInferenceRules.Temporal.TemporalInduction(compound_event, event_C) # (A &/ B) =/> C
-                        self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
-                        counter += 1
-
-            self.global_buffer.put_new(event_task_A)
-            counter += 1
-
-        self.event_buffer.clear()
+        results = self.event_buffer.process()
+        for result in results:
+            self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
 
     def Observe(self):
         """
@@ -335,7 +298,7 @@ class NARS:
         task_statement_concept.belief_table.put(j1)
 
         # revise the judgment
-        self.process_judgment_sentence(j1)
+        #self.process_judgment_sentence(j1)
 
     def process_question_task(self, task, task_statement_concept):
         """
@@ -390,7 +353,7 @@ class NARS:
             Continued processing
         """
         # revision
-        self.process_goal_sentence(j1)
+        #self.process_goal_sentence(j1)
 
     def process_judgment_sentence(self, j1: NALGrammar.Sentences.Judgment, related_concept=None):
         """

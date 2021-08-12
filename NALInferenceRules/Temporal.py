@@ -32,6 +32,8 @@ def TemporalInduction(j1, j2):
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
+    if j1_statement_term == j2_statement_term: return None  # S =/> S simplifies to S, so no inference to do
+
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 =|> j2
         result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
@@ -45,7 +47,9 @@ def TemporalInduction(j1, j2):
         result_statement = NALGrammar.Terms.StatementTerm(j2_statement_term, j1_statement_term,
                                                           NALSyntax.Copula.PredictiveImplication)
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
                                                                  TruthValueFunctions.F_Induction)
 
 
@@ -69,6 +73,8 @@ def TemporalComparison(j1, j2):
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
+    if j1_statement_term == j2_statement_term: return None # S </> S simplifies to S, so no inference to do
+
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # <|>
         result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
@@ -82,7 +88,11 @@ def TemporalComparison(j1, j2):
         result_statement = NALGrammar.Terms.StatementTerm(j2_statement_term, j1_statement_term,
                                                           NALSyntax.Copula.PredictiveEquivalence)
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Comparison)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Comparison)
+
 
 def TemporalIntersection(j1, j2):
     """
@@ -100,28 +110,27 @@ def TemporalIntersection(j1, j2):
             :- or Event (S &| P <f3, c3>)
     """
     assert j1.stamp.get_tense() != NALSyntax.Tense.Eternal and j2.stamp.get_tense() != NALSyntax.Tense.Eternal,"ERROR: Temporal Induction needs events"
+    result = None
 
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
 
-    result = None
+    if j1_statement_term == j2_statement_term: return result # S && S simplifies to S, so no inference to do
+
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 &| j2
         result_statement = NALGrammar.Terms.CompoundTerm([j1_statement_term, j2_statement_term],
                                                           NALSyntax.TermConnector.ParallelConjunction)
-        result = HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
-                                                              TruthValueFunctions.F_Intersection)
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 &/ j2
         result_statement = NALGrammar.Terms.CompoundTerm([j1_statement_term, j2_statement_term],
                                                           NALSyntax.TermConnector.SequentialConjunction)
-        result = HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
-                                                              TruthValueFunctions.F_Intersection)
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 &/ j1
         result_statement = NALGrammar.Terms.CompoundTerm([j2_statement_term, j1_statement_term],
                                                           NALSyntax.TermConnector.SequentialConjunction)
-        result = HelperFunctions.create_resultant_sentence_two_premise(j2, j1, result_statement,
-                                                              TruthValueFunctions.F_Intersection)
 
-    return result
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Intersection)

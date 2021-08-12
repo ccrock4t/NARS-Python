@@ -149,7 +149,6 @@ class NARSGUI:
         msg_id = msg[len(Global.Global.MARKER_ITEM_ID):msg.rfind(
             Global.Global.MARKER_ID_END)]  # assuming ID is at the beginning, get characters from ID: to first spacebar
 
-        print('removing ID ' + str(msg_id) + ' from ' + str(listbox))
         if listbox is self.gui_memory_listbox:
             # if memory listbox, non-statement concept
             # remove it from memory contents

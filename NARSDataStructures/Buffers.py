@@ -3,8 +3,11 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+import NALSyntax
+import NARSInferenceEngine
 from NARSDataStructures.ItemContainers import ItemContainer, Item
 from NARSDataStructures.Other import Depq
+import NALInferenceRules
 import Config
 import queue
 
@@ -112,3 +115,54 @@ class EventBuffer(ItemContainer):
         """
         while len(self) > 0:
             self.take()
+
+    def process(self):
+        """
+            Process events into the global buffer
+
+            produce all possible forward implication statements using temporal induction and intersection
+                A &/ B,
+                A =/> B
+                and
+                (A &/ B) =/> C
+        """
+        processed_results = []
+        num_of_events = len(self)
+
+        # produce all possible forward implication statements using temporal induction and intersection
+        # A &/ B,
+        # A =/> B
+        # and
+        # (A &/ B) =/> C
+        for i in range(num_of_events): # iterate through all events except the last
+            event_task_A = self[i].object
+            event_A = event_task_A.sentence
+            for j in range(i+1, num_of_events): # and do induction with events occurring afterward
+                event_task_B = self[j].object
+                event_B = event_task_B.sentence
+
+                # produce statements (A =/> B) and (A &/ B)
+                derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
+
+                compound_event = None
+                for derived_sentence in derived_sentences:
+                    processed_results.append(derived_sentence)
+                    if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
+                        compound_event = derived_sentence
+
+                if compound_event is not None:
+                    # produce statements (A &/ B) =/> C
+                    for k in range(j+1, num_of_events):
+                        # event A must be at least 3rd to last, and event B must be at least 2nd to last
+                        # the edge case during which event C is the last event
+                        if i < num_of_events-2 and j < num_of_events-1:
+                            event_task_C = self[k].object
+                            event_C = event_task_C.sentence
+
+                            derived_sentence = NALInferenceRules.Temporal.TemporalInduction(compound_event, event_C) # (A &/ B) =/> C
+                            processed_results.append(derived_sentence)
+            processed_results.append(event_A)
+
+        self.clear()
+
+        return processed_results

@@ -39,7 +39,11 @@ def Deduction(j1, j2):
                                                       j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Deduction)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Deduction)
+
 
 
 def Analogy(j1, j2):
@@ -91,7 +95,10 @@ def Analogy(j1, j2):
         assert (
             False), "Error: Invalid inputs to nal_analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Analogy)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Analogy)
 
 
 
@@ -143,8 +150,10 @@ def Resemblance(j1, j2):
         assert (
             False), "Error: Invalid inputs to nal_resemblance: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Resemblance)
-
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Resemblance)
 
 def Abduction(j1, j2):
     """
@@ -169,8 +178,10 @@ def Abduction(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_subject_term(),
                                                       j1.statement.get_subject_term(),
                                                       j1.statement.get_copula())
-
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Abduction)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Abduction)
 
 
 def Induction(j1, j2):
@@ -195,7 +206,11 @@ def Induction(j1, j2):
     # Statement
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                       j1.statement.get_predicate_term(), j1.statement.get_copula())
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Induction)
+
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Induction)
 
 
 def Exemplification(j1, j2):
@@ -220,8 +235,10 @@ def Exemplification(j1, j2):
     # Statement
     result_statement = NALGrammar.Terms.StatementTerm(j2.statement.get_predicate_term(),
                                                       j1.statement.get_subject_term(), j1.statement.get_copula())
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Exemplification)
-
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Exemplification)
 
 def Comparison(j1, j2):
     """
@@ -268,4 +285,7 @@ def Comparison(j1, j2):
     else:
         truth_function = TruthValueFunctions.F_Comparison
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1,j2,result_statement,truth_function)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 truth_function)

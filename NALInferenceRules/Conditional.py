@@ -39,8 +39,12 @@ def ConditionalAnalogy(j1, j2):
     else:
         assert False, "Error: Invalid inputs to Conditional Analogy: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
                                                                  TruthValueFunctions.F_Analogy)
+
+
 
 def ConditionalDeduction(j1, j2):
     """
@@ -59,8 +63,11 @@ def ConditionalDeduction(j1, j2):
     assert j2.statement == j1.statement.get_subject_term(), "Error: Invalid inputs to Conditional Deduction: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
     result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
                                                                  TruthValueFunctions.F_Deduction)
+
 
 def ConditionalAbduction(j1, j2):
     """
@@ -80,7 +87,9 @@ def ConditionalAbduction(j1, j2):
 
     result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement,
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
                                                                  TruthValueFunctions.F_Abduction)
 
 
@@ -126,7 +135,10 @@ def ConditionalConjunctionalDeduction(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Deduction)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Deduction)
 
 def ConditionalConjunctionalAbduction(j1, j2):
     """
@@ -140,7 +152,10 @@ def ConditionalConjunctionalAbduction(j1, j2):
             F_abduction
         Returns:
             :-  S  <f3, c3>
+
+        #todo temporal
     """
+
     Asserts.assert_sentence_forward_implication(j1)
     Asserts.assert_sentence_forward_implication(j2)
 
@@ -159,4 +174,8 @@ def ConditionalConjunctionalAbduction(j1, j2):
 
     result_statement: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Abduction)
+
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Abduction)

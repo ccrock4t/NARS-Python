@@ -357,25 +357,14 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
     return all_derived_sentences
 
-def add_to_derived_sentences(derived_sentence,derived_sentence_array):
-    """
-        Add derived sentence to array if it meets certain conditions
-    :param derived_sentence:
-    :param derived_sentence_array:
-    :return:
-    """
-    if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
-    if derived_sentence is None: return # inference result was not useful
-    derived_sentence_array.append(derived_sentence)
-
 def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     derived_sentences = []
 
     derived_sentence = NALInferenceRules.Temporal.TemporalInduction(A, B) # A =|> B or A =/> B or B =/> A
-    derived_sentences.append(derived_sentence)
+    add_to_derived_sentences(derived_sentence,derived_sentences)
 
     derived_sentence = NALInferenceRules.Temporal.TemporalIntersection(A, B) # A &/ B or  A &/ B or B &/ A
-    derived_sentences.append(derived_sentence)
+    add_to_derived_sentences(derived_sentence,derived_sentences)
 
     """
     ===============================================
@@ -386,6 +375,7 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sen
     """
 
     return derived_sentences
+
 
 
 def do_inference_one_premise(j):
@@ -404,19 +394,19 @@ def do_inference_one_premise(j):
     if isinstance(j, NALGrammar.Sentences.Judgment):
         # Negation (--,(S-->P))
         derived_sentence = NALInferenceRules.Immediate.Negation(j)
-        derived_sentences.append(derived_sentence)
+        add_to_derived_sentences(derived_sentence, derived_sentences)
 
         # Conversion (P --> S) or (P ==> S)
         if not j.stamp.from_one_premise_inference \
                 and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
                 and j.value.frequency > 0:
             derived_sentence = NALInferenceRules.Immediate.Conversion(j)
-            derived_sentences.append(derived_sentence)
+            add_to_derived_sentences(derived_sentence, derived_sentences)
 
         # Contraposition  ((--,P) ==> (--,S))
         if j.statement.get_copula() == NALSyntax.Copula.Implication and j.value.frequency < 1:
             derived_sentence = NALInferenceRules.Immediate.Contraposition(j)
-            derived_sentences.append(derived_sentence)
+            add_to_derived_sentences(derived_sentence, derived_sentences)
 
         # Image
         if isinstance(j.statement.get_subject_term(), NALGrammar.Terms.CompoundTerm) \
@@ -424,11 +414,23 @@ def do_inference_one_premise(j):
                 and j.statement.get_copula() == NALSyntax.Copula.Inheritance:
             derived_sentence_list = NALInferenceRules.Immediate.ExtensionalImage(j)
             for derived_sentence in derived_sentence_list:
-                derived_sentences.append(derived_sentence)
+                add_to_derived_sentences(derived_sentence, derived_sentences)
         elif isinstance(j.statement.get_predicate_term(), NALGrammar.Terms.CompoundTerm) \
             and j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Product:
             derived_sentence_list = NALInferenceRules.Immediate.IntensionalImage(j)
             for derived_sentence in derived_sentence_list:
-                derived_sentences.append(derived_sentence)
+                add_to_derived_sentences(derived_sentence, derived_sentences)
 
     return derived_sentences
+
+
+def add_to_derived_sentences(derived_sentence,derived_sentence_array):
+    """
+        Add derived sentence to array if it meets certain conditions
+    :param derived_sentence:
+    :param derived_sentence_array:
+    :return:
+    """
+    if derived_sentence is None: return  # inference result was not useful
+    if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
+    derived_sentence_array.append(derived_sentence)

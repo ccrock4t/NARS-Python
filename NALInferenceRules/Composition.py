@@ -92,7 +92,10 @@ def DisjunctionOrIntensionalIntersection(j1, j2):
     else:
         assert False,"ERROR: Invalid inputs to Intensional Intersection"
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, result_truth_function)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 result_truth_function)
 
 
 def ConjunctionOrExtensionalIntersection(j1, j2):
@@ -142,7 +145,7 @@ def ConjunctionOrExtensionalIntersection(j1, j2):
         connector = NALSyntax.TermConnector.Conjunction # &&
         copula = NALSyntax.Copula.Implication
 
-    result_truth_value = None
+    result_truth_function = None
     if j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
         # j1: Sentence(T1 --> M < f1, c1 >)
         # j2: Sentence(T2 --> M < f2, c2 >)
@@ -154,7 +157,7 @@ def ConjunctionOrExtensionalIntersection(j1, j2):
                                                           copula)  # ((T1 & T2) --> M)
 
         if isinstance(j1, NALGrammar.Sentences.Judgment):
-            result_truth_value = TruthValueFunctions.F_Union
+            result_truth_function = TruthValueFunctions.F_Union
 
     elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
         # j1: Sentence(M --> T1 < f1, c1 >)
@@ -167,11 +170,14 @@ def ConjunctionOrExtensionalIntersection(j1, j2):
                                                           copula)  # (M --> (T1 & T2))
 
         if isinstance(j1, NALGrammar.Sentences.Judgment):
-            result_truth_value = TruthValueFunctions.F_Intersection
+            result_truth_function = TruthValueFunctions.F_Intersection
     else:
         assert False, "ERROR: Invalid inputs to Extensional Intersection"
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, result_truth_value)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 result_truth_function)
 
 
 def IntensionalDifference(j1, j2):
@@ -200,8 +206,10 @@ def IntensionalDifference(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(compound_term,
                                                       j1.statement.get_predicate_term(),
                                                       NALSyntax.Copula.Inheritance)  # ((T1 ~ T2) --> M)
-
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Difference)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Difference)
 
 
 def ExtensionalDifference(j1, j2):
@@ -229,4 +237,7 @@ def ExtensionalDifference(j1, j2):
                                                       compound_term,
                                                       NALSyntax.Copula.Inheritance)  # (M --> (T1 - T2))
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1, j2, result_statement, TruthValueFunctions.F_Difference)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Difference)

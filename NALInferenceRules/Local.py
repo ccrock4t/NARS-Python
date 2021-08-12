@@ -40,9 +40,11 @@ def Revision(j1, j2):
     result_statement = NALGrammar.Terms.StatementTerm(j1.statement.get_subject_term(),
                                                       j1.statement.get_predicate_term(),
                                                       j1.statement.get_copula())
-    truth_function = TruthValueFunctions.F_Revision
 
-    return HelperFunctions.create_resultant_sentence_two_premise(j1,j2,result_statement,truth_function)
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Revision)
 
 
 def Choice(j1, j2):
