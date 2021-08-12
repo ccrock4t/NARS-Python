@@ -33,6 +33,7 @@ class NARS:
     def __init__(self):
         self.global_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task, capacity=Config.GLOBAL_BUFFER_CAPACITY)
         self.event_buffer = NARSDataStructures.Buffers.EventBuffer(item_type=NARSDataStructures.Other.Task, capacity=Config.EVENT_BUFFER_CAPACITY)
+        self.temporal_chaining_rate = 2 * self.event_buffer.temporal_chain_max_results_length # how many working cycles to perform temporal chaining
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
 
@@ -86,10 +87,16 @@ class NARS:
         """
             Process events into the global buffer
         """
-        if len(self.event_buffer) < self.event_buffer.capacity: return # don't process until full
-        results = self.event_buffer.process()
-        for result in results:
-            self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+        results = []
+        if Global.Global.get_current_cycle_number() % self.temporal_chaining_rate == 0:
+            results = self.event_buffer.process_temporal_chaining()
+            for result in results:
+                self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+
+        if len(self.event_buffer) > 0:
+            self.global_buffer.put_new(self.event_buffer.take().object) # move task from event buffer to global buffer
+
+
 
     def Observe(self):
         """
@@ -369,10 +376,9 @@ class NARS:
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept = self.memory.peek_concept_item(statement_term).object
 
-        j2 = None
-
+        # do a Revision
         if not j1.is_event():
-            # revise if not event. Don't revise events
+            j2 = None
             for (belief, confidence) in statement_concept.belief_table:
                 if NALGrammar.Sentences.may_interact(j1, belief):
                     j2 = belief  # belief can interact with j1
@@ -387,7 +393,7 @@ class NARS:
 
         self.process_sentence_semantic_inference(j1, related_concept)
 
-    def process_goal_sentence(self, j1: NALGrammar.Sentences.Goal, related_concept=None):
+    def process_goal_sentence(self, j1: NALGrammar.Sentences.Goal):
         """
             Continued processing for Goal
 
@@ -397,19 +403,20 @@ class NARS:
         statement_term = j1.statement
         statement_concept: NARSMemory.Concept = self.memory.peek_concept_item(statement_term).object
 
-        # Do a Revision
-        j2 = None
-        for (desire, confidence) in statement_concept.desire_table:
-            if NALGrammar.Sentences.may_interact(j1, desire):
-                j2 = desire  # belief can interact with j1
-                break
+        # do a Revision
+        if not j1.is_event():
+            j2 = None
+            for (desire, confidence) in statement_concept.desire_table:
+                if NALGrammar.Sentences.may_interact(j1, desire):
+                    j2 = desire  # belief can interact with j1
+                    break
 
-        if j2 is not None:
-            if Config.DEBUG: print(
-                "Revising desire: " + j1.get_formatted_string())
-            derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-            for derived_sentence in derived_sentences:
-                self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+            if j2 is not None:
+                if Config.DEBUG: print(
+                    "Revising desire: " + j1.get_formatted_string())
+                derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
+                for derived_sentence in derived_sentences:
+                    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
         # now see if it should be pursued
         should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
@@ -423,7 +430,7 @@ class NARS:
         if statement_term.is_operation():
             self.execute_operation(j1.statement)
         else:
-            if related_concept is not None: self.process_sentence_semantic_inference(j1, related_concept=related_concept)
+            self.process_sentence_semantic_inference(j1)
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):
         """

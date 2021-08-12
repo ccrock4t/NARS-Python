@@ -130,4 +130,4 @@ class Task:
         return self.sentence.statement
 
     def __str__(self):
-        return self.sentence.get_formatted_string_no_id()
+        return "TASK: " + self.sentence.get_formatted_string_no_id()

@@ -97,7 +97,9 @@ class NARSGUI:
         elif data_structure_info is None:
             # output to interface or shell
             if self.gui_use_interface:
+                self.gui_output_textbox.configure(state="normal")
                 self.gui_output_textbox.insert(tk.END, msg + "\n")
+                self.gui_output_textbox.configure(state="disabled")
             print(msg,flush=True)
 
         if listbox is None: return
@@ -407,6 +409,7 @@ class NARSGUI:
 
         self.gui_output_textbox = tk.Text(window, height=25, width=75, yscrollcommand=output_scrollbar.set)
         self.gui_output_textbox.grid(row=1, column=0, columnspan=output_width, rowspan=output_height)
+        self.gui_output_textbox.configure(state="disabled")
 
         # row 2
         self.gui_total_cycles_stringvar = tk.StringVar()
@@ -527,26 +530,26 @@ class NARSGUI:
                 column = 0
 
                 # name
-                create_key_item_label(parent=item_info_window,
-                                      row=row,
-                                      column=column,
-                                      key_label=classname + " Name: ",
-                                      value_label=item[NARSGUI.KEY_OBJECT_STRING])
+                create_key_value_label(parent=item_info_window,
+                                       row=row,
+                                       column=column,
+                                       key_label=classname + " Name: ",
+                                       value_label=item[NARSGUI.KEY_OBJECT_STRING])
 
                 # term type
                 row += 1
-                create_key_item_label(parent=item_info_window,
-                                      row=row,
-                                      column=column,
-                                      key_label="Term Type: ",
-                                      value_label=item[NARSGUI.KEY_TERM_TYPE])
+                create_key_value_label(parent=item_info_window,
+                                       row=row,
+                                       column=column,
+                                       key_label="Term Type: ",
+                                       value_label=item[NARSGUI.KEY_TERM_TYPE])
 
                 row += 1
-                create_key_item_label(parent=item_info_window,
-                                      row=row,
-                                      column=0,
-                                      key_label="Sentence: ",
-                                      value_label=item[NARSGUI.KEY_SENTENCE_STRING])
+                create_key_value_label(parent=item_info_window,
+                                       row=row,
+                                       column=0,
+                                       key_label="Sentence: ",
+                                       value_label=item[NARSGUI.KEY_SENTENCE_STRING])
 
                 row += 1
                 label = tk.Label(item_info_window, text="", justify=tk.LEFT)
@@ -584,19 +587,19 @@ class NARSGUI:
         column = 0
 
         # name
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label=classname + " Name: ",
-                              value_label=item[NARSGUI.KEY_OBJECT_STRING])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label=classname + " Name: ",
+                               value_label=item[NARSGUI.KEY_OBJECT_STRING])
 
         # term type
         row += 1
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Term Type: ",
-                              value_label=item[NARSGUI.KEY_TERM_TYPE])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Term Type: ",
+                               value_label=item[NARSGUI.KEY_TERM_TYPE])
 
         row += 1
         if classname == NARSMemory.Concept.__name__:
@@ -672,65 +675,73 @@ class NARSGUI:
         column = 0
 
         # sentence
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Sentence: ",
-                              value_label=sentence_to_draw[NARSGUI.KEY_STRING_NOID])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Sentence: ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_STRING_NOID])
 
         # sentence ID
         row += 1
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Sentence ID: ",
-                              value_label=sentence_to_draw[NARSGUI.KEY_ID])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Sentence ID: ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_ID])
         # original truth value
         row += 1
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Truth Value: ",
-                              value_label=sentence_to_draw[NARSGUI.KEY_TRUTH_VALUE])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Truth Value: ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_TRUTH_VALUE])
 
         # sentence occurrence time
         row += 1
         oc_time = sentence_to_draw[NARSGUI.KEY_OCCURRENCE_TIME]
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Occurrence Time: ",
-                              value_label=str("Eternal" if oc_time is None else oc_time))
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Occurrence Time: ",
+                               value_label=str("Eternal" if oc_time is None else oc_time))
 
         if oc_time is not None:
-            create_key_item_label(parent=item_info_window,
-                                  row=row,
-                                  column=column,
-                                  key_label="Time projected Truth Value: ",
-                                  value_label=sentence_to_draw[NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE])
+            create_key_value_label(parent=item_info_window,
+                                   row=row,
+                                   column=column,
+                                   key_label="Time projected Truth Value: ",
+                                   value_label=sentence_to_draw[NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE])
 
         # sentence type
         row += 1
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Sentence Type: ",
-                              value_label=sentence_to_draw[NARSGUI.KEY_SENTENCE_TYPE])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Sentence Type: ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_SENTENCE_TYPE])
 
         # sentence type
         row += 1
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Derived By: ",
-                              value_label=sentence_to_draw[NARSGUI.KEY_DERIVED_BY])
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Derived By: ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_DERIVED_BY])
 
-        row += 1
-        create_key_item_label(parent=item_info_window,
-                              row=row,
-                              column=column,
-                              key_label="Parent Premises: ",
-                              value_label=sentence_to_draw[NARSGUI.KEY_PARENT_PREMISES])
+        if len(sentence_to_draw[NARSGUI.KEY_PARENT_PREMISES]) > 0:
+            row += 1
+            create_key_value_label(parent=item_info_window,
+                                   row=row,
+                                   column=column,
+                                   key_label="Parent Premises: ",
+                                   value_label=sentence_to_draw[NARSGUI.KEY_PARENT_PREMISES][0])
+
+            if len(sentence_to_draw[NARSGUI.KEY_PARENT_PREMISES]) == 2:
+                row += 1
+                create_value_label(parent=item_info_window,
+                                   row=row,
+                                   column=column+1,
+                                   value_label=sentence_to_draw[NARSGUI.KEY_PARENT_PREMISES][1])
 
         # blank
         row += 1
@@ -954,15 +965,25 @@ class NARSGUI:
         values = list(self.dict_listbox_from_id.values())
         return keys[values.index(listbox)]
 
-def create_key_item_label(parent,row,column,key_label,value_label):
+def create_key_value_label(parent, row, column, key_label, value_label):
     """
         Dimensions: 1 row; 2 columns
     """
+    create_key_label(parent, row, column, key_label)
+    create_value_label(parent, row, column + 1, value_label)
+
+
+def create_key_label(parent, row, column, key_label):
+    if key_label is None: return
     label = tk.Label(parent, text=key_label, borderwidth=2, relief="raised", bg="white")
     label.grid(row=row, column=column, sticky='e')
 
-    label = tk.Label(parent, text=value_label, borderwidth=2, relief="sunken", bg="white")
-    label.grid(row=row, column=column + 1, columnspan=3, sticky='w')
+def create_value_label(parent, row, column, value_label):
+    if value_label is None: return
+    label = tk.Text(parent,height=1)
+    label.grid(row=row, column=column, columnspan=3, sticky='w')
+    label.insert(tk.END,value_label)
+    label.configure(state="disabled")
 
 def create_clickable_listbox(parent, row, column, title_label, listbox_contents, content_click_callback):
     """

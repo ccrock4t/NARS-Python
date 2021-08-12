@@ -71,16 +71,17 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     # j2 is projected to be used with j1
     if isinstance(j1, NALGrammar.Sentences.Judgment):
         if j1.value.frequency == 0 and j2.value.frequency == 0: return [] # can't do inference with 2 entirely negative premises
-        if j2.is_event():
-            eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
-            if j1.is_event():
-                projected_j2 = NALInferenceRules.Local.Projection(j2, j1.stamp.occurrence_time)
-                if projected_j2.value.confidence > eternalized_j2.value.confidence:
-                    j2 = projected_j2
-                else:
-                    j2 = eternalized_j2
-            else:
-                j2 = eternalized_j2
+        if j1.is_event() or j2.is_event(): return [] # todo .. don't do inference with events, it isn't handled gracefully right now
+        # if j2.is_event():
+        #     eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
+        #     if j1.is_event():
+        #         projected_j2 = NALInferenceRules.Local.Projection(j2, j1.stamp.occurrence_time)
+        #         if projected_j2.value.confidence > eternalized_j2.value.confidence:
+        #             j2 = projected_j2
+        #         else:
+        #             j2 = eternalized_j2
+        #     else:
+        #         j2 = eternalized_j2
 
     """
     ===============================================

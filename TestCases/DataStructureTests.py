@@ -152,7 +152,7 @@ def test_event_buffer_processing():
         for i in range(capacity):
             event_buffer.put_new(NARSDataStructures.Other.Task(NALGrammar.Sentences.new_sentence_from_string("(a" + str(i) + "-->b" + str(i) + "). :|:")))
 
-        actual = len(event_buffer.process())
+        actual = len(event_buffer.process_temporal_chaining())
         expected = calculate_expected_num_of_results(capacity)
         assert actual == expected,"ERROR: Event buffer of size " + str(capacity) + " produced " + str(actual) + " results, instead of expected " + str(expected)
 
