@@ -27,7 +27,7 @@ def TemporalInduction(j1, j2):
             :- or Sentence (S =/> P <f3, c3>)
             :- or Sentence (P =/> S <f3, c3>)
     """
-    assert j1.stamp.get_tense() != NALSyntax.Tense.Eternal and j2.stamp.get_tense() != NALSyntax.Tense.Eternal,"ERROR: Temporal Induction needs events"
+    assert j1.get_tense() != NALSyntax.Tense.Eternal and j2.get_tense() != NALSyntax.Tense.Eternal,"ERROR: Temporal Induction needs events"
 
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
@@ -68,7 +68,7 @@ def TemporalComparison(j1, j2):
             :- or Sentence (S </> P <f3, c3>)
             :- or Sentence (P </> S <f3, c3>)
     """
-    assert j1.stamp.get_tense() != NALSyntax.Tense.Eternal and j2.stamp.get_tense() != NALSyntax.Tense.Eternal, "ERROR: Temporal Comparison needs events"
+    assert j1.get_tense() != NALSyntax.Tense.Eternal and j2.get_tense() != NALSyntax.Tense.Eternal, "ERROR: Temporal Comparison needs events"
 
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement
@@ -109,7 +109,7 @@ def TemporalIntersection(j1, j2):
             :- or Event (P &/ S <f3, c3>)
             :- or Event (S &| P <f3, c3>)
     """
-    assert j1.stamp.get_tense() != NALSyntax.Tense.Eternal and j2.stamp.get_tense() != NALSyntax.Tense.Eternal,"ERROR: Temporal Induction needs events"
+    assert j1.get_tense() != NALSyntax.Tense.Eternal and j2.get_tense() != NALSyntax.Tense.Eternal,"ERROR: Temporal Induction needs events"
     result = None
 
     j1_statement_term = j1.statement

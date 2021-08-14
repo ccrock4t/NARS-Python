@@ -64,14 +64,14 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
     if tautology:
         if Config.DEBUG: print("tautology")
-        return [] # can't do inference, it will result in tautology
+        return all_derived_sentences # can't do inference, it will result in tautology
 
 
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
     if isinstance(j1, NALGrammar.Sentences.Judgment):
         if j1.value.frequency == 0 and j2.value.frequency == 0: return [] # can't do inference with 2 entirely negative premises
-        if j1.is_event() or j2.is_event(): return [] # todo .. don't do inference with events, it isn't handled gracefully right now
+        if (isinstance(j1,NALGrammar.Sentences.Judgment) and j1.is_event()) or j2.is_event(): return [] # todo .. don't do inference with events, it isn't handled gracefully right now
         # if j2.is_event():
         #     eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
         #     if j1.is_event():
@@ -92,7 +92,12 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     """
     swapped = False
 
-    if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
+    if j1_copula == j2_copula:
+        # same copula
+
+        if NALSyntax.Copula.is_temporal(j1_copula):
+             return all_derived_sentences
+
         if j1_statement == j2_statement:
             """
             # Revision
@@ -214,10 +219,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                         j2_subject_statement_terms = j2_subject_term.subterms if NALSyntax.TermConnector.is_conjunction(
                             j2_subject_term.connector) else [j2_subject_term]
 
-                        if len(j1_subject_statement_terms) > len(j2_subject_statement_terms):
-                            difference_of_subterms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
-                        else:
-                            difference_of_subterms = list(set(j2_subject_statement_terms) - set(j1_subject_statement_terms))
+                        difference_of_subterms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms)) + list(set(j2_subject_statement_terms) - set(j1_subject_statement_terms))
 
                         if len(difference_of_subterms) == 1:
                             """
@@ -434,4 +436,6 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array):
     """
     if derived_sentence is None: return  # inference result was not useful
     if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
+    if isinstance(derived_sentence, NALGrammar.Sentences.Goal):
+        print("DERIVED GOAL: " + derived_sentence.get_formatted_string())
     derived_sentence_array.append(derived_sentence)

@@ -142,7 +142,7 @@ def test_bag_overflow_purge():
     assert (test_data_structure.count == max_capacity), "TEST FAILURE: " + type(test_data_structure).__name__  + " did not maintain capacity on overflow"
 
 def test_event_buffer_processing():
-    calculate_expected_num_of_results = lambda N: int(N * (N-1) * (1/(N-1) + 1 + (N-2)/6))
+    calculate_expected_num_of_results = lambda N: int(N*(N+1)/2 - 1)
 
     capacities = [2, 3, 6, 10]
 

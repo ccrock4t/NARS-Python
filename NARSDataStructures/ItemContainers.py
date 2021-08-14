@@ -10,6 +10,7 @@ import NALGrammar
 import NARSMemory
 import Config
 from NARSDataStructures.Other import Task
+import NALInferenceRules
 
 
 class ItemContainer:
@@ -170,13 +171,13 @@ class Item:
             based on Bag granularity
             (e.g. Priority=0.5, 100 buckets -> bucket 50, 200 buckets -> bucket 100, 50 buckets -> bucket 25)
         """
-        return int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100
+        return min(int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100, Config.BAG_NUMBER_OF_BUCKETS - 1)
 
     def strengthen(self):
         """
             Increase this item's priority to a high value
         """
-        self.budget.priority = Config.PRIORITY_STRENGTHEN_VALUE
+        self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority, Config.PRIORITY_STRENGTHEN_VALUE)
 
     def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):
         """

@@ -33,7 +33,7 @@ class NARS:
     def __init__(self):
         self.global_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task, capacity=Config.GLOBAL_BUFFER_CAPACITY)
         self.event_buffer = NARSDataStructures.Buffers.EventBuffer(item_type=NARSDataStructures.Other.Task, capacity=Config.EVENT_BUFFER_CAPACITY)
-        self.temporal_chaining_rate = 2 * self.event_buffer.temporal_chain_max_results_length # how many working cycles to perform temporal chaining
+        self.event_buffer_rate = self.event_buffer.temporal_chain_max_results_length # how many working cycles to perform temporal chaining
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
 
@@ -64,6 +64,8 @@ class NARS:
 
         self.process_event_buffer()  # process events from the event buffer
 
+       # self.configure_busyness()
+
         # now do something with tasks from experience buffer and/or knowledge from memory
         for _ in range(Config.ACTIONS_PER_CYCLE):
             rand = random.random()
@@ -75,6 +77,11 @@ class NARS:
                 self.Consider()
 
         self.memory.current_cycle_number += 1
+
+    def configure_busyness(self):
+        # X% full = X% focus
+        Config.MINDFULNESS = len(self.global_buffer) / self.global_buffer.capacity
+
 
     def do_working_cycles(self, cycles: int):
         """
@@ -88,33 +95,28 @@ class NARS:
             Process events into the global buffer
         """
         results = []
-        if Global.Global.get_current_cycle_number() % self.temporal_chaining_rate == 0:
+        if Global.Global.get_current_cycle_number() % self.event_buffer.capacity == 0:
+
+            # take task from event buffer, put into global buffer
+            if len(self.event_buffer) > 0:
+                self.global_buffer.put_new(self.event_buffer.take().object)
+
+            # temporal chaining
             results = self.event_buffer.process_temporal_chaining()
             for result in results:
                 self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
-
-        if len(self.event_buffer) > 0:
-            self.global_buffer.put_new(self.event_buffer.take().object) # move task from event buffer to global buffer
 
 
 
     def Observe(self):
         """
-            Process a task from the experience buffer
+            Process all tasks from the global buffer
         """
-        task_item = self.global_buffer.take()
+        while len(self.global_buffer) > 0:
+            task_item = self.global_buffer.take()
 
-        if task_item is None: return  # nothing to observe
-
-        # process task
-        self.process_task(task_item.object)
-
-        if isinstance(task_item.object.sentence, NALGrammar.Sentences.Question):
-            # decay priority
-            task_item.decay()
-
-            # return task to buffer
-            self.global_buffer.put(task_item)
+            # process task
+            self.process_task(task_item.object)
 
 
     def Consider(self):
@@ -151,7 +153,7 @@ class NARS:
         concept_item.decay()
         self.memory.concepts_bag.put(concept_item)
 
-    def save_memory_to_disk(self, filename="memory.nars"):
+    def save_memory_to_disk(self, filename="memory1.narsmemory"):
         """
             Save the NARS Memory instance to disk
         """
@@ -160,7 +162,7 @@ class NARS:
             pickle.dump(self.memory, f, pickle.HIGHEST_PROTOCOL)
             Global.Global.print_to_output("SAVE MEMORY SUCCESS")
 
-    def load_memory_from_disk(self, filename="memory.nars"):
+    def load_memory_from_disk(self, filename="memory1.narsmemory"):
         """
             Load a NARS Memory instance from disk.
             This will override the NARS' current memory

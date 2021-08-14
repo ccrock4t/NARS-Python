@@ -63,7 +63,10 @@ class Sentence(Array):
         return self.stamp.id
 
     def is_event(self):
-        return self.stamp.get_tense() != NALSyntax.Tense.Eternal
+        return self.get_tense() != NALSyntax.Tense.Eternal
+
+    def get_tense(self):
+        return self.stamp.get_tense()
 
     def is_positive(self):
         """
@@ -108,7 +111,7 @@ class Sentence(Array):
 
     def get_formatted_string_no_id(self):
         string = self.statement.get_formatted_string() + str(self.punctuation.value)
-        if self.is_event(): string = string + " " + self.stamp.get_tense().value
+        if self.is_event(): string = string + " " + self.get_tense().value
         if self.value is not None: string = string + " " + self.get_value_projected_to_current_time().get_formatted_string()
         return string
 
@@ -152,7 +155,11 @@ class Judgment(Sentence):
 
     def __init__(self, statement, value,occurrence_time=None):
         Asserts.assert_valid_statement(statement)
-        Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Judgment,occurrence_time=occurrence_time)
+        Sentence.__init__(self,
+                          statement,
+                          value,
+                          NALSyntax.Punctuation.Judgment,
+                          occurrence_time=occurrence_time)
 
 
 class Question(Sentence):
@@ -162,7 +169,10 @@ class Question(Sentence):
 
     def __init__(self, statement):
         Asserts.assert_valid_statement(statement)
-        Sentence.__init__(self,statement, None, NALSyntax.Punctuation.Question)
+        Sentence.__init__(self,
+                          statement,
+                          None,
+                          NALSyntax.Punctuation.Question)
 
 
 class Goal(Sentence):
@@ -172,7 +182,11 @@ class Goal(Sentence):
 
     def __init__(self, statement, value):
         Asserts.assert_valid_statement(statement)
-        Sentence.__init__(self,statement, value, NALSyntax.Punctuation.Goal)
+        Sentence.__init__(self,
+                          statement,
+                          value,
+                          NALSyntax.Punctuation.Goal,
+                          occurrence_time=Global.Global.get_current_cycle_number())
 
 class Stamp:
     """

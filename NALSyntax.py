@@ -155,6 +155,7 @@ class Copula(enum.Enum):
     PredictiveEquivalence = "</>"
     ConcurrentEquivalence = "<|>"
 
+
     @classmethod
     def is_first_order(cls, copula):
         return copula is cls.Inheritance \
@@ -162,6 +163,14 @@ class Copula(enum.Enum):
                or copula is cls.Instance \
                or copula is cls.Property \
                or copula is cls.InstanceProperty
+
+    @classmethod
+    def is_temporal(cls, copula):
+        return copula == cls.PredictiveImplication \
+               or copula == cls.RetrospectiveImplication \
+               or copula == cls.ConcurrentImplication \
+               or copula == cls.PredictiveEquivalence \
+               or copula == cls.ConcurrentEquivalence
 
     @classmethod
     def is_symmetric(cls, copula):

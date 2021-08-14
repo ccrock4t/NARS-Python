@@ -355,7 +355,7 @@ class CompoundTerm(Term):
 
 
 
-class StatementTerm(CompoundTerm):
+class StatementTerm(Term):
     """
         <subject><copula><predicate>
 
@@ -364,19 +364,26 @@ class StatementTerm(CompoundTerm):
         (P --> Q)
     """
 
-    def __init__(self, subject_term: Term, predicate_term, copula):
+    def __init__(self, subject_term: Term, predicate_term, copula, dimensions=None):
         Asserts.assert_term(subject_term)
         Asserts.assert_term(predicate_term)
 
-        subterms = [subject_term, predicate_term]
+        self.connector = None
+        self.subterms = [subject_term, predicate_term]
 
         self.copula = None
         if copula is not None:
             self.copula = copula
             if NALSyntax.Copula.is_symmetric(copula):
-                subterms.sort(key=lambda t: str(t))  # sort alphabetically
+                self.subterms.sort(key=lambda t: str(t))  # sort alphabetically
 
-        CompoundTerm.__init__(self,subterms=subterms)
+        if dimensions is None:
+            # get number of dimensions from subterm
+            for subterm in self.subterms:
+                if subterm.is_array:
+                    dimensions = subterm.get_dimensions()
+
+        Term.__init__(self,term_string=self.get_formatted_string(),dimensions=dimensions)
 
 
     @classmethod
@@ -407,8 +414,6 @@ class StatementTerm(CompoundTerm):
             and the subterms syntactic complexities are summed as well.
         """
         count = 1  # the copula
-        if self.connector is not None:
-            count += 1
         for subterm in self.subterms:
             count = count + subterm._calculate_syntactic_complexity()
 

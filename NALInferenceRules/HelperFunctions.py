@@ -110,9 +110,11 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
                     or (not isinstance(result_statement, NALGrammar.Terms.StatementTerm)
                         and isinstance(result_statement, NALGrammar.Terms.CompoundTerm)
                         and not NALSyntax.TermConnector.is_first_order(result_statement.connector)):
-                # if the result is a first-order statement,
-                # or a compound statement, it may have an occurrence time
-                occurrence_time = j1.stamp.occurrence_time
+                # if the result is a first-order statement,  or a compound statement, it may have an occurrence time
+                if j1.is_event():
+                    occurrence_time = j1.stamp.occurrence_time
+                elif j2.is_event():
+                        occurrence_time = j2.stamp.occurrence_time
 
             result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
                                                    occurrence_time=occurrence_time)

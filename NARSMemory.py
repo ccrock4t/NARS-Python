@@ -99,16 +99,19 @@ class Memory:
                         # do term linking with subterms
                         concept_item.object.set_term_link(subconcept)
 
-            if isinstance(term, NALGrammar.Terms.StatementTerm) and \
-                    term.get_copula() is not None and\
-                    not NALSyntax.Copula.is_first_order(term.get_copula()):
-                # implication statement
+            elif isinstance(term, NALGrammar.Terms.StatementTerm):
                 subject_concept = self.peek_concept_item(term.get_subject_term()).object
                 predicate_concept = self.peek_concept_item(term.get_predicate_term()).object
 
-                # do prediction/explanation linking with subterms
-                subject_concept.set_prediction_link(concept_item.object)
-                predicate_concept.set_explanation_link(concept_item.object)
+                subject_concept.set_term_link(concept_item.object)
+                predicate_concept.set_term_link(concept_item.object)
+
+                if not NALSyntax.Copula.is_first_order(term.get_copula()):
+                    # implication statement
+                    # do prediction/explanation linking with subterms
+                    subject_concept.set_prediction_link(concept_item.object)
+                    predicate_concept.set_explanation_link(concept_item.object)
+
 
         return concept_item
 
