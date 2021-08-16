@@ -1,3 +1,5 @@
+import math
+
 import NALGrammar
 import NALSyntax
 from NALInferenceRules import TruthValueFunctions, HelperFunctions
@@ -33,6 +35,7 @@ def TemporalInduction(j1, j2):
     j2_statement_term = j2.statement
 
     if j1_statement_term == j2_statement_term: return None  # S =/> S simplifies to S, so no inference to do
+    if j2_statement_term.is_operation(): return None # exclude operation consequents
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 =|> j2
@@ -124,7 +127,8 @@ def TemporalIntersection(j1, j2):
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 &/ j2
         result_statement = NALGrammar.Terms.CompoundTerm([j1_statement_term, j2_statement_term],
-                                                          NALSyntax.TermConnector.SequentialConjunction)
+                                                          NALSyntax.TermConnector.SequentialConjunction,
+                                                         intervals=[math.log(j2.stamp.occurrence_time - j1.stamp.occurrence_time)])
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 &/ j1
         result_statement = NALGrammar.Terms.CompoundTerm([j2_statement_term, j1_statement_term],

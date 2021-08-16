@@ -64,7 +64,7 @@ def getevidentialvalues_fromsentence(j):
         Returns:
             f, c
     """
-    return j.value.frequency, j.value.confidence
+    return j.get_value_projected_to_current_time().frequency, j.get_value_projected_to_current_time().confidence
 
 
 def getevidence_from2sentences(j1, j2):

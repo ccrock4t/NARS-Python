@@ -67,15 +67,12 @@ def Choice(j1, j2):
     """
     Asserts.assert_sentence(j1)
     Asserts.assert_sentence(j2)
-    # Subject Predicate
-    subjpred1 = j1.subject_predicate
-    subjpred2 = j2.subject_predicate
 
     # Truth Value
     (f1, c1), (f2, c2) = HelperFunctions.getevidentialvalues_from2sentences(j1, j2)
 
     # Make the choice
-    if subjpred1 == subjpred2:
+    if j1.statement == j2.statement:
         if c1 >= c2:
             best = j1
         else:

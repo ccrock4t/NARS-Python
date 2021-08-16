@@ -17,7 +17,7 @@ class Global:
     """
         Terms
     """
-    TERM_SELF = NALGrammar.Terms.Term.from_string("self")
+    TERM_SELF = NALGrammar.Terms.Term.from_string("{SELF}")
     TERM_IMAGE_PLACEHOLDER = NALGrammar.Terms.Term.from_string("_")
 
     """

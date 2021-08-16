@@ -56,8 +56,28 @@ class Memory:
         # put into data structure
         purged_item = self.concepts_bag.put_new(new_concept)
 
-        if purged_item is not None:
-            purged_concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(purged_item.object)
+        if isinstance(term, NALGrammar.Terms.CompoundTerm):
+            for subterm in term.subterms:
+                # get/create subterm concepts
+                if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
+                        and not isinstance(subterm,
+                                           NALGrammar.Terms.ArrayTermElementTerm):  # don't create concepts for variables or array elements
+                    subconcept = self.peek_concept_item(subterm).object
+                    # do term linking with subterms
+                    new_concept.set_term_link(subconcept)
+
+        elif isinstance(term, NALGrammar.Terms.StatementTerm):
+            subject_concept = self.peek_concept_item(term.get_subject_term()).object
+            predicate_concept = self.peek_concept_item(term.get_predicate_term()).object
+
+            subject_concept.set_term_link(new_concept)
+            predicate_concept.set_term_link(new_concept)
+
+            if not NALSyntax.Copula.is_first_order(term.get_copula()):
+                # implication statement
+                # do prediction/explanation linking with subterms
+                subject_concept.set_prediction_link(new_concept)
+                predicate_concept.set_explanation_link(new_concept)
 
         return self.concepts_bag.peek(concept_key)
 
@@ -89,29 +109,6 @@ class Memory:
         # it must be created along with its sub-concepts if necessary
         if not isinstance(term, NALGrammar.Terms.VariableTerm):
             concept_item = self.conceptualize_term(term)
-
-            if isinstance(term, NALGrammar.Terms.CompoundTerm):
-                for subterm in term.subterms:
-                    # get/create subterm concepts
-                    if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
-                        and not isinstance(subterm, NALGrammar.Terms.ArrayTermElementTerm): # don't create concepts for variables or array elements
-                        subconcept = self.peek_concept_item(subterm).object
-                        # do term linking with subterms
-                        concept_item.object.set_term_link(subconcept)
-
-            elif isinstance(term, NALGrammar.Terms.StatementTerm):
-                subject_concept = self.peek_concept_item(term.get_subject_term()).object
-                predicate_concept = self.peek_concept_item(term.get_predicate_term()).object
-
-                subject_concept.set_term_link(concept_item.object)
-                predicate_concept.set_term_link(concept_item.object)
-
-                if not NALSyntax.Copula.is_first_order(term.get_copula()):
-                    # implication statement
-                    # do prediction/explanation linking with subterms
-                    subject_concept.set_prediction_link(concept_item.object)
-                    predicate_concept.set_explanation_link(concept_item.object)
-
 
         return concept_item
 
@@ -256,7 +253,7 @@ class Concept:
         self.term = term  # concept's unique term
         self.term_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)  # Bag of related concepts (related by term)
         self.belief_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Judgment)
-        self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal)
+        self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal, capacity=1)
         self.prediction_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
         self.explanation_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
 

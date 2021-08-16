@@ -72,7 +72,8 @@ class Depq():
 class Table(Depq):
     """
         NARS Table, stored within Concepts.
-        Tables store Narsese sentences using a double ended priority queue, sorted by confidence
+        Tables store Narsese sentences using a double ended priority queue, where priority = sentence confidence
+        Sorted by highest-confidence.
         It purges lowest-confidence items when it overflows.
     """
 

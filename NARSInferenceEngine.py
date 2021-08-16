@@ -66,12 +66,11 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
         if Config.DEBUG: print("tautology")
         return all_derived_sentences # can't do inference, it will result in tautology
 
-
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
     if isinstance(j1, NALGrammar.Sentences.Judgment):
         if j1.value.frequency == 0 and j2.value.frequency == 0: return [] # can't do inference with 2 entirely negative premises
-        if (isinstance(j1,NALGrammar.Sentences.Judgment) and j1.is_event()) or j2.is_event(): return [] # todo .. don't do inference with events, it isn't handled gracefully right now
+        if (isinstance(j1,NALGrammar.Sentences.Judgment) and j1.is_event()) and (isinstance(j1,NALGrammar.Sentences.Judgment) and j2.is_event()): return [] # todo .. don't do inference with events, it isn't handled gracefully right now
         # if j2.is_event():
         #     eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
         #     if j1.is_event():
@@ -92,21 +91,20 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     """
     swapped = False
 
-    if j1_copula == j2_copula:
-        # same copula
-
-        if NALSyntax.Copula.is_temporal(j1_copula):
-             return all_derived_sentences
-
+    if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
+        # same order copula
         if j1_statement == j2_statement:
             """
             # Revision
             # j1 = j2
             """
-            if isinstance(j1, NALGrammar.Sentences.Question): return all_derived_sentences # can't do revision with questions
+            if isinstance(j1,NALGrammar.Sentences.Question): return all_derived_sentences  # can't do revision with questions
 
             derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
-            add_to_derived_sentences(derived_sentence,all_derived_sentences)
+            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+        elif NALSyntax.Copula.is_temporal(j1_copula):
+             # dont do semantic inference with temporal copula
+             return all_derived_sentences
         elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
             if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
                 """
@@ -136,13 +134,13 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     """
 
                     derived_sentence = NALInferenceRules.Syllogistic.Deduction(j1, j2)  # S-->P
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Swapped Exemplification
                     """
                     derived_sentence = NALInferenceRules.Syllogistic.Exemplification(j2, j1)  # P-->S
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
             elif j1_subject_term == j2_subject_term:
                 """
@@ -154,43 +152,43 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     # Induction
                     """
                     derived_sentence = NALInferenceRules.Syllogistic.Induction(j1, j2)  # S-->P
-                    add_to_derived_sentences(derived_sentence, all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Swapped Induction
                     """
                     derived_sentence = NALInferenceRules.Syllogistic.Induction(j2, j1)  # P-->S
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Comparison
                     """
                     derived_sentence = NALInferenceRules.Syllogistic.Comparison(j1, j2)  # S<->P
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Intensional Intersection or Disjunction
                     """
                     derived_sentence = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)  # M --> (S | P)
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Extensional Intersection or Conjunction
                     """
                     derived_sentence = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)  # M --> (S & P)
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Extensional Difference
                     """
                     derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j1, j2)  # M --> (S - P)
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                     """
                     # Swapped Extensional Difference
                     """
                     derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)  # M --> (P - S)
-                    add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                    add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
             elif j1_predicate_term == j2_predicate_term:
                 """
                     j1 = P-->M
@@ -201,13 +199,13 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 # Abduction
                 """
                 derived_sentence = NALInferenceRules.Syllogistic.Abduction(j1, j2)  # S-->P or S==>P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                 """
                 # Swapped Abduction
                 """
                 derived_sentence = NALInferenceRules.Syllogistic.Abduction(j2, j1)  # P-->S or P==>S
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                 if not NALSyntax.Copula.is_first_order(j1_copula):
                     # two implication statements
@@ -230,36 +228,36 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                                 derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1,j2)  # S
                             else:
                                 derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j2,j1)  # S
-                            add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                 """
                 # Intensional Intersection Disjunction
                 """
                 derived_sentence = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)  # (P | S) --> M
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                 """
                 # Extensional Intersection Conjunction
                 """
                 derived_sentence = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)  # (P & S) --> M
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                 """
                 # Intensional Difference
                 """
                 derived_sentence = NALInferenceRules.Composition.IntensionalDifference(j1, j2)  # (P ~ S) --> M
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
                 """
                 # Swapped Intensional Difference
                 """
                 derived_sentence = NALInferenceRules.Composition.IntensionalDifference(j2, j1)  # (S ~ P) --> M
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
                 """
                 # Comparison
                 """
                 derived_sentence = NALInferenceRules.Syllogistic.Comparison(j1, j2)  # S<->P or S<=>P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
         elif not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
             """
             # j1 = M-->P or P-->M
@@ -267,7 +265,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             # Analogy
             """
             derived_sentence = NALInferenceRules.Syllogistic.Analogy(j1, j2)  # S-->P or P-->S
-            add_to_derived_sentences(derived_sentence,all_derived_sentences)
+            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
         elif NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
             """
             # j1 = M<->S or S<->M
@@ -275,7 +273,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             # Swapped Analogy
             """
             derived_sentence = NALInferenceRules.Syllogistic.Analogy(j2, j1)  # S-->P or P-->S
-            add_to_derived_sentences(derived_sentence,all_derived_sentences)
+            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
         elif NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
             """
             # j1 = M<->P or P<->M
@@ -283,8 +281,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             # Resemblance
             """
             derived_sentence = NALInferenceRules.Syllogistic.Resemblance(j1, j2)  # S<->P
-            add_to_derived_sentences(derived_sentence,all_derived_sentences)
-    else:
+            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+    elif NALSyntax.Copula.is_first_order(j1_copula) != NALSyntax.Copula.is_first_order(j2_copula):
         # They do not have the same-order copula
         """
                 j1 = S==>P or S<=>P
@@ -314,7 +312,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 j2 = S (e.g A-->B)
             """
             derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j2, j1)  # P
-            add_to_derived_sentences(derived_sentence,all_derived_sentences)
+            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
         else:
             """
                 j1 = S==>P
@@ -325,20 +323,20 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     j2 = S
                 """
                 derived_sentence = NALInferenceRules.Conditional.ConditionalDeduction(j1, j2)  # P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
             elif j2_statement == j1_predicate_term:
                 """
                     j2 = P
                 """
                 derived_sentence = NALInferenceRules.Conditional.ConditionalAbduction(j1, j2)  # S
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
             elif NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector) and not NALSyntax.Copula.is_symmetric(j1_copula):
                 """
                     j1 = (C1 && C2 && ..CN && S) ==> P
                     j2 = S
                 """
                 derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # (C1 && C2 && ..CN) ==> P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences)
+                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
         if swapped:
             # restore sentences
@@ -364,10 +362,10 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sen
     derived_sentences = []
 
     derived_sentence = NALInferenceRules.Temporal.TemporalInduction(A, B) # A =|> B or A =/> B or B =/> A
-    add_to_derived_sentences(derived_sentence,derived_sentences)
+    add_to_derived_sentences(derived_sentence,derived_sentences,A,B)
 
-    derived_sentence = NALInferenceRules.Temporal.TemporalIntersection(A, B) # A &/ B or  A &/ B or B &/ A
-    add_to_derived_sentences(derived_sentence,derived_sentences)
+    derived_sentence = NALInferenceRules.Temporal.TemporalIntersection(A,B) # A &/ B or  A &/ B or B &/ A
+    add_to_derived_sentences(derived_sentence,derived_sentences,A,B)
 
     """
     ===============================================
@@ -397,19 +395,19 @@ def do_inference_one_premise(j):
     if isinstance(j, NALGrammar.Sentences.Judgment):
         # Negation (--,(S-->P))
         derived_sentence = NALInferenceRules.Immediate.Negation(j)
-        add_to_derived_sentences(derived_sentence, derived_sentences)
+        add_to_derived_sentences(derived_sentence,derived_sentences,j)
 
         # Conversion (P --> S) or (P ==> S)
         if not j.stamp.from_one_premise_inference \
                 and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
                 and j.value.frequency > 0:
             derived_sentence = NALInferenceRules.Immediate.Conversion(j)
-            add_to_derived_sentences(derived_sentence, derived_sentences)
+            add_to_derived_sentences(derived_sentence,derived_sentences,j)
 
         # Contraposition  ((--,P) ==> (--,S))
         if j.statement.get_copula() == NALSyntax.Copula.Implication and j.value.frequency < 1:
             derived_sentence = NALInferenceRules.Immediate.Contraposition(j)
-            add_to_derived_sentences(derived_sentence, derived_sentences)
+            add_to_derived_sentences(derived_sentence,derived_sentences,j)
 
         # Image
         if isinstance(j.statement.get_subject_term(), NALGrammar.Terms.CompoundTerm) \
@@ -417,17 +415,17 @@ def do_inference_one_premise(j):
                 and j.statement.get_copula() == NALSyntax.Copula.Inheritance:
             derived_sentence_list = NALInferenceRules.Immediate.ExtensionalImage(j)
             for derived_sentence in derived_sentence_list:
-                add_to_derived_sentences(derived_sentence, derived_sentences)
+                add_to_derived_sentences(derived_sentence,derived_sentences,j)
         elif isinstance(j.statement.get_predicate_term(), NALGrammar.Terms.CompoundTerm) \
             and j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Product:
             derived_sentence_list = NALInferenceRules.Immediate.IntensionalImage(j)
             for derived_sentence in derived_sentence_list:
-                add_to_derived_sentences(derived_sentence, derived_sentences)
+                add_to_derived_sentences(derived_sentence,derived_sentences,j)
 
     return derived_sentences
 
 
-def add_to_derived_sentences(derived_sentence,derived_sentence_array):
+def add_to_derived_sentences(derived_sentence,derived_sentence_array,j1,j2=None):
     """
         Add derived sentence to array if it meets certain conditions
     :param derived_sentence:
@@ -437,5 +435,6 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array):
     if derived_sentence is None: return  # inference result was not useful
     if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
     if isinstance(derived_sentence, NALGrammar.Sentences.Goal):
-        print("DERIVED GOAL: " + derived_sentence.get_formatted_string())
+        print("DERIVED GOAL: " + derived_sentence.get_formatted_string() + "from " + j1.get_formatted_string()
+              + ("" if j2 is None else " AND " + j2.get_formatted_string()))
     derived_sentence_array.append(derived_sentence)

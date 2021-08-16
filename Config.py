@@ -7,7 +7,7 @@
     System Parameters
 """
 k = 1 # evidential horizon
-T = 0.5 # decision rule (goal decision-making) threshold
+T = 0.8 # decision rule (goal decision-making) threshold
 
 POSITIVE_THRESHOLD = 2.0/3.0 # frequency must be above this value to be considered "true"
 NEGATIVE_THRESHOLD = 1.0/3.0 # frequency must be below this value to be considered "false"
@@ -20,7 +20,7 @@ CONCEPT_LINK_CAPACITY = 1000 # how many of each concept link can this NARS have?
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = 10 # The number of times to look for a semantically related concept to interact with
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number of times to look for a semantically related belief to interact with
 PRIORITY_DECAY_MULTIPLIER = 0.95 # value in [0,1] multiplied w/ priority during priority decay
-PRIORITY_STRENGTHEN_VALUE = 0.5 # priority strengthen multiplier
+PRIORITY_STRENGTHEN_VALUE = 0.02 # priority strengthen multiplier
 ACTIONS_PER_CYCLE = 5
 
 
@@ -33,7 +33,7 @@ ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each i
 """
     Inference
 """
-TRUTH_PROJECTION_DECAY = 0.8
+TRUTH_PROJECTION_DECAY = 0.9
 
 """
     Bags

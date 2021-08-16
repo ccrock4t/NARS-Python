@@ -55,8 +55,8 @@ if sys.platform.startswith('win'):
 class GUIProcess(multiprocessing.Process):
     def __init__(self):
         NARS_object = Global.Global.NARS
-        global_task_buffer_ID = (str(NARS_object.global_buffer), type(NARS_object.global_buffer).__name__)
-        global_task_buffer_capacity = NARS_object.global_buffer.capacity
+        global_task_buffer_ID = ("nullid", "buffer")
+        global_task_buffer_capacity = 0
         event_buffer_ID = (str(NARS_object.event_buffer), type(NARS_object.event_buffer).__name__)
         event_buffer_capacity = NARS_object.event_buffer.capacity
         memory_bag_ID = (str(NARS_object.memory.concepts_bag), type(NARS_object.memory.concepts_bag).__name__)

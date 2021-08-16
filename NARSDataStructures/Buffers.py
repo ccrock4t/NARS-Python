@@ -6,10 +6,8 @@
 import NALSyntax
 import NARSInferenceEngine
 from NARSDataStructures.ItemContainers import ItemContainer, Item
-from NARSDataStructures.Other import Depq
+from NARSDataStructures.Other import Depq, Task
 import NALInferenceRules
-import Config
-import queue
 
 class Buffer(ItemContainer, Depq):
     """
@@ -120,7 +118,7 @@ class EventBuffer(ItemContainer):
         self._take_from_lookup_dict(item.key)
         return item
 
-    def process_temporal_chaining(self):
+    def process_temporal_chaining(self, NARS=None):
         """
             Perform temporal chaining
 
@@ -130,48 +128,50 @@ class EventBuffer(ItemContainer):
                 and
                 (A &/ B) =/> C
 
-            for the first statement in the chain
+            for the latest statement in the chain
         """
         if not self.temporal_chain_has_changes: return []
-        num_of_events = len(self.temporal_chain)
+        results = []
+        temporal_chain = self.temporal_chain
+        num_of_events = len(temporal_chain)
 
-        if num_of_events <= 1: return []
+        event_task_C = temporal_chain[-1].object
+        event_C = event_task_C.sentence
 
-        processed_results = []
-
-        event_task_A = self.temporal_chain[0].object
-        event_A = event_task_A.sentence
+        def process_sentence(derived_sentence):
+            if derived_sentence is not None:
+                results.append(derived_sentence)
+                if NARS is not None: NARS.process_task(Task(derived_sentence))
 
         # produce all possible forward implication statements using temporal induction and intersection
-        # A &/ B,
-        # A =/> B
+        # A &/ C,
+        # A =/> C
         # and
         # (A &/ B) =/> C
-        for i in range(1, num_of_events): # and do induction with events occurring afterward
-            event_task_B = self.temporal_chain[i].object
-            event_B = event_task_B.sentence
+        for i in range(0, num_of_events-1):  # and do induction with events occurring afterward
+            event_task_A = temporal_chain[i].object
+            event_A = event_task_A.sentence
 
-            # produce statements (A =/> B) and (A &/ B)
-            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
+            # produce statements (A =/> C) and (A &/ C)
+            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_C)
 
-            compound_event = None
             for derived_sentence in derived_sentences:
-                processed_results.append(derived_sentence)
-                if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
-                    compound_event = derived_sentence
+                process_sentence(derived_sentence)
 
-            if compound_event is not None:
-                # produce statements (A &/ B) =/> C
-                for j in range(i+1, num_of_events):
-                    # event A must be at least 3rd to last, and event B must be at least 2nd to last
-                    # the edge case during which event C is the last event
-                    if i < num_of_events-1:
-                        event_task_C = self.temporal_chain[j].object
-                        event_C = event_task_C.sentence
+            for j in range(i + 1, num_of_events-1):
+                event_task_B = temporal_chain[j].object
+                event_B = event_task_B.sentence
 
-                        derived_sentence = NALInferenceRules.Temporal.TemporalInduction(compound_event, event_C) # (A &/ B) =/> C
-                        processed_results.append(derived_sentence)
+
+
+                conjunction = NALInferenceRules.Temporal.TemporalIntersection(event_A,
+                                                                                event_B)  # (A &/ B)
+
+                if conjunction is not None:
+                    derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction,
+                                                                                    event_C)  # (A &/ B) =/> C
+                    process_sentence(derived_sentence)
 
         self.temporal_chain_has_changes = False
 
-        return processed_results
+        return results

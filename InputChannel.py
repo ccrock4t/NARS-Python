@@ -33,8 +33,6 @@ def add_input_string(input_string: str):
         if input_string == "count":
             Global.Global.print_to_output(
                 "Memory count (concepts in memory): " + str(len(NARS.memory)))
-            Global.Global.print_to_output(
-                "Buffer count (tasks in buffer): " + str(len(NARS.global_buffer)))
         elif input_string == "cycle":
             Global.Global.print_to_output("Current cycle: " + str(Global.Global.get_current_cycle_number()))
         elif input_string == "save":
@@ -67,11 +65,11 @@ def add_input_sentence(sentence: NALGrammar.Sentences.Sentence):
     input_queue.put(item=sentence)
 
 
-def process_next_pending_sentence():
+def process_pending_sentence():
     """
         Processes the next pending sentence from the input buffer if one exists
     """
-    while input_queue.qsize() > 0:
+    if input_queue.qsize() > 0:
         sentence = input_queue.get()
         process_sentence(sentence)
 
@@ -85,13 +83,12 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-    if isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.is_event():
-        # temporal experience
-        Global.Global.NARS.event_buffer.put_new(task)
-    else:
-        # goals, questions, eternal beliefs,
-        Global.Global.NARS.global_buffer.put_new(task)
+    # process the task into NARS
+    Global.Global.NARS.process_task(task)
 
+    if isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.is_event():
+        # put events on the temporal chain
+        Global.Global.NARS.event_buffer.put_new(task)
 
 
 def load_input(filename="input.nal"):

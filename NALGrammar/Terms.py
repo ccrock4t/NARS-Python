@@ -210,51 +210,62 @@ class CompoundTerm(Term):
         (Connector T1, T2, ..., Tn)
     """
 
-    def __init__(self, subterms: [Term], term_connector: NALSyntax.TermConnector = None,dimensions=None):
+    def __init__(self, subterms: [Term],
+                 term_connector: NALSyntax.TermConnector = None,
+                 dimensions=None,
+                 intervals=None):
         """
         Input:
             subterms: array of immediate subterms
 
             connector: subterm connector
+
+            intervals: array of time intervals between statements (only used for sequential conjunction)
         """
-        self.connector = term_connector  # sets are represented by the opening bracket as the connector, { or [
-
+        self.connector = None  # sets are represented by the opening bracket as the connector, { or [
+        self.intervals = None
         if term_connector is not None:
-            if len(subterms) > 1 \
-                    and NALSyntax.TermConnector.is_order_invariant(term_connector):
-                # order doesn't matter, alphabetize so the system can recognize the same term
-                subterms.sort(key=lambda t: str(t))
+            self.connector = term_connector
+            if len(subterms) > 1:
+                if term_connector == NALSyntax.TermConnector.SequentialConjunction:
+                    # (A &/ B ...)
+                    self.intervals = intervals
 
-            is_extensional_set = (term_connector == NALSyntax.TermConnector.ExtensionalSetStart)
-            is_intensional_set = (term_connector == NALSyntax.TermConnector.IntensionalSetStart)
+                if NALSyntax.TermConnector.is_order_invariant(term_connector):
+                    # order doesn't matter, alphabetize so the system can recognize the same term
+                    subterms.sort(key=lambda t: str(t))
 
-            is_set = is_extensional_set or is_intensional_set
+                # check for set
+                is_extensional_set = (term_connector == NALSyntax.TermConnector.ExtensionalSetStart)
+                is_intensional_set = (term_connector == NALSyntax.TermConnector.IntensionalSetStart)
 
-            if is_set and len(subterms) > 1:
-                # multi_component_set
-                # todo handle multi-component sets better
-                singleton_set_subterms = []
+                is_set = is_extensional_set or is_intensional_set
 
-                for subterm in subterms:
-                    # decompose the set into an intersection of singleton sets
-                    singleton_set_subterm = CompoundTerm.from_string(self.connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(self.connector).value)
-                    singleton_set_subterms.append(singleton_set_subterm)
+                if is_set and len(subterms) > 1:
+                    # multi_component_set
+                    # todo handle multi-component sets better
+                    singleton_set_subterms = []
 
-                subterms = singleton_set_subterms
+                    for subterm in subterms:
+                        # decompose the set into an intersection of singleton sets
+                        singleton_set_subterm = CompoundTerm.from_string(term_connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(term_connector).value)
+                        singleton_set_subterms.append(singleton_set_subterm)
 
-                # set new term connector as intersection
-                if is_extensional_set:
-                    self.connector = NALSyntax.TermConnector.IntensionalIntersection
-                elif is_intensional_set:
-                    self.connector = NALSyntax.TermConnector.ExtensionalIntersection
+                    subterms = singleton_set_subterms
 
-        self.subterms: [Term] = subterms
+                    # set new term connector as intersection
+                    if is_extensional_set:
+                        self.connector = NALSyntax.TermConnector.IntensionalIntersection
+                    elif is_intensional_set:
+                        self.connector = NALSyntax.TermConnector.ExtensionalIntersection
 
-        if dimensions is None:
-            # get number of dimensions from subterm
-            for subterm in self.subterms:
-                if subterm.is_array:
-                    dimensions = subterm.get_dimensions()
+            self.subterms: [Term] = subterms
+
+            if dimensions is None:
+                # get number of dimensions from subterm
+                for subterm in self.subterms:
+                    if subterm.is_array:
+                        dimensions = subterm.get_dimensions()
 
         Term.__init__(self,term_string=self.get_formatted_string(),dimensions=dimensions)
 
@@ -273,8 +284,11 @@ class CompoundTerm(Term):
         else:
             string = self.connector.value + NALSyntax.StatementSyntax.TermDivider.value
 
-        for subterm in self.subterms:
+        for i in range(len(self.subterms)):
+            subterm = self.subterms[i]
             string = string + subterm.get_formatted_string() + NALSyntax.StatementSyntax.TermDivider.value
+            if self.connector == NALSyntax.TermConnector.SequentialConjunction and i < len(self.intervals)-1:
+                string = string + str(self.intervals[i]) + NALSyntax.StatementSyntax.TermDivider.value
 
         string = string[:-1] # remove the final term divider
 
@@ -419,7 +433,7 @@ class StatementTerm(Term):
 
         return count
 
-    def get_subject_term(self) -> Term:
+    def get_subject_term(self):
         return self.subterms[0]
 
     def get_predicate_term(self):
@@ -560,13 +574,14 @@ def simplify_term(term):
         elif isinstance(term, CompoundTerm):
             if not NALSyntax.TermConnector.is_first_order(term.connector) and \
                     len(simplified_subterms) == 1:
-                # higher order compounds can't have 1 component, so just return the term
+                # higher order compounds can't have 1 component, (so just return the term
                 # without any connector
                 simplified_term = simplified_subterms[0]
             else:
                 # first order compounds can have 1 component
                 simplified_term = CompoundTerm(subterms=simplified_subterms,
-                                    term_connector=term.connector)
+                                    term_connector=term.connector,
+                                               intervals=term.intervals)
 
     else:
         simplified_term = term
