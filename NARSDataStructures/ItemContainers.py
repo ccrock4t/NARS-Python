@@ -120,8 +120,8 @@ class Item:
                 priority = 0.95
             quality = 0.010
         elif isinstance(object, NARSMemory.Concept):
-            priority = 0.990# / object.term.syntactic_complexity
-            quality = 0.500
+            quality = 0.95
+            priority = 0.990 / object.term.syntactic_complexity
         elif isinstance(object, NALGrammar.Sentences.Sentence):
             priority = object.value.confidence
             quality = 0.500

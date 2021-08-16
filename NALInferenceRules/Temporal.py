@@ -128,7 +128,7 @@ def TemporalIntersection(j1, j2):
         # j1 &/ j2
         result_statement = NALGrammar.Terms.CompoundTerm([j1_statement_term, j2_statement_term],
                                                           NALSyntax.TermConnector.SequentialConjunction,
-                                                         intervals=[math.log(j2.stamp.occurrence_time - j1.stamp.occurrence_time)])
+                                                         intervals=[int(math.log(j2.stamp.occurrence_time - j1.stamp.occurrence_time))])
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 &/ j1
         result_statement = NALGrammar.Terms.CompoundTerm([j2_statement_term, j1_statement_term],

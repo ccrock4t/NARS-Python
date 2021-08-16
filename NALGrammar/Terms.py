@@ -223,13 +223,18 @@ class CompoundTerm(Term):
             intervals: array of time intervals between statements (only used for sequential conjunction)
         """
         self.connector = None  # sets are represented by the opening bracket as the connector, { or [
-        self.intervals = None
+        self.intervals = []
         if term_connector is not None:
             self.connector = term_connector
             if len(subterms) > 1:
                 if term_connector == NALSyntax.TermConnector.SequentialConjunction:
                     # (A &/ B ...)
-                    self.intervals = intervals
+                    if intervals is not None:
+                        self.intervals = intervals
+                    else:
+                        # if generic conjunction from input, assume interval of 1
+                        # todo accept intervals from input
+                        self.intervals = [1] * (len(subterms)-1)
 
                 if NALSyntax.TermConnector.is_order_invariant(term_connector):
                     # order doesn't matter, alphabetize so the system can recognize the same term
@@ -287,7 +292,7 @@ class CompoundTerm(Term):
         for i in range(len(self.subterms)):
             subterm = self.subterms[i]
             string = string + subterm.get_formatted_string() + NALSyntax.StatementSyntax.TermDivider.value
-            if self.connector == NALSyntax.TermConnector.SequentialConjunction and i < len(self.intervals)-1:
+            if self.connector == NALSyntax.TermConnector.SequentialConjunction and i < len(self.intervals):
                 string = string + str(self.intervals[i]) + NALSyntax.StatementSyntax.TermDivider.value
 
         string = string[:-1] # remove the final term divider
@@ -415,9 +420,11 @@ class StatementTerm(Term):
         predicate_str = statement_string[
                         copula_idx + len(copula.value):len(statement_string) - 1]  # get predicate string
 
-        return simplify_term(StatementTerm(subject_term=Term.from_string(subject_str),
+        statement_term = StatementTerm(subject_term=Term.from_string(subject_str),
                                            predicate_term=Term.from_string(predicate_str),
-                                           copula=copula))
+                                           copula=copula)
+
+        return statement_term
 
 
 

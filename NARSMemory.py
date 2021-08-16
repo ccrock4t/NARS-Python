@@ -266,6 +266,12 @@ class Concept:
     def get_term(self):
         return self.term
 
+    def is_positive(self):
+        """
+            :return: If the highest-confidence belief says this statement is true
+        """
+        return self.belief_table.peek().is_positive()
+
     def set_term_link(self, concept):
         """
             Set a bidirectional term link between 2 concepts

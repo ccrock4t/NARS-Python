@@ -43,6 +43,7 @@ class Global:
     def print_to_output(cls, msg, data_structure=None):
         data_structure_name = None
         data_structure_len = 0
+        if not(data_structure is cls.NARS.memory.concepts_bag or data_structure is cls.NARS.event_buffer or data_structure is None): return # must be a valid data structure
         if data_structure is not None: data_structure_name = (str(data_structure), type(data_structure).__name__)
         if data_structure is not None: data_structure_len = len(data_structure)
         cls.NARS_string_pipe.send(("print", msg, data_structure_name,data_structure_len))

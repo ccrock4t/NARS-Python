@@ -17,6 +17,7 @@ import NARSDataStructures.Other
 import NARSDataStructures.ItemContainers
 
 import Global
+from NALInferenceRules.HelperFunctions import create_resultant_sentence_one_premise
 
 """
     Author: Christian Hahm
@@ -230,13 +231,21 @@ class NARS:
         """
         Asserts.assert_task(task)
 
-        if task.sentence.statement.contains_variable(): return  # todo handle variables
-
-        statement_term = task.sentence.statement
+        sentence = task.sentence
+        statement_term = sentence.statement
+        if statement_term.contains_variable(): return  # todo handle variables
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept_item = self.memory.peek_concept_item(statement_term)
         statement_concept = statement_concept_item.object
+
+        if statement_term.connector == NALSyntax.TermConnector.SequentialConjunction:
+            # derive individual components from conjunction
+            for statement in statement_term.subterms:
+                # statement subterms
+                self.process_task(NARSDataStructures.Other.Task(create_resultant_sentence_one_premise(sentence,
+                                                                                    statement,
+                                                                                    truth_value_function=None)))
 
         if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
             self.process_judgment_task(task,statement_concept)
@@ -330,6 +339,11 @@ class NARS:
         # store the most confident desire
         task_statement_concept.desire_table.put(revised_desire)
 
+        if isinstance(revised_desire, NALGrammar.Sentences.Goal):
+            string = "PROCESSED GOAL: " + revised_desire.get_formatted_string() + "from "
+            for premise in revised_desire.stamp.parent_premise_strings:
+                string += premise + ","
+            print(string)
 
     def process_judgment_sentence(self, j1: NALGrammar.Sentences.Judgment, related_concept=None):
         """
@@ -360,7 +374,9 @@ class NARS:
                 for derived_sentence in derived_sentences:
                     self.process_task(NARSDataStructures.Other.Task(derived_sentence))
 
-        self.process_sentence_semantic_inference(j1, related_concept)
+        results = self.process_sentence_semantic_inference(j1, related_concept)
+        for result in results:
+            self.process_task(NARSDataStructures.Other.Task(result))
 
     def process_goal_sentence(self, j1: NALGrammar.Sentences.Goal):
         """
@@ -393,7 +409,10 @@ class NARS:
                     best_explanation = explanation_concept
 
             # process with highest-confidence explanation
-            self.process_sentence_semantic_inference(j1, best_explanation)
+            results = self.process_sentence_semantic_inference(j1, best_explanation)
+
+            for result in results:
+                self.process_task(NARSDataStructures.Other.Task(result))
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):
         """
@@ -424,14 +443,16 @@ class NARS:
 
         if len(j2s) == 0:
             if Config.DEBUG: print('No related beliefs found for ' + j1.get_formatted_string())
-            return  # done if can't interact
+            return []  # done if can't interact
 
+        results = []
         for j2 in j2s:
             if Config.DEBUG: print(
                 "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
             derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-            for derived_sentence in derived_sentences:
-                self.process_task(NARSDataStructures.Other.Task(derived_sentence))
+            results += derived_sentences
+
+        return results
 
     def execute_operation(self, full_operation_statement):
         """

@@ -15,6 +15,7 @@ import NALInferenceRules.Temporal
 import NARSDataStructures.Other
 import NALSyntax
 
+
 def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
@@ -434,7 +435,5 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array,j1,j2=None)
     """
     if derived_sentence is None: return  # inference result was not useful
     if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
-    if isinstance(derived_sentence, NALGrammar.Sentences.Goal):
-        print("DERIVED GOAL: " + derived_sentence.get_formatted_string() + "from " + j1.get_formatted_string()
-              + ("" if j2 is None else " AND " + j2.get_formatted_string()))
+
     derived_sentence_array.append(derived_sentence)

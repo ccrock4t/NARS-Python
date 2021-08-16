@@ -13,7 +13,7 @@ POSITIVE_THRESHOLD = 2.0/3.0 # frequency must be above this value to be consider
 NEGATIVE_THRESHOLD = 1.0/3.0 # frequency must be below this value to be considered "false"
 
 MINDFULNESS = 0.80 # between 0-1, how much attention the system allocates to the present moment (overall experience buffer) [1.0] vs. pondering concepts [0.0]
-MEMORY_CONCEPT_CAPACITY = 20000 # how many concepts can this NARS have?
+MEMORY_CONCEPT_CAPACITY = 10000 # how many concepts can this NARS have?
 EVENT_BUFFER_CAPACITY = 10
 GLOBAL_BUFFER_CAPACITY = 250
 CONCEPT_LINK_CAPACITY = 1000 # how many of each concept link can this NARS have?

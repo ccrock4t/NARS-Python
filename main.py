@@ -55,15 +55,13 @@ if sys.platform.startswith('win'):
 class GUIProcess(multiprocessing.Process):
     def __init__(self):
         NARS_object = Global.Global.NARS
-        global_task_buffer_ID = ("nullid", "buffer")
-        global_task_buffer_capacity = 0
         event_buffer_ID = (str(NARS_object.event_buffer), type(NARS_object.event_buffer).__name__)
         event_buffer_capacity = NARS_object.event_buffer.capacity
         memory_bag_ID = (str(NARS_object.memory.concepts_bag), type(NARS_object.memory.concepts_bag).__name__)
         memory_bag_capacity = NARS_object.memory.concepts_bag.capacity
 
-        data_structure_IDs = (global_task_buffer_ID, event_buffer_ID, memory_bag_ID)
-        data_structure_capacities = (global_task_buffer_capacity, event_buffer_capacity, memory_bag_capacity)
+        data_structure_IDs = (event_buffer_ID, memory_bag_ID)
+        data_structure_capacities = (event_buffer_capacity, memory_bag_capacity)
 
         # multiprocess pipe to pass objects between NARS and GUI Processes
         pipe_gui_objects, pipe_NARS_objects = multiprocessing.Pipe()  # 2-way object request pipe
@@ -72,8 +70,7 @@ class GUIProcess(multiprocessing.Process):
         Global.Global.NARS_string_pipe = pipe_NARS_strings
 
         multiprocessing.Process.__init__(self,target=NARSGUI.start_gui,
-                             args=(Global.Global.gui_use_internal_data,
-                                   Global.Global.gui_use_interface,
+                             args=(Global.Global.gui_use_interface,
                                    data_structure_IDs,
                                    data_structure_capacities,
                                    pipe_gui_objects,
@@ -103,7 +100,7 @@ def main():
     Global.Global.NARS = NARS_object
 
     # setup internal/interface GUI
-    if Global.Global.gui_use_internal_data or Global.Global.gui_use_interface:
+    if Global.Global.gui_use_interface:
         GUIProcess()
 
     # launch shell input thread

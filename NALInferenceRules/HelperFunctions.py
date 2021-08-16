@@ -165,12 +165,12 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
 
     return result
 
-def stamp_and_print_inference_rule(sentence, inference_rule, parent_premises):
+def stamp_and_print_inference_rule(sentence, inference_rule, parent_premise_strings):
     sentence.stamp.derived_by = "Structural Transformation" if inference_rule is None else inference_rule.__name__
 
-    sentence.stamp.parent_premises = []
-    for premise in parent_premises:
-        sentence.stamp.parent_premises.append(premise)
+    sentence.stamp.parent_premise_strings = []
+    for premise in parent_premise_strings:
+        sentence.stamp.parent_premise_strings.append(premise)
     if Config.DEBUG: print(sentence.stamp.derived_by + " derived " + sentence.get_formatted_string())
 
 def premise_result_type(j1,j2):
