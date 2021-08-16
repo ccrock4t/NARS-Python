@@ -67,21 +67,23 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
         if Config.DEBUG: print("tautology")
         return all_derived_sentences # can't do inference, it will result in tautology
 
+
+
+    if j1.value.frequency == 0 and j2.value.frequency == 0: return [] # can't do inference with 2 entirely negative premises
+
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
-    if isinstance(j1, NALGrammar.Sentences.Judgment):
-        if j1.value.frequency == 0 and j2.value.frequency == 0: return [] # can't do inference with 2 entirely negative premises
-        if (isinstance(j1,NALGrammar.Sentences.Judgment) and j1.is_event()) and (isinstance(j1,NALGrammar.Sentences.Judgment) and j2.is_event()): return [] # todo .. don't do inference with events, it isn't handled gracefully right now
-        # if j2.is_event():
-        #     eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
-        #     if j1.is_event():
-        #         projected_j2 = NALInferenceRules.Local.Projection(j2, j1.stamp.occurrence_time)
-        #         if projected_j2.value.confidence > eternalized_j2.value.confidence:
-        #             j2 = projected_j2
-        #         else:
-        #             j2 = eternalized_j2
-        #     else:
-        #         j2 = eternalized_j2
+    #if isinstance(j1, NALGrammar.Sentences.Judgment):
+    # if j2.is_event():
+    #     eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
+    #     if j1.is_event():
+    #         projected_j2 = NALInferenceRules.Local.Projection(j2, j1.stamp.occurrence_time)
+    #         if projected_j2.value.confidence > eternalized_j2.value.confidence:
+    #             j2 = projected_j2
+    #         else:
+    #             j2 = eternalized_j2
+    #     else:
+    #         j2 = eternalized_j2
 
     """
     ===============================================
@@ -103,9 +105,12 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
             derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
             add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
-        elif NALSyntax.Copula.is_temporal(j1_copula):
-             # dont do semantic inference with temporal copula
-             return all_derived_sentences
+        elif NALSyntax.Copula.is_temporal(j1_copula) \
+            or (isinstance(j1,NALGrammar.Sentences.Judgment)
+                and j1.is_event()) or (isinstance(j2,NALGrammar.Sentences.Judgment) and j2.is_event()):
+            #dont do semantic inference with temporal
+            # todo .. don't do inference with events, it isn't handled gracefully right now
+            return all_derived_sentences
         elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
             if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
                 """

@@ -11,6 +11,7 @@ import NALInferenceRules
 import numpy as np
 
 import NARSGUI
+from NALInferenceRules import TruthValueFunctions
 
 """
     Author: Christian Hahm
@@ -68,17 +69,26 @@ class Sentence(Array):
     def get_tense(self):
         return self.stamp.get_tense()
 
+    def get_expectation(self):
+        if self.is_event():
+            time_projected_truth_value = self.get_value_projected_to_current_time()
+            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
+                                                                     time_projected_truth_value.confidence)
+        else:
+            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence)
+
     def is_positive(self):
         """
             :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be positive."
+
         if self.is_event():
-            time_projected_truth_value = self.get_value_projected_to_current_time()
-            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
-                                                                     time_projected_truth_value.confidence) >= Config.POSITIVE_THRESHOLD
+            value = self.get_value_projected_to_current_time()
         else:
-            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) >= Config.POSITIVE_THRESHOLD
+            value = self.value
+
+        return NALInferenceRules.TruthValueFunctions.Expectation(value.frequency, value.confidence) >= Config.POSITIVE_THRESHOLD
 
     def is_negative(self):
         """
@@ -86,11 +96,11 @@ class Sentence(Array):
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be negative."
         if self.is_event():
-            time_projected_truth_value = self.get_value_projected_to_current_time()
-            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
-                                                                     time_projected_truth_value.confidence) < Config.NEGATIVE_THRESHOLD
+            value = self.get_value_projected_to_current_time()
         else:
-            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence) < Config.NEGATIVE_THRESHOLD
+            value = self.value
+
+        return NALInferenceRules.TruthValueFunctions.Expectation(value.frequency, value.confidence) < Config.NEGATIVE_THRESHOLD
 
     def get_value_projected_to_current_time(self):
         """
@@ -129,6 +139,12 @@ class Sentence(Array):
         dict[NARSGUI.NARSGUI.KEY_STRING] = self.get_formatted_string()
         dict[NARSGUI.NARSGUI.KEY_TRUTH_VALUE] = str(self.value)
         dict[NARSGUI.NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE] = None if self.stamp.occurrence_time is None else str(self.get_value_projected_to_current_time())
+        dict[NARSGUI.NARSGUI.KEY_EXPECTATION] = str(self.get_expectation())
+        dict[NARSGUI.NARSGUI.KEY_IS_POSITIVE] = "True" if self.is_positive() else "False"
+        if isinstance(self, Goal):
+            dict[NARSGUI.NARSGUI.KEY_PASSES_DECISION] = "True" if NALInferenceRules.Local.Decision(self) else "False"
+        else:
+            dict[NARSGUI.NARSGUI.KEY_PASSES_DECISION] = None
         dict[NARSGUI.NARSGUI.KEY_STRING_NOID] = self.get_formatted_string_no_id()
         dict[NARSGUI.NARSGUI.KEY_ID] = str(self.stamp.id)
         dict[NARSGUI.NARSGUI.KEY_OCCURRENCE_TIME] = self.stamp.occurrence_time

@@ -59,7 +59,7 @@ def F_Contraposition(f, c):
     wp = 0
     wn = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bnot(f), c)
     w = wn
-    f_cnt, c_cnt = NALInferenceRules.Helperfunctions.get_truthvalue_from_evidence(wp, w)
+    f_cnt, c_cnt = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
 
     return NALGrammar.Values.TruthValue(f_cnt, c_cnt)
 

@@ -50,6 +50,7 @@ class NARSGUI:
     KEY_STRING = "String"
     KEY_TRUTH_VALUE = "TruthValue"
     KEY_TIME_PROJECTED_TRUTH_VALUE = "TimeProjectedTruthValue"
+    KEY_EXPECTATION = "ProjectedExpectation"
     KEY_IS_ARRAY = "IsArray"
     KEY_STRING_NOID = "StringNoID"
     KEY_ID = "ID"
@@ -67,6 +68,8 @@ class NARSGUI:
     KEY_CLASS_NAME = "ClassName"
     KEY_OBJECT_STRING = "ObjectString"
     KEY_TERM_TYPE = "TermType"
+    KEY_IS_POSITIVE = "IsPositive"
+    KEY_PASSES_DECISION = "PassesDecision"
     KEY_LIST_BELIEFS = "ListBeliefs"
     KEY_LIST_DESIRES = "ListDesires"
     KEY_LIST_TERM_LINKS = "ListTermLinks"
@@ -418,9 +421,13 @@ class NARSGUI:
             index = selection[0]
             sentence_string = event.widget.get(index)
             self.gui_object_pipe.send(("getsentence", sentence_string, None))
-            sentence = self.gui_object_pipe.recv()
-            if sentence is not None:
-                self.draw_sentence_internal_data(sentence)
+            rcv = self.gui_object_pipe.recv()
+            if rcv is not None:
+                (object, content) = rcv
+                if object == "sentence":
+                    self.draw_sentence_internal_data(content)
+                elif object == "concept":
+                    self.draw_concept_internal_data(content)
 
     def listbox_concept_item_click_callback(self,event):
         selection = event.widget.curselection()
@@ -430,7 +437,7 @@ class NARSGUI:
             self.gui_object_pipe.send(("getconcept", concept_term_string, None))
             concept_item = self.gui_object_pipe.recv()
             if concept_item is not None:
-                self.draw_concept_internal_data(concept_item,concept_term_string)
+                self.draw_concept_internal_data(concept_item)
 
     def listbox_datastructure_item_click_callback(self,event):
         """
@@ -464,7 +471,7 @@ class NARSGUI:
             assert classname == NARSMemory.Concept.__name__ or classname == NARSDataStructures.Other.Task.__name__, "ERROR: Data Structure clickback only defined for Concept and Task"
 
             if classname == NARSMemory.Concept.__name__:
-                self.draw_concept_internal_data(item,item_string)
+                self.draw_concept_internal_data(item)
             elif classname == NARSDataStructures.Other.Task.__name__:
                 # window
                 item_info_window = tk.Toplevel()
@@ -521,11 +528,11 @@ class NARSGUI:
                                          content_click_callback=self.listbox_sentence_item_click_callback)
 
 
-    def draw_concept_internal_data(self, item, item_string):
+    def draw_concept_internal_data(self, item):
         # window
         classname = item[NARSGUI.KEY_CLASS_NAME]
         item_info_window = tk.Toplevel()
-        item_info_window.title(classname + "Internal Data: " + item_string)
+        item_info_window.title(classname + "Internal Data: " + item[NARSGUI.KEY_OBJECT_STRING])
         item_info_window.geometry('1100x700')
         # item_info_window.grab_set()  # lock the other windows until this window is exited
 
@@ -546,6 +553,28 @@ class NARSGUI:
                                column=column,
                                key_label="Term Type: ",
                                value_label=item[NARSGUI.KEY_TERM_TYPE])
+
+        row += 1
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Expectation: ",
+                               value_label=item[NARSGUI.KEY_EXPECTATION])
+
+        row += 1
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Is Positive? ",
+                               value_label=item[NARSGUI.KEY_IS_POSITIVE])
+
+        if item[NARSGUI.KEY_PASSES_DECISION] is not None:
+            row += 1
+            create_key_value_label(parent=item_info_window,
+                                   row=row,
+                                   column=column,
+                                   key_label="Passes Decision-Making Rule? ",
+                                   value_label=item[NARSGUI.KEY_PASSES_DECISION])
 
         row += 1
         if classname == NARSMemory.Concept.__name__:
@@ -652,11 +681,36 @@ class NARSGUI:
                                value_label=str("Eternal" if oc_time is None else oc_time))
 
         if oc_time is not None:
+            row += 1
             create_key_value_label(parent=item_info_window,
                                    row=row,
                                    column=column,
                                    key_label="Time projected Truth Value: ",
                                    value_label=sentence_to_draw[NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE])
+
+        row += 1
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Expectation: ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_EXPECTATION])
+
+
+        row += 1
+        create_key_value_label(parent=item_info_window,
+                               row=row,
+                               column=column,
+                               key_label="Is Positive? ",
+                               value_label=sentence_to_draw[NARSGUI.KEY_IS_POSITIVE])
+
+
+        if sentence_to_draw[NARSGUI.KEY_PASSES_DECISION] is not None:
+            row += 1
+            create_key_value_label(parent=item_info_window,
+                                   row=row,
+                                   column=column,
+                                   key_label="Passes Decision-Making Rule? ",
+                                   value_label=sentence_to_draw[NARSGUI.KEY_PASSES_DECISION])
 
         # sentence type
         row += 1

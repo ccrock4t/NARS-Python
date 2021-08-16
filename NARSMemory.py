@@ -7,6 +7,7 @@ import NALSyntax
 import NARSDataStructures.Bag
 import NARSDataStructures.Other
 import NARSDataStructures.ItemContainers
+import NALInferenceRules
 """
     Author: Christian Hahm
     Created: October 9, 2020
@@ -270,7 +271,16 @@ class Concept:
         """
             :return: If the highest-confidence belief says this statement is true
         """
+        if len(self.belief_table) == 0: return False
         return self.belief_table.peek().is_positive()
+
+    def get_expectation(self):
+        """
+            :return: If the highest-confidence belief says this statement is true
+        """
+        if len(self.belief_table) == 0: return None
+        belief = self.belief_table.peek()
+        return belief.get_expectation()
 
     def set_term_link(self, concept):
         """

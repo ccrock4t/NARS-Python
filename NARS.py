@@ -17,6 +17,7 @@ import NARSDataStructures.Other
 import NARSDataStructures.ItemContainers
 
 import Global
+from NALInferenceRules import TruthValueFunctions
 from NALInferenceRules.HelperFunctions import create_resultant_sentence_one_premise
 
 """
@@ -112,7 +113,6 @@ class NARS:
             if len(concept_to_consider.desire_table) > 0:
                 sentence = concept_to_consider.desire_table.peek()  # get most confident goal
                 self.process_goal_sentence(sentence)
-                concept_to_consider.desire_table.put(sentence)
 
                 # decay priority; take concept out of bag and replace
         concept_item = self.memory.concepts_bag.take_using_key(concept_item.key)
@@ -172,12 +172,13 @@ class NARS:
                 sentence_string = key
                 statement_start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
                 statement_end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
-                statement_string = sentence_string[statement_start_idx:statement_end_idx+1].replace(" ","")
+                statement_string = sentence_string[statement_start_idx:statement_end_idx+1]
                 statement_term = NALGrammar.Terms.Term.from_string(statement_string)
-                concept = self.memory.peek_concept_item(statement_term).object
+                concept_item = self.memory.peek_concept_item(statement_term)
+                concept = concept_item.object
 
                 if concept is None:
-                    Global.Global.NARS_object_pipe.send(None)
+                    Global.Global.NARS_object_pipe.send(None)  # couldn't get concept, maybe it was purged
                 else:
                     punctuation_str = sentence_string[statement_end_idx + 1]
                     if punctuation_str == NALSyntax.Punctuation.Judgment.value:
@@ -195,10 +196,10 @@ class NARS:
                         knowledge_sentence_ID = knowledge_sentence_str[knowledge_sentence_str.find(Global.Global.MARKER_ITEM_ID) + len(
                             Global.Global.MARKER_ITEM_ID):knowledge_sentence_str.rfind(Global.Global.MARKER_ID_END)]
                         if ID == knowledge_sentence_ID:
-                            Global.Global.NARS_object_pipe.send(knowledge_sentence.get_gui_info())
+                            Global.Global.NARS_object_pipe.send(("sentence",knowledge_sentence.get_gui_info()))
                             sent = True
                             break
-                    if not sent: Global.Global.NARS_object_pipe.send(None) # couldn't get sentence, maybe it was purged
+                    if not sent: Global.Global.NARS_object_pipe.send(("concept",concept_item.get_gui_info())) # couldn't get sentence, maybe it was purged
             elif command == "getconcept":
                 item = self.memory.concepts_bag.peek(key)
                 if item is not None:
@@ -239,13 +240,6 @@ class NARS:
         statement_concept_item = self.memory.peek_concept_item(statement_term)
         statement_concept = statement_concept_item.object
 
-        if statement_term.connector == NALSyntax.TermConnector.SequentialConjunction:
-            # derive individual components from conjunction
-            for statement in statement_term.subterms:
-                # statement subterms
-                self.process_task(NARSDataStructures.Other.Task(create_resultant_sentence_one_premise(sentence,
-                                                                                    statement,
-                                                                                    truth_value_function=None)))
 
         if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
             self.process_judgment_task(task,statement_concept)
@@ -276,7 +270,25 @@ class NARS:
         #   self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
         # add the judgment itself into concept's belief table
-        task_statement_concept.belief_table.put(j1)
+        current_belief = task_statement_concept.belief_table.take()
+
+        if current_belief is None:
+            revised_belief = j1
+        elif NALGrammar.Sentences.may_interact(j1,current_belief):
+            # do a Revision
+            revised_beliefs = NARSInferenceEngine.do_semantic_inference_two_premise(j1, current_belief)
+            if len(revised_beliefs) > 0:
+                revised_belief = revised_beliefs[0]
+            else:
+                revised_belief = j1
+        else:
+            # choose the better desire
+            revised_belief = NALInferenceRules.Local.Choice(j1,current_belief)
+
+        # store the most confident desire
+        task_statement_concept.belief_table.put(revised_belief)
+
+        #task_statement_concept.belief_table.put(j1)
 
 
     def process_question_task(self, task, task_statement_concept):
@@ -319,6 +331,14 @@ class NARS:
         Asserts.assert_task(task)
 
         j1 = task.sentence
+
+        statement_term = task.sentence.statement
+        if statement_term.connector == NALSyntax.TermConnector.SequentialConjunction:
+            # derive individual components from conjunction &/
+            for subterm in statement_term.subterms:
+                self.process_task(NARSDataStructures.Other.Task(create_resultant_sentence_one_premise(j1,
+                                                                                    subterm,
+                                                                                    truth_value_function=None)))
 
         """
             Initial Processing
@@ -389,7 +409,7 @@ class NARS:
         statement_concept: NARSMemory.Concept = self.memory.peek_concept_item(statement_term).object
 
         # see if it should be pursued
-        should_pursue = NALInferenceRules.Local.Decision(j1.value.frequency, j1.value.confidence)
+        should_pursue = NALInferenceRules.Local.Decision(j1)
         if not should_pursue: return  # Failed decision-making rule
 
         desire_event = statement_concept.belief_table.take()
@@ -398,21 +418,35 @@ class NARS:
             if desire_event.is_positive(): return  # Return if goal is already achieved
 
         if statement_term.is_operation():
-            self.execute_operation(j1.statement)
+            self.execute_operation(j1)
         else:
             best_explanation = None
             for explanation_concept_item in statement_concept.explanation_links:
                 explanation_concept: NARSMemory.Concept = explanation_concept_item.object
+                explanation_confidence = explanation_concept.belief_table.peek().value.confidence
+                precondition_statement = explanation_concept.belief_table.peek().statement.get_subject_term()
+
+                if precondition_statement.connector == NALSyntax.TermConnector.SequentialConjunction:
+                    # conjunction &/
+                    for subterm in precondition_statement.subterms:
+                        subterm_concept = self.memory.peek_concept_item(subterm).object
+                        if subterm_concept.is_positive():
+                            # strengthen for every positive precondition element
+                            explanation_confidence = NALInferenceRules.ExtendedBooleanOperators.bor(explanation_confidence, Config.CONFIDENCE_STRENGTHEN_VALUE)
+                            print('PREMISE IS TRUE: ' + str(subterm))
+
                 if best_explanation is None \
-                    or (explanation_concept.belief_table.peek().value.confidence > best_explanation.belief_table.peek().value.confidence):
+                    or (explanation_confidence > best_explanation.belief_table.peek().value.confidence):
                     # this is better than the best explanation found so far
                     best_explanation = explanation_concept
+
 
             # process with highest-confidence explanation
             results = self.process_sentence_semantic_inference(j1, best_explanation)
 
             for result in results:
                 self.process_task(NARSDataStructures.Other.Task(result))
+
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):
         """
@@ -454,16 +488,20 @@ class NARS:
 
         return results
 
-    def execute_operation(self, full_operation_statement):
+    def execute_operation(self, operation_goal):
         """
 
-        :param full_operation_statement: Including SELF, arguments, and Operation itself
+        :param operation_goal: Including SELF, arguments, and Operation itself
         :return:
         """
         # todo extract and use args
         # full_operation_term.get_subject_term()
-        operation = full_operation_statement.get_predicate_term()
-        Global.Global.print_to_output("EXE: ^" + str(operation))
-        operation_event = NALGrammar.Sentences.Judgment(full_operation_statement, NALGrammar.Values.TruthValue(),
+        operation = operation_goal.statement.get_predicate_term()
+        value = operation_goal.get_value_projected_to_current_time()
+        desirability = TruthValueFunctions.Expectation(value.frequency, value.confidence)
+        Global.Global.print_to_output("EXE: ^" + str(operation) + " based on desirability: " + str(desirability))
+        operation_event = NALGrammar.Sentences.Judgment(operation_goal.statement, NALGrammar.Values.TruthValue(),
                                                         occurrence_time=Global.Global.get_current_cycle_number())
-        self.process_task(NARSDataStructures.Other.Task(operation_event))
+        operation_task = NARSDataStructures.Other.Task(operation_event)
+        self.event_buffer.put_new(operation_task)
+        self.process_task(operation_task)

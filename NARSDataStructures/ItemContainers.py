@@ -178,6 +178,7 @@ class Item:
             Increase this item's priority to a high value
         """
         self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority, Config.PRIORITY_STRENGTHEN_VALUE)
+        if self.budget.priority > 0.95: self.budget.priority = 0.95
 
     def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):
         """
@@ -194,6 +195,12 @@ class Item:
         dict[NARSGUI.NARSGUI.KEY_OBJECT_STRING] = str(self.object)
         dict[NARSGUI.NARSGUI.KEY_TERM_TYPE] = type(self.object.get_term()).__name__
         if isinstance(self.object, NARSMemory.Concept):
+            dict[NARSGUI.NARSGUI.KEY_IS_POSITIVE] = "True" if self.object.is_positive() else "False"
+            if len(self.object.desire_table) > 0:
+                dict[NARSGUI.NARSGUI.KEY_PASSES_DECISION] = "True" if NALInferenceRules.Local.Decision(self.object.desire_table.peek()) else "False"
+            else:
+                dict[NARSGUI.NARSGUI.KEY_PASSES_DECISION] = None
+            dict[NARSGUI.NARSGUI.KEY_EXPECTATION] = self.object.get_expectation()
             dict[NARSGUI.NARSGUI.KEY_LIST_BELIEFS] = [str(belief[0]) for belief in self.object.belief_table]
             dict[NARSGUI.NARSGUI.KEY_LIST_DESIRES] = [str(desire[0]) for desire in self.object.desire_table]
             dict[NARSGUI.NARSGUI.KEY_LIST_TERM_LINKS] = [str(termlink.object) for termlink in self.object.term_links]

@@ -58,7 +58,7 @@ class Term(Array):
             :param term_string - String from which to construct the term
             :returns Term constructed using the string
         """
-
+        term_string = term_string.replace(" ", "")
         if term_string in cls.term_dict:
             return cls.term_dict[term_string]
 
@@ -321,8 +321,9 @@ class CompoundTerm(Term):
         """
             Create a compound term from a string representing a compound term
         """
-        subterms, connector = cls.parse_toplevel_subterms_and_connector(compound_term_string)
-        return simplify_term(cls(subterms, connector))
+        compound_term_string = compound_term_string.replace(" ", "")
+        subterms, connector, intervals = cls.parse_toplevel_subterms_and_connector(compound_term_string)
+        return simplify_term(cls(subterms, connector,intervals=intervals))
 
     @classmethod
     def parse_toplevel_subterms_and_connector(cls, compound_term_string):
@@ -333,6 +334,7 @@ class CompoundTerm(Term):
         """
         compound_term_string = compound_term_string.replace(" ","")
         subterms = []
+        intervals = []
         internal_string = compound_term_string[1:-1] # string with no outer parentheses () or set brackets [], {}
 
         # check for intensional/extensional set [a,b], {a,b}
@@ -361,8 +363,11 @@ class CompoundTerm(Term):
                 depth -= 1
 
             if c == NALSyntax.StatementSyntax.TermDivider.value and depth == 0:
-                subterm = Term.from_string(subterm_string)
-                subterms.append(subterm)
+                if subterm_string.isdigit():
+                    intervals.append(int(subterm_string))
+                else:
+                    subterm = Term.from_string(subterm_string)
+                    subterms.append(subterm)
                 subterm_string = ""
             else:
                 subterm_string += c
@@ -370,7 +375,7 @@ class CompoundTerm(Term):
         subterm = Term.from_string(subterm_string)
         subterms.append(subterm)
 
-        return subterms, connector
+        return subterms, connector, intervals
 
 
 
@@ -412,6 +417,7 @@ class StatementTerm(Term):
 
             Returns: top-level subject term, predicate term, copula, copula index
         """
+        statement_string = statement_string.replace(" ", "")
         # get copula
         copula, copula_idx = NALSyntax.Copula.get_top_level_copula(statement_string)
         assert (copula is not None), "Copula not found. Exiting.."
