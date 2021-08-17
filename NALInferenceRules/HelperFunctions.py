@@ -1,7 +1,8 @@
 import Config
+import Global
 import NALGrammar
 import NALSyntax
-from NALInferenceRules.TruthValueFunctions import TruthFunctionOnArrayAndRevise, TruthFunctionOnArray
+from NALInferenceRules.TruthValueFunctions import TruthFunctionOnArrayAndRevise, TruthFunctionOnArray,F_Deduction
 
 
 def get_truthvalue_from_evidence(wp, w):
@@ -45,39 +46,7 @@ def get_confidence_from_evidence(w):
     return w / (w + Config.k)
 
 
-def getevidentialvalues_from2sentences(j1, j2):
-    """
-        Input:
-            j1: Sentence <f1, c1>
 
-            j2: Sentence <f2, c2>
-        Returns:
-            f1, c1, f2, c2
-    """
-    return getevidentialvalues_fromsentence(j1), getevidentialvalues_fromsentence(j2)
-
-
-def getevidentialvalues_fromsentence(j):
-    """
-        Input:
-            j: Sentence <f, c>
-        Returns:
-            f, c
-    """
-    return j.get_value_projected_to_current_time().frequency, j.get_value_projected_to_current_time().confidence
-
-
-def getevidence_from2sentences(j1, j2):
-    """
-        Input:
-            j1: Sentence <f1, c1>
-
-            j2: Sentence <f2, c2>
-        Returns:
-            w1+, w1, w1-, w2+, w2, w2-
-    """
-    (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
-    return get_evidence_fromfreqconf(f1, c1), get_evidence_fromfreqconf(f2, c2)
 
 def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_function):
     """
@@ -89,12 +58,13 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     :return:
     """
     result_statement = NALGrammar.Terms.simplify_term(result_statement)
+
     result_type = premise_result_type(j1,j2)
 
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal :
         # Judgment or Goal
         # Get Truth Value
-        (f1, c1), (f2, c2) = getevidentialvalues_from2sentences(j1, j2)
+        (f1, c1), (f2, c2) = (j1.value.frequency, j1.value.confidence), (j2.value.frequency, j2.value.confidence)
         result_truth_array = None
         if j1.is_array and j2.is_array:
             result_truth, result_truth_array = TruthFunctionOnArrayAndRevise(j1.truth_values,
@@ -103,22 +73,29 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
         else:
             result_truth = truth_value_function(f1, c1, f2, c2)
 
-        if result_type == NALGrammar.Sentences.Judgment:
-            occurrence_time = None
-            if (isinstance(result_statement, NALGrammar.Terms.StatementTerm)
-                and NALSyntax.Copula.is_first_order(result_statement.get_copula())) \
-                    or (not isinstance(result_statement, NALGrammar.Terms.StatementTerm)
-                        and isinstance(result_statement, NALGrammar.Terms.CompoundTerm)
-                        and not NALSyntax.TermConnector.is_first_order(result_statement.connector)):
-                # if the result is a first-order statement,  or a compound statement, it may have an occurrence time
-                if j1.is_event():
-                    occurrence_time = j1.stamp.occurrence_time
-                elif j2.is_event():
-                        occurrence_time = j2.stamp.occurrence_time
+        occurrence_time = None
 
+        # if the result is a first-order statement,  or a compound statement, it may need an occurrence time
+        if (isinstance(result_statement, NALGrammar.Terms.StatementTerm)
+            and NALSyntax.Copula.is_first_order(result_statement.get_copula())) \
+                or (not isinstance(result_statement, NALGrammar.Terms.StatementTerm)
+                    and isinstance(result_statement, NALGrammar.Terms.CompoundTerm)
+                    and not NALSyntax.TermConnector.is_first_order(result_statement.connector)):
+            if j1.is_event():
+                occurrence_time = j1.stamp.occurrence_time
+            elif j2.is_event():
+                #todo dont map to j2 occurrence times
+                occurrence_time = j2.stamp.occurrence_time
+
+        if result_type == NALGrammar.Sentences.Judgment:
             result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
                                                    occurrence_time=occurrence_time)
         elif result_type == NALGrammar.Sentences.Goal:
+            if isinstance(result_statement,NALGrammar.Terms.CompoundTerm):
+                result_statement, result_truth = simplify_compound_event_goal(result_statement, result_truth)
+                if result_statement is None:
+                    return None # goal is already true
+
             result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array))
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
@@ -129,6 +106,41 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     stamp_and_print_inference_rule(result, truth_value_function, [j1.get_formatted_string(),j2.get_formatted_string()])
 
     return result
+
+
+def simplify_compound_event_goal(compound_goal_statement, value):
+    if not NALSyntax.TermConnector.is_conjunction(compound_goal_statement.connector): return compound_goal_statement, value
+    # conjunction &/
+    new_subterms = []
+    new_value = value
+    for subterm in compound_goal_statement.subterms:
+        subterm_concept = Global.Global.NARS.memory.peek_concept_item(subterm).object
+        if subterm_concept.is_positive():
+            belief = subterm_concept.belief_table.peek()
+            # strengthen for every positive precondition element
+            new_value = F_Deduction(new_value.frequency,
+                                  new_value.confidence,
+                                  belief.get_present_value().frequency,
+                                  belief.get_present_value().confidence)
+            print('PREMISE IS TRUE: ' + str(subterm))
+        else:
+            new_subterms.append(subterm)
+
+    if len(new_subterms) == len(compound_goal_statement.subterms):
+        # nothing could be simplified
+        return compound_goal_statement, value
+    else:
+        if len(new_subterms) > 1:
+            new_statement = NALGrammar.Terms.CompoundTerm(subterms=new_subterms,
+                                                          term_connector=NALSyntax.TermConnector.SequentialConjunction)
+            #todo intervals
+        elif len(new_subterms) == 1:
+            new_statement = new_subterms[0]
+        else:
+            return None, None
+
+    print('PREMISE IS SIMPLIFIED ' + str(new_statement) + ' FROM ' + str(compound_goal_statement))
+    return new_statement, new_value
 
 def create_resultant_sentence_one_premise(j, result_statement, truth_value_function):
     """

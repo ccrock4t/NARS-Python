@@ -43,7 +43,7 @@ def assert_sentence_equivalence(j):
     :return:
     """
     assert_sentence(j)
-    assert NALSyntax.Copula.is_symmetric(j.statement.get_copula()) and not NALSyntax.Copula.is_first_order(j.statement.get_copula()), str(j) + " must be an equivalence statement"
+    assert NALSyntax.Copula.is_symmetric(j.statement.get_copula()) and not j.statement.is_first_order(), str(j) + " must be an equivalence statement"
 
 def assert_sentence_similarity(j):
     """

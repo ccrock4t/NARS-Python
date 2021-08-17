@@ -5,6 +5,7 @@
 """
 import Asserts
 import Config
+import Global
 import NALGrammar
 import NALInferenceRules.Immediate
 import NALInferenceRules.Syllogistic
@@ -102,6 +103,10 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             # j1 = j2
             """
             if isinstance(j1,NALGrammar.Sentences.Question): return all_derived_sentences  # can't do revision with questions
+
+            if j1.is_event() and j2.is_event():
+                j1 = NALInferenceRules.Local.Projection(j1, Global.Global.get_current_cycle_number())
+                j2 = NALInferenceRules.Local.Projection(j2, Global.Global.get_current_cycle_number())
 
             derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
             add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)

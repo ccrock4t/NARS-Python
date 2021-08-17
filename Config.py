@@ -7,10 +7,10 @@
     System Parameters
 """
 k = 1 # evidential horizon
-T = 2/3 # decision rule (goal decision-making) threshold
+T = 0.51 # decision rule (goal decision-making) threshold
 
-POSITIVE_THRESHOLD = 2/3
-NEGATIVE_THRESHOLD = 1/3
+POSITIVE_THRESHOLD = 0.51
+NEGATIVE_THRESHOLD = 0.51
 
 MEMORY_CONCEPT_CAPACITY = 10000 # how many concepts can this NARS have?
 EVENT_BUFFER_CAPACITY = 10
@@ -33,6 +33,7 @@ ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each i
 """
     Inference
 """
+DESIRE_PROJECTION_DECAY = 0.85
 TRUTH_PROJECTION_DECAY = 0.85
 
 """

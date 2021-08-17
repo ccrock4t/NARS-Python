@@ -334,7 +334,7 @@ class NARS:
 
         statement_term = task.sentence.statement
         if statement_term.connector == NALSyntax.TermConnector.SequentialConjunction:
-            # derive individual components from conjunction &/
+            # derive individual component goals from conjunction &/
             for subterm in statement_term.subterms:
                 self.process_task(NARSDataStructures.Other.Task(create_resultant_sentence_one_premise(j1,
                                                                                     subterm,
@@ -422,30 +422,35 @@ class NARS:
         else:
             best_explanation = None
             for explanation_concept_item in statement_concept.explanation_links:
-                explanation_concept: NARSMemory.Concept = explanation_concept_item.object
-                explanation_confidence = explanation_concept.belief_table.peek().value.confidence
-                precondition_statement = explanation_concept.belief_table.peek().statement.get_subject_term()
+                # process with highest-confidence explanation
+                results = self.process_sentence_semantic_inference(j1, explanation_concept_item.object)
 
-                if precondition_statement.connector == NALSyntax.TermConnector.SequentialConjunction:
-                    # conjunction &/
-                    for subterm in precondition_statement.subterms:
-                        subterm_concept = self.memory.peek_concept_item(subterm).object
-                        if subterm_concept.is_positive():
-                            # strengthen for every positive precondition element
-                            explanation_confidence = NALInferenceRules.ExtendedBooleanOperators.bor(explanation_confidence, Config.CONFIDENCE_STRENGTHEN_VALUE)
-                            print('PREMISE IS TRUE: ' + str(subterm))
+                for result in results:
+                    self.process_task(NARSDataStructures.Other.Task(result))
+                # explanation_concept: NARSMemory.Concept = explanation_concept_item.object
+                # explanation_confidence = explanation_concept.belief_table.peek().value.confidence
+                # precondition_statement = explanation_concept.belief_table.peek().statement.get_subject_term()
+                #
+                # if precondition_statement.connector == NALSyntax.TermConnector.SequentialConjunction:
+                #     # conjunction &/
+                #     for subterm in precondition_statement.subterms:
+                #         subterm_concept = self.memory.peek_concept_item(subterm).object
+                #         if subterm_concept.is_positive():
+                #             # strengthen for every positive precondition element
+                #             explanation_confidence = NALInferenceRules.ExtendedBooleanOperators.bor(explanation_confidence, Config.CONFIDENCE_STRENGTHEN_VALUE)
+                #             print('PREMISE IS TRUE: ' + str(subterm))
 
-                if best_explanation is None \
-                    or (explanation_confidence > best_explanation.belief_table.peek().value.confidence):
-                    # this is better than the best explanation found so far
-                    best_explanation = explanation_concept
+                # if best_explanation is None \
+                #     or (explanation_confidence > best_explanation.belief_table.peek().value.confidence):
+                #     # this is better than the best explanation found so far
+                #     best_explanation = explanation_concept
 
 
             # process with highest-confidence explanation
-            results = self.process_sentence_semantic_inference(j1, best_explanation)
-
-            for result in results:
-                self.process_task(NARSDataStructures.Other.Task(result))
+            # results = self.process_sentence_semantic_inference(j1, best_explanation)
+            #
+            # for result in results:
+            #     self.process_task(NARSDataStructures.Other.Task(result))
 
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):
@@ -497,7 +502,7 @@ class NARS:
         # todo extract and use args
         # full_operation_term.get_subject_term()
         operation = operation_goal.statement.get_predicate_term()
-        value = operation_goal.get_value_projected_to_current_time()
+        value = operation_goal.get_present_value()
         desirability = TruthValueFunctions.Expectation(value.frequency, value.confidence)
         Global.Global.print_to_output("EXE: ^" + str(operation) + " based on desirability: " + str(desirability))
         operation_event = NALGrammar.Sentences.Judgment(operation_goal.statement, NALGrammar.Values.TruthValue(),

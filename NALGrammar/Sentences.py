@@ -71,7 +71,7 @@ class Sentence(Array):
 
     def get_expectation(self):
         if self.is_event():
-            time_projected_truth_value = self.get_value_projected_to_current_time()
+            time_projected_truth_value = self.get_present_value()
             return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
                                                                      time_projected_truth_value.confidence)
         else:
@@ -84,7 +84,7 @@ class Sentence(Array):
         assert not isinstance(self,Question),"ERROR: Question cannot be positive."
 
         if self.is_event():
-            value = self.get_value_projected_to_current_time()
+            value = self.get_present_value()
         else:
             value = self.value
 
@@ -96,21 +96,27 @@ class Sentence(Array):
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be negative."
         if self.is_event():
-            value = self.get_value_projected_to_current_time()
+            value = self.get_present_value()
         else:
+            # eternal statements are eternally valid
             value = self.value
 
         return NALInferenceRules.TruthValueFunctions.Expectation(value.frequency, value.confidence) < Config.NEGATIVE_THRESHOLD
 
-    def get_value_projected_to_current_time(self):
+    def get_present_value(self):
         """
             If this is an event, project its value to the current time
         """
         if self.is_event():
+            decay = Config.TRUTH_PROJECTION_DECAY
+            if isinstance(self,Goal):
+                decay = Config.DESIRE_PROJECTION_DECAY
+
             return NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
                                                            self.value.confidence,
                                                            self.stamp.occurrence_time,
-                                                           Global.Global.get_current_cycle_number())
+                                                           Global.Global.get_current_cycle_number(),
+                                                           decay=decay)
         else:
             return self.value
 
@@ -122,7 +128,7 @@ class Sentence(Array):
     def get_formatted_string_no_id(self):
         string = self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.is_event(): string = string + " " + self.get_tense().value
-        if self.value is not None: string = string + " " + self.get_value_projected_to_current_time().get_formatted_string()
+        if self.value is not None: string = string + " " + self.get_present_value().get_formatted_string()
         return string
 
     def mutually_add_to_interacted_sentences(self, other_sentence):
@@ -138,7 +144,7 @@ class Sentence(Array):
         dict = {}
         dict[NARSGUI.NARSGUI.KEY_STRING] = self.get_formatted_string()
         dict[NARSGUI.NARSGUI.KEY_TRUTH_VALUE] = str(self.value)
-        dict[NARSGUI.NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE] = None if self.stamp.occurrence_time is None else str(self.get_value_projected_to_current_time())
+        dict[NARSGUI.NARSGUI.KEY_TIME_PROJECTED_TRUTH_VALUE] = None if self.stamp.occurrence_time is None else str(self.get_present_value())
         dict[NARSGUI.NARSGUI.KEY_EXPECTATION] = str(self.get_expectation())
         dict[NARSGUI.NARSGUI.KEY_IS_POSITIVE] = "True" if self.is_positive() else "False"
         if isinstance(self, Goal):
@@ -196,13 +202,18 @@ class Goal(Sentence):
         goal ::= <statement>! %<desire-value>%
     """
 
-    def __init__(self, statement, value):
+    def __init__(self, statement, value, occurrence_time=None):
         Asserts.assert_valid_statement(statement)
+        if occurrence_time is None:
+            occurrence_time = Global.Global.get_current_cycle_number()
         Sentence.__init__(self,
                           statement,
                           value,
                           NALSyntax.Punctuation.Goal,
-                          occurrence_time=Global.Global.get_current_cycle_number())
+                          occurrence_time=occurrence_time)
+
+
+
 
 class Stamp:
     """

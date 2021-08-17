@@ -174,7 +174,6 @@ def ConditionalConjunctionalAbduction(j1, j2):
 
     result_statement: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
 
-
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
                                                                  result_statement,

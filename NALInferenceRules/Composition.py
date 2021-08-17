@@ -47,12 +47,10 @@ def DisjunctionOrIntensionalIntersection(j1, j2):
     Asserts.assert_sentence_asymmetric(j1)
     Asserts.assert_sentence_asymmetric(j2)
 
-    j1_copula = j1.statement.get_copula()
-    j2_copula = j2.statement.get_copula()
     # Statement
     connector = None
     copula = None
-    if NALSyntax.Copula.is_first_order(j1_copula) and NALSyntax.Copula.is_first_order(j2_copula):
+    if j1.statement.is_first_order() and j2.statement.is_first_order():
         connector = NALSyntax.TermConnector.IntensionalIntersection
         copula = NALSyntax.Copula.Inheritance
     else:
@@ -146,12 +144,10 @@ def ConjunctionOrExtensionalIntersection(j1, j2):
     Asserts.assert_sentence_asymmetric(j1)
     Asserts.assert_sentence_asymmetric(j2)
 
-    j1_copula = j1.statement.get_copula()
-    j2_copula = j2.statement.get_copula()
     # Statement
     connector = None
     copula = None
-    if NALSyntax.Copula.is_first_order(j1_copula) and NALSyntax.Copula.is_first_order(j2_copula):
+    if j1.statement.is_first_order() and j2.statement.is_first_order():
         connector = NALSyntax.TermConnector.ExtensionalIntersection # &
         copula = NALSyntax.Copula.Inheritance
     else:

@@ -477,6 +477,11 @@ class StatementTerm(Term):
             and self.get_subject_term().connector == NALSyntax.TermConnector.Product \
             and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF # product and first term is self means this is an operation
 
+    def is_first_order(self):
+        return NALSyntax.Copula.is_first_order(self.copula)
+
+    def is_symmetric(self):
+        return NALSyntax.Copula.is_symmetric(self.copula)
 
 class ArrayTerm(CompoundTerm):
     """

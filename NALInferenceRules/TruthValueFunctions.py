@@ -76,6 +76,8 @@ def F_Deduction(f1, c1, f2, c2):
     return NALGrammar.Values.TruthValue(f3, c3)
 
 
+
+
 def F_Analogy(f1, c1, f2, c2):
     """
         f_ana: AND(f1,f2)
@@ -122,6 +124,9 @@ def F_Induction(f1, c1, f2, c2):
     w = ExtendedBooleanOperators.band(f2, c1, c2)
     f_ind, c_ind = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.Values.TruthValue(f_ind, c_ind)
+
+    ExtendedBooleanOperators.band(f1, f2) * ExtendedBooleanOperators.bnot (ExtendedBooleanOperators.bor(f2))
+
 
 
 def F_Exemplification(f1, c1, f2, c2):
@@ -178,7 +183,7 @@ def F_Difference(f1, c1, f2, c2):
     return NALGrammar.Values.TruthValue(f3, c3)
 
 
-def F_Projection(frequency, confidence, t_B, t_T):
+def F_Projection(frequency, confidence, t_B, t_T, decay=Config.TRUTH_PROJECTION_DECAY):
     """
         Time Projection
 
@@ -186,7 +191,7 @@ def F_Projection(frequency, confidence, t_B, t_T):
         to another occurrence time (t_T)
     """
     if t_B == t_T: return NALGrammar.Values.TruthValue(frequency, confidence)
-    projected_confidence = confidence * (Config.TRUTH_PROJECTION_DECAY ** abs(t_B - t_T))
+    projected_confidence = confidence * (decay ** abs(t_B - t_T))
     return NALGrammar.Values.TruthValue(frequency, projected_confidence)
 
 

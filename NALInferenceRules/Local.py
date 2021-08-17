@@ -69,7 +69,9 @@ def Choice(j1, j2):
     Asserts.assert_sentence(j2)
 
     # Truth Value
-    (f1, c1), (f2, c2) = HelperFunctions.getevidentialvalues_from2sentences(j1, j2)
+    j1_value = j1.get_present_value()
+    j2_value = j2.get_present_value()
+    (f1, c1), (f2, c2) = (j1_value.frequency, j1_value.confidence), (j2_value.frequency, j2_value.confidence)
 
     # Make the choice
     if j1.statement == j2.statement:
@@ -103,7 +105,7 @@ def Decision(j):
          Returns:
            True or false, whether to pursue the goal
     """
-    value = j.get_value_projected_to_current_time()
+    value = j.get_present_value()
     desirability = TruthValueFunctions.Expectation(value.frequency, value.confidence)
     return desirability > Config.T
 
@@ -137,9 +139,14 @@ def Projection(j, occurrence_time):
     """
     Asserts.assert_sentence(j)
 
+
+    result_truth = TruthValueFunctions.F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)
+
+
     if isinstance(j, NALGrammar.Sentences.Judgment):
-        result_truth = TruthValueFunctions.F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)
         result = NALGrammar.Sentences.Judgment(j.statement, result_truth, occurrence_time=occurrence_time)
+    elif isinstance(j, NALGrammar.Sentences.Goal):
+        result = NALGrammar.Sentences.Goal(j.statement, result_truth, occurrence_time=occurrence_time)
     elif isinstance(j, NALGrammar.Sentences.Question):
         assert "error"
 

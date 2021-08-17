@@ -90,7 +90,7 @@ class Table(Depq):
 
         confidence = sentence.value.confidence
         if sentence.is_event():
-            confidence = sentence.get_value_projected_to_current_time().confidence
+            confidence = sentence.get_present_value().confidence
 
         Depq._insert_object(self, sentence, confidence)
 

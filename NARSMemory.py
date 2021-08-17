@@ -74,7 +74,7 @@ class Memory:
             subject_concept.set_term_link(new_concept)
             predicate_concept.set_term_link(new_concept)
 
-            if not NALSyntax.Copula.is_first_order(term.get_copula()):
+            if not term.is_first_order():
                 # implication statement
                 # do prediction/explanation linking with subterms
                 subject_concept.set_prediction_link(new_concept)
@@ -141,7 +141,7 @@ class Memory:
                     # return this statement concept
                     related_concepts.append(term_linked_concept)
 
-                    if not NALSyntax.Copula.is_first_order(term_linked_concept.term.get_copula()): return related_concepts
+                    if not term_linked_concept.term.is_first_order(): return related_concepts
 
                     # if it's first-order, that means the original concept is higher-order
                     # so also try for a related higher-order concept below
