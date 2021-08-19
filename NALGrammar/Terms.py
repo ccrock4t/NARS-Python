@@ -141,9 +141,9 @@ class VariableTerm(Term):
         self.variable_type = variable_type
         self.variable_symbol = VariableTerm.QUERY_SYM if variable_type == VariableTerm.Type.Query else VariableTerm.VARIABLE_SYM
         self.dependency_list = dependency_list
-        super().__init__(self.get_formatted_string())
+        super().__init__(self.create_formatted_string())
 
-    def get_formatted_string(self):
+    def create_formatted_string(self):
         dependency_string = ""
         if self.dependency_list is not None:
             dependency_string = "("
@@ -272,7 +272,7 @@ class CompoundTerm(Term):
                     if subterm.is_array:
                         dimensions = subterm.get_dimensions()
 
-        Term.__init__(self,term_string=self.get_formatted_string(),dimensions=dimensions)
+        Term.__init__(self,term_string=self.create_formatted_string(),dimensions=dimensions)
 
     def is_intensional_set(self):
         return self.connector == NALSyntax.TermConnector.IntensionalSetStart
@@ -283,7 +283,7 @@ class CompoundTerm(Term):
     def is_set(self):
         return self.is_intensional_set() or self.is_extensional_set()
 
-    def get_formatted_string(self):
+    def create_formatted_string(self):
         if self.is_set():
             string = self.connector.value
         else:
@@ -386,14 +386,27 @@ class StatementTerm(Term):
         A special kind of compound term with a subject, predicate, and copula.
 
         (P --> Q)
+
+
     """
 
-    def __init__(self, subject_term: Term, predicate_term, copula, dimensions=None):
+    def __init__(self, subject_term: Term, predicate_term, copula, interval=0, dimensions=None):
+        """
+        :param subject_term:
+        :param predicate_term:
+        :param copula:
+        :param interval: If first-order (an event):
+                        the number of working cycles, i.e. the interval, before the event, if this event was derived from a compound
+                        If higher-order (predictive implication)
+                         the number of working cycles, i.e. the interval, between the subject and predicate events
+        :param dimensions:
+        """
         Asserts.assert_term(subject_term)
         Asserts.assert_term(predicate_term)
 
         self.connector = None
         self.subterms = [subject_term, predicate_term]
+        self.interval = interval
 
         self.copula = None
         if copula is not None:
@@ -407,7 +420,7 @@ class StatementTerm(Term):
                 if subterm.is_array:
                     dimensions = subterm.get_dimensions()
 
-        Term.__init__(self,term_string=self.get_formatted_string(),dimensions=dimensions)
+        Term.__init__(self,term_string=self.create_formatted_string(),dimensions=dimensions)
 
 
     @classmethod
@@ -431,8 +444,6 @@ class StatementTerm(Term):
                                            copula=copula)
 
         return statement_term
-
-
 
     def _calculate_syntactic_complexity(self):
         """
@@ -461,15 +472,29 @@ class StatementTerm(Term):
     def get_copula_string(self):
         return str(self.get_copula().value)
 
-    def get_formatted_string(self):
+    def create_formatted_string(self):
         """
+            Returns the term's string.
+
+            This is very important, because terms are compared for equality using this string.
+
             returns: (Subject copula Predicate)
         """
         string = NALSyntax.StatementSyntax.Start.value + \
-           self.get_subject_term().get_formatted_string() + \
-           " " + self.get_copula_string() + " " + \
-           self.get_predicate_term().get_formatted_string() \
-           + NALSyntax.StatementSyntax.End.value
+           self.get_subject_term().get_formatted_string()
+
+        is_fo = NALSyntax.Copula.is_first_order(self.copula)
+        if not is_fo and self.interval > 0:
+            string = string[:-1] + \
+                     NALSyntax.StatementSyntax.TermDivider.value + \
+                     str(self.interval) + \
+                     string[-1]
+
+        string += " " + self.get_copula_string() + " "
+
+        string += self.get_predicate_term().get_formatted_string() + \
+           NALSyntax.StatementSyntax.End.value
+
         return string
 
     def is_operation(self):

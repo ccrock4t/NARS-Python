@@ -8,9 +8,11 @@
 """
 k = 1 # evidential horizon
 T = 0.51 # decision rule (goal decision-making) threshold
+MINDFULNESS = 0.8
 
-POSITIVE_THRESHOLD = 0.51
-NEGATIVE_THRESHOLD = 0.51
+
+POSITIVE_THRESHOLD = 2/3
+NEGATIVE_THRESHOLD = 1/3
 
 MEMORY_CONCEPT_CAPACITY = 10000 # how many concepts can this NARS have?
 EVENT_BUFFER_CAPACITY = 10
@@ -20,14 +22,16 @@ NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = 10 # The number 
 NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = 10 # The number of times to look for a semantically related belief to interact with
 PRIORITY_DECAY_MULTIPLIER = 0.8 # value in [0,1] multiplied w/ priority during priority decay
 PRIORITY_STRENGTHEN_VALUE = 0.02 # priority strengthen bor multiplier when concept is activated
-CONFIDENCE_STRENGTHEN_VALUE = 0.5 # confidence strengthen bor multiplier when conjunction element is true
 ACTIONS_PER_CYCLE = 5
+
+WORKING_CYCLE_DELAY = 0 # in milliseconds
 
 
 """
     GUI
 """
-DEBUG = False # set to true for useful debug statements
+gui_use_interface = False
+DEBUG = True # set to true for useful debug statements
 ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = False # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
 
 """
@@ -60,17 +64,14 @@ DEFAULT_CONCEPT_EXPECTATION = 0.6
 DEFAULT_CONCEPT_EXPECTATION_GOAL = 0.6
 
 DEFAULT_JUDGMENT_FREQUENCY = 1.0
-DEFAULT_JUDGMENT_CONFIDENCE = 0.9
-DEFAULT_JUDGMENT_PRIORITY = 0.8
-DEFAULT_JUDGMENT_DURABILITY = 0.5
+DEFAULT_JUDGMENT_CONFIDENCE = 1.0 / (1.0 + k)
 
+DEFAULT_JUDGMENT_PRIORITY = 0.9
 DEFAULT_QUESTION_PRIORITY = 0.9
-DEFAULT_QUESTION_DURABILITY = 0.9
+DEFAULT_GOAL_PRIORITY = 0.9
+DEFAULT_QUEST_PRIORITY = 0.9
 
 DEFAULT_GOAL_FREQUENCY = 1.0
 DEFAULT_GOAL_CONFIDENCE = 0.9
-DEFAULT_GOAL_PRIORITY = 0.9
-DEFAULT_GOAL_DURABILITY = 0.9
 
-DEFAULT_QUEST_PRIORITY = 0.9
-DEFAULT_QUEST_DURABILITY = 0.9
+

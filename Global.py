@@ -2,7 +2,7 @@
     Author: Christian Hahm
     Created: December 24, 2020
 """
-
+import Config
 import NARSGUI
 import NALGrammar
 
@@ -30,8 +30,6 @@ class Global:
     """
         GUI
     """
-    gui_use_internal_data = True
-    gui_use_interface = True
     NARS_object_pipe = None
     NARS_string_pipe = None
 
@@ -41,12 +39,14 @@ class Global:
 
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
+        print(msg, flush=True)
         data_structure_name = None
         data_structure_len = 0
-        if not(data_structure is cls.NARS.memory.concepts_bag or data_structure is cls.NARS.event_buffer or data_structure is None): return # must be a valid data structure
-        if data_structure is not None: data_structure_name = (str(data_structure), type(data_structure).__name__)
-        if data_structure is not None: data_structure_len = len(data_structure)
-        cls.NARS_string_pipe.send(("print", msg, data_structure_name,data_structure_len))
+        if not(data_structure is cls.NARS.memory.concepts_bag or data_structure is cls.NARS.temporal_module or data_structure is None): return # must be a valid data structure
+        if data_structure is not None:
+            data_structure_name = (str(data_structure), type(data_structure).__name__)
+            data_structure_len = len(data_structure)
+        if Config.gui_use_interface: cls.NARS_string_pipe.send(("print", msg, data_structure_name,data_structure_len))
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):
@@ -65,6 +65,6 @@ class Global:
             Set global paused variable and GUI
         """
         cls.paused = paused
-        cls.NARS_string_pipe.send(("paused", paused, "guibox",0))
+        if Config.gui_use_interface: cls.NARS_string_pipe.send(("paused", paused, "guibox",0))
 
 

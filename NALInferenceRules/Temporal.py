@@ -44,11 +44,13 @@ def TemporalInduction(j1, j2):
     elif j1.stamp.occurrence_time < j2.stamp.occurrence_time:
         # j1 =/> j2
         result_statement = NALGrammar.Terms.StatementTerm(j1_statement_term, j2_statement_term,
-                                                          NALSyntax.Copula.PredictiveImplication)
+                                                          NALSyntax.Copula.PredictiveImplication,
+                                                          interval=HelperFunctions.convert_to_interval(abs(j2.stamp.occurrence_time - j1.stamp.occurrence_time)))
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 =/> j1
         result_statement = NALGrammar.Terms.StatementTerm(j2_statement_term, j1_statement_term,
-                                                          NALSyntax.Copula.PredictiveImplication)
+                                                          NALSyntax.Copula.PredictiveImplication,
+                                                          interval=HelperFunctions.convert_to_interval(abs(j2.stamp.occurrence_time - j1.stamp.occurrence_time)))
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
@@ -128,11 +130,12 @@ def TemporalIntersection(j1, j2):
         # j1 &/ j2
         result_statement = NALGrammar.Terms.CompoundTerm([j1_statement_term, j2_statement_term],
                                                           NALSyntax.TermConnector.SequentialConjunction,
-                                                         intervals=[int(math.log(j2.stamp.occurrence_time - j1.stamp.occurrence_time))])
+                                                         intervals=[HelperFunctions.convert_to_interval(abs(j2.stamp.occurrence_time - j1.stamp.occurrence_time))])
     elif j2.stamp.occurrence_time < j1.stamp.occurrence_time:
         # j2 &/ j1
         result_statement = NALGrammar.Terms.CompoundTerm([j2_statement_term, j1_statement_term],
-                                                          NALSyntax.TermConnector.SequentialConjunction)
+                                                          NALSyntax.TermConnector.SequentialConjunction,
+                                                         intervals=[HelperFunctions.convert_to_interval(abs(j2.stamp.occurrence_time - j1.stamp.occurrence_time))])
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,

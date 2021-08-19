@@ -63,13 +63,13 @@ class Memory:
                 if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
                         and not isinstance(subterm,
                                            NALGrammar.Terms.ArrayTermElementTerm):  # don't create concepts for variables or array elements
-                    subconcept = self.peek_concept_item(subterm).object
+                    subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
                     new_concept.set_term_link(subconcept)
 
         elif isinstance(term, NALGrammar.Terms.StatementTerm):
-            subject_concept = self.peek_concept_item(term.get_subject_term()).object
-            predicate_concept = self.peek_concept_item(term.get_predicate_term()).object
+            subject_concept = self.peek_concept(term.get_subject_term())
+            predicate_concept = self.peek_concept(term.get_predicate_term())
 
             subject_concept.set_term_link(new_concept)
             predicate_concept.set_term_link(new_concept)
@@ -81,6 +81,9 @@ class Memory:
                 predicate_concept.set_explanation_link(new_concept)
 
         return self.concepts_bag.peek(concept_key)
+
+    def peek_concept(self, term):
+        return self.peek_concept_item(term).object
 
     def peek_concept_item(self, term):
         """

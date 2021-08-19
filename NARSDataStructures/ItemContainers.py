@@ -49,7 +49,7 @@ class ItemContainer:
         # put item into lookup table
         self.item_lookup_dict[item.key] = item
 
-        if Global.Global.gui_use_internal_data:
+        if Config.gui_use_interface:
             Global.Global.print_to_output(str(item), data_structure=self)
             ItemContainer.item_archive[item.key] = item
 
@@ -63,7 +63,7 @@ class ItemContainer:
         """
         item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
 
-        if Global.Global.gui_use_internal_data:
+        if Config.gui_use_interface:
             Global.Global.remove_from_output(str(item), data_structure=self)
 
         return item
@@ -173,11 +173,11 @@ class Item:
         """
         return min(int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100, Config.BAG_NUMBER_OF_BUCKETS - 1)
 
-    def strengthen(self):
+    def strengthen(self,multiplier= Config.PRIORITY_STRENGTHEN_VALUE):
         """
             Increase this item's priority to a high value
         """
-        self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority, Config.PRIORITY_STRENGTHEN_VALUE)
+        self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority,)
         if self.budget.priority > 0.95: self.budget.priority = 0.95
 
     def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):

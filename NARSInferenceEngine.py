@@ -33,9 +33,6 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     Asserts.assert_sentence(j1)
     Asserts.assert_sentence(j2)
 
-    if j1.statement.connector is not None or j2.statement.connector is not None:
-        return []
-
     """
     ===============================================
     ===============================================
@@ -47,6 +44,24 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
     j1_statement = j1.statement
     j2_statement = j2.statement
+
+    # same order copula
+    if j1_statement == j2_statement:
+        """
+        # Revision
+        # j1 = j2
+        """
+        if isinstance(j1,
+                      NALGrammar.Sentences.Question): return all_derived_sentences  # can't do revision with questions
+
+        if j1.is_event() and j2.is_event():
+            j1 = NALInferenceRules.Local.Projection(j1, Global.Global.get_current_cycle_number())
+            j2 = NALInferenceRules.Local.Projection(j2, Global.Global.get_current_cycle_number())
+
+        derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
+        add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+        return all_derived_sentences
+
     j1_subject_term = j1.statement.get_subject_term()
     j2_subject_term = j2.statement.get_subject_term()
     j1_predicate_term = j1.statement.get_predicate_term()
@@ -70,7 +85,9 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
 
 
-    if j1.value.frequency == 0 and j2.value.frequency == 0: return [] # can't do inference with 2 entirely negative premises
+    if j1.value.frequency == 0 and j2.value.frequency == 0:
+        if Config.DEBUG: print("Can't do inference between negative premises")
+        return [] # can't do inference with 2 entirely negative premises
 
     # Time Projection between j1 and j2
     # j2 is projected to be used with j1
@@ -96,21 +113,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     swapped = False
 
     if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
-        # same order copula
-        if j1_statement == j2_statement:
-            """
-            # Revision
-            # j1 = j2
-            """
-            if isinstance(j1,NALGrammar.Sentences.Question): return all_derived_sentences  # can't do revision with questions
-
-            if j1.is_event() and j2.is_event():
-                j1 = NALInferenceRules.Local.Projection(j1, Global.Global.get_current_cycle_number())
-                j2 = NALInferenceRules.Local.Projection(j2, Global.Global.get_current_cycle_number())
-
-            derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
-            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
-        elif NALSyntax.Copula.is_temporal(j1_copula) \
+        if NALSyntax.Copula.is_temporal(j1_copula) \
             or (isinstance(j1,NALGrammar.Sentences.Judgment)
                 and j1.is_event()) or (isinstance(j2,NALGrammar.Sentences.Judgment) and j2.is_event()):
             #dont do semantic inference with temporal
@@ -293,8 +296,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             """
             derived_sentence = NALInferenceRules.Syllogistic.Resemblance(j1, j2)  # S<->P
             add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-    elif NALSyntax.Copula.is_first_order(j1_copula) != NALSyntax.Copula.is_first_order(j2_copula):
-        # They do not have the same-order copula
+    elif NALSyntax.Copula.is_first_order(j1_copula) != NALSyntax.Copula.is_first_order(j2_copula) and isinstance(j1, NALGrammar.Sentences.Goal):
+        # They do not have the same-order copula (only use goals for this type of inference)
         """
                 j1 = S==>P or S<=>P
                 j2 = A-->B or A<->B
@@ -366,6 +369,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     """
     # mark sentences as interacted with each other
     j1.mutually_add_to_interacted_sentences(j2)
+
+    if Config.DEBUG: print("Derived " + str(len(all_derived_sentences)) + " inference results.")
 
     return all_derived_sentences
 

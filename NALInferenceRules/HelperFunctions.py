@@ -1,3 +1,5 @@
+import math
+
 import Config
 import Global
 import NALGrammar
@@ -81,7 +83,12 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
                 or (not isinstance(result_statement, NALGrammar.Terms.StatementTerm)
                     and isinstance(result_statement, NALGrammar.Terms.CompoundTerm)
                     and not NALSyntax.TermConnector.is_first_order(result_statement.connector)):
-            if j1.is_event():
+            if j1.is_event() and j2.is_event():
+                if j1.stamp.occurrence_time > j2.stamp.occurrence_time:
+                    occurrence_time = j1.stamp.occurrence_time
+                else:
+                    occurrence_time = j2.stamp.occurrence_time
+            elif j1.is_event():
                 occurrence_time = j1.stamp.occurrence_time
             elif j2.is_event():
                 #todo dont map to j2 occurrence times
@@ -114,7 +121,7 @@ def simplify_compound_event_goal(compound_goal_statement, value):
     new_subterms = []
     new_value = value
     for subterm in compound_goal_statement.subterms:
-        subterm_concept = Global.Global.NARS.memory.peek_concept_item(subterm).object
+        subterm_concept = Global.Global.NARS.memory.peek_concept(subterm)
         if subterm_concept.is_positive():
             belief = subterm_concept.belief_table.peek()
             # strengthen for every positive precondition element
@@ -122,7 +129,7 @@ def simplify_compound_event_goal(compound_goal_statement, value):
                                   new_value.confidence,
                                   belief.get_present_value().frequency,
                                   belief.get_present_value().confidence)
-            print('PREMISE IS TRUE: ' + str(subterm))
+            print('PREMISE IS TRUE: ' + str(subterm_concept.belief_table.peek()))
         else:
             new_subterms.append(subterm)
 
@@ -139,7 +146,7 @@ def simplify_compound_event_goal(compound_goal_statement, value):
         else:
             return None, None
 
-    print('PREMISE IS SIMPLIFIED ' + str(new_statement) + ' FROM ' + str(compound_goal_statement))
+    if Config.DEBUG: print('PREMISE IS SIMPLIFIED ' + str(new_statement) + ' FROM ' + str(compound_goal_statement))
     return new_statement, new_value
 
 def create_resultant_sentence_one_premise(j, result_statement, truth_value_function):
@@ -151,6 +158,7 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
     :param truth_value_function:
     :return:
     """
+
     result_type = type(j)
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal:
         # Get Truth Value
@@ -195,3 +203,9 @@ def premise_result_type(j1,j2):
         return type(j2)
     else:
         return NALGrammar.Sentences.Judgment
+
+def convert_to_interval(working_cycles):
+    return int(math.log(working_cycles))
+
+def convert_from_interval(working_cycles):
+    return int(math.exp(working_cycles))

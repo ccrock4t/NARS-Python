@@ -12,6 +12,8 @@ import sys
 import threading
 import multiprocessing
 # Module multiprocessing is organized differently in Python 3.4+
+import Config
+
 try:
     # Python 3.4+
     if sys.platform.startswith('win'):
@@ -55,8 +57,8 @@ if sys.platform.startswith('win'):
 class GUIProcess(multiprocessing.Process):
     def __init__(self):
         NARS_object = Global.Global.NARS
-        event_buffer_ID = (str(NARS_object.event_buffer), type(NARS_object.event_buffer).__name__)
-        event_buffer_capacity = NARS_object.event_buffer.capacity
+        event_buffer_ID = (str(NARS_object.temporal_module), type(NARS_object.temporal_module).__name__)
+        event_buffer_capacity = NARS_object.temporal_module.capacity
         memory_bag_ID = (str(NARS_object.memory.concepts_bag), type(NARS_object.memory.concepts_bag).__name__)
         memory_bag_capacity = NARS_object.memory.concepts_bag.capacity
 
@@ -70,7 +72,7 @@ class GUIProcess(multiprocessing.Process):
         Global.Global.NARS_string_pipe = pipe_NARS_strings
 
         multiprocessing.Process.__init__(self,target=NARSGUI.start_gui,
-                             args=(Global.Global.gui_use_interface,
+                             args=(Config.gui_use_interface,
                                    data_structure_IDs,
                                    data_structure_capacities,
                                    pipe_gui_objects,
@@ -100,7 +102,7 @@ def main():
     Global.Global.NARS = NARS_object
 
     # setup internal/interface GUI
-    if Global.Global.gui_use_interface:
+    if Config.gui_use_interface:
         GUIProcess()
 
     # launch shell input thread
@@ -115,6 +117,7 @@ def main():
 
     # Finally, run NARS in the shell
     Global.Global.NARS.memory.conceptualize_term(Global.Global.TERM_SELF)
+    Global.Global.NARS.delay = Config.WORKING_CYCLE_DELAY
     Global.Global.NARS.run()
 
 

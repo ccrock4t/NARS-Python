@@ -96,7 +96,6 @@ class NARSGUI:
                 self.gui_output_textbox.configure(state="normal")
                 self.gui_output_textbox.insert(tk.END, msg + "\n")
                 self.gui_output_textbox.configure(state="disabled")
-            print(msg,flush=True)
             return
 
         listbox = None

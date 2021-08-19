@@ -11,6 +11,7 @@ class StatementSyntax(enum.Enum):
     Start = "("
     End = ")"
     TruthValMarker = "%"
+    ExpectationMarker = "#"
     TruthValDivider = ";"
     TermDivider = ","
     BudgetMarker = "$"

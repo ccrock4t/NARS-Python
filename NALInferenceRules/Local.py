@@ -37,9 +37,7 @@ def Revision(j1, j2):
     assert (
             j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
-    result_statement = NALGrammar.Terms.StatementTerm(j1.statement.get_subject_term(),
-                                                      j1.statement.get_predicate_term(),
-                                                      j1.statement.get_copula())
+    result_statement = j1.statement
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
@@ -47,7 +45,7 @@ def Revision(j1, j2):
                                                                  TruthValueFunctions.F_Revision)
 
 
-def Choice(j1, j2):
+def Choice(j1, j2, only_confidence=False):
     """
          Choice Rule
 
@@ -73,8 +71,9 @@ def Choice(j1, j2):
     j2_value = j2.get_present_value()
     (f1, c1), (f2, c2) = (j1_value.frequency, j1_value.confidence), (j2_value.frequency, j2_value.confidence)
 
+
     # Make the choice
-    if j1.statement == j2.statement:
+    if only_confidence or j1.statement == j2.statement:
         if c1 >= c2:
             best = j1
         else:

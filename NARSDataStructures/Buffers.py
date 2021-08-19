@@ -3,11 +3,13 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+import Config
 import NALSyntax
 import NARSInferenceEngine
 from NARSDataStructures.ItemContainers import ItemContainer, Item
 from NARSDataStructures.Other import Depq, Task
 import NALInferenceRules
+import NALGrammar
 
 class Buffer(ItemContainer, Depq):
     """
@@ -60,26 +62,33 @@ class Buffer(ItemContainer, Depq):
         else:
             return ItemContainer.peek_using_key(self, key=key)
 
-class EventBuffer(ItemContainer):
+class TemporalModule(ItemContainer):
     """
-        FIFO that performs temporal composition
+        Performs
+            temporal composition
+                and
+            anticipation (negative evidence for predictive implications)
     """
-    def __init__(self, item_type, capacity):
+    def __init__(self, NARS, item_type, capacity):
         ItemContainer.__init__(self,item_type=item_type,capacity=capacity)
-        self.fifo = [] # stores events
+
+        self.NARS = NARS
         # temporal chaining
         self.temporal_chain = []
         self.temporal_chain_max_results_length = capacity * (capacity + 1) / 2 - 1 # maximum number of results created by temporal chaining
         self.temporal_chain_has_changes = False # have any changes to the temporal chain since last time it was processed?
 
+        # anticipation
+        self.anticipations_list = []
+
     def __len__(self):
-        return len(self.fifo)
+        return len(self.temporal_chain)
 
     def __iter__(self):
-        return iter(self.fifo)
+        return iter(self.temporal_chain)
 
     def __getitem__(self, index):
-        return self.fifo[index]
+        return self.temporal_chain[index]
 
     def put(self, item):
         """
@@ -93,32 +102,21 @@ class EventBuffer(ItemContainer):
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
         # add to buffer
-        self.fifo.append(item)
-        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
-
-        purged_item = None
-        if len(self) > self.capacity:
-            purged_item = self.take()
-
-        # update temporal chain
         self.temporal_chain.append(item)
         self.temporal_chain_has_changes = True
+        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
+
+        # update temporal chain
         if len(self.temporal_chain) > self.capacity:
             self.temporal_chain.pop(0)
 
-        return purged_item
+        return
 
-    def take(self):
-        """
-            Take the oldest item from the Buffer
-            :return:
-        """
-        if len(self) == 0: return None
-        item = self.fifo.pop(0)
-        self._take_from_lookup_dict(item.key)
-        return item
+    def get_most_recent_event_task(self):
+        return self.temporal_chain[-1].object
 
-    def process_temporal_chaining(self, NARS=None):
+
+    def temporal_chaining(self):
         """
             Perform temporal chaining
 
@@ -131,17 +129,18 @@ class EventBuffer(ItemContainer):
             for the latest statement in the chain
         """
         if not self.temporal_chain_has_changes: return []
+        NARS = self.NARS
         results = []
         temporal_chain = self.temporal_chain
         num_of_events = len(temporal_chain)
 
-        event_task_C = temporal_chain[-1].object
+        event_task_C = self.get_most_recent_event_task()
         event_C = event_task_C.sentence
 
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
                 results.append(derived_sentence)
-                if NARS is not None: NARS.process_task(Task(derived_sentence))
+                if NARS is not None: NARS.global_buffer.put_new(Task(derived_sentence))
 
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ C,
@@ -162,8 +161,6 @@ class EventBuffer(ItemContainer):
                 event_task_B = temporal_chain[j].object
                 event_B = event_task_B.sentence
 
-
-
                 conjunction = NALInferenceRules.Temporal.TemporalIntersection(event_A,
                                                                                 event_B)  # (A &/ B)
 
@@ -175,3 +172,51 @@ class EventBuffer(ItemContainer):
         self.temporal_chain_has_changes = False
 
         return results
+
+    def anticipate(self):
+        """
+            anticipation (negative evidence for predictive implications)
+        """
+        # process pending anticipations
+        i = 0
+        while i < len(self.anticipations_list):
+            remaining_cycles, best_prediction_concept, anticipated_event_term = self.anticipations_list[i] # event we expect to occur
+            anticipation_concept = self.NARS.memory.peek_concept(anticipated_event_term)
+            if remaining_cycles == 0:
+                if anticipation_concept.is_positive():
+                    # confirmed
+                    pass
+                else:
+                    if Config.DEBUG: print(str(anticipation_concept) + " DISAPPOINT - FAILED ANTICIPATION, NEGATIVE EVIDENCE FOR " + str(best_prediction_concept.term))
+                    self.NARS.global_buffer.put_new(Task(NALGrammar.Sentences.Judgment(statement=best_prediction_concept.term,
+                                                  value=NALGrammar.Values.TruthValue(frequency=0.0, confidence=0.5))))
+                self.anticipations_list.pop(i)
+                i -= 1
+            else:
+                self.anticipations_list[i][0] -= 1
+
+            i += 1
+
+        # and form new anticipations
+        # todo compound events, this only happens with atomic events
+        observed_event = self.get_most_recent_event_task()
+        observed_event = observed_event.sentence
+
+        best_prediction_concept = None
+        for prediction_concept_item in self.NARS.memory.peek_concept(observed_event.statement).prediction_links:
+            prediction_concept = prediction_concept_item.object
+            if isinstance(prediction_concept.term.get_predicate_term(),NALGrammar.Terms.StatementTerm) and prediction_concept.is_positive():
+                if best_prediction_concept is None:
+                    best_prediction_concept= prediction_concept
+                else:
+                    if prediction_concept.belief_table.peek().value.confidence > best_prediction_concept.belief_table.peek().value.confidence:
+                        best_prediction_concept = prediction_concept
+
+        if best_prediction_concept is None: return # nothing is anticipated
+
+        # something is anticipated
+        postcondition = best_prediction_concept.term.get_predicate_term()
+        print(str(postcondition) +  " IS ANTICIPATED FROM " + str(best_prediction_concept.belief_table.peek()))
+        self.anticipations_list.append([NALInferenceRules.HelperFunctions.convert_from_interval(postcondition.interval+1),best_prediction_concept, postcondition])
+
+

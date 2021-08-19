@@ -30,7 +30,6 @@ class Sentence(Array):
         :param value: Pass as a tuple for array sentences (overall_truth, list_of_element_truth_values)
         :param punctuation:
         :param occurrence_time:
-        :param array_truth_values:
         """
         Asserts.assert_punctuation(punctuation)
         assert isinstance(statement,StatementTerm) or isinstance(statement,CompoundTerm),"ERROR: Judgment needs a statement"
@@ -128,7 +127,8 @@ class Sentence(Array):
     def get_formatted_string_no_id(self):
         string = self.statement.get_formatted_string() + str(self.punctuation.value)
         if self.is_event(): string = string + " " + self.get_tense().value
-        if self.value is not None: string = string + " " + self.get_present_value().get_formatted_string()
+        if self.value is not None:
+            string = string + " " + self.get_present_value().get_formatted_string() + " " + str(NALSyntax.StatementSyntax.ExpectationMarker.value) + str(self.get_expectation())
         return string
 
     def mutually_add_to_interacted_sentences(self, other_sentence):
@@ -204,15 +204,14 @@ class Goal(Sentence):
 
     def __init__(self, statement, value, occurrence_time=None):
         Asserts.assert_valid_statement(statement)
-        if occurrence_time is None:
-            occurrence_time = Global.Global.get_current_cycle_number()
         Sentence.__init__(self,
                           statement,
                           value,
                           NALSyntax.Punctuation.Goal,
                           occurrence_time=occurrence_time)
 
-
+    def get_desirability(self):
+        return self.get_expectation()
 
 
 class Stamp:
@@ -298,7 +297,6 @@ def may_interact(j1,j2):
     """
     if j1 is None or j2 is None: return False
     if j1.stamp.id == j2.stamp.id: return False
-    if j1 in j2.stamp.interacted_sentences or j2 in j1.stamp.interacted_sentences: return False
     if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
     if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
     return True

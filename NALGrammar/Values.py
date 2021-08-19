@@ -5,7 +5,7 @@
 """
 import Config
 import NALSyntax
-
+import NALInferenceRules
 
 class EvidentialValue:
     """
@@ -56,7 +56,7 @@ class TruthValue(EvidentialValue):
                + '{0:.2f}'.format(self.frequency) \
                + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
                + '{0:.2f}'.format(self.confidence) \
-               + str(NALSyntax.StatementSyntax.TruthValMarker.value)
+               + str(NALSyntax.StatementSyntax.TruthValMarker.value) \
 
     def get_formatted_string(self):
         return self.formatted_string

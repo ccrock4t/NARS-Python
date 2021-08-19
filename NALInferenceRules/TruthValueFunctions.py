@@ -215,6 +215,22 @@ def Expectation(f, c):
     """
     return c * (f - 0.5) + 0.5
 
+def Goal_Expectation(f, c):
+    """
+        Expectation
+
+        -----------------
+
+         Input:
+            f: frequency
+
+            c: confidence
+
+         Returns:
+            expectation value
+    """
+    return c * (f - 0.5) + 0.5
+
 def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_function):
     """
         Performs a truth value function element-wise on the array
