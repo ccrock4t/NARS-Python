@@ -334,7 +334,7 @@ def conditional_deduction():
     j1 = NALGrammar.Sentences.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
     j2 = NALGrammar.Sentences.new_sentence_from_string("(a-->b). %1.0;0.9%")
 
-    output = NALInferenceRules.Conditional.ConditionalDeduction(j1, j2)
+    output = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2)
 
     success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(c-->d)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Deduction(
@@ -357,7 +357,7 @@ def conditional_abduction():
     j1 = NALGrammar.Sentences.new_sentence_from_string("((a-->b)==>(c-->d)). %1.0;0.9%")
     j2 = NALGrammar.Sentences.new_sentence_from_string("(c-->d). %1.0;0.9%")
 
-    output = NALInferenceRules.Conditional.ConditionalAbduction(j1, j2)
+    output = NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2)
 
     success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(a-->b)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Abduction(

@@ -26,12 +26,14 @@ class NARSGUI:
 
     # Internal Data vars
     # listboxes
+    gui_global_buffer_listbox = None  # output for tasks in global buffer
     gui_memory_listbox = None  # output for concepts in memory bag
     gui_event_buffer_listbox = None # output for tasks in event buffer
 
     # arrays
+    gui_global_buffer_full_contents = []
     gui_memory_full_contents = []
-    gui_event_buffer_listbox_full_contents = []
+    gui_event_buffer_full_contents = []
 
     # labels
     gui_event_buffer_output_label = None
@@ -102,6 +104,8 @@ class NARSGUI:
         if data_structure_info is not None and data_structure_info[0] in self.dict_listbox_from_id:
             data_structure_id, data_structure_name = data_structure_info
             listbox = self.dict_listbox_from_id[data_structure_id]
+        else:
+            assert False,'ERROR: Data structure name invalid ' + str(data_structure_info)
 
         # internal data output
         # insert item sorted by priority
@@ -123,14 +127,20 @@ class NARSGUI:
 
         if listbox is self.gui_memory_listbox:
             self.gui_memory_full_contents.insert(len(self.gui_memory_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
-            is_statement = NALSyntax.Copula.contains_top_level_copula(msg)
-            if (is_statement) or (not is_statement and self.gui_show_non_statement_concepts):
+            if NARSGUI.is_statement_string(msg) or self.gui_show_non_statement_concepts:
                 listbox.insert(idx_to_insert, msg)
         elif listbox is self.gui_event_buffer_listbox:
-            self.gui_event_buffer_listbox_full_contents.insert(len(self.gui_event_buffer_listbox_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
+            self.gui_event_buffer_full_contents.insert(len(self.gui_event_buffer_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
+            listbox.insert(idx_to_insert, msg)
+        elif listbox is self.gui_global_buffer_listbox:
+            self.gui_global_buffer_full_contents.insert(len(self.gui_global_buffer_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
             listbox.insert(idx_to_insert, msg)
 
         self.update_datastructure_labels(data_structure_info, length=length)
+
+    @classmethod
+    def is_statement_string(cls,msg):
+        return NALSyntax.Copula.contains_top_level_copula(msg) or NALSyntax.TermConnector.contains_conjunction(msg)
 
     def remove_from_output(self, msg, data_structure_info=None, length=0):
         """
@@ -157,7 +167,7 @@ class NARSGUI:
                 i = i + 1
             del self.gui_memory_full_contents[i]
             # if non-statement and not showing non-statements, don't bother trying to remove it from memory GUI output
-            if not NALSyntax.Copula.contains_top_level_copula(msg) and not self.gui_show_non_statement_concepts: return
+            if not NARSGUI.is_statement_string(msg) and not self.gui_show_non_statement_concepts: return
 
         string_list = listbox.get(0, tk.END)
         idx_to_remove = -1
@@ -175,10 +185,13 @@ class NARSGUI:
         listbox.delete(idx_to_remove)
 
         contents = None
-        if listbox is self.gui_memory_listbox:
+
+        if listbox is self.gui_global_buffer_listbox:
+            contents = self.gui_global_buffer_full_contents
+        elif listbox is self.gui_memory_listbox:
             contents = None # already removed at beginning of function
         elif listbox is self.gui_event_buffer_listbox:
-            contents = self.gui_event_buffer_listbox_full_contents
+            contents = self.gui_event_buffer_full_contents
 
         if contents is not None: contents.pop(idx_to_remove)
 
@@ -196,6 +209,9 @@ class NARSGUI:
             label = self.gui_concepts_bag_output_label
         elif listbox is self.gui_event_buffer_listbox:
             label = self.gui_event_buffer_output_label
+        elif listbox is self.gui_global_buffer_listbox:
+            label_txt = "Global Task "
+            label = self.gui_global_buffer_output_label
 
         if label is None: return
         label.config(
@@ -218,7 +234,7 @@ class NARSGUI:
         else:
             self.clear_listbox(self.gui_memory_listbox)
             for concept_string in self.gui_memory_full_contents:
-                if NALSyntax.Copula.contains_top_level_copula(concept_string):
+                if NARSGUI.is_statement_string(concept_string):
                     self.gui_memory_listbox.insert(tk.END, concept_string)
 
 
@@ -233,7 +249,7 @@ class NARSGUI:
         # launch internal data GUI
         window = tk.Tk()
         window.title("NARS in Python - Interface")
-        window.geometry("1400x700")
+        window.geometry("1900x700")
         self.execute_interface_gui(window, data_structure_IDs, data_structure_capacities)
 
         # main GUI loop
@@ -350,10 +366,10 @@ class NARSGUI:
         send_input_btn = tk.Button(window, text="Send input.", command=input_clicked)  # send input when click button
         send_input_btn.grid(column=2, row=1+output_height)
 
-        listbox_height = 30
+        listbox_height = 40
         listbox_width = 80
 
-        ((event_buffer_ID,_), (memory_bag_ID,_)) = data_structure_IDs
+        ((global_task_buffer_ID, _), (event_buffer_ID,_), (memory_bag_ID,_)) = data_structure_IDs
 
         """
             Event buffer internal contents GUI
@@ -374,19 +390,45 @@ class NARSGUI:
         self.dict_listbox_from_id[event_buffer_ID] = self.gui_event_buffer_listbox
 
         """
-            Memory internal contents GUI
+            Global Buffer internal contents GUI
         """
         row +=1
+        self.gui_global_buffer_output_label = tk.Label(window)
+        self.gui_global_buffer_output_label.grid(row=row,
+                                                column=column,
+                                                sticky='w')
+
+        row += 1
+        buffer_scrollbar = tk.Scrollbar(window)
+        buffer_scrollbar.grid(row=row,
+                                   column=column+1,
+                                   rowspan=4,
+                                   sticky='ns')
+        self.gui_global_buffer_listbox = tk.Listbox(window,
+                                            height=2*listbox_height//3,
+                                            width=listbox_width,
+                                            font=('', 8),
+                                            yscrollcommand=buffer_scrollbar.set)
+        self.gui_global_buffer_listbox.grid(row=row,
+                                    column=column,
+                                    columnspan=1,
+                                    rowspan=4)
+        self.dict_listbox_from_id[global_task_buffer_ID] = self.gui_global_buffer_listbox
+
+        """
+            Memory internal contents GUI
+        """
+        row -= 3
         self.gui_concepts_bag_output_label = tk.Label(window)
         self.gui_concepts_bag_output_label.grid(row=row,
-                                                column=column,
+                                                column=column+3,
                                                 sticky='w')
 
         row += 1
         concept_bag_scrollbar = tk.Scrollbar(window)
         concept_bag_scrollbar.grid(row=row,
-                                   column=column+1,
-                                   rowspan=4,
+                                   column=column+4,
+                                   rowspan=6,
                                    sticky='ns')
         self.gui_memory_listbox = tk.Listbox(window,
                                             height=listbox_height,
@@ -394,9 +436,9 @@ class NARSGUI:
                                             font=('', 8),
                                             yscrollcommand=concept_bag_scrollbar.set)
         self.gui_memory_listbox.grid(row=row,
-                                    column=column,
+                                    column=column+3,
                                     columnspan=1,
-                                    rowspan=4)
+                                    rowspan=6)
         self.dict_listbox_from_id[memory_bag_ID] = self.gui_memory_listbox
 
         # define callbacks when clicking items in any box

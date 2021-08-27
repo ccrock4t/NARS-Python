@@ -165,7 +165,7 @@ class Bag(ItemContainer):
         # pop random item from currently selected bucket
         rnd = random.random()  # another randomly generated number in [0.0, 1.0)
         maxidx = len(self.buckets[self.current_bucket_number]) - 1
-        randidx = int(round(rnd * maxidx))
+        randidx = round(rnd * maxidx)
         item = self.buckets[self.current_bucket_number][randidx]
         return item, randidx
 

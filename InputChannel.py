@@ -21,6 +21,7 @@ vision_sensor_keyword = "vision:"
 
 def get_user_input():
     userinput = ""
+
     while userinput != "exit":
         userinput = input("")
         add_input_string(userinput)
@@ -69,10 +70,10 @@ def process_pending_sentence():
     """
         Processes the next pending sentence from the input buffer if one exists
     """
-    print(input_queue.qsize())
     if input_queue.qsize() > 0:
         sentence = input_queue.get()
         process_sentence(sentence)
+    if Config.DEBUG: Global.Global.debug_print("Input Channel Size: " + str(input_queue.qsize()))
 
 
 def process_sentence(sentence: NALGrammar.Sentences.Sentence):
@@ -84,14 +85,13 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-
-
     if isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.is_event():
         # put events on the temporal chain
         Global.Global.NARS.temporal_module.put_new(task)
-
-    # process the task into NARS
-    Global.Global.NARS.global_buffer.put_new(task)
+        # process the task into NARS
+        Global.Global.NARS.process_task(task)
+    else:
+        Global.Global.NARS.global_buffer.put_new(task)
 
 
 def load_input(filename="input.nal"):

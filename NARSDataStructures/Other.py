@@ -1,3 +1,5 @@
+import random
+
 import Asserts
 import NALGrammar
 import Config
@@ -22,6 +24,9 @@ class Depq():
 
     def __len__(self):
         return len(self.depq)
+
+    def __getitem__(self, i):
+        return self.depq[i][0]
 
     def _insert_object(self, object, priority):
         self.depq.insert(object, priority)
@@ -112,6 +117,30 @@ class Table(Depq):
             Returns None if depq is empty
         """
         return Depq.peek_max(self)
+
+    def peek_random(self):
+        """
+            Peek random item from the depq
+            O(1)
+
+            Returns None if depq is empty
+        """
+        if len(self) == 0: return None
+        return self[round(random.random() * (len(self)-1))]
+
+    def peek_highest_confidence_interactable(self, j):
+        """
+            Returns the best sentence in this table that j may interact with
+            None if there are none.
+            O(N)
+
+        :param j:
+        :return:
+        """
+        for (belief, confidence) in self: # loop starting with max confidence
+            if NALGrammar.Sentences.may_interact(j,belief):
+                return belief
+        return None
 
 
 class Task:

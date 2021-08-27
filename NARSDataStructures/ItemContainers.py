@@ -118,13 +118,13 @@ class Item:
                 priority = object.sentence.value.confidence
             else:
                 priority = 0.95
-            quality = 0.010
+            quality = 0.01
         elif isinstance(object, NARSMemory.Concept):
-            quality = 0.95
+            quality = 0.01
             priority = 0.990 / object.term.syntactic_complexity
         elif isinstance(object, NALGrammar.Sentences.Sentence):
             priority = object.value.confidence
-            quality = 0.500
+            quality = 0.01
 
         if priority is not None:
             if isinstance(object, Task):
@@ -177,7 +177,7 @@ class Item:
         """
             Increase this item's priority to a high value
         """
-        self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority,)
+        self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority,multiplier)
         if self.budget.priority > 0.95: self.budget.priority = 0.95
 
     def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):

@@ -141,18 +141,18 @@ def test_bag_overflow_purge():
     assert (items_added > max_capacity), "TEST FAILURE: For this test, add more items than the capacity"
     assert (test_data_structure.count == max_capacity), "TEST FAILURE: " + type(test_data_structure).__name__  + " did not maintain capacity on overflow"
 
-def test_event_buffer_processing():
+def test_4_event_temporal_chaining():
     calculate_expected_num_of_results = lambda N: int(N*(N+1)/2 - 1)
 
     capacities = [2, 3, 6, 10]
 
     for capacity in capacities:
-        event_buffer = NARSDataStructures.Buffers.TemporalModule(item_type=NARSDataStructures.Other.Task, capacity=capacity)
+        event_buffer = NARSDataStructures.Buffers.TemporalModule(NARS=None,item_type=NARSDataStructures.Other.Task, capacity=capacity)
 
         for i in range(capacity):
             event_buffer.put_new(NARSDataStructures.Other.Task(NALGrammar.Sentences.new_sentence_from_string("(a" + str(i) + "-->b" + str(i) + "). :|:")))
 
-        actual = len(event_buffer.temporal_chaining())
+        actual = len(event_buffer.temporal_chaining_4())
         expected = calculate_expected_num_of_results(capacity)
         assert actual == expected,"ERROR: Event buffer of size " + str(capacity) + " produced " + str(actual) + " results, instead of expected " + str(expected)
 
@@ -176,7 +176,7 @@ def main():
     """
     test_buffer_removemax()
     test_buffer_removemin()
-    test_event_buffer_processing()
+    #test_event_buffer_processing()
 
     """
         Bag Tests

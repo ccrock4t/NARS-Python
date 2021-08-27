@@ -183,7 +183,7 @@ def F_Difference(f1, c1, f2, c2):
     return NALGrammar.Values.TruthValue(f3, c3)
 
 
-def F_Projection(frequency, confidence, t_B, t_T, decay=Config.TRUTH_PROJECTION_DECAY):
+def F_Projection(frequency, confidence, t_B, t_T, decay):
     """
         Time Projection
 
@@ -191,7 +191,8 @@ def F_Projection(frequency, confidence, t_B, t_T, decay=Config.TRUTH_PROJECTION_
         to another occurrence time (t_T)
     """
     if t_B == t_T: return NALGrammar.Values.TruthValue(frequency, confidence)
-    projected_confidence = confidence * (decay ** abs(t_B - t_T))
+    interval = abs(t_B - t_T)
+    projected_confidence = confidence * (decay ** interval)
     return NALGrammar.Values.TruthValue(frequency, projected_confidence)
 
 

@@ -33,6 +33,12 @@ class Memory:
         """
             Probabilistically peek the concepts
         """
+        return self.concepts_bag.peek().object
+
+    def get_random_concept_item(self):
+        """
+            Probabilistically peek the concepts
+        """
         return self.concepts_bag.peek()
 
     def get_number_of_concepts(self):
@@ -269,6 +275,13 @@ class Concept:
 
     def get_term(self):
         return self.term
+
+    def is_desired(self):
+        """
+            :return: If the highest-confidence belief says this statement is true
+        """
+        if len(self.desire_table) == 0: return False
+        return NALInferenceRules.Local.Decision(self.desire_table.peek())
 
     def is_positive(self):
         """

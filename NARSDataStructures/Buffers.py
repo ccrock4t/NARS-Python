@@ -4,6 +4,7 @@
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
 import Config
+import Global
 import NALSyntax
 import NARSInferenceEngine
 from NARSDataStructures.ItemContainers import ItemContainer, Item
@@ -79,7 +80,8 @@ class TemporalModule(ItemContainer):
         self.temporal_chain_has_changes = False # have any changes to the temporal chain since last time it was processed?
 
         # anticipation
-        self.anticipations_list = []
+        self.anticipations_queue = []
+        self.current_anticipation = None
 
     def __len__(self):
         return len(self.temporal_chain)
@@ -116,7 +118,8 @@ class TemporalModule(ItemContainer):
         return self.temporal_chain[-1].object
 
 
-    def temporal_chaining(self):
+
+    def temporal_chaining_3(self):
         """
             Perform temporal chaining
 
@@ -129,6 +132,7 @@ class TemporalModule(ItemContainer):
             for the latest statement in the chain
         """
         if not self.temporal_chain_has_changes: return []
+        if Config.DEBUG: Global.Global.debug_print("CHAIN")
         NARS = self.NARS
         results = []
         temporal_chain = self.temporal_chain
@@ -140,7 +144,12 @@ class TemporalModule(ItemContainer):
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
                 results.append(derived_sentence)
-                if NARS is not None: NARS.global_buffer.put_new(Task(derived_sentence))
+                if NARS is not None:
+                    task = Task(derived_sentence)
+                    if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
+                        Global.Global.NARS.process_task(task)
+                    else:
+                        NARS.global_buffer.put_new(task)
 
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ C,
@@ -152,7 +161,77 @@ class TemporalModule(ItemContainer):
             event_A = event_task_A.sentence
 
             # produce statements (A =/> C) and (A &/ C)
-            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_C)
+            #derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_C)
+
+
+            # for derived_sentence in derived_sentences:
+            #     process_sentence(derived_sentence)
+
+            for j in range(i + 1, num_of_events-1):
+                event_task_B = temporal_chain[j].object
+                event_B = event_task_B.sentence
+
+
+                conjunction_A_B = NALInferenceRules.Temporal.TemporalIntersection(event_A,
+                                                                                event_B)  # (A &/ B)
+
+                if conjunction_A_B is not None:
+                    process_sentence(conjunction_A_B)
+
+                    derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction_A_B,
+                                                                                    event_C)  # (A &/ B) =/> C
+                    process_sentence(derived_sentence)
+
+        self.temporal_chain_has_changes = False
+
+        return results
+
+
+    def temporal_chaining_4(self):
+        """
+            Perform temporal chaining
+
+            produce all possible forward implication statements using temporal induction and intersection
+                A &/ D,
+                A =/> D
+                and
+                (A &/ B) =/> D
+                (A &/ C) =/> D
+                and
+                (A &/ B &/ C) =/> D
+
+            for the latest event D in the chain
+        """
+        if not self.temporal_chain_has_changes: return []
+        NARS = self.NARS
+        results = []
+        temporal_chain = self.temporal_chain
+        num_of_events = len(temporal_chain)
+
+        event_task_D = self.get_most_recent_event_task()
+        event_D = event_task_D.sentence
+
+        def process_sentence(derived_sentence):
+            if derived_sentence is not None:
+                results.append(derived_sentence)
+                if NARS is not None:
+                    task = Task(derived_sentence)
+                    if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
+                        Global.Global.NARS.process_task(task)
+                    else:
+                        NARS.global_buffer.put_new(task)
+
+        # produce all possible forward implication statements using temporal induction and intersection
+        # A &/ C,
+        # A =/> C
+        # and
+        # (A &/ B) =/> C
+        for i in range(0, num_of_events-1):  # and do induction with events occurring afterward
+            event_task_A = temporal_chain[i].object
+            event_A = event_task_A.sentence
+
+            # produce statements (A =/> D) and (A &/ D)
+            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_D)
 
             for derived_sentence in derived_sentences:
                 process_sentence(derived_sentence)
@@ -161,62 +240,106 @@ class TemporalModule(ItemContainer):
                 event_task_B = temporal_chain[j].object
                 event_B = event_task_B.sentence
 
-                conjunction = NALInferenceRules.Temporal.TemporalIntersection(event_A,
+                conjunction_A_B = NALInferenceRules.Temporal.TemporalIntersection(event_A,
                                                                                 event_B)  # (A &/ B)
+                if conjunction_A_B is not None:
+                    derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction_A_B,
+                                                                                    event_D)  # (A &/ B) =/> D
+                    process_sentence(derived_sentence)
 
-                if conjunction is not None:
-                    derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction,
-                                                                                    event_C)  # (A &/ B) =/> C
+
+                for k in range(j + 1, num_of_events - 1):
+                    if conjunction_A_B is None: break
+                    event_task_C = temporal_chain[k].object
+                    event_C = event_task_C.sentence
+                    conjunction_A_B_C = NALInferenceRules.Temporal.TemporalIntersection(conjunction_A_B,
+                                                                                        event_C)  # (A &/ B &/ C)
+                    derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction_A_B_C,
+                                                                                    event_D)  # (A &/ B &/ C) =/> D
                     process_sentence(derived_sentence)
 
         self.temporal_chain_has_changes = False
 
         return results
 
-    def anticipate(self):
+    def anticipate_from_event(self, observed_event):
         """
+            # form new anticipation from observed event
+        """
+        anticipated_implication_belief = self.NARS.get_random_positive_prediction(observed_event)
+
+        if anticipated_implication_belief is None: return # nothing is anticipated
+        # something is anticipated
+        self.anticipate_from_concept(self.NARS.memory.peek_concept(anticipated_implication_belief.statement),
+                                     anticipated_implication_belief)
+
+        # predictions = self.NARS.get_all_positive_predictions(observed_event)
+        # for prediction in predictions:
+        # #something is anticipated
+        #     self.anticipate_from_concept(self.NARS.memory.peek_concept(prediction.statement),prediction)
+
+
+    def anticipate_from_concept(self, higher_order_anticipation_concept, best_belief=None):
+        """
+            Form an anticipation based on a higher-order concept.
+            Uses the best belief from the belief table, unless one is provided.
+
+        :param higher_order_anticipation_concept:
+        :param best_belief:
+        :return:
+        """
+
+        if best_belief is None:
+            best_belief = higher_order_anticipation_concept.belief_table.peek()
+
+        operation_statement = best_belief.statement
+        expectation = best_belief.get_expectation()
+        if self.current_anticipation is not None:
+            # in the middle of a operation sequence already
+            current_anticipation_expectation = self.current_anticipation
+            if expectation <= current_anticipation_expectation: return # don't execute since the current anticipation is more expected
+            # else, the given operation is more expected
+            self.anticipations_queue.clear()
+
+        self.current_anticipation = expectation
+
+        working_cycles = NALInferenceRules.HelperFunctions.convert_from_interval(higher_order_anticipation_concept.term.interval)
+
+        postcondition = higher_order_anticipation_concept.term.get_predicate_term()
+        self.anticipations_queue.append([working_cycles, higher_order_anticipation_concept, postcondition])
+        if Config.DEBUG: Global.Global.debug_print(str(postcondition) + " IS ANTICIPATED FROM " + str(best_belief) + " Total Anticipations:" + str(len(self.anticipations_queue)))
+
+    def process_anticipations(self):
+        """
+
             anticipation (negative evidence for predictive implications)
         """
         # process pending anticipations
         i = 0
-        while i < len(self.anticipations_list):
-            remaining_cycles, best_prediction_concept, anticipated_event_term = self.anticipations_list[i] # event we expect to occur
-            anticipation_concept = self.NARS.memory.peek_concept(anticipated_event_term)
+
+        while i < len(self.anticipations_queue):
+            remaining_cycles, best_prediction_concept, anticipated_postcondition = self.anticipations_queue[i] # event we expect to occur
+            anticipated_postcondition_concept = self.NARS.memory.peek_concept(anticipated_postcondition)
             if remaining_cycles == 0:
-                if anticipation_concept.is_positive():
+                if anticipated_postcondition_concept.is_positive():
                     # confirmed
-                    pass
+                    if Config.DEBUG: Global.Global.debug_print(
+                        str(anticipated_postcondition_concept) + " SATISFIED - CONFIRMED ANTICIPATION" + str(
+                            best_prediction_concept.term))
                 else:
-                    if Config.DEBUG: print(str(anticipation_concept) + " DISAPPOINT - FAILED ANTICIPATION, NEGATIVE EVIDENCE FOR " + str(best_prediction_concept.term))
+                    if Config.DEBUG:
+                        Global.Global.debug_print(str(anticipated_postcondition_concept) + " DISAPPOINT - FAILED ANTICIPATION, NEGATIVE EVIDENCE FOR " + str(best_prediction_concept.term))
                     self.NARS.global_buffer.put_new(Task(NALGrammar.Sentences.Judgment(statement=best_prediction_concept.term,
-                                                  value=NALGrammar.Values.TruthValue(frequency=0.0, confidence=0.5))))
-                self.anticipations_list.pop(i)
+                                                  value=NALGrammar.Values.TruthValue(frequency=0.0,
+                                                                                     confidence=Config.DEFAULT_DISAPPOINT_CONFIDENCE))))
+                self.anticipations_queue.pop(i)
+                self.current_anticipation = None
                 i -= 1
             else:
-                self.anticipations_list[i][0] -= 1
+                self.anticipations_queue[i][0] -= 1
 
             i += 1
 
-        # and form new anticipations
-        # todo compound events, this only happens with atomic events
-        observed_event = self.get_most_recent_event_task()
-        observed_event = observed_event.sentence
 
-        best_prediction_concept = None
-        for prediction_concept_item in self.NARS.memory.peek_concept(observed_event.statement).prediction_links:
-            prediction_concept = prediction_concept_item.object
-            if isinstance(prediction_concept.term.get_predicate_term(),NALGrammar.Terms.StatementTerm) and prediction_concept.is_positive():
-                if best_prediction_concept is None:
-                    best_prediction_concept= prediction_concept
-                else:
-                    if prediction_concept.belief_table.peek().value.confidence > best_prediction_concept.belief_table.peek().value.confidence:
-                        best_prediction_concept = prediction_concept
-
-        if best_prediction_concept is None: return # nothing is anticipated
-
-        # something is anticipated
-        postcondition = best_prediction_concept.term.get_predicate_term()
-        print(str(postcondition) +  " IS ANTICIPATED FROM " + str(best_prediction_concept.belief_table.peek()))
-        self.anticipations_list.append([NALInferenceRules.HelperFunctions.convert_from_interval(postcondition.interval+1),best_prediction_concept, postcondition])
 
 

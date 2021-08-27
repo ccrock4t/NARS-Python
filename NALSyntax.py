@@ -109,6 +109,12 @@ class TermConnector(enum.Enum):
                 connector is cls.SequentialConjunction or
                 connector is cls.ParallelConjunction)
 
+    @classmethod
+    def contains_conjunction(cls,string):
+        return (cls.Conjunction.value in string or
+                cls.SequentialConjunction.value in string or
+                cls.ParallelConjunction.value in string)
+
 
     @classmethod
     def get_set_end_connector_from_set_start_connector(cls, start_connector):

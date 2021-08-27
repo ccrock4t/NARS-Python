@@ -32,7 +32,7 @@ class DesireValue(EvidentialValue):
         how much the associated statement S implies the overall desired state of NARS, D
     """
 
-    def __init__(self, frequency, confidence):
+    def __init__(self, frequency, confidence=Config.DEFAULT_GOAL_CONFIDENCE):
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \

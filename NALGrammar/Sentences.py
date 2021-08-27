@@ -4,7 +4,7 @@ import Global
 import NALSyntax
 import Asserts
 
-from NALGrammar.Terms import StatementTerm, CompoundTerm
+from NALGrammar.Terms import StatementTerm, CompoundTerm, simplify
 
 from NALGrammar.Values import TruthValue, DesireValue
 import NALInferenceRules
@@ -107,7 +107,7 @@ class Sentence(Array):
             If this is an event, project its value to the current time
         """
         if self.is_event():
-            decay = Config.TRUTH_PROJECTION_DECAY
+            decay = Config.EVENT_TRUTH_PROJECTION_DECAY
             if isinstance(self,Goal):
                 decay = Config.DESIRE_PROJECTION_DECAY
 
@@ -125,20 +125,16 @@ class Sentence(Array):
         return string
 
     def get_formatted_string_no_id(self):
-        string = self.statement.get_formatted_string() + str(self.punctuation.value)
+        if isinstance(self.statement, StatementTerm) or isinstance(self.statement,CompoundTerm):
+            string = self.statement.get_formatted_string_with_interval()
+        else:
+            string = self.statement.get_formatted_string()
+        string += str(self.punctuation.value)
         if self.is_event(): string = string + " " + self.get_tense().value
         if self.value is not None:
             string = string + " " + self.get_present_value().get_formatted_string() + " " + str(NALSyntax.StatementSyntax.ExpectationMarker.value) + str(self.get_expectation())
         return string
 
-    def mutually_add_to_interacted_sentences(self, other_sentence):
-        self.stamp.interacted_sentences.append(other_sentence)
-        if len(self.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-            self.stamp.interacted_sentences.pop(0)
-
-        other_sentence.stamp.interacted_sentences.append(self)
-        if len(other_sentence.stamp.interacted_sentences) > Config.MAX_INTERACTED_SENTENCES_LENGTH:
-            other_sentence.stamp.interacted_sentences.pop(0)
 
     def get_gui_info(self):
         dict = {}
@@ -166,7 +162,7 @@ class Sentence(Array):
         dict[NARSGUI.NARSGUI.KEY_ARRAY_ALPHA_IMAGE] = self.image_alpha_array if self.is_array and not isinstance(self,Question) else None
         dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
         dict[NARSGUI.NARSGUI.KEY_DERIVED_BY] = self.stamp.derived_by
-        dict[NARSGUI.NARSGUI.KEY_PARENT_PREMISES] = self.stamp.parent_premise_strings
+        dict[NARSGUI.NARSGUI.KEY_PARENT_PREMISES] = str(self.stamp.parent_premises)
         return dict
 
 
@@ -228,7 +224,7 @@ class Stamp:
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
         self.interacted_sentences = []  # list of sentence this sentence has already interacted with
         self.derived_by = None
-        self.parent_premise_strings = []
+        self.parent_premises = []
         self.from_one_premise_inference = False # is this sentence derived from one-premise inference?
 
     def get_tense(self):
@@ -295,11 +291,19 @@ def may_interact(j1,j2):
     :param j2:
     :return: Are the sentence allowed to interact for inference
     """
-    if j1 is None or j2 is None: return False
-    if j1.stamp.id == j2.stamp.id: return False
-    if j1 in j2.stamp.evidential_base or j2 in j1.stamp.evidential_base: return False
-    if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base): return False
+    if j1 is None or j2 is None:
+        return False
+    if j1.stamp.id == j2.stamp.id:
+        return False
+    if j1 in j2.stamp.evidential_base:
+        return False
+    if j2 in j1.stamp.evidential_base:
+        return False
+    if j1.stamp.evidential_base.has_evidential_overlap(j2.stamp.evidential_base):
+        return False
     return True
+
+
 
 def new_sentence_from_string(sentence_string: str):
     """
@@ -338,7 +342,10 @@ def new_sentence_from_string(sentence_string: str):
     statement_string = sentence_string[start_idx:end_idx + 1]
 
     # create standard statement from string
-    statement = StatementTerm.from_string(statement_string)
+    if NALSyntax.TermConnector.is_string_a_term_connector(statement_string[1:3]):
+        statement = simplify(CompoundTerm.from_string(statement_string))
+    else:
+        statement = simplify(StatementTerm.from_string(statement_string))
 
     if punctuation == NALSyntax.Punctuation.Judgment:
         if freq is None:

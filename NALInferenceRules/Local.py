@@ -37,12 +37,38 @@ def Revision(j1, j2):
     assert (
             j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
 
-    result_statement = j1.statement
+    if isinstance(j1.statement, NALGrammar.Terms.StatementTerm):
+        new_interval = HelperFunctions.interval_weighted_average(interval1=j1.statement.interval,
+                                                                 interval2=j2.statement.interval,
+                                                                 weight1=j1.value.confidence,
+                                                                 weight2=j2.value.confidence)
+        result_statement = NALGrammar.Terms.StatementTerm(subject_term=j1.statement.get_subject_term(),
+                                                          predicate_term=j1.statement.get_predicate_term(),
+                                                          copula=j1.statement.get_copula(),
+                                                          interval=new_interval)
+    elif isinstance(j1.statement, NALGrammar.Terms.CompoundTerm):
+        new_intervals = []
+        for i in range(len(j1.statement.intervals)):
+            new_interval = HelperFunctions.interval_weighted_average(interval1=j1.statement.intervals[i],
+                                                      interval2=j2.statement.intervals[i],
+                                                      weight1=j1.value.confidence,
+                                                      weight2=j2.value.confidence)
+            new_intervals.append(new_interval)
+        result_statement = NALGrammar.Terms.CompoundTerm(subterms=j1.statement.subterms,
+                                                         term_connector=j1.statement.connector,
+                                                         intervals=new_intervals)
+    else:
+        assert False,"ERROR: Invalid inputs to Revision"
+
+
+
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
                                                                  result_statement,
                                                                  TruthValueFunctions.F_Revision)
+
+
 
 
 def Choice(j1, j2, only_confidence=False):
@@ -70,7 +96,6 @@ def Choice(j1, j2, only_confidence=False):
     j1_value = j1.get_present_value()
     j2_value = j2.get_present_value()
     (f1, c1), (f2, c2) = (j1_value.frequency, j1_value.confidence), (j2_value.frequency, j2_value.confidence)
-
 
     # Make the choice
     if only_confidence or j1.statement == j2.statement:
@@ -138,8 +163,14 @@ def Projection(j, occurrence_time):
     """
     Asserts.assert_sentence(j)
 
-
-    result_truth = TruthValueFunctions.F_Projection(j.value.frequency, j.value.confidence, j.stamp.occurrence_time, occurrence_time)
+    decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+    if isinstance(j, NALGrammar.Sentences.Goal):
+        decay = Config.DESIRE_PROJECTION_DECAY
+    result_truth = TruthValueFunctions.F_Projection(j.value.frequency,
+                                                    j.value.confidence,
+                                                    j.stamp.occurrence_time,
+                                                    occurrence_time,
+                                                    decay=decay)
 
 
     if isinstance(j, NALGrammar.Sentences.Judgment):
@@ -152,3 +183,26 @@ def Projection(j, occurrence_time):
     result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
 
     return result
+
+def Value_Projection(j,occurrence_time):
+    """
+        Projection; only returns a value
+
+        Returns j's value projected to the given occurrence time.
+
+        :param j:
+        :param occurrence_time: occurrence time to project j to
+        :return: project value of j
+    """
+    Asserts.assert_sentence(j)
+
+    decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+    if isinstance(j, NALGrammar.Sentences.Goal):
+        decay = Config.DESIRE_PROJECTION_DECAY
+    result_truth = TruthValueFunctions.F_Projection(j.value.frequency,
+                                                    j.value.confidence,
+                                                    j.stamp.occurrence_time,
+                                                    occurrence_time,
+                                                    decay=decay)
+
+    return result_truth

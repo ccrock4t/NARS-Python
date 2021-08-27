@@ -42,7 +42,10 @@ class Global:
         print(msg, flush=True)
         data_structure_name = None
         data_structure_len = 0
-        if not(data_structure is cls.NARS.memory.concepts_bag or data_structure is cls.NARS.temporal_module or data_structure is None): return # must be a valid data structure
+        if not(data_structure is cls.NARS.memory.concepts_bag or
+               data_structure is cls.NARS.temporal_module or
+               data_structure is cls.NARS.global_buffer or
+               data_structure is None): return # must be a valid data structure
         if data_structure is not None:
             data_structure_name = (str(data_structure), type(data_structure).__name__)
             data_structure_len = len(data_structure)
@@ -68,3 +71,6 @@ class Global:
         if Config.gui_use_interface: cls.NARS_string_pipe.send(("paused", paused, "guibox",0))
 
 
+    @classmethod
+    def debug_print(cls,msg):
+        print(str(cls.get_current_cycle_number()) + ": " + msg)

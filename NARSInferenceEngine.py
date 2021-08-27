@@ -33,6 +33,9 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     Asserts.assert_sentence(j1)
     Asserts.assert_sentence(j2)
 
+    if Config.DEBUG: Global.Global.debug_print(
+        "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
+
     """
     ===============================================
     ===============================================
@@ -54,39 +57,13 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
         if isinstance(j1,
                       NALGrammar.Sentences.Question): return all_derived_sentences  # can't do revision with questions
 
-        if j1.is_event() and j2.is_event():
-            j1 = NALInferenceRules.Local.Projection(j1, Global.Global.get_current_cycle_number())
-            j2 = NALInferenceRules.Local.Projection(j2, Global.Global.get_current_cycle_number())
-
         derived_sentence = NALInferenceRules.Local.Revision(j1, j2)  # S-->P
         add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
         return all_derived_sentences
 
-    j1_subject_term = j1.statement.get_subject_term()
-    j2_subject_term = j2.statement.get_subject_term()
-    j1_predicate_term = j1.statement.get_predicate_term()
-    j2_predicate_term = j2.statement.get_predicate_term()
-    j1_copula = j1.statement.get_copula()
-    j2_copula = j2.statement.get_copula()
-    j1_is_array = j1.is_array
-    j2_is_array = j2.is_array
 
-    # check if the result will lead to tautology
-    tautology = (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) or\
-                (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term
-                 and
-                 ((not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula)) # S-->P and P<->S
-                 or
-                 (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula)))) # S<->P and S-->P
-
-    if tautology:
-        if Config.DEBUG: print("tautology")
-        return all_derived_sentences # can't do inference, it will result in tautology
-
-
-
-    if j1.value.frequency == 0 and j2.value.frequency == 0:
-        if Config.DEBUG: print("Can't do inference between negative premises")
+    if j1.value.frequency == 0 or j2.value.frequency == 0:
+        if Config.DEBUG: Global.Global.debug_print("Can't do inference between negative premises")
         return [] # can't do inference with 2 entirely negative premises
 
     # Time Projection between j1 and j2
@@ -112,14 +89,37 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     """
     swapped = False
 
-    if NALSyntax.Copula.is_first_order(j1_copula) == NALSyntax.Copula.is_first_order(j2_copula):
-        if NALSyntax.Copula.is_temporal(j1_copula) \
+    if isinstance(j1.statement,NALGrammar.Terms.StatementTerm) and isinstance(j2.statement,NALGrammar.Terms.StatementTerm) and \
+            NALSyntax.Copula.is_first_order(j1.statement.get_copula()) == NALSyntax.Copula.is_first_order(j2.statement.get_copula()):
+        j1_subject_term = j1.statement.get_subject_term()
+        j2_subject_term = j2.statement.get_subject_term()
+        j1_predicate_term = j1.statement.get_predicate_term()
+        j2_predicate_term = j2.statement.get_predicate_term()
+        j1_copula = j1.statement.get_copula()
+        j2_copula = j2.statement.get_copula()
+
+
+        # check if the result will lead to tautology
+        tautology = (j1_subject_term == j2_predicate_term and j1_predicate_term == j2_subject_term) or \
+                    (j1_subject_term == j2_subject_term and j1_predicate_term == j2_predicate_term
+                     and
+                     ((not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(
+                         j2_copula))  # S-->P and P<->S
+                      or
+                      (NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(
+                          j2_copula))))  # S<->P and S-->P
+
+        if tautology:
+            if Config.DEBUG: Global.Global.debug_print("tautology")
+            return all_derived_sentences  # can't do inference, it will result in tautology
+
+        if NALSyntax.Copula.is_temporal(j1.statement.get_copula()) \
             or (isinstance(j1,NALGrammar.Sentences.Judgment)
                 and j1.is_event()) or (isinstance(j2,NALGrammar.Sentences.Judgment) and j2.is_event()):
             #dont do semantic inference with temporal
             # todo .. don't do inference with events, it isn't handled gracefully right now
             return all_derived_sentences
-        elif not NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
+        elif not NALSyntax.Copula.is_symmetric(j1.statement.get_copula()) and not NALSyntax.Copula.is_symmetric(j2.statement.get_copula()):
             if j1_subject_term == j2_predicate_term or j1_predicate_term == j2_subject_term:
                 """
                     j1 = M-->P, j2 = S-->M
@@ -134,15 +134,11 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     """
 
                     j1, j2 = j2, j1
-                    j1_is_array, j2_is_array = j2_is_array, j1_is_array
-                    j1_statement, j2_statement, j1_subject_term, j2_subject_term = j2_statement, j1_statement, j2_subject_term, j1_subject_term
-                    j1_predicate_term, j2_predicate_term, j1_copula, j2_copula = j2_predicate_term, j1_predicate_term, j2_copula, j1_copula
-                    swapped = True
 
                 """
                     j1 = M-->P, j2 = S-->M
                 """
-                if not j1_is_array and not j2_is_array:
+                if not j1.is_array and not j2.is_array:
                     """
                     # Deduction
                     """
@@ -156,12 +152,12 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     derived_sentence = NALInferenceRules.Syllogistic.Exemplification(j2, j1)  # P-->S
                     add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
 
-            elif j1_subject_term == j2_subject_term:
+            elif j1.statement.get_subject_term() == j2.statement.get_subject_term():
                 """
                     j1=M-->P
                     j2=M-->S
                 """
-                if not j1_is_array and not j2_is_array:
+                if not j1.is_array and not j2.is_array:
                     """
                     # Induction
                     """
@@ -203,7 +199,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                     """
                     derived_sentence = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)  # M --> (P - S)
                     add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-            elif j1_predicate_term == j2_predicate_term:
+            elif j1.statement.get_predicate_term() == j2.statement.get_predicate_term():
                 """
                     j1 = P-->M
                     j2 = S-->M
@@ -272,7 +268,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 """
                 derived_sentence = NALInferenceRules.Syllogistic.Comparison(j1, j2)  # S<->P or S<=>P
                 add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-        elif not NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
+        elif not NALSyntax.Copula.is_symmetric(j1.statement.get_copula()) and NALSyntax.Copula.is_symmetric(j2.statement.get_copula()):
             """
             # j1 = M-->P or P-->M
             # j2 = S<->M or M<->S
@@ -280,7 +276,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             """
             derived_sentence = NALInferenceRules.Syllogistic.Analogy(j1, j2)  # S-->P or P-->S
             add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-        elif NALSyntax.Copula.is_symmetric(j1_copula) and not NALSyntax.Copula.is_symmetric(j2_copula):
+        elif NALSyntax.Copula.is_symmetric(j1.statement.get_copula()) and not NALSyntax.Copula.is_symmetric(j2.statement.get_copula()):
             """
             # j1 = M<->S or S<->M
             # j2 = P-->M or M-->P
@@ -288,7 +284,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             """
             derived_sentence = NALInferenceRules.Syllogistic.Analogy(j2, j1)  # S-->P or P-->S
             add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-        elif NALSyntax.Copula.is_symmetric(j1_copula) and NALSyntax.Copula.is_symmetric(j2_copula):
+        elif NALSyntax.Copula.is_symmetric(j1.statement.get_copula()) and NALSyntax.Copula.is_symmetric(j2.statement.get_copula()):
             """
             # j1 = M<->P or P<->M
             # j2 = S<->M or M<->S
@@ -296,8 +292,9 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             """
             derived_sentence = NALInferenceRules.Syllogistic.Resemblance(j1, j2)  # S<->P
             add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-    elif NALSyntax.Copula.is_first_order(j1_copula) != NALSyntax.Copula.is_first_order(j2_copula) and isinstance(j1, NALGrammar.Sentences.Goal):
-        # They do not have the same-order copula (only use goals for this type of inference)
+    elif (isinstance(j1.statement,NALGrammar.Sentences.StatementTerm) and not j1.statement.is_first_order())\
+            or (isinstance(j2.statement,NALGrammar.Sentences.StatementTerm) and not j2.statement.is_first_order()):
+        # One premise is a higher-order statement
         """
                 j1 = S==>P or S<=>P
                 j2 = A-->B or A<->B
@@ -305,61 +302,98 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 j1 = A-->B or A<->B
                 j2 = S==>P or S<=>P
         """
-        if NALSyntax.Copula.is_first_order(j1_copula):
+        if isinstance(j2.statement,NALGrammar.Sentences.StatementTerm) and not j2.statement.is_first_order():
             """
                 j1 = A-->B or A<->B 
                 j2 = S==>P or S<=>P
             """
-            # swap sentences
+            # swap sentences so j1 is higher order
             j1, j2 = j2, j1
-            j1_is_array, j2_is_array = j2_is_array, j1_is_array
-            j1_statement, j2_statement,j1_subject_term, j2_subject_term  = j2_statement, j1_statement,j2_subject_term, j1_subject_term
-            j1_predicate_term, j2_predicate_term,j1_copula, j2_copula = j2_predicate_term, j1_predicate_term,j2_copula, j1_copula
             swapped = True
+
+        assert (isinstance(j1.statement,NALGrammar.Sentences.StatementTerm) and not j1.statement.is_first_order()),"ERROR"
 
         """
             j1 = S==>P or S<=>P
         """
-        if NALSyntax.Copula.is_symmetric(j1_copula) and (j2_statement == j1_subject_term or j2_statement == j1_predicate_term) :
+        if NALSyntax.Copula.is_symmetric(j1.statement.get_copula()) and (j2.statement == j1.statement.get_subject_term() or j2.statement == j1.statement.get_predicate_term()) :
             """
                 j1 = S<=>P
                 j2 = S (e.g A-->B)
             """
-            derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j2, j1)  # P
-            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+            pass
+            # derived_sentence = NALInferenceRules.Conditional.ConditionalAnalogy(j2, j1)  # P
+            # add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
         else:
             """
                 j1 = S==>P
                 j2 = S or P (e.g A-->B)
             """
-            if j2_statement == j1_subject_term:
+            if j2.statement == j1.statement.get_subject_term():
                 """
                     j2 = S
                 """
-                derived_sentence = NALInferenceRules.Conditional.ConditionalDeduction(j1, j2)  # P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-            elif j2_statement == j1_predicate_term:
+               # derived_sentence = NALInferenceRules.Conditional.ConditionalDeduction(j1, j2)  # P
+               # add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+                pass
+            elif j2.statement == j1.statement.get_predicate_term():
                 """
                     j2 = P
                 """
-                derived_sentence = NALInferenceRules.Conditional.ConditionalAbduction(j1, j2)  # S
+
+                if isinstance(j2,NALGrammar.Sentences.Goal):
+                    # j2 = P! or (P ==> D)
+                    derived_sentence = NALInferenceRules.Conditional.ConditionalGoalDeduction(j1, j2)  # S!
+                else:
+                    # j2 = P. or (E ==> P)
+                    derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2)  # S.
                 add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-            elif NALSyntax.TermConnector.is_conjunction(j1_subject_term.connector) and not NALSyntax.Copula.is_symmetric(j1_copula):
+            elif NALSyntax.TermConnector.is_conjunction(j1.statement.get_subject_term().connector) and not NALSyntax.Copula.is_symmetric(j1.statement.get_copula()):
                 """
                     j1 = (C1 && C2 && ..CN && S) ==> P
                     j2 = S
                 """
-                derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # (C1 && C2 && ..CN) ==> P
-                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-
-        if swapped:
-            # restore sentences
+                pass
+                # derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # (C1 && C2 && ..CN) ==> P
+                # add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+    elif (isinstance(j1.statement, NALGrammar.Sentences.CompoundTerm) and
+          isinstance(j2.statement, NALGrammar.Sentences.StatementTerm) and
+            NALSyntax.TermConnector.is_conjunction(j1.statement.connector))\
+            or (isinstance(j2.statement, NALGrammar.Sentences.CompoundTerm) and
+                isinstance(j1.statement, NALGrammar.Sentences.StatementTerm) and
+                NALSyntax.TermConnector.is_conjunction(j2.statement.connector)):
+        """
+                j1 = (A &/ B)
+                j2 = A
+            OR
+                j1 = A
+                j2 = (A &/ B)
+        """
+        if isinstance(j2.statement,NALGrammar.Sentences.CompoundTerm):
+            """
+                j1 = A
+                j2 = (A &/ B)
+            """
+            # swap sentences so j1 is the compound
             j1, j2 = j2, j1
-            j1_is_array, j2_is_array = j2_is_array, j1_is_array
-            j1_statement, j2_statement,j1_subject_term, j2_subject_term = j2_statement, j1_statement,j2_subject_term, j1_subject_term
-            j1_predicate_term, j2_predicate_term,j1_copula, j2_copula = j2_predicate_term, j1_predicate_term,j2_copula, j1_copula
-            swapped = False
+            swapped = True
 
+        """
+            j1 = (A &/ B)
+            j2 = A
+        """
+        if isinstance(j1, NALGrammar.Sentences.Goal) and j1.statement.subterms[0] == j2.statement:
+            """
+                j1 = (A &/ B)!
+                j2 = A.
+            """
+            derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # B!
+            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+
+    if swapped:
+        # restore sentences
+        j1, j2 = j2, j1
+        swapped = False
     """
     ===============================================
     ===============================================
@@ -368,9 +402,9 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     ===============================================
     """
     # mark sentences as interacted with each other
-    j1.mutually_add_to_interacted_sentences(j2)
+    #j1.mutually_add_to_interacted_sentences(j2)
 
-    if Config.DEBUG: print("Derived " + str(len(all_derived_sentences)) + " inference results.")
+    if Config.DEBUG: Global.Global.debug_print("Derived " + str(len(all_derived_sentences)) + " inference results.")
 
     return all_derived_sentences
 
@@ -392,7 +426,6 @@ def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sen
     """
 
     return derived_sentences
-
 
 
 def do_inference_one_premise(j):
@@ -450,5 +483,4 @@ def add_to_derived_sentences(derived_sentence,derived_sentence_array,j1,j2=None)
     """
     if derived_sentence is None: return  # inference result was not useful
     if not isinstance(derived_sentence, NALGrammar.Sentences.Question) and derived_sentence.value.confidence == 0.0: return # zero confidence is useless
-
     derived_sentence_array.append(derived_sentence)
