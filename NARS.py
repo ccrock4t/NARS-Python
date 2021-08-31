@@ -38,9 +38,15 @@ class NARS:
         self.memory = NARSMemory.Memory()
         self.delay = 0  # delay between cycles
         self.atomic_operation_queue = [] # operations the system has queued to executed
-        self.time = time.time()
-        self.last_working_cycle = 0
         self.current_operation_sequence = None
+
+        # enforce configurable milliseconds per working cycle
+        self.cycle_begin_time = None
+
+        # keeps track of number of working cycles per second
+        self.cycles_per_second_timer = time.time()
+        self.last_working_cycle = 0
+
 
     def run(self):
         """
@@ -65,19 +71,23 @@ class NARS:
         """
         if Config.gui_use_interface: Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None,0))
 
+        self.cycle_begin_time = time.time()
+
         InputChannel.process_pending_sentence()  # process strings coming from input buffer
 
+        before = time.time()
         self.process_temporal_module()  # process events from the event buffer
+        if Config.DEBUG: Global.Global.debug_print("Chaining took " + str((time.time() - before) * 1000) + "ms")
 
-        if time.time() - self.time > 1.0:
-            self.time = time.time()
+        if time.time() - self.cycles_per_second_timer > 1.0:
+            self.cycles_per_second_timer = time.time()
             print('Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
             self.last_working_cycle = Global.Global.get_current_cycle_number()
 
         self.configure_busyness()
 
-        # now do something with tasks from experience buffer and/or knowledge from memory
-        for _ in range(Config.TASKS_PER_CYCLE):
+        # do stuff with buffer and memory if there is time
+        while (time.time() - self.cycle_begin_time) * 1000 < Config.WORKING_CYCLE_TIME:
             rand = random.random()
             if rand < Config.MINDFULNESS and len(self.global_buffer) > 0:
                 # OBSERVE
@@ -90,21 +100,13 @@ class NARS:
                 self.Consider()
                 if Config.DEBUG: Global.Global.debug_print("Consider took " + str((time.time() - before) * 1000) + "ms")
 
-        # if len(self.global_buffer) > 0:
-        #     # process global buffer tasks
-        #     for _ in range(Config.OBSERVES_PER_CYCLE):
-        #         if len(self.global_buffer) > 0:
-        #             # OBSERVE
-        #             self.Observe()
-        # else:
-        #     for _ in range(Config.CONSIDERS_PER_CYCLE):
-        #         self.Consider()
-
         # now execute operations
         self.execute_operation_queue()
 
         if Config.DEBUG:
             Global.Global.debug_print("global buffer: " + str(len(self.global_buffer)))
+
+        if Config.DEBUG: Global.Global.debug_print('Cycle took: ' + str((time.time() - self.cycle_begin_time)*1000) + "ms")
 
         # done
         self.memory.current_cycle_number += 1
@@ -133,7 +135,9 @@ class NARS:
 
     def Observe(self):
         """
-            Process a task from the global buffer
+            Process a task from the global buffer.
+
+            This function should never produce new tasks.
         """
         if len(self.global_buffer) > 0:
             task_item = self.global_buffer.take()
@@ -142,18 +146,19 @@ class NARS:
             self.process_task(task_item.object)
 
 
-    def Consider(self, concept=None):
+    def Consider(self):
         """
-            Process a random concept in memory
+            Process a random concept in memory.
+
+            This function can result in new tasks
 
             :param: concept: concept to consider. If None, picks a random concept
         """
-        concept_item = None
-        if concept is None:
-            concept_item = self.memory.get_random_concept_item()
-            if concept_item is None: return # nothing to ponder
+        concept_item = self.memory.get_random_concept_item()
+        if concept_item is None: return # nothing to ponder
+        concept = concept_item.object
 
-            concept = concept_item.object
+        original_concept_item = concept_item
 
         attempts = 0
         max_attempts = 2
@@ -176,11 +181,12 @@ class NARS:
 
         if concept is not None and attempts != max_attempts:
             #process a belief and desire
-            #todo process both
+
             if len(concept.desire_table) > 0:
                 sentence = concept.desire_table.peek()  # get most confident goal
                 self.process_goal_sentence(sentence)
-            elif len(concept.belief_table) > 0:
+
+            if len(concept.belief_table) > 0:
                 sentence = concept.belief_table.peek()  # get most confident belief
                 self.process_judgment_sentence(sentence)
 
@@ -191,9 +197,11 @@ class NARS:
 
         # decay priority; take concept out of bag and replace
         if concept_item is not None:
-            concept_item = self.memory.concepts_bag.take_using_key(concept_item.key)
-            concept_item.decay()
-            self.memory.concepts_bag.put(concept_item)
+            self.memory.concepts_bag.decay_item(concept_item.key)
+
+        if attempts > 1:
+            # decay priority; take concept out of bag and replace
+            self.memory.concepts_bag.decay_item(original_concept_item.key)
 
     def save_memory_to_disk(self, filename="memory1.narsmemory"):
         """
@@ -309,11 +317,11 @@ class NARS:
         Asserts.assert_task(task)
 
         sentence = task.sentence
-        statement_term = sentence.statement
-        if statement_term.contains_variable(): return  # todo handle variables
+        task_statement_term = sentence.statement
+        if task_statement_term.contains_variable(): return  # todo handle variables
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept_item = self.memory.peek_concept_item(statement_term)
+        statement_concept_item = self.memory.peek_concept_item(task_statement_term)
         statement_concept = statement_concept_item.object
 
         if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
@@ -325,9 +333,7 @@ class NARS:
 
         if task.sentence.is_event():
             # increase priority; take concept out of bag and replace
-            statement_concept_item = self.memory.concepts_bag.take_using_key(statement_concept_item.key)
-            statement_concept_item.strengthen(Config.PRIORITY_STRENGTHEN_VALUE)
-            self.memory.concepts_bag.put(statement_concept_item)
+            self.memory.concepts_bag.strengthen_item(statement_concept_item.key)
 
     def process_judgment_task(self, task: NARSDataStructures.Other.Task, task_statement_concept):
         """
@@ -405,7 +411,7 @@ class NARS:
 
         # try a Revision on another belief in the table
         if not j1.is_event():
-            j2 = statement_concept.belief_table.peek_random()
+            j2 = statement_concept.belief_table.peek_highest_confidence_interactable(j1)
 
             if NALGrammar.Sentences.may_interact(j1,j2):
                 if Config.DEBUG: Global.Global.debug_print(
@@ -414,10 +420,11 @@ class NARS:
                 for derived_sentence in derived_sentences:
                     self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
-        # results = self.process_sentence_semantic_inference(j1, related_concept)
-        # for result in results:
-        #     self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
-        #
+        if j1.is_array: #todo remove this condition
+            results = self.process_sentence_semantic_inference(j1, related_concept)
+            for result in results:
+                self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+
 
 
     def process_question_task(self, task, task_statement_concept):
@@ -522,7 +529,7 @@ class NARS:
                 subterm_concept = Global.Global.NARS.memory.peek_concept(subterm)
                 belief = subterm_concept.belief_table.peek()
                 if belief is not None and belief.is_positive():
-                    # a component is positive, do inference and insert the remaining goal component
+                    # the first component is positive, do inference and derive the remaining goal component
                     results = NARSInferenceEngine.do_semantic_inference_two_premise(j, belief)
                     for result in results:
                         self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
@@ -534,7 +541,7 @@ class NARS:
                     self.global_buffer.put_new(NARSDataStructures.Other.Task(new_goal))
             else:
                 # process with highest-expectation explanation A =/> B
-                best_explanation_belief = self.get_best_explanation_with_true_precondition(j)
+                best_explanation_belief = self.get_best_positive_explanation_with_true_precondition(j)
 
                 if best_explanation_belief is not None:
                     if Config.DEBUG: Global.Global.debug_print(str(best_explanation_belief) + " is best explanation for " + str(j))
@@ -611,7 +618,7 @@ class NARS:
 
         return best_explanation_belief
 
-    def get_best_explanation_with_true_precondition(self, j):
+    def get_best_positive_explanation_with_true_precondition(self, j):
         """
             Gets the best explanation belief for the given sentence's statement
             that the sentence is able to interact with
@@ -625,7 +632,7 @@ class NARS:
 
             belief = explanation_concept.belief_table.peek() # A =/> B
 
-            if belief.statement.get_subject_term().contains_positive():
+            if belief.is_positive() and belief.statement.get_subject_term().contains_positive():
                 if best_explanation_belief is None:
                     best_explanation_belief = belief
                 else:
@@ -697,6 +704,20 @@ class NARS:
         if len(positive_beliefs) == 0:
             return None
         return positive_beliefs[round(random.random() * (len(positive_beliefs)-1))]
+
+    def get_random_prediction(self, j):
+        """
+            Returns a random positive prediction belief for a given belief
+        :param j:
+        :return:
+        """
+        concept = self.memory.peek_concept(j.statement)
+        if len(concept.prediction_links) == 0:
+            return None
+        prediction_concept = concept.prediction_links.peek().object
+        if len(prediction_concept.belief_table) == 0:
+            return None
+        return prediction_concept.belief_table.peek()
 
     def get_all_positive_predictions(self, j):
         predictions = []

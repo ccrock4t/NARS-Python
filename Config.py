@@ -14,6 +14,8 @@ k = user_config["k"] # evidential horizon
 T = user_config["T"] # decision rule (goal decision-making) threshold
 MINDFULNESS = user_config["MINDFULNESS"]
 
+WORKING_CYCLE_TIME = user_config["WORKING_CYCLE_TIME"] # time in milliseconds per working cycle
+
 POSITIVE_THRESHOLD = user_config["POSITIVE_THRESHOLD"]
 NEGATIVE_THRESHOLD = user_config["NEGATIVE_THRESHOLD"]
 
@@ -49,7 +51,6 @@ INTERVAL_SCALE = user_config["INTERVAL_SCALE"] # higher scale is more granular
     Bags
 """
 BAG_DEFAULT_CAPACITY = user_config["BAG_DEFAULT_CAPACITY"] # default for how many items can fit in a bag
-BAG_NUMBER_OF_BUCKETS = user_config["BAG_NUMBER_OF_BUCKETS"] # how many probability buckets are there? e.g. 100 allows 100 probability values in [0%, 100%)
 
 """
     Tables

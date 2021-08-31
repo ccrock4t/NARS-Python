@@ -43,6 +43,12 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     ===============================================
     ===============================================
     """
+
+    if j1.value.confidence == 0 or j2.value.confidence == 0:
+        if Config.DEBUG: Global.Global.debug_print("Can't do inference between negative premises")
+        return [] # can't do inference with 2 entirely negative premises
+
+
     all_derived_sentences = []
 
     j1_statement = j1.statement

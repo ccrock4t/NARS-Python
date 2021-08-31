@@ -4,6 +4,7 @@
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
 import random
+from bisect import bisect
 
 from NARSDataStructures.ItemContainers import ItemContainer
 import Config
@@ -19,15 +20,10 @@ class Bag(ItemContainer):
     """
 
     def __init__(self, item_type, capacity):
-        self.number_of_buckets = Config.BAG_NUMBER_OF_BUCKETS  # number of buckets in the bag (the bag's granularity)
-        self.buckets = dict()  # for accessing items by priority
-        self.current_bucket_number = 0  # keeps track of the Bag's current bucket number
+        self.items = [] # cumulative weights of non-empty buckets
         self.count = 0
-
-        # initialize buckets between 0 and number-of-buckets minus 1
-        for i in range(0, self.number_of_buckets):
-            self.buckets[i] = []
-
+        self.min = None
+        self.max = None
         ItemContainer.__init__(self, item_type=item_type,capacity=capacity)
 
     def __len__(self):
@@ -38,7 +34,7 @@ class Bag(ItemContainer):
 
     def put(self, item):
         """
-            Place an Item into the bag.
+            Place a NEW Item into the bag.
 
             :param Bag Item to place into the Bag
             :returns Item purged from the Bag if the inserted item causes an overflow
@@ -49,9 +45,10 @@ class Bag(ItemContainer):
         self.count += 1
 
         ItemContainer._put_into_lookup_dict(self, item)  # Item Container
-        # put item into bucket
-        self.buckets[item.get_target_bucket_number()].append(item)
-        item.current_bucket_number = item.get_target_bucket_number()
+        # put item into bag (priority times)
+        idx_to_add = bisect(self.items, item.key)
+        for i in range(int(100*item.budget.priority)):
+            self.items.insert(idx_to_add,item.key)
 
         # remove lowest priority item if over capacity
         purged_item = None
@@ -70,11 +67,48 @@ class Bag(ItemContainer):
         if self.count == 0: return None  # no items
 
         if key is None:
-            item, _ = self._peek_probabilistically()
+            item = self._peek_probabilistically()
         else:
             item = ItemContainer.peek_using_key(self,key=key)
 
         return item
+
+    def strengthen_item(self, key):
+        """
+            Decays an item in the bag
+        :param key:
+        :return:
+        """
+        concept_item = self.peek_using_key(key)
+        before = concept_item.get_bag_number()
+        ItemContainer._take_from_lookup_dict(self, key)
+        concept_item.strengthen()
+        ItemContainer._put_into_lookup_dict(self, concept_item)
+        after = concept_item.get_bag_number()
+        diff = abs(after - before)
+        # remove the difference in priority so its less likely to be randomly selected
+        idx_to_add = bisect(self.items, key)
+        for i in range(diff):
+            self.items.insert(idx_to_add,key)
+
+    def decay_item(self, key):
+        """
+            Decays an item in the bag
+        :param key:
+        :return:
+        """
+        item = ItemContainer.peek_using_key(self, key=key)
+        concept_item = self.peek_using_key(key)
+        before = concept_item.get_bag_number()
+        ItemContainer._take_from_lookup_dict(self, key)
+        concept_item.decay()
+        ItemContainer._put_into_lookup_dict(self, concept_item)
+        after = concept_item.get_bag_number()
+        diff = abs(after - before)
+        # remove the difference in priority so its less likely to be randomly selected
+        idx_to_rmv = bisect(self.items, key)
+        for i in range(diff):
+            self.items.pop(idx_to_rmv-i-1)
 
     def peek_max(self):
         """
@@ -82,10 +116,8 @@ class Bag(ItemContainer):
 
             Returns None if Bag is empty
         """
-        if self.count == 0: return None
-        self._move_up_to_max_nonempty_bucket()
-        item, _ = self._peek_random_item_from_current_bucket()
-        return item
+        #todo
+        pass
 
 
     def take_using_key(self, key):
@@ -98,40 +130,19 @@ class Bag(ItemContainer):
         assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
 
         item = ItemContainer.peek_using_key(self, key=key)
-        self.buckets[item.current_bucket_number].remove(item)  # remove item reference from bucket
         self.count = self.count - 1  # decrement bag count
 
         ItemContainer._take_from_lookup_dict(self, key)
-
+        #todo
         return item
 
     def _take_min(self):
         """
-            Selects the lowest priority bucket, and removes an item from it.
-            Also removes the item from the Item Lookup Dict
-
             :returns the lowest priority item taken from the Bag
         """
-        # store old index so we can restore it
-        oldidx = self.current_bucket_number
+        #todo
+        pass
 
-        self._move_to_min_nonempty_bucket()
-
-        # peek a random item from the bucket
-        _, randidx = self._peek_random_item_from_current_bucket()
-
-        # remove the item from the bucket
-        item = self.buckets[self.current_bucket_number].pop(randidx)
-
-        self.count = self.count - 1  # decrement bag count
-
-        # remove item reference from lookup table
-        ItemContainer._take_from_lookup_dict(self, key=item.key)
-
-        # restore original index
-        self.current_bucket_number = oldidx
-
-        return item
 
     def _peek_probabilistically(self):
         """
@@ -140,72 +151,7 @@ class Bag(ItemContainer):
             :returns (item, index of item in the current bucket)
         """
         if self.count == 0: return None, None
-        # probabilistically select a priority bucket
-        self._move_to_next_nonempty_bucket()  # try next non-empty bucket
         rnd = random.random()  # randomly generated number in [0.0, 1.0)
-        bucket_probability = self.current_bucket_number / self.number_of_buckets
+        key = self.items[round(rnd*(len(self.items)-1))]
+        return self.item_lookup_dict[key]
 
-        while rnd >= bucket_probability:
-            # bucket was not selected, try next bucket
-            self._move_to_next_nonempty_bucket()  # try next non-empty bucket
-            rnd = random.random()  # randomly generated number in [0.0, 1.0)
-            bucket_probability = self.current_bucket_number / self.number_of_buckets
-
-        # peek a random item from the bucket
-        item, randidx = self._peek_random_item_from_current_bucket()
-
-        return item, randidx
-
-    def _peek_random_item_from_current_bucket(self):
-        """
-            Picks an item from the current bucket using uniform randomness.
-
-            :returns (item, index of item in current bucket)
-        """
-        # pop random item from currently selected bucket
-        rnd = random.random()  # another randomly generated number in [0.0, 1.0)
-        maxidx = len(self.buckets[self.current_bucket_number]) - 1
-        randidx = round(rnd * maxidx)
-        item = self.buckets[self.current_bucket_number][randidx]
-        return item, randidx
-
-    def _move_to_next_nonempty_bucket(self):
-        """
-            Select the next non-empty bucket after the currently selected bucket
-        """
-        assert self.count > 0, "Cannot select non-empty bucket in empty Bag"
-        self._move_upward_to_next_bucket()
-        while len(self.buckets[self.current_bucket_number]) == 0:
-            self._move_upward_to_next_bucket()
-
-    def _move_up_to_max_nonempty_bucket(self):
-        """
-            Select the highest value non-empty bucket
-
-        """
-        assert self.count > 0,"Cannot select non-empty bucket in empty Bag"
-        self.current_bucket_number = self.number_of_buckets - 1 # first check highest bucket
-        while len(self.buckets[self.current_bucket_number]) == 0:
-            self._move_down_to_next_bucket()
-
-    def _move_to_min_nonempty_bucket(self):
-        """
-            Select the highest value non-empty bucket
-
-        """
-        assert self.count > 0,"Cannot select non-empty bucket in empty Bag"
-        # move to lowest non-empty priority bucket
-        self.current_bucket_number = 0
-        self._move_to_next_nonempty_bucket()
-
-    def _move_down_to_next_bucket(self):
-        """
-            Select the next bucket below the currently selected bucket
-        """
-        self.current_bucket_number = (self.current_bucket_number - 1) % self.number_of_buckets
-
-    def _move_upward_to_next_bucket(self):
-        """
-            Select the next bucket above the currently selected bucket
-        """
-        self.current_bucket_number = (self.current_bucket_number + 1) % self.number_of_buckets

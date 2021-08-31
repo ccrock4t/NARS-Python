@@ -132,7 +132,6 @@ class TemporalModule(ItemContainer):
             for the latest statement in the chain
         """
         if not self.temporal_chain_has_changes: return []
-        if Config.DEBUG: Global.Global.debug_print("CHAIN")
         NARS = self.NARS
         results = []
         temporal_chain = self.temporal_chain
@@ -146,10 +145,7 @@ class TemporalModule(ItemContainer):
                 results.append(derived_sentence)
                 if NARS is not None:
                     task = Task(derived_sentence)
-                    if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
-                        Global.Global.NARS.process_task(task)
-                    else:
-                        NARS.global_buffer.put_new(task)
+                    NARS.global_buffer.put_new(task)
 
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ C,
@@ -216,10 +212,7 @@ class TemporalModule(ItemContainer):
                 results.append(derived_sentence)
                 if NARS is not None:
                     task = Task(derived_sentence)
-                    if NALSyntax.TermConnector.is_conjunction(derived_sentence.statement.connector):
-                        Global.Global.NARS.process_task(task)
-                    else:
-                        NARS.global_buffer.put_new(task)
+                    NARS.global_buffer.put_new(task)
 
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ C,
@@ -266,17 +259,13 @@ class TemporalModule(ItemContainer):
         """
             # form new anticipation from observed event
         """
-        anticipated_implication_belief = self.NARS.get_random_positive_prediction(observed_event)
+        anticipated_implication_belief = self.NARS.get_random_prediction(observed_event)
 
         if anticipated_implication_belief is None: return # nothing is anticipated
         # something is anticipated
         self.anticipate_from_concept(self.NARS.memory.peek_concept(anticipated_implication_belief.statement),
                                      anticipated_implication_belief)
 
-        # predictions = self.NARS.get_all_positive_predictions(observed_event)
-        # for prediction in predictions:
-        # #something is anticipated
-        #     self.anticipate_from_concept(self.NARS.memory.peek_concept(prediction.statement),prediction)
 
 
     def anticipate_from_concept(self, higher_order_anticipation_concept, best_belief=None):
@@ -294,6 +283,8 @@ class TemporalModule(ItemContainer):
 
         operation_statement = best_belief.statement
         expectation = best_belief.get_expectation()
+
+        # use this for 1 anticipation only
         if self.current_anticipation is not None:
             # in the middle of a operation sequence already
             current_anticipation_expectation = self.current_anticipation

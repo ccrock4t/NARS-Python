@@ -69,11 +69,13 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal:
         # Judgment or Goal
         # Get Truth Value
-        (f1, c1) = (j1.value.frequency, j1.value.confidence)
+
         if j1.is_event() and j2.is_event():
-            proj_value = NALInferenceRules.Local.Value_Projection(j1, j2.stamp.occurrence_time)
+            (f1, c1) = (j1.value.frequency, j1.value.confidence)
+            proj_value = NALInferenceRules.Local.Value_Projection(j2, j1.stamp.occurrence_time)
             (f2, c2) = proj_value.frequency, proj_value.confidence
         else:
+            (f1, c1) = (j1.value.frequency, j1.value.confidence)
             (f2, c2) = (j2.value.frequency, j2.value.confidence)
         result_truth_array = None
         if j1.is_array and j2.is_array:
@@ -99,7 +101,6 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
             elif j1.is_event():
                 occurrence_time = j1.stamp.occurrence_time
             elif j2.is_event():
-                #todo dont map to j2 occurrence times
                 occurrence_time = j2.stamp.occurrence_time
 
         if result_type == NALGrammar.Sentences.Judgment:

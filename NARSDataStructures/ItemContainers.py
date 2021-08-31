@@ -121,10 +121,7 @@ class Item:
             quality = 0.01
         elif isinstance(object, NARSMemory.Concept):
             quality = 0.01
-            priority = 0.990 / object.term.syntactic_complexity
-        elif isinstance(object, NALGrammar.Sentences.Sentence):
-            priority = object.value.confidence
-            quality = 0.01
+            priority = 0.990
 
         if priority is not None:
             if isinstance(object, Task):
@@ -133,10 +130,10 @@ class Item:
                 self.key = Item.get_key_from_object(object)
             self.budget = Item.Budget(priority=priority, quality=quality)
         else:
-            self.key = str(object)
-            self.budget = Item.Budget()
+            assert False,"ERROR: No priority for item."
 
-        self.current_bucket_number = self.get_target_bucket_number()
+
+
 
     @classmethod
     def get_key_from_object(cls, object):
@@ -163,16 +160,6 @@ class Item:
                + NALSyntax.StatementSyntax.BudgetMarker.value
 
 
-    def get_target_bucket_number(self):
-        """
-            Returns: The Bag bucket number this item belongs in according to its priority.
-
-            It is calculated as this item's priority [0,1] converted to a corresponding probability
-            based on Bag granularity
-            (e.g. Priority=0.5, 100 buckets -> bucket 50, 200 buckets -> bucket 100, 50 buckets -> bucket 25)
-        """
-        return min(int(round(self.budget.priority, 2) * 100) * Config.BAG_NUMBER_OF_BUCKETS / 100, Config.BAG_NUMBER_OF_BUCKETS - 1)
-
     def strengthen(self,multiplier= Config.PRIORITY_STRENGTHEN_VALUE):
         """
             Increase this item's priority to a high value
@@ -187,6 +174,9 @@ class Item:
         new_priority = self.budget.priority * multiplier
         if new_priority < self.budget.quality: return # priority can't go below quality
         self.budget.priority = round(new_priority, 3)
+
+    def get_bag_number(self):
+        return int(100*self.budget.priority)
 
     def get_gui_info(self):
         dict = {}

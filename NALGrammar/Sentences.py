@@ -119,11 +119,6 @@ class Sentence(Array):
         else:
             return self.value
 
-    def get_formatted_string(self):
-        string = self.get_formatted_string_no_id()
-        string = Global.Global.MARKER_SENTENCE_ID + str(self.stamp.id) + Global.Global.MARKER_ID_END + string
-        return string
-
     def get_formatted_string_no_id(self):
         if isinstance(self.statement, StatementTerm) or isinstance(self.statement,CompoundTerm):
             string = self.statement.get_formatted_string_with_interval()
@@ -135,6 +130,10 @@ class Sentence(Array):
             string = string + " " + self.get_present_value().get_formatted_string() + " " + str(NALSyntax.StatementSyntax.ExpectationMarker.value) + str(self.get_expectation())
         return string
 
+    def get_formatted_string(self):
+        string = self.get_formatted_string_no_id()
+        string = Global.Global.MARKER_SENTENCE_ID + str(self.stamp.id) + Global.Global.MARKER_ID_END + string
+        return string
 
     def get_gui_info(self):
         dict = {}

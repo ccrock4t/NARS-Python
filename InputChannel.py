@@ -70,7 +70,7 @@ def process_pending_sentence():
     """
         Processes the next pending sentence from the input buffer if one exists
     """
-    if input_queue.qsize() > 0:
+    while input_queue.qsize() > 0:
         sentence = input_queue.get()
         process_sentence(sentence)
     if Config.DEBUG: Global.Global.debug_print("Input Channel Size: " + str(input_queue.qsize()))
@@ -227,6 +227,13 @@ def process_visual_sensory_input(input_string):
         else:
             pixel_value_array, dim_lengths = parse_3D_array(input_string)
 
+    # fast fourier transform
+    f = np.fft.fft2(pixel_value_array) #todo does this work on rgb image?
+    fshift = np.fft.fftshift(f)
+    pixel_value_array = 20*np.log(np.abs(fshift))
+
+    #create Narsese array
+
     atomic_array_term = NALGrammar.Terms.ArrayTerm(name=subject_str,
                                              dimensions=dim_lengths)
     statement_array_term = NALGrammar.Terms.StatementTerm(subject_term=NALGrammar.Terms.CompoundTerm(subterms=[atomic_array_term],
@@ -234,6 +241,7 @@ def process_visual_sensory_input(input_string):
                                                     predicate_term=predicate_term,
                                                     copula=NALSyntax.Copula.Inheritance)
 
+    max_value = np.max(pixel_value_array)
 
     def create_truth_value_array(*coord_vars):
         coords = tuple([int(var) for var in coord_vars])
@@ -249,7 +257,7 @@ def process_visual_sensory_input(input_string):
             c += (1.0 - abs(coord))
         c /= len(dim_lengths)
 
-        f = pixel_value / 255.0
+        f = pixel_value / max_value
         if c >= 1:
             c = 0.99
         elif c <= 0.0:
