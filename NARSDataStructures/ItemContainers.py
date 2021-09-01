@@ -9,7 +9,7 @@ import NARSGUI
 import NALGrammar
 import NARSMemory
 import Config
-from NARSDataStructures.Other import Task
+import NARSDataStructures.Other
 import NALInferenceRules
 
 
@@ -49,8 +49,8 @@ class ItemContainer:
         # put item into lookup table
         self.item_lookup_dict[item.key] = item
 
-        if Config.gui_use_interface:
-            Global.Global.print_to_output(str(item), data_structure=self)
+        if Config.GUI_USE_INTERFACE:
+            Global.Global.print_to_output(str(item), data_structure=self) # draw to GUI
             ItemContainer.item_archive[item.key] = item
 
     def _take_from_lookup_dict(self, key):
@@ -63,7 +63,7 @@ class ItemContainer:
         """
         item = self.item_lookup_dict.pop(key)  # remove item reference from lookup table
 
-        if Config.gui_use_interface:
+        if Config.GUI_USE_INTERFACE:
             Global.Global.remove_from_output(str(item), data_structure=self)
 
         return item
@@ -113,7 +113,7 @@ class Item:
         self.id = id
         priority = None
         quality = None
-        if isinstance(object, Task):
+        if isinstance(object, NARSDataStructures.Other.Task):
             if isinstance(object.sentence, NALGrammar.Sentences.Judgment):
                 priority = object.sentence.value.confidence
             else:
@@ -122,9 +122,12 @@ class Item:
         elif isinstance(object, NARSMemory.Concept):
             quality = 0.01
             priority = 0.990
+        else:
+            quality = 0.01
+            priority = 0.5
 
         if priority is not None:
-            if isinstance(object, Task):
+            if isinstance(object, NARSDataStructures.Other.Task):
                 self.key = id
             else:
                 self.key = Item.get_key_from_object(object)
@@ -201,7 +204,7 @@ class Item:
             dict[NARSGUI.NARSGUI.KEY_CAPACITY_TERM_LINKS] = str(self.object.term_links.capacity)
             dict[NARSGUI.NARSGUI.KEY_CAPACITY_PREDICTION_LINKS] = str(self.object.prediction_links.capacity)
             dict[NARSGUI.NARSGUI.KEY_CAPACITY_EXPLANATION_LINKS] = str(self.object.explanation_links.capacity)
-        elif isinstance(self.object, Task):
+        elif isinstance(self.object, NARSDataStructures.Other.Task):
             dict[NARSGUI.NARSGUI.KEY_SENTENCE_STRING] = str(self.object.sentence)
             dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in self.object.sentence.stamp.evidential_base]
             dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [str(interactedsentence) for interactedsentence in self.object.sentence.stamp.interacted_sentences]

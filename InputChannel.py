@@ -3,7 +3,7 @@ import time
 import numpy as np
 
 import Config
-import NALGrammar
+import NALGrammar.Sentences
 import Global
 import NALSyntax
 import NARSDataStructures

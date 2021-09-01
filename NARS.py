@@ -36,7 +36,6 @@ class NARS:
                                                                capacity=Config.GLOBAL_BUFFER_CAPACITY)
         self.temporal_module = NARSDataStructures.Buffers.TemporalModule(self,item_type=NARSDataStructures.Other.Task, capacity=Config.EVENT_BUFFER_CAPACITY)
         self.memory = NARSMemory.Memory()
-        self.delay = 0  # delay between cycles
         self.atomic_operation_queue = [] # operations the system has queued to executed
         self.current_operation_sequence = None
 
@@ -53,14 +52,11 @@ class NARS:
             Infinite loop of working cycles
         """
         while True:
-            if Config.gui_use_interface: self.handle_gui_pipes()
+            if Config.GUI_USE_INTERFACE: self.handle_gui_pipes()
             # global parameters
             if Global.Global.paused:
                 time.sleep(0.2)
                 continue
-
-            if self.delay > 0:
-                time.sleep(self.delay)
 
             self.do_working_cycle()
 
@@ -69,13 +65,15 @@ class NARS:
             Performs 1 working cycle.
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
-        if Config.gui_use_interface: Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None,0))
+        if Config.GUI_USE_INTERFACE: Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None, 0))
 
+        # track when the cycle began
         self.cycle_begin_time = time.time()
 
-        InputChannel.process_pending_sentence()  # process strings coming from input buffer
+        # process strings coming from input buffer
+        InputChannel.process_pending_sentence()
 
-        before = time.time()
+        if Config.DEBUG: before = time.time()
         self.process_temporal_module()  # process events from the event buffer
         if Config.DEBUG: Global.Global.debug_print("Chaining took " + str((time.time() - before) * 1000) + "ms")
 
@@ -84,6 +82,7 @@ class NARS:
             print('Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
             self.last_working_cycle = Global.Global.get_current_cycle_number()
 
+        # determine mindfulness parameter
         self.configure_busyness()
 
         # do stuff with buffer and memory if there is time
@@ -91,22 +90,26 @@ class NARS:
             rand = random.random()
             if rand < Config.MINDFULNESS and len(self.global_buffer) > 0:
                 # OBSERVE
-                before = time.time()
+                if Config.DEBUG: before = time.time()
                 self.Observe()
                 if Config.DEBUG: Global.Global.debug_print("Observe took " + str((time.time() - before)*1000) + "ms")
             else:
                 # CONSIDER
-                before = time.time()
+                if Config.DEBUG: before = time.time()
                 self.Consider()
                 if Config.DEBUG: Global.Global.debug_print("Consider took " + str((time.time() - before) * 1000) + "ms")
 
         # now execute operations
         self.execute_operation_queue()
 
+        # debug statements
         if Config.DEBUG:
             Global.Global.debug_print("global buffer: " + str(len(self.global_buffer)))
 
         if Config.DEBUG: Global.Global.debug_print('Cycle took: ' + str((time.time() - self.cycle_begin_time)*1000) + "ms")
+
+        # if using GUI, sleep 4 ms, otherwise GUI doesn't work
+        if Config.GUI_USE_INTERFACE: time.sleep(0.005)
 
         # done
         self.memory.current_cycle_number += 1
@@ -223,13 +226,13 @@ class NARS:
                 # load memory from file
                 self.memory = pickle.load(f)
                 # Print memory contents to internal data GUI
-                if Config.gui_use_interface:
+                if Config.GUI_USE_INTERFACE:
                     Global.Global.clear_output_gui(data_structure=self.memory.concepts_bag)
                     for item in self.memory.concepts_bag:
                         if item not in self.memory.concepts_bag:
                             Global.Global.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
-                if Config.gui_use_interface:
+                if Config.GUI_USE_INTERFACE:
                     NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
 
                 Global.Global.print_to_output("LOAD MEMORY SUCCESS")
@@ -304,8 +307,8 @@ class NARS:
                     lines = key.splitlines(False)
                     for line in lines:
                         InputChannel.add_input_string(line)
-            elif command == "delay":
-                self.delay = key
+            elif command == "duration":
+                Config.WORKING_CYCLE_TIME = key
             elif command == "paused":
                 Global.Global.paused = key
 

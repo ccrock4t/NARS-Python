@@ -23,7 +23,7 @@ def test_table_removemax():
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, c))
         table.put(sentence)
-    tablemax = table._extract_max().value.confidence
+    tablemax = table.extract_max().value.confidence
     assert(tablemax == maximum), "TEST FAILURE: Table did not properly retrieve maximum value"
 
 
@@ -41,7 +41,7 @@ def test_table_removemin():
             NALGrammar.Values.TruthValue(0.9, c))
         table.put(sentence)
 
-    tablemin = table._extract_min().value.confidence
+    tablemin = table.extract_min().value.confidence
     assert (tablemin == minimum), "TEST FAILURE: Table did not properly retrieve minimum value"
 
 def test_table_overflow_purge():
@@ -64,17 +64,17 @@ def test_buffer_removemax():
     """
         Test if the Buffer can successfully remove its maximum value
     """
-    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence, capacity=10)
+    buffer = NARSDataStructures.Buffers.Buffer(NARSDataStructures.Other.Task, capacity=10)
     priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
     maximum = max(priorities)
     for p in priorities:
         sentence = NALGrammar.Sentences.Judgment(
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
-        item = NARSDataStructures.ItemContainers.Item(sentence,-1)
+        item = NARSDataStructures.ItemContainers.Item(NARSDataStructures.Other.Task(sentence),-1)
         item.budget.priority = p
         buffer.put(item)
-    buffermax = buffer._extract_max().budget.priority
+    buffermax = buffer.extract_max().budget.priority
     assert(buffermax == maximum), "TEST FAILURE: Buffer did not properly retrieve maximum value"
 
 
@@ -82,7 +82,7 @@ def test_buffer_removemin():
     """
         Test if the Table can successfully remove its minimum value
     """
-    buffer = NARSDataStructures.Buffers.Buffer(NALGrammar.Sentences.Sentence, capacity=10)
+    buffer = NARSDataStructures.Buffers.Buffer(NARSDataStructures.Other.Task, capacity=10)
     priorities = [0.6, 0.2, 0.99, 0.5, 0.9]
     minimum = min(priorities)
     for p in priorities:
@@ -90,11 +90,11 @@ def test_buffer_removemin():
         sentence = NALGrammar.Sentences.Judgment(
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
-        item = NARSDataStructures.ItemContainers.Item(sentence,-1)
+        item = NARSDataStructures.ItemContainers.Item(NARSDataStructures.Other.Task(sentence),-1)
         item.budget.priority = p
         buffer.put(item)
 
-    buffermin = buffer._extract_min().budget.priority
+    buffermin = buffer.extract_min().budget.priority
     assert (buffermin == minimum), "TEST FAILURE: Buffer did not properly retrieve minimum value"
 
 

@@ -4,7 +4,7 @@ import Global
 import NALSyntax
 import Asserts
 
-from NALGrammar.Terms import StatementTerm, CompoundTerm, simplify
+import NALGrammar.Terms
 
 from NALGrammar.Values import TruthValue, DesireValue
 import NALInferenceRules
@@ -32,7 +32,7 @@ class Sentence(Array):
         :param occurrence_time:
         """
         Asserts.assert_punctuation(punctuation)
-        assert isinstance(statement,StatementTerm) or isinstance(statement,CompoundTerm),"ERROR: Judgment needs a statement"
+        assert isinstance(statement,NALGrammar.Terms.StatementTerm) or isinstance(statement,NALGrammar.Terms.CompoundTerm),"ERROR: Judgment needs a statement"
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
@@ -120,7 +120,7 @@ class Sentence(Array):
             return self.value
 
     def get_formatted_string_no_id(self):
-        if isinstance(self.statement, StatementTerm) or isinstance(self.statement,CompoundTerm):
+        if isinstance(self.statement, NALGrammar.Terms.StatementTerm) or isinstance(self.statement,NALGrammar.Terms.CompoundTerm):
             string = self.statement.get_formatted_string_with_interval()
         else:
             string = self.statement.get_formatted_string()
@@ -342,9 +342,9 @@ def new_sentence_from_string(sentence_string: str):
 
     # create standard statement from string
     if NALSyntax.TermConnector.is_string_a_term_connector(statement_string[1:3]):
-        statement = simplify(CompoundTerm.from_string(statement_string))
+        statement = NALGrammar.Terms.simplify(NALGrammar.Terms.CompoundTerm.from_string(statement_string))
     else:
-        statement = simplify(StatementTerm.from_string(statement_string))
+        statement = NALGrammar.Terms.simplify(NALGrammar.Terms.StatementTerm.from_string(statement_string))
 
     if punctuation == NALSyntax.Punctuation.Judgment:
         if freq is None:

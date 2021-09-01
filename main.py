@@ -7,51 +7,15 @@
 
 
 
-import os
-import sys
 import threading
 import multiprocessing
-# Module multiprocessing is organized differently in Python 3.4+
 import Config
-
-try:
-    # Python 3.4+
-    if sys.platform.startswith('win'):
-        import multiprocessing.popen_spawn_win32 as forking
-    else:
-        import multiprocessing.popen_fork as forking
-except ImportError:
-    import multiprocessing.forking as forking
 
 import Global
 import InputChannel
 import NARSGUI
 import NARS
 
-
-if sys.platform.startswith('win'):
-    # First define a modified version of Popen.
-    class _Popen(forking.Popen):
-        def __init__(self, *args, **kw):
-            if hasattr(sys, 'frozen'):
-                # We have to set original _MEIPASS2 value from sys._MEIPASS
-                # to get --onefile mode working.
-                os.putenv('_MEIPASS2', sys._MEIPASS)
-            try:
-                super(_Popen, self).__init__(*args, **kw)
-            finally:
-                if hasattr(sys, 'frozen'):
-                    # On some platforms (e.g. AIX) 'os.unsetenv()' is not
-                    # available. In those cases we cannot delete the variable
-                    # but only set it to the empty string. The bootloader
-                    # can handle this case.
-                    if hasattr(os, 'unsetenv'):
-                        os.unsetenv('_MEIPASS2')
-                    else:
-                        os.putenv('_MEIPASS2', '')
-
-    # Second override 'Popen' class with our modified version.
-    forking.Popen = _Popen
 
 
 class GUIProcess(multiprocessing.Process):
@@ -74,7 +38,7 @@ class GUIProcess(multiprocessing.Process):
         Global.Global.NARS_string_pipe = pipe_NARS_strings
 
         multiprocessing.Process.__init__(self,target=NARSGUI.start_gui,
-                             args=(Config.gui_use_interface,
+                             args=(Config.GUI_USE_INTERFACE,
                                    data_structure_IDs,
                                    data_structure_capacities,
                                    pipe_gui_objects,
@@ -95,16 +59,13 @@ def main():
         Creates threads, populates globals, and runs the NARS.
 
     """
-    # On Windows calling this function is necessary.
-    # On Linux/OSX it does nothing.
-    multiprocessing.freeze_support()
 
     # First, create the NARS
     NARS_object = NARS.NARS()
     Global.Global.NARS = NARS_object
 
     # setup internal/interface GUI
-    if Config.gui_use_interface:
+    if Config.GUI_USE_INTERFACE:
         GUIProcess()
 
     # launch shell input thread
@@ -119,9 +80,11 @@ def main():
 
     # Finally, run NARS in the shell
     Global.Global.NARS.memory.conceptualize_term(Global.Global.TERM_SELF)
-    Global.Global.NARS.delay = Config.WORKING_CYCLE_DELAY
     Global.Global.NARS.run()
 
 
 if __name__ == "__main__":
+    # On Windows calling this function is necessary.
+    # On Linux/OSX it does nothing.
+    multiprocessing.freeze_support()
     main()

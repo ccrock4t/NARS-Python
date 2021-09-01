@@ -248,7 +248,7 @@ class CompoundTerm(Term):
                         singleton_set_subterm = CompoundTerm.from_string(term_connector.value + str(subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(term_connector).value)
                         singleton_set_subterms.append(singleton_set_subterm)
 
-                    subterms = singleton_set_subterms
+                    self.subterms = singleton_set_subterms
 
                     # set new term connector as intersection
                     if is_extensional_set:
@@ -310,7 +310,7 @@ class CompoundTerm(Term):
 
         for i in range(len(self.subterms)):
             subterm = self.subterms[i]
-            string = string + subterm.get_formatted_string() + NALSyntax.StatementSyntax.TermDivider.value
+            string += subterm.get_formatted_string() + NALSyntax.StatementSyntax.TermDivider.value
             if self.connector == NALSyntax.TermConnector.SequentialConjunction and i < len(self.intervals):
                 string = string + str(self.intervals[i]) + NALSyntax.StatementSyntax.TermDivider.value
 

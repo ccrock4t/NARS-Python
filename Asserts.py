@@ -4,9 +4,7 @@
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
 import NALSyntax
-import NALGrammar.Sentences
-import NALGrammar.Terms
-import NALGrammar.Values
+import NALGrammar
 import NARSDataStructures
 
 def assert_sentence_forward_implication(j):

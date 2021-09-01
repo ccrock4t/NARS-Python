@@ -1,9 +1,9 @@
-import Config
 import DataStructureTests
-import Global
 import GrammarTests
 import InferenceEngineTests
 import InferenceRuleTests
+import Config
+
 
 def main():
     DataStructureTests.main()
@@ -12,5 +12,6 @@ def main():
     InferenceRuleTests.main()
 
 if __name__ == "__main__":
-    Config.gui_use_interface = False
+    Config.DEBUG = False
+    Config.GUI_USE_INTERFACE = False
     main()

@@ -3,13 +3,13 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+import heapq
 import random
 from bisect import bisect
 
-from NARSDataStructures.ItemContainers import ItemContainer
-import Config
+import NARSDataStructures.ItemContainers
 
-class Bag(ItemContainer):
+class Bag(NARSDataStructures.ItemContainers.ItemContainer):
     """
         Probabilistic priority-queue
 
@@ -22,9 +22,8 @@ class Bag(ItemContainer):
     def __init__(self, item_type, capacity):
         self.items = [] # cumulative weights of non-empty buckets
         self.count = 0
-        self.min = None
-        self.max = None
-        ItemContainer.__init__(self, item_type=item_type,capacity=capacity)
+        self.ordered_items = NARSDataStructures.Other.Depq()
+        NARSDataStructures.ItemContainers.ItemContainer.__init__(self, item_type=item_type,capacity=capacity)
 
     def __len__(self):
         return self.count
@@ -44,11 +43,13 @@ class Bag(ItemContainer):
         # increase Bag count
         self.count += 1
 
-        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
+        NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, item)  # Item Container
         # put item into bag (priority times)
         idx_to_add = bisect(self.items, item.key)
         for i in range(int(100*item.budget.priority)):
             self.items.insert(idx_to_add,item.key)
+
+        self.ordered_items.insert_object(item, item.budget.priority)
 
         # remove lowest priority item if over capacity
         purged_item = None
@@ -69,7 +70,7 @@ class Bag(ItemContainer):
         if key is None:
             item = self._peek_probabilistically()
         else:
-            item = ItemContainer.peek_using_key(self,key=key)
+            item = NARSDataStructures.ItemContainers.ItemContainer.peek_using_key(self,key=key)
 
         return item
 
@@ -81,9 +82,9 @@ class Bag(ItemContainer):
         """
         concept_item = self.peek_using_key(key)
         before = concept_item.get_bag_number()
-        ItemContainer._take_from_lookup_dict(self, key)
+        NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
         concept_item.strengthen()
-        ItemContainer._put_into_lookup_dict(self, concept_item)
+        NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
         after = concept_item.get_bag_number()
         diff = abs(after - before)
         # remove the difference in priority so its less likely to be randomly selected
@@ -97,12 +98,11 @@ class Bag(ItemContainer):
         :param key:
         :return:
         """
-        item = ItemContainer.peek_using_key(self, key=key)
         concept_item = self.peek_using_key(key)
         before = concept_item.get_bag_number()
-        ItemContainer._take_from_lookup_dict(self, key)
+        NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
         concept_item.decay()
-        ItemContainer._put_into_lookup_dict(self, concept_item)
+        NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
         after = concept_item.get_bag_number()
         diff = abs(after - before)
         # remove the difference in priority so its less likely to be randomly selected
@@ -116,8 +116,9 @@ class Bag(ItemContainer):
 
             Returns None if Bag is empty
         """
-        #todo
-        pass
+        item = self.ordered_items.extract_max()
+        self.take_using_key(item.key)
+        return item
 
 
     def take_using_key(self, key):
@@ -129,20 +130,27 @@ class Bag(ItemContainer):
         """
         assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
 
-        item = ItemContainer.peek_using_key(self, key=key)
-        self.count = self.count - 1  # decrement bag count
+        self.count -=1
 
-        ItemContainer._take_from_lookup_dict(self, key)
-        #todo
+        item = self.peek_using_key(key)
+        elements_in_bag = item.get_bag_number()
+
+        # remove the difference in priority so its less likely to be randomly selected
+        idx_to_rmv = bisect(self.items, key)
+        for i in range(elements_in_bag):
+            self.items.pop(idx_to_rmv-i-1)
+
+        NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+
         return item
 
     def _take_min(self):
         """
             :returns the lowest priority item taken from the Bag
         """
-        #todo
-        pass
-
+        item = self.ordered_items.extract_min()
+        self.take_using_key(item.key)
+        return item
 
     def _peek_probabilistically(self):
         """

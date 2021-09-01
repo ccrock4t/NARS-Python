@@ -30,12 +30,12 @@ class Buffer(ItemContainer, Depq):
         """
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        Depq._insert_object(self, item, item.budget.priority) # Depq
+        Depq.insert_object(self, item, item.budget.priority) # Depq
         ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
         purged_item = None
         if len(self) > self.capacity:
-            purged_item = self._extract_min()
+            purged_item = self.extract_min()
             self._take_from_lookup_dict(purged_item.key)
 
         return purged_item
@@ -46,7 +46,7 @@ class Buffer(ItemContainer, Depq):
             :return:
         """
         if len(self) == 0: return None
-        item = Depq._extract_max(self)
+        item = Depq.extract_max(self)
         self._take_from_lookup_dict(item.key)
         return item
 

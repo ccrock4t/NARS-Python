@@ -23,7 +23,7 @@ def revision():
 
     output = NALInferenceRules.Local.Revision(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Revision(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Revision(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -45,7 +45,7 @@ def first_order_deduction():
 
     output = NALInferenceRules.Syllogistic.Deduction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Deduction(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Deduction(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -67,7 +67,7 @@ def first_order_induction():
 
     output = NALInferenceRules.Syllogistic.Induction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Induction(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Induction(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -89,7 +89,7 @@ def first_order_abduction():
 
     output = NALInferenceRules.Syllogistic.Abduction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Abduction(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Abduction(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -110,7 +110,7 @@ def first_order_analogy():
 
     output = NALInferenceRules.Syllogistic.Analogy(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Analogy(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Analogy(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -138,7 +138,7 @@ def first_order_intensional_composition():
     """
     output = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(M-->(&,S,P))"), value=NALInferenceRules.TruthValueFunctions.F_Intersection(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(M-->(&,S,P))"), value=NALInferenceRules.TruthValueFunctions.F_Intersection(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -151,7 +151,7 @@ def first_order_intensional_composition():
     """
     output = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(M-->(|,S,P))"), value=NALInferenceRules.TruthValueFunctions.F_Union(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(M-->(|,S,P))"), value=NALInferenceRules.TruthValueFunctions.F_Union(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -164,7 +164,7 @@ def first_order_intensional_composition():
     """
     output = NALInferenceRules.Composition.ExtensionalDifference(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(M-->(-,S,P))"), value=NALInferenceRules.TruthValueFunctions.F_Difference(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(M-->(-,S,P))"), value=NALInferenceRules.TruthValueFunctions.F_Difference(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -177,7 +177,7 @@ def first_order_intensional_composition():
     """
     output = NALInferenceRules.Composition.ExtensionalDifference(j2, j1)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(M-->(-,P,S))"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(M-->(-,P,S))"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Difference(
                                                          j2.value.frequency,
                                                          j2.value.confidence,
@@ -207,7 +207,7 @@ def first_order_extensional_composition():
     """
     output = NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("((&,S,P)-->M)"), value=NALInferenceRules.TruthValueFunctions.F_Union(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("((&,S,P)-->M)"), value=NALInferenceRules.TruthValueFunctions.F_Union(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -220,7 +220,7 @@ def first_order_extensional_composition():
     """
     output = NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("((|,S,P)-->M)"), value=NALInferenceRules.TruthValueFunctions.F_Intersection(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("((|,S,P)-->M)"), value=NALInferenceRules.TruthValueFunctions.F_Intersection(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -233,7 +233,7 @@ def first_order_extensional_composition():
     """
     output = NALInferenceRules.Composition.IntensionalDifference(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("((~,S,P)-->M)"), value=NALInferenceRules.TruthValueFunctions.F_Difference(j1.value.frequency,
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("((~,S,P)-->M)"), value=NALInferenceRules.TruthValueFunctions.F_Difference(j1.value.frequency,
                                                                                                                                                                        j1.value.confidence,
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
@@ -246,7 +246,7 @@ def first_order_extensional_composition():
     """
     output = NALInferenceRules.Composition.IntensionalDifference(j2, j1)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("((~,P,S)-->M)"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("((~,P,S)-->M)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Difference(
                                                          j2.value.frequency,
                                                          j2.value.confidence,
@@ -270,7 +270,7 @@ def first_order_exemplification():
 
     output = NALInferenceRules.Syllogistic.Exemplification(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(S-->P)"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Exemplification(
                                                          j1.value.frequency,
                                                          j1.value.confidence,
@@ -313,7 +313,7 @@ def conditional_analogy():
 
     output = NALInferenceRules.Conditional.ConditionalAnalogy(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(c-->d)"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(c-->d)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Analogy(
                                                          j1.value.frequency,
                                                          j1.value.confidence,
@@ -336,7 +336,7 @@ def conditional_deduction():
 
     output = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(c-->d)"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(c-->d)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Deduction(
                                                          j1.value.frequency,
                                                          j1.value.confidence,
@@ -359,7 +359,7 @@ def conditional_abduction():
 
     output = NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(a-->b)"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(a-->b)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Abduction(
                                                          j1.value.frequency,
                                                          j1.value.confidence,
@@ -385,7 +385,7 @@ def conditional_conjunctional_deduction():
 
     output = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("((a-->b)==>(e-->f))"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("((a-->b)==>(e-->f))"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Deduction(
                                                          j1.value.frequency,
                                                          j1.value.confidence,
@@ -409,7 +409,7 @@ def conditional_conjunctional_abduction():
 
     output = NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Sentences.StatementTerm.from_string("(a-->b)"),
+    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(a-->b)"),
                                                      value=NALInferenceRules.TruthValueFunctions.F_Abduction(
                                                          j1.value.frequency,
                                                          j1.value.confidence,

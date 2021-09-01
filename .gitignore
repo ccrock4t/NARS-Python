@@ -7,3 +7,5 @@ NARS.spec
 *.nal
 .spec
 *.pyo
+*.spec
+main.spec

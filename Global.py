@@ -3,9 +3,7 @@
     Created: December 24, 2020
 """
 import Config
-import NARSGUI
-import NALGrammar
-
+import NALGrammar.Terms
 
 class Global:
     """
@@ -17,8 +15,8 @@ class Global:
     """
         Terms
     """
-    TERM_SELF = NALGrammar.Terms.Term.from_string("{SELF}")
-    TERM_IMAGE_PLACEHOLDER = NALGrammar.Terms.Term.from_string("_")
+    TERM_SELF = None
+    TERM_IMAGE_PLACEHOLDER = None
 
     """
         ID markers
@@ -39,6 +37,7 @@ class Global:
 
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
+        if cls.NARS is None: return
         print(msg, flush=True)
         data_structure_name = None
         data_structure_len = 0
@@ -49,7 +48,7 @@ class Global:
         if data_structure is not None:
             data_structure_name = (str(data_structure), type(data_structure).__name__)
             data_structure_len = len(data_structure)
-        if Config.gui_use_interface: cls.NARS_string_pipe.send(("print", msg, data_structure_name,data_structure_len))
+        if Config.GUI_USE_INTERFACE: cls.NARS_string_pipe.send(("print", msg, data_structure_name, data_structure_len))
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):
@@ -60,6 +59,7 @@ class Global:
         """
             Remove a message from an output GUI box
         """
+        if  cls.NARS_string_pipe is None: return
         cls.NARS_string_pipe.send(("remove", msg, (str(data_structure), type(data_structure).__name__),len(data_structure)))
 
     @classmethod
@@ -68,9 +68,16 @@ class Global:
             Set global paused variable and GUI
         """
         cls.paused = paused
-        if Config.gui_use_interface: cls.NARS_string_pipe.send(("paused", paused, "guibox",0))
+        if Config.GUI_USE_INTERFACE: cls.NARS_string_pipe.send(("paused", paused, "guibox", 0))
 
 
     @classmethod
     def debug_print(cls,msg):
         print(str(cls.get_current_cycle_number()) + ": " + msg)
+
+    @classmethod
+    def create_inherent_terms(cls):
+        cls.TERM_SELF = NALGrammar.Terms.Term.from_string("{SELF}")
+        cls.TERM_IMAGE_PLACEHOLDER = NALGrammar.Terms.Term.from_string("_")
+
+Global.create_inherent_terms()

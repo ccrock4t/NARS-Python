@@ -1,13 +1,10 @@
 import random
 
 import Asserts
-import NALGrammar
+import NALGrammar.Sentences
 import Config
 import Global
 import depq
-import NALInferenceRules
-
-import NALSyntax
 
 """
     Author: Christian Hahm
@@ -28,10 +25,10 @@ class Depq():
     def __getitem__(self, i):
         return self.depq[i][0]
 
-    def _insert_object(self, object, priority):
+    def insert_object(self, object, priority):
         self.depq.insert(object, priority)
 
-    def _extract_max(self):
+    def extract_max(self):
         """
             Extract Item with highest priority from the depq
             O(1)
@@ -42,7 +39,7 @@ class Depq():
         max = self.depq.popfirst()[0]
         return max
 
-    def _extract_min(self):
+    def extract_min(self):
         """
             Extract Item with lowest priority from the depq
             O(1)
@@ -82,12 +79,12 @@ class Table(Depq):
         It purges lowest-confidence items when it overflows.
     """
 
-    def __init__(self, item_type=NALGrammar.Sentences.Judgment, capacity=Config.TABLE_DEFAULT_CAPACITY):
+    def __init__(self, item_type, capacity=Config.TABLE_DEFAULT_CAPACITY):
         self.item_type = item_type
         self.capacity = capacity
         Depq.__init__(self)
 
-    def put(self, sentence: NALGrammar.Sentences.Sentence):
+    def put(self, sentence):
         """
             Insert a Sentence into the depq, sorted by confidence (time-projected confidence if it's an event).
         """
@@ -97,17 +94,17 @@ class Table(Depq):
         if sentence.is_event():
             confidence = sentence.get_present_value().confidence
 
-        Depq._insert_object(self, sentence, confidence)
+        Depq.insert_object(self, sentence, confidence)
 
         if len(self) > self.capacity:
-            Depq._extract_min(self)
+            Depq.extract_min(self)
 
     def take(self):
         """
             Take item with highest confidence from the depq
             O(1)
         """
-        return Depq._extract_max(self)
+        return Depq.extract_max(self)
 
     def peek(self):
         """

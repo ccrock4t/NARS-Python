@@ -35,7 +35,7 @@ class Array():
 
         # prepare to store an image if necessary
         self.element_string_array = None
-        if Config.gui_use_interface and (isinstance(self, NALGrammar.Sentences.Judgment) or isinstance(self, NALGrammar.Sentences.Goal)):
+        if Config.GUI_USE_INTERFACE and (isinstance(self, NALGrammar.Sentences.Judgment) or isinstance(self, NALGrammar.Sentences.Goal)):
             self.image_array = np.empty(shape=dimensions,dtype=np.uint8) # image_array is used to visualize an array of judgments/goals activations
             self.image_alpha_array = np.empty(shape=(dimensions[0], dimensions[1]) if len(dimensions) > 1 else dimensions[0],
                                         dtype=np.uint8)  # image_array is used to visualize an array of judgments/goals activations
