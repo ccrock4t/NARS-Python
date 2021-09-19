@@ -3,6 +3,8 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+import time
+
 import Config
 import Global
 import NALSyntax
@@ -30,7 +32,7 @@ class Buffer(ItemContainer, Depq):
         """
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        Depq.insert_object(self, item, item.budget.priority) # Depq
+        Depq.insert_object(self, item, item.budget.get_priority()) # Depq
         ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
         purged_item = None
@@ -157,23 +159,21 @@ class TemporalModule(ItemContainer):
             event_A = event_task_A.sentence
 
             # produce statements (A =/> C) and (A &/ C)
-            #derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_C)
+            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_C)
 
 
-            # for derived_sentence in derived_sentences:
-            #     process_sentence(derived_sentence)
+            for derived_sentence in derived_sentences:
+                #if isinstance(derived_sentence.statement, NALGrammar.Terms.StatementTerm): continue  # ignore simple implications
+                process_sentence(derived_sentence)
 
             for j in range(i + 1, num_of_events-1):
                 event_task_B = temporal_chain[j].object
                 event_B = event_task_B.sentence
 
-
                 conjunction_A_B = NALInferenceRules.Temporal.TemporalIntersection(event_A,
-                                                                                event_B)  # (A &/ B)
+                                                                                  event_B)  # (A &/ B)
 
-                if conjunction_A_B is not None:
-                    process_sentence(conjunction_A_B)
-
+                if conjunction_A_B is not None and NALSyntax.TermConnector.is_conjunction(conjunction_A_B.statement.connector):
                     derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction_A_B,
                                                                                     event_C)  # (A &/ B) =/> C
                     process_sentence(derived_sentence)
@@ -259,12 +259,19 @@ class TemporalModule(ItemContainer):
         """
             # form new anticipation from observed event
         """
-        anticipated_implication_belief = self.NARS.get_random_prediction(observed_event)
+        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
 
-        if anticipated_implication_belief is None: return # nothing is anticipated
-        # something is anticipated
-        self.anticipate_from_concept(self.NARS.memory.peek_concept(anticipated_implication_belief.statement),
-                                     anticipated_implication_belief)
+        random_prediction = self.NARS.memory.get_random_bag_prediction(observed_event)
+
+        if random_prediction is not None:
+            # something is anticipated
+            self.anticipate_from_concept(self.NARS.memory.peek_concept(random_prediction.statement),
+                                         random_prediction)
+
+
+        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+            "Forming anticipation from event took " + str((time.time() - before) * 1000) + "ms")
+
 
 
 
@@ -281,16 +288,15 @@ class TemporalModule(ItemContainer):
         if best_belief is None:
             best_belief = higher_order_anticipation_concept.belief_table.peek()
 
-        operation_statement = best_belief.statement
         expectation = best_belief.get_expectation()
 
         # use this for 1 anticipation only
-        if self.current_anticipation is not None:
-            # in the middle of a operation sequence already
-            current_anticipation_expectation = self.current_anticipation
-            if expectation <= current_anticipation_expectation: return # don't execute since the current anticipation is more expected
-            # else, the given operation is more expected
-            self.anticipations_queue.clear()
+        # if self.current_anticipation is not None:
+        #     # in the middle of a operation sequence already
+        #     current_anticipation_expectation = self.current_anticipation
+        #     if expectation <= current_anticipation_expectation: return # don't execute since the current anticipation is more expected
+        #     # else, the given operation is more expected
+        #     self.anticipations_queue.clear()
 
         self.current_anticipation = expectation
 
@@ -318,11 +324,12 @@ class TemporalModule(ItemContainer):
                         str(anticipated_postcondition_concept) + " SATISFIED - CONFIRMED ANTICIPATION" + str(
                             best_prediction_concept.term))
                 else:
-                    if Config.DEBUG:
-                        Global.Global.debug_print(str(anticipated_postcondition_concept) + " DISAPPOINT - FAILED ANTICIPATION, NEGATIVE EVIDENCE FOR " + str(best_prediction_concept.term))
-                    self.NARS.global_buffer.put_new(Task(NALGrammar.Sentences.Judgment(statement=best_prediction_concept.term,
+                    sentence = NALGrammar.Sentences.Judgment(statement=best_prediction_concept.term,
                                                   value=NALGrammar.Values.TruthValue(frequency=0.0,
-                                                                                     confidence=Config.DEFAULT_DISAPPOINT_CONFIDENCE))))
+                                                                                     confidence=Config.DEFAULT_DISAPPOINT_CONFIDENCE))
+                    if Config.DEBUG:
+                        Global.Global.debug_print(str(anticipated_postcondition_concept) + " DISAPPOINT - FAILED ANTICIPATION, NEGATIVE EVIDENCE FOR " + str(sentence))
+                    self.NARS.global_buffer.put_new(Task(sentence))
                 self.anticipations_queue.pop(i)
                 self.current_anticipation = None
                 i -= 1

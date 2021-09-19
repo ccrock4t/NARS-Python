@@ -35,7 +35,7 @@ def TemporalInduction(j1, j2):
     j2_statement_term = j2.statement
 
     if j1_statement_term == j2_statement_term: return None  # S =/> S simplifies to S, so no inference to do
-    if j2_statement_term.is_operation(): return None # exclude operation consequents
+    if j2_statement_term.is_op(): return None # exclude operation consequents
 
     if isinstance(j1_statement_term,NALGrammar.Terms.CompoundTerm):
         for subterm in j1_statement_term.subterms:
@@ -127,7 +127,7 @@ def TemporalIntersection(j1, j2):
     j2_statement_term = j2.statement
 
     if j1_statement_term == j2_statement_term: return result # S && S simplifies to S, so no inference to do
-    if not (not j1_statement_term.is_operation() and j2_statement_term.is_operation()): return result  # only care about operations right now
+    if not (not j1_statement_term.is_op() and j2_statement_term.is_op()): return result  # only care about operations right now
 
     if j1.stamp.occurrence_time == j2.stamp.occurrence_time:
         # j1 &| j2

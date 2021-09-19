@@ -1,4 +1,3 @@
-import math
 import pickle
 import random
 import time
@@ -36,7 +35,8 @@ class NARS:
                                                                capacity=Config.GLOBAL_BUFFER_CAPACITY)
         self.temporal_module = NARSDataStructures.Buffers.TemporalModule(self,item_type=NARSDataStructures.Other.Task, capacity=Config.EVENT_BUFFER_CAPACITY)
         self.memory = NARSMemory.Memory()
-        self.atomic_operation_queue = [] # operations the system has queued to executed
+
+        self.operation_queue = [] # operations the system has queued to executed
         self.current_operation_sequence = None
 
         # enforce configurable milliseconds per working cycle
@@ -65,59 +65,63 @@ class NARS:
             Performs 1 working cycle.
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
-        if Config.GUI_USE_INTERFACE: Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None, 0))
-
         # track when the cycle began
         self.cycle_begin_time = time.time()
 
-        # process strings coming from input buffer
-        InputChannel.process_pending_sentence()
-
-        if Config.DEBUG: before = time.time()
-        self.process_temporal_module()  # process events from the event buffer
-        if Config.DEBUG: Global.Global.debug_print("Chaining took " + str((time.time() - before) * 1000) + "ms")
-
+        # debug
         if time.time() - self.cycles_per_second_timer > 1.0:
             self.cycles_per_second_timer = time.time()
             print('Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
             self.last_working_cycle = Global.Global.get_current_cycle_number()
 
-        # determine mindfulness parameter
-        self.configure_busyness()
+        # GUI
+        if Config.GUI_USE_INTERFACE: Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None, 0))
 
-        # do stuff with buffer and memory if there is time
-        while (time.time() - self.cycle_begin_time) * 1000 < Config.WORKING_CYCLE_TIME:
+        # do stuff with buffer and memory while there is time
+        while (time.time() - self.cycle_begin_time) * 1000 < Config.TAU_WORKING_CYCLE_DURATION:
+            if InputChannel.input_queue.qsize() > 0:
+                # process input channel and temporal module
+                if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+                InputChannel.process_pending_sentence()
+                if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+                    "Process input sentence took " + str((time.time() - before) * 1000) + "ms")
+                if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+                self.process_temporal_chaining()  # process events from the event buffer
+                if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print("Chaining took " + str((time.time() - before) * 1000) + "ms")
+
             rand = random.random()
             if rand < Config.MINDFULNESS and len(self.global_buffer) > 0:
                 # OBSERVE
-                if Config.DEBUG: before = time.time()
+                if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
                 self.Observe()
-                if Config.DEBUG: Global.Global.debug_print("Observe took " + str((time.time() - before)*1000) + "ms")
+                if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print("Observe took " + str((time.time() - before)*1000) + "ms")
             else:
                 # CONSIDER
-                if Config.DEBUG: before = time.time()
+                if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
                 self.Consider()
-                if Config.DEBUG: Global.Global.debug_print("Consider took " + str((time.time() - before) * 1000) + "ms")
+                if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print("Consider took " + str((time.time() - before) * 1000) + "ms")
 
         # now execute operations
+        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
         self.execute_operation_queue()
+        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print("Execute Operations Queue took " + str((time.time() - before) * 1000) + "ms")
+
+        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+        self.temporal_module.process_anticipations()
+        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+            "Anticipations Queue took " + str((time.time() - before) * 1000) + "ms")
 
         # debug statements
         if Config.DEBUG:
             Global.Global.debug_print("global buffer: " + str(len(self.global_buffer)))
 
-        if Config.DEBUG: Global.Global.debug_print('Cycle took: ' + str((time.time() - self.cycle_begin_time)*1000) + "ms")
+        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print('Cycle took: ' + str((time.time() - self.cycle_begin_time)*1000) + "ms")
 
         # if using GUI, sleep 4 ms, otherwise GUI doesn't work
         if Config.GUI_USE_INTERFACE: time.sleep(0.005)
 
         # done
         self.memory.current_cycle_number += 1
-
-    def configure_busyness(self):
-        # X% full = X% focus
-        Config.MINDFULNESS = max(0.75, len(self.global_buffer) / self.global_buffer.capacity)
-
 
     def do_working_cycles(self, cycles: int):
         """
@@ -126,14 +130,12 @@ class NARS:
         for i in range(cycles):
             self.do_working_cycle()
 
-    def process_temporal_module(self):
+    def process_temporal_chaining(self):
         """
             Process temporal chaining
         """
         if len(self.temporal_module) > 0:
             self.temporal_module.temporal_chaining_3()
-
-        self.temporal_module.process_anticipations()
 
 
     def Observe(self):
@@ -143,11 +145,16 @@ class NARS:
             This function should never produce new tasks.
         """
         if len(self.global_buffer) > 0:
+            if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
             task_item = self.global_buffer.take()
+            if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+                "Take from global buffer took " + str((time.time() - before) * 1000) + "ms")
 
+            if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
             # process task
             self.process_task(task_item.object)
-
+            if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+                "Process task took " + str((time.time() - before) * 1000) + "ms")
 
     def Consider(self):
         """
@@ -177,7 +184,7 @@ class NARS:
 
         if Config.DEBUG:
             string = "Considering concept: " + str(concept.term)
-            if concept_item is not None: string += " $" + str(concept_item.budget.priority) + "$"
+            if concept_item is not None: string += " $" + str(concept_item.budget.get_priority()) + "$"
             if len(concept.belief_table) > 0: string += " expectation: " + str(concept.belief_table.peek().get_expectation())
             if len(concept.desire_table) > 0: string += " desirability: " + str(concept.desire_table.peek().get_desirability())
             Global.Global.debug_print(string)
@@ -308,7 +315,7 @@ class NARS:
                     for line in lines:
                         InputChannel.add_input_string(line)
             elif command == "duration":
-                Config.WORKING_CYCLE_TIME = key
+                Config.TAU_WORKING_CYCLE_DURATION = key
             elif command == "paused":
                 Global.Global.paused = key
 
@@ -323,9 +330,12 @@ class NARS:
         task_statement_term = sentence.statement
         if task_statement_term.contains_variable(): return  # todo handle variables
 
+        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
         # get (or create if necessary) statement concept, and sub-term concepts recursively
         statement_concept_item = self.memory.peek_concept_item(task_statement_term)
         statement_concept = statement_concept_item.object
+        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+            "Get concept item took " + str((time.time() - before) * 1000) + "ms")
 
         if isinstance(task.sentence, NALGrammar.Sentences.Judgment):
             self.process_judgment_task(task,statement_concept)
@@ -354,46 +364,38 @@ class NARS:
         #for derived_sentence in derived_sentences:
         #   self.global_task_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
-        # add the judgment itself into concept's belief table
         current_belief = task_statement_concept.belief_table.peek()
 
         best_belief = None
-        if current_belief is None:
-            best_belief = j
-        elif NALGrammar.Sentences.may_interact(j,current_belief):
+        if NALGrammar.Sentences.may_interact(j,current_belief):
             # do a Revision
-            revised_beliefs = NARSInferenceEngine.do_semantic_inference_two_premise(j, current_belief)
-            if len(revised_beliefs) > 0:
-                best_belief = revised_beliefs[0]
-            else:
-                best_belief = j
-
+            revised = NARSInferenceEngine.do_semantic_inference_two_premise(j, current_belief)[0]
+            self.global_buffer.put_new(NARSDataStructures.Other.Task(revised))
         else:
             if j.is_event():
-                # choose the better desire
-                best_belief = NALInferenceRules.Local.Choice(j,current_belief,only_confidence=True)
+                if current_belief is not None:
+                    best_belief = NALInferenceRules.Local.Choice(j,current_belief,only_confidence=True)
+                    # only keep one event
+                    task_statement_concept.belief_table.take()
+                    task_statement_concept.belief_table.put(best_belief)
+                else:
+                    task_statement_concept.belief_table.put(j)
+
+                # anticipate event j
+                self.temporal_module.anticipate_from_event(j)
             else:
-                # otherwise put it with the rest of the beliefs
-                best_belief = j
+                task_statement_concept.belief_table.put(j)
 
-        if j.is_event():
-            # only keep one event
-            current_belief = task_statement_concept.belief_table.take()
-
-        task_statement_concept.belief_table.put(best_belief)
-
-        if j.is_event():
-            # anticipate event j
-            self.temporal_module.anticipate_from_event(j)
 
         if Config.DEBUG:
-            string = "Integrated BELIEF: " + best_belief.get_formatted_string() + "from "
-            for premise in best_belief.stamp.parent_premises:
+            string = "Integrated new BELIEF Task: " + j.get_formatted_string() + "from "
+            for premise in j.stamp.parent_premises:
                 string += str(premise) + ","
             Global.Global.debug_print(string)
 
+            best_belief = task_statement_concept.belief_table.peek()
             if best_belief.is_event() and isinstance(best_belief.statement, NALGrammar.Terms.StatementTerm):
-                print("Is " + str(best_belief.statement) + " positive? " + str(best_belief.is_positive()))
+                print("Is " + str(j.statement) + " best belief positive? " + str(best_belief.is_positive()))
 
     def process_judgment_sentence(self, j1: NALGrammar.Sentences.Judgment, related_concept=None):
         """
@@ -415,15 +417,14 @@ class NARS:
         # try a Revision on another belief in the table
         if not j1.is_event():
             j2 = statement_concept.belief_table.peek_highest_confidence_interactable(j1)
-
-            if NALGrammar.Sentences.may_interact(j1,j2):
+            if j2 is not None:
                 if Config.DEBUG: Global.Global.debug_print(
                     "Revising belief: " + j1.get_formatted_string())
                 derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
                 for derived_sentence in derived_sentences:
                     self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
-        if j1.is_array: #todo remove this condition
+            # regular inference
             results = self.process_sentence_semantic_inference(j1, related_concept)
             for result in results:
                 self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
@@ -470,7 +471,7 @@ class NARS:
         """
         Asserts.assert_task(task)
 
-        j1 = task.sentence
+        j = task.sentence
 
         """
             Initial Processing
@@ -480,22 +481,23 @@ class NARS:
         current_desire = task_statement_concept.desire_table.take()
 
         if current_desire is None:
-            best_desire = j1
-        elif NALGrammar.Sentences.may_interact(j1,current_desire):
+            best_desire = j
+        elif NALGrammar.Sentences.may_interact(j,current_desire):
             # do a Revision
-            best_desire =  NARSInferenceEngine.do_semantic_inference_two_premise(j1, current_desire)[0]
+            best_desire =  NARSInferenceEngine.do_semantic_inference_two_premise(j, current_desire)[0]
         else:
             # choose the better desire
-            best_desire = NALInferenceRules.Local.Choice(j1, current_desire, only_confidence=True)
+            best_desire = NALInferenceRules.Local.Choice(j, current_desire, only_confidence=True)
 
         # store the most confident desire
         task_statement_concept.desire_table.put(best_desire)
 
         if Config.DEBUG:
-            string = "Integrated GOAL: " + best_desire.get_formatted_string() + "from "
+            string = "Integrated new GOAL Task: " + j.get_formatted_string() + "from "
             for premise in best_desire.stamp.parent_premises:
                 string += str(premise) + ","
             Global.Global.debug_print(string)
+
 
     def process_goal_sentence(self, j: NALGrammar.Sentences.Goal):
         """
@@ -512,7 +514,7 @@ class NARS:
         # see if it should be pursued
         should_pursue = NALInferenceRules.Local.Decision(j)
         if not should_pursue:
-            if Config.DEBUG and statement.is_operation():
+            if Config.DEBUG and statement.is_op():
                 Global.Global.debug_print("Operation failed decision-making rule " + j.get_formatted_string())
             return  # Failed decision-making rule
 
@@ -522,40 +524,52 @@ class NARS:
                 if Config.DEBUG: Global.Global.debug_print(str(desire_event) + " is positive for goal: " + str(j))
                 return  # Return if goal is already achieved
 
-        if statement.is_operation():
+
+        if statement.is_op():
             self.queue_operation(j)
         else:
             if isinstance(statement, NALGrammar.Terms.CompoundTerm)\
                 and NALSyntax.TermConnector.is_conjunction(statement.connector):
-                # if it's a conjunction, simplify using true beliefs
+                # if it's a conjunction (A &/ B), simplify using true beliefs (e.g. A)
                 subterm = statement.subterms[0]
                 subterm_concept = Global.Global.NARS.memory.peek_concept(subterm)
                 belief = subterm_concept.belief_table.peek()
                 if belief is not None and belief.is_positive():
-                    # the first component is positive, do inference and derive the remaining goal component
+                    # the first component of the goal is positive, do inference and derive the remaining goal component
                     results = NARSInferenceEngine.do_semantic_inference_two_premise(j, belief)
                     for result in results:
+                        # if result.statement.is_op():
+                        #     self.process_goal_sentence(result)
                         self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
                 else:
-                    # first component is not positive, but we want it to be
-                    new_goal = NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j=j,
-                                                                                                      result_statement=subterm,
-                                                                                                      truth_value_function=None)
-                    self.global_buffer.put_new(NARSDataStructures.Other.Task(new_goal))
+                    pass
+                    # # first component is not positive, but we want it to be
+                    # new_goal = NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j=j,
+                    #                                                                                   result_statement=subterm,
+                    #                                                                                   truth_value_function=None)
+                    # self.global_buffer.put_new(NARSDataStructures.Other.Task(new_goal))
             else:
-                # process with highest-expectation explanation A =/> B
-                best_explanation_belief = self.get_best_positive_explanation_with_true_precondition(j)
+                # process with random and context-relevant explanation A =/> B
+                random_explanation_belief = self.memory.get_random_bag_explanation(j)
+                contextual_explanation_belief = self.memory.get_explanation_preferred_with_true_precondition(j)
 
-                if best_explanation_belief is not None:
-                    if Config.DEBUG: Global.Global.debug_print(str(best_explanation_belief) + " is best explanation for " + str(j))
-
-                    # process goal with highest-expectation explanation
-                    results = NARSInferenceEngine.do_semantic_inference_two_premise(j, best_explanation_belief)
-
+                if random_explanation_belief is not None:
+                    if Config.DEBUG: Global.Global.debug_print(str(random_explanation_belief) + " is random explanation for " + str(j))
+                    # process goal with explanation
+                    results = NARSInferenceEngine.do_semantic_inference_two_premise(j, random_explanation_belief)
                     for result in results:
                         self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
-                else:
-                    if Config.DEBUG: Global.Global.debug_print("No best explanation for " + str(j))
+
+                if contextual_explanation_belief is not None:
+                    if Config.DEBUG: Global.Global.debug_print(str(contextual_explanation_belief) + " is contextual explanation for " + str(j))
+                    # process goal with explanation
+                    results = NARSInferenceEngine.do_semantic_inference_two_premise(j, contextual_explanation_belief)
+                    for result in results:
+                        self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+
+                if random_explanation_belief is None and contextual_explanation_belief is None:
+                    if Config.DEBUG: Global.Global.debug_print("No explanations for " + str(j))
+
 
 
     def process_sentence_semantic_inference(self, j1, related_concept=None):
@@ -598,168 +612,6 @@ class NARS:
 
         return results
 
-    def get_best_explanation(self, j):
-        """
-            Gets the best explanation belief for the given sentence's statement
-            that the sentence is able to interact with
-        :param statement_concept:
-        :return:
-        """
-        statement_concept: NARSMemory.Concept = self.memory.peek_concept(j.statement) # B
-        best_explanation_belief = None
-        for explanation_concept_item in statement_concept.explanation_links:
-            explanation_concept: NARSMemory.Concept = explanation_concept_item.object  # A =/> B
-            if len(explanation_concept.belief_table) == 0: continue
-
-            belief = explanation_concept.belief_table.peek()
-
-            if NALGrammar.Sentences.may_interact(j,belief):
-                if best_explanation_belief is None:
-                    best_explanation_belief = belief
-                else:
-                    best_explanation_belief = NALInferenceRules.Local.Choice(belief, best_explanation_belief)
-
-        return best_explanation_belief
-
-    def get_best_positive_explanation_with_true_precondition(self, j):
-        """
-            Gets the best explanation belief for the given sentence's statement
-            that the sentence is able to interact with
-        :param statement_concept:
-        :return:
-        """
-        statement_concept: NARSMemory.Concept = self.memory.peek_concept(j.statement) # B
-        best_explanation_belief = None
-        for explanation_concept_item in statement_concept.explanation_links:
-            explanation_concept: NARSMemory.Concept = explanation_concept_item.object  # A =/> B
-
-            belief = explanation_concept.belief_table.peek() # A =/> B
-
-            if belief.is_positive() and belief.statement.get_subject_term().contains_positive():
-                if best_explanation_belief is None:
-                    best_explanation_belief = belief
-                else:
-                    best_explanation_belief = NALInferenceRules.Local.Choice(belief, best_explanation_belief)
-
-        return best_explanation_belief
-
-
-    def get_random_positive_explanation(self, j):
-        """
-            Gets the best explanation belief for the given sentence's statement
-            that the sentence is able to interact with
-        :param statement_concept:
-        :return:
-        """
-        concept: NARSMemory.Concept = self.memory.peek_concept(j.statement) # B
-        positive_beliefs = []
-        for explanation_concept_item in concept.explanation_links:
-            explanation_concept = explanation_concept_item.object
-            if len(explanation_concept.belief_table ) == 0: continue
-            explanation_belief = explanation_concept.belief_table.peek()
-
-            if explanation_belief is not None:
-                if explanation_belief.is_positive():
-                    positive_beliefs.append(explanation_belief)
-
-        if len(positive_beliefs) == 0:
-            return None
-        return positive_beliefs[round(random.random() * (len(positive_beliefs)-1))]
-
-    def get_best_prediction(self, j):
-        """
-            Returns the best prediction belief for a given belief
-        :param j:
-        :return:
-        """
-        concept = self.memory.peek_concept(j.statement)
-        best_belief = None
-        for prediction_concept_item in concept.prediction_links:
-            prediction_concept = prediction_concept_item.object
-            if len(prediction_concept.belief_table ) == 0: continue
-            prediction_belief = prediction_concept.belief_table.peek()
-
-            if prediction_belief is not None:
-                if best_belief is None:
-                    best_belief = prediction_belief
-                else:
-                    best_belief = NALInferenceRules.Local.Choice(best_belief, prediction_belief) # new best belief?
-
-        return best_belief
-
-    def get_random_positive_prediction(self, j):
-        """
-            Returns a random positive prediction belief for a given belief
-        :param j:
-        :return:
-        """
-        concept = self.memory.peek_concept(j.statement)
-        positive_beliefs = []
-        for prediction_concept_item in concept.prediction_links:
-            prediction_concept = prediction_concept_item.object
-            if len(prediction_concept.belief_table) == 0: continue
-            prediction_belief = prediction_concept.belief_table.peek()
-
-            if prediction_belief is not None:
-                if prediction_belief.is_positive():
-                    positive_beliefs.append(prediction_belief)
-
-        if len(positive_beliefs) == 0:
-            return None
-        return positive_beliefs[round(random.random() * (len(positive_beliefs)-1))]
-
-    def get_random_prediction(self, j):
-        """
-            Returns a random positive prediction belief for a given belief
-        :param j:
-        :return:
-        """
-        concept = self.memory.peek_concept(j.statement)
-        if len(concept.prediction_links) == 0:
-            return None
-        prediction_concept = concept.prediction_links.peek().object
-        if len(prediction_concept.belief_table) == 0:
-            return None
-        return prediction_concept.belief_table.peek()
-
-    def get_all_positive_predictions(self, j):
-        predictions = []
-        concept = self.memory.peek_concept(j.statement)
-        for prediction_concept_item in concept.prediction_links:
-            prediction_concept = prediction_concept_item.object
-            if len(prediction_concept.belief_table ) == 0: continue
-            prediction_belief = prediction_concept.belief_table.peek()
-
-            if prediction_belief is not None:
-                if isinstance(prediction_belief.statement.get_predicate_term(),NALGrammar.Terms.StatementTerm) and prediction_belief.is_positive():
-                    predictions.append(prediction_belief)
-
-        return predictions
-
-    def get_best_desired_prediction(self, concept):
-        """
-            Returns the best predictive implication from a given concept's prediction links,
-            but only accounts those predictions whose postconditions are desired
-        :param j:
-        :return:
-        """
-        best_belief = None
-        for prediction_concept_item in concept.prediction_links:
-            prediction_concept = prediction_concept_item.object
-            if len(prediction_concept.belief_table ) == 0: continue
-            prediction_belief = prediction_concept.belief_table.peek()
-
-            if prediction_belief is not None:
-                postcondition_term = prediction_concept.term.get_predicate_term()
-                if isinstance(postcondition_term,NALGrammar.Terms.StatementTerm) and prediction_concept.is_positive():
-                    if self.memory.peek_concept(postcondition_term).is_desired():
-                        if best_belief is None:
-                            best_belief = prediction_belief
-                        else:
-                            best_belief = NALInferenceRules.Local.Choice(best_belief, prediction_belief) # new best belief?
-
-        return best_belief
-
     """
         OPERATIONS
     """
@@ -772,6 +624,8 @@ class NARS:
         :return:
         """
         # todo extract and use args
+        if Config.DEBUG:
+            Global.Global.debug_print("Attempting queue operation: " + str(operation_goal))
         # full_operation_term.get_subject_term()
         operation_statement = operation_goal.statement
         desirability = operation_goal.get_desirability()
@@ -779,9 +633,11 @@ class NARS:
             # in the middle of a operation sequence already
             [_, current_sequence_desirability] = self.current_operation_sequence
             if desirability <= current_sequence_desirability: return # don't execute since the current sequence is more desirable
-            # else, the given operation is more dresirable
-            self.atomic_operation_queue.clear()
+            # else, the given operation is more desirable
+            self.operation_queue.clear()
 
+        if Config.DEBUG:
+            Global.Global.debug_print("Queueing operation: " + str(operation_goal))
         parent_strings = []
         # create an anticipation if this goal was based on a higher-order implication
         for parent in operation_goal.stamp.parent_premises:
@@ -790,8 +646,9 @@ class NARS:
         # insert operation into queue to be execute after the interval
         # intervals of zero will result in immediate execution (assuming the queue is processed afterwards and in the same cycle as this function)
         if isinstance(operation_statement,NALGrammar.Terms.StatementTerm):
-            self.current_operation_sequence = None
-            self.atomic_operation_queue.append([0, operation_statement, desirability, parent_strings])
+            # atomic op
+            self.current_operation_sequence = [1, desirability] # 1 op to executre, desirability
+            self.operation_queue.append([0, operation_statement, desirability, parent_strings])
         elif isinstance(operation_statement,NALGrammar.Terms.CompoundTerm):
             # higher-order operation like A &/ B or A &| B
             atomic_ops_left_to_execute = len(operation_statement.subterms)
@@ -801,7 +658,7 @@ class NARS:
             for i in range(len(operation_statement.subterms)):
                 # insert the atomic subterm operations and their working cycle delays
                 subterm = operation_statement.subterms[i]
-                self.atomic_operation_queue.append([working_cycles, subterm, desirability, parent_strings])
+                self.operation_queue.append([working_cycles, subterm, desirability, parent_strings])
                 if i < len(operation_statement.subterms)-1:
                     working_cycles += NALInferenceRules.HelperFunctions.convert_from_interval(operation_statement.intervals[i])
 
@@ -815,24 +672,25 @@ class NARS:
         :return:
         """
         i = 0
-        while i < len(self.atomic_operation_queue):
-            remaining_working_cycles, operation_statement, desirability, parents = self.atomic_operation_queue[i]
+        while i < len(self.operation_queue):
+            remaining_working_cycles, operation_statement, desirability, parents = self.operation_queue[i]
 
             if remaining_working_cycles == 0:
                 # operation is ready to execute
                 self.execute_atomic_operation(operation_statement, desirability, parents)
                 # now remove it from the queue
-                self.atomic_operation_queue.pop(i)
+                self.operation_queue.pop(i)
                 i -= 1
             else:
                 # decrease remaining working cycles
-                self.atomic_operation_queue[i][0] -= 1
+                self.operation_queue[i][0] -= 1
             i += 1
+
+        if len(self.operation_queue) == 0: self.current_operation_sequence = None
 
 
     def execute_atomic_operation(self, operation_statement_to_execute, desirability, parents):
         # execute an atomic operation immediately
-
         Global.Global.print_to_output("EXE: ^" + str(operation_statement_to_execute.get_predicate_term()) +
                                       " based on desirability: " + str(desirability) +
                                       " and parents: " + str(parents))

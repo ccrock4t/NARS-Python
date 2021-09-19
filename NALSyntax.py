@@ -93,7 +93,6 @@ class TermConnector(enum.Enum):
 
     @classmethod
     def is_order_invariant(cls, connector):
-        assert connector is not None, "ERROR: None is not a term connector"
         return (connector is cls.ExtensionalIntersection or
                 connector is cls.IntensionalIntersection or
                 connector is cls.ExtensionalSetStart or

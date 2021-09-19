@@ -43,7 +43,7 @@ class Term(Array):
     def _calculate_syntactic_complexity(self):
         assert False, "Complexity not defined for Term base class"
 
-    def is_operation(self):
+    def is_op(self):
         return False
 
     def contains_variable(self):
@@ -216,7 +216,7 @@ class CompoundTerm(Term):
             if len(subterms) > 1:
                 if term_connector == NALSyntax.TermConnector.SequentialConjunction:
                     # (A &/ B ...)
-                    if intervals is not None:
+                    if intervals is not None and len(intervals) > 0:
                         self.intervals = intervals
                     else:
                         # if generic conjunction from input, assume interval of 1
@@ -263,27 +263,27 @@ class CompoundTerm(Term):
                         dimensions = subterm.get_dimensions()
 
         # store if this is an operation (all of its components are operations)
-        self.is_op = True
+        self.is_operation = True
         for subterm in self.subterms:
-            self.is_op = self.is_op and subterm.is_operation()
+            self.is_operation = self.is_operation and subterm.is_op()
 
         self.string_with_interval = self._create_formatted_string_with_interval()
 
         Term.__init__(self, term_string=self._create_formatted_string(), dimensions=dimensions)
 
-    def is_operation(self):
-        return self.is_op
+    def is_op(self):
+        return self.is_operation
 
-    def contains_operation(self):
+    def contains_op(self):
         for subterm in self.subterms:
-            if subterm.is_operation():
+            if subterm.is_op():
                 return True
         return False
 
     def contains_positive(self):
         for subterm in self.subterms:
             subterm_concept = Global.Global.NARS.memory.peek_concept(subterm)
-            if not subterm.is_operation() and subterm_concept.is_positive():
+            if not subterm.is_op() and subterm_concept.is_positive():
                 return True
         return False
 
@@ -457,7 +457,7 @@ class StatementTerm(Term):
                 if subterm.is_array:
                     dimensions = subterm.get_dimensions()
 
-        self.is_op = self.create_is_operation()
+        self.is_operation = self.calculate_is_operation()
 
         self.string_with_interval = self._create_formatted_string_with_interval()
         Term.__init__(self, term_string=self._create_formatted_string(), dimensions=dimensions)
@@ -567,18 +567,18 @@ class StatementTerm(Term):
 
         return string
 
-    def contains_operation(self):
-        contains = self.is_operation()
+    def contains_op(self):
+        contains = self.is_op()
         if not self.is_first_order():
             contains = contains or\
-                       self.get_subject_term().contains_operation() or \
-                       self.get_predicate_term().contains_operation()
+                       self.get_subject_term().contains_op() or \
+                       self.get_predicate_term().contains_op()
         return contains
 
-    def is_operation(self):
-        return self.is_op
+    def is_op(self):
+        return self.is_operation
 
-    def create_is_operation(self):
+    def calculate_is_operation(self):
         return isinstance(self.get_subject_term(), CompoundTerm) \
             and self.get_subject_term().connector == NALSyntax.TermConnector.Product \
             and self.get_subject_term().subterms[0] == Global.Global.TERM_SELF # product and first term is self means this is an operation
@@ -589,6 +589,15 @@ class StatementTerm(Term):
     def is_symmetric(self):
         return NALSyntax.Copula.is_symmetric(self.copula)
 
+    def is_positive(self):
+        subterm_concept = Global.Global.NARS.memory.peek_concept(self)
+        if subterm_concept is None : return False
+        # todo higher order statements?
+        return subterm_concept.is_positive()
+
+    def contains_positive(self):
+        # todo higher order?
+        return self.is_positive()
 
 class ArrayTerm(CompoundTerm):
     """

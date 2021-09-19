@@ -188,7 +188,9 @@ def F_Projection(frequency, confidence, t_B, t_T, decay):
         Time Projection
 
         Project the occurrence time of a belief (t_B)
-        to another occurrence time (t_T)
+        to another occurrence time (t_T).
+
+        Same frequency, but lower confidence depending on when it occurred.
     """
     if t_B == t_T: return NALGrammar.Values.TruthValue(frequency, confidence)
     interval = abs(t_B - t_T)

@@ -70,7 +70,7 @@ def process_pending_sentence():
     """
         Processes the next pending sentence from the input buffer if one exists
     """
-    while input_queue.qsize() > 0:
+    if input_queue.qsize() > 0:
         sentence = input_queue.get()
         process_sentence(sentence)
     if Config.DEBUG: Global.Global.debug_print("Input Channel Size: " + str(input_queue.qsize()))
@@ -85,11 +85,12 @@ def process_sentence(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-    if isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.is_event():
-        # put events on the temporal chain
-        Global.Global.NARS.temporal_module.put_new(task)
+    if sentence.is_event():
+        if isinstance(sentence, NALGrammar.Sentences.Judgment):
+            # put events on the temporal chain
+            Global.Global.NARS.temporal_module.put_new(task)
         # process the task into NARS
-        Global.Global.NARS.process_task(task)
+        Global.Global.NARS.global_buffer.put_new(task)
     else:
         Global.Global.NARS.global_buffer.put_new(task)
 

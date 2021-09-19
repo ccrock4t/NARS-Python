@@ -7,6 +7,9 @@ import heapq
 import random
 from bisect import bisect
 
+import numpy as np
+
+import Config
 import NARSDataStructures.ItemContainers
 
 class Bag(NARSDataStructures.ItemContainers.ItemContainer):
@@ -20,13 +23,15 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
     """
 
     def __init__(self, item_type, capacity):
-        self.items = [] # cumulative weights of non-empty buckets
-        self.count = 0
-        self.ordered_items = NARSDataStructures.Other.Depq()
+        self.item_keys = np.array([]) # items contained in the bag
+        self.weights = np.array([]) # un-normalized probability weight vector (e.g. item priority)
+        self.weights_sum = 0
+        self.item_key_to_index = {} # get item index from key
+        self.ordered_items = NARSDataStructures.Other.Depq() # for taking min and max
         NARSDataStructures.ItemContainers.ItemContainer.__init__(self, item_type=item_type,capacity=capacity)
 
     def __len__(self):
-        return self.count
+        return len(self.item_keys)
 
     def __iter__(self):
         return iter(list(self.item_lookup_dict.values()).__reversed__())
@@ -36,27 +41,27 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
             Place a NEW Item into the bag.
 
             :param Bag Item to place into the Bag
-            :returns Item purged from the Bag if the inserted item causes an overflow
+            :returns the new item
         """
         assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        # increase Bag count
-        self.count += 1
-
         NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, item)  # Item Container
-        # put item into bag (priority times)
-        idx_to_add = bisect(self.items, item.key)
-        for i in range(int(100*item.budget.priority)):
-            self.items.insert(idx_to_add,item.key)
 
-        self.ordered_items.insert_object(item, item.budget.priority)
+
+        self.item_keys = np.append(self.item_keys, item.key) # insert at last index
+        weight = item.budget.get_priority_weight()
+        self.weights = np.append(self.weights,weight)  # insert at last index
+        self.weights_sum += weight
+        priority = item.budget.get_priority()
+        self.ordered_items.insert_object(item, priority)  # insert into ordered queue
+        self.item_key_to_index[item.key] = len(self.item_keys) - 1 # last index
 
         # remove lowest priority item if over capacity
         purged_item = None
         if len(self) > self.capacity:
             purged_item = self._take_min()
 
-        return purged_item
+        return item
 
     def peek(self, key=None):
         """
@@ -65,7 +70,7 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
             :returns An item peeked from the Bag; None if item could not be peeked from the Bag
         """
-        if self.count == 0: return None  # no items
+        if len(self) == 0: return None  # no items
 
         if key is None:
             item = self._peek_probabilistically()
@@ -74,6 +79,31 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
         return item
 
+    def change_priority(self, key, new_priority):
+        """
+            Changes an item priority in the bag
+        :param key:
+        :return:
+        """
+        concept_item = self.peek_using_key(key)
+
+        # subtract current weight from sum
+        current_weight = concept_item.budget.get_priority_weight()
+        self.weights_sum -= current_weight
+
+        # change item priority attribute, and GUI if necessary
+        concept_item.budget.set_priority(new_priority)
+
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
+
+        # insert new weight
+        new_weight = concept_item.budget.get_priority_weight()
+        item_index = self.item_key_to_index[key]
+        self.weights[item_index] = new_weight
+        self.weights_sum += new_weight
+
+
     def strengthen_item(self, key):
         """
             Decays an item in the bag
@@ -81,16 +111,22 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         :return:
         """
         concept_item = self.peek_using_key(key)
-        before = concept_item.get_bag_number()
-        NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+
+        # subtract current weight from sum
+        current_weight = concept_item.budget.get_priority_weight()
+        self.weights_sum -= current_weight
+
+        # change item priority attribute, and GUI if necessary
         concept_item.strengthen()
-        NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
-        after = concept_item.get_bag_number()
-        diff = abs(after - before)
-        # remove the difference in priority so its less likely to be randomly selected
-        idx_to_add = bisect(self.items, key)
-        for i in range(diff):
-            self.items.insert(idx_to_add,key)
+
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
+
+        # insert new weight
+        new_weight = concept_item.budget.get_priority_weight()
+        item_index = self.item_key_to_index[key]
+        self.weights[item_index] = new_weight
+        self.weights_sum += new_weight
 
     def decay_item(self, key):
         """
@@ -99,16 +135,23 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         :return:
         """
         concept_item = self.peek_using_key(key)
-        before = concept_item.get_bag_number()
-        NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+
+        # subtract current weight from sum
+        current_weight = concept_item.budget.get_priority_weight()
+        self.weights_sum -= current_weight
+
+        # change item priority attribute, and GUI if necessary
         concept_item.decay()
-        NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
-        after = concept_item.get_bag_number()
-        diff = abs(after - before)
-        # remove the difference in priority so its less likely to be randomly selected
-        idx_to_rmv = bisect(self.items, key)
-        for i in range(diff):
-            self.items.pop(idx_to_rmv-i-1)
+
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
+
+        # insert new weight
+        new_weight = concept_item.budget.get_priority_weight()
+        item_index = self.item_key_to_index[key]
+        self.weights[item_index] = new_weight
+        self.weights_sum += new_weight
+
 
     def peek_max(self):
         """
@@ -116,10 +159,8 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
             Returns None if Bag is empty
         """
-        item = self.ordered_items.extract_max()
-        self.take_using_key(item.key)
+        item = self.ordered_items.peek_max()
         return item
-
 
     def take_using_key(self, key):
         """
@@ -130,17 +171,13 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         """
         assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
 
-        self.count -=1
+        item_idx = self.item_key_to_index[key]
 
-        item = self.peek_using_key(key)
-        elements_in_bag = item.get_bag_number()
+        item = NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
 
-        # remove the difference in priority so its less likely to be randomly selected
-        idx_to_rmv = bisect(self.items, key)
-        for i in range(elements_in_bag):
-            self.items.pop(idx_to_rmv-i-1)
-
-        NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        self.item_keys = np.delete(self.item_keys,item_idx)
+        self.weights = np.delete(self.weights, item_idx)
+        self.weights_sum -= item.budget.get_priority_weight()
 
         return item
 
@@ -158,8 +195,12 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
             :returns (item, index of item in the current bucket)
         """
-        if self.count == 0: return None, None
-        rnd = random.random()  # randomly generated number in [0.0, 1.0)
-        key = self.items[round(rnd*(len(self.items)-1))]
+        if len(self) == 0: return None, None
+        normalized_weights = self.weights / self.weights_sum
+        try:
+            key = np.random.choice(self.item_keys, p=normalized_weights)
+        except:
+            assert False, "ERROR: " + str(self.weights_sum) + " and " + str(np.sum(self.weights)) + " with len " + str(
+                len(self.item_keys)) + " and len " + str(len(self.weights))
         return self.item_lookup_dict[key]
 

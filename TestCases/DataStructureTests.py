@@ -1,3 +1,5 @@
+import random
+
 import Global
 import NARSDataStructures
 import NALGrammar
@@ -72,9 +74,9 @@ def test_buffer_removemax():
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainers.Item(NARSDataStructures.Other.Task(sentence),-1)
-        item.budget.priority = p
+        item.budget.set_priority(p)
         buffer.put(item)
-    buffermax = buffer.extract_max().budget.priority
+    buffermax = buffer.extract_max().budget.get_priority()
     assert(buffermax == maximum), "TEST FAILURE: Buffer did not properly retrieve maximum value"
 
 
@@ -91,10 +93,10 @@ def test_buffer_removemin():
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.Term.from_string("a"), NALGrammar.Terms.Term.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainers.Item(NARSDataStructures.Other.Task(sentence),-1)
-        item.budget.priority = p
+        item.budget.set_priority(p)
         buffer.put(item)
 
-    buffermin = buffer.extract_min().budget.priority
+    buffermin = buffer.extract_min().budget.get_priority()
     assert (buffermin == minimum), "TEST FAILURE: Buffer did not properly retrieve minimum value"
 
 
@@ -141,6 +143,59 @@ def test_bag_overflow_purge():
     assert (items_added > max_capacity), "TEST FAILURE: For this test, add more items than the capacity"
     assert (test_data_structure.count == max_capacity), "TEST FAILURE: " + type(test_data_structure).__name__  + " did not maintain capacity on overflow"
 
+def test_bag_priority_changing():
+    """
+        Test if bag stays within capacity when it overflows.
+    """
+    max_capacity = 10
+    test_data_structure = NARSDataStructures.Bag.Bag(item_type=NALGrammar.Sentences.Sentence, capacity=max_capacity)
+    items_added = 0
+
+    expected_values = {}
+    for i in range(0, max_capacity):
+        item = test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
+        new_priority = random.random()
+        test_data_structure.change_priority(item.key,new_priority)
+        expected_values[item.key] = item.get_bag_number()
+        items_added += 1
+
+    counts = {}
+    for key in test_data_structure.item_keys:
+        if key not in counts:
+            counts[key] = 1
+        else:
+            counts[key] += 1
+
+    for key in expected_values.keys():
+        assert (counts[key] == expected_values[key]), "TEST FAILURE: Priority change did not remove/add proper number of values in Bag " + str((counts[key], expected_values[key]))
+
+def test_bag_priority_changing():
+    """
+        Test if bag stays within capacity when it overflows.
+    """
+    max_capacity = 10
+    test_data_structure = NARSDataStructures.Bag.Bag(item_type=NALGrammar.Sentences.Sentence, capacity=max_capacity)
+    items_added = 0
+
+    expected_values = {}
+    for i in range(0, max_capacity):
+        item = test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
+        new_priority = random.random()
+        test_data_structure.change_priority(item.key,new_priority)
+        expected_values[item.key] = item.get_bag_number()
+        items_added += 1
+
+    counts = {}
+    for key in test_data_structure.item_keys:
+        if key not in counts:
+            counts[key] = 1
+        else:
+            counts[key] += 1
+
+    for key in expected_values.keys():
+        assert (counts[key] == expected_values[key]), "TEST FAILURE: Priority change did not remove/add proper number of values in Bag " + str((counts[key], expected_values[key]))
+
+
 def test_4_event_temporal_chaining():
     calculate_expected_num_of_results = lambda N: int(N*(N+1)/2 - 1)
 
@@ -182,6 +237,7 @@ def main():
         Bag Tests
     """
     test_bag_overflow_purge()
+    test_bag_priority_changing()
 
     print("All Data Structure Tests successfully passed.")
 

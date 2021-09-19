@@ -123,7 +123,7 @@ class Table(Depq):
             Returns None if depq is empty
         """
         if len(self) == 0: return None
-        return self[round(random.random() * (len(self)-1))]
+        return random.choice(self)
 
     def peek_highest_confidence_interactable(self, j):
         """

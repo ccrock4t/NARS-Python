@@ -23,6 +23,7 @@ class Sentence(Array):
         sentence ::= <statement><punctuation> <tense> %<value>%
     """
 
+
     def __init__(self, statement, value, punctuation, occurrence_time=None):
         """
 
@@ -33,6 +34,7 @@ class Sentence(Array):
         """
         Asserts.assert_punctuation(punctuation)
         assert isinstance(statement,NALGrammar.Terms.StatementTerm) or isinstance(statement,NALGrammar.Terms.CompoundTerm),"ERROR: Judgment needs a statement"
+
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
@@ -50,6 +52,16 @@ class Sentence(Array):
             if hasattr(value, '__iter__'): # if its iterable, only use the primary truth-value
                 value = value[0]
             self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
+
+        # setup cached calculations
+        self.cached_calculations = {"expectation" : [-1, None],
+                                    "is_positive" : [-1, None],
+                                    "is_negative" : [-1, None],
+                                    "present_value" : [-1, None]
+                                    } # format: key: calculation, value: [working cycle, value]
+        if not self.is_event():
+            self.cached_calculations["expectation"] = (-1, NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence))
+
 
     def __str__(self):
         return self.get_formatted_string()
@@ -70,11 +82,19 @@ class Sentence(Array):
 
     def get_expectation(self):
         if self.is_event():
-            time_projected_truth_value = self.get_present_value()
-            return NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
-                                                                     time_projected_truth_value.confidence)
+            current_cycle = Global.Global.get_current_cycle_number()
+            if current_cycle != self.cached_calculations["expectation"][0]:
+                # out of date
+                time_projected_truth_value = self.get_present_value()
+                expectation = NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
+                                                                         time_projected_truth_value.confidence)
+                self.cached_calculations["expectation"] = [current_cycle, expectation]
+                return expectation
+            else:
+                # value is cached
+                return self.cached_calculations["expectation"][1]
         else:
-            return NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence)
+            return self.cached_calculations["expectation"][1]
 
     def is_positive(self):
         """
@@ -82,40 +102,60 @@ class Sentence(Array):
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be positive."
 
+        current_cycle = Global.Global.get_current_cycle_number()
+        if current_cycle == self.cached_calculations["is_positive"][0]: return self.cached_calculations["is_positive"][1]
+
         if self.is_event():
             value = self.get_present_value()
         else:
             value = self.value
 
-        return NALInferenceRules.TruthValueFunctions.Expectation(value.frequency, value.confidence) >= Config.POSITIVE_THRESHOLD
+        is_positive = self.get_expectation() >= Config.POSITIVE_THRESHOLD
+
+        self.cached_calculations["is_positive"][1] = [current_cycle, is_positive]
+
+        return is_positive
 
     def is_negative(self):
         """
             :returns: Is this statement False? (does it have more negative evidence than positive evidence?)
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be negative."
+
+        current_cycle = Global.Global.get_current_cycle_number()
+        if current_cycle == self.cached_calculations["is_negative"][0]: return self.cached_calculations["is_negative"][1]
+
         if self.is_event():
             value = self.get_present_value()
         else:
             # eternal statements are eternally valid
             value = self.value
 
-        return NALInferenceRules.TruthValueFunctions.Expectation(value.frequency, value.confidence) < Config.NEGATIVE_THRESHOLD
+        is_negative = self.get_expectation() < Config.NEGATIVE_THRESHOLD
+
+        self.cached_calculations["is_negative"][1] = [current_cycle, is_negative]
+
+        return is_negative
 
     def get_present_value(self):
         """
             If this is an event, project its value to the current time
         """
         if self.is_event():
-            decay = Config.EVENT_TRUTH_PROJECTION_DECAY
-            if isinstance(self,Goal):
-                decay = Config.DESIRE_PROJECTION_DECAY
-
-            return NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
-                                                           self.value.confidence,
-                                                           self.stamp.occurrence_time,
-                                                           Global.Global.get_current_cycle_number(),
-                                                           decay=decay)
+            current_cycle = Global.Global.get_current_cycle_number()
+            if current_cycle != self.cached_calculations["present_value"][0]:
+                decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+                if isinstance(self,Goal):
+                    decay = Config.DESIRE_PROJECTION_DECAY
+                present_value = NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
+                                                               self.value.confidence,
+                                                               self.stamp.occurrence_time,
+                                                               Global.Global.get_current_cycle_number(),
+                                                               decay=decay)
+                self.cached_calculations["present_value"] = [current_cycle, present_value]
+                return present_value
+            else:
+                return self.cached_calculations["present_value"][1]
         else:
             return self.value
 
@@ -346,11 +386,24 @@ def new_sentence_from_string(sentence_string: str):
     else:
         statement = NALGrammar.Terms.simplify(NALGrammar.Terms.StatementTerm.from_string(statement_string))
 
+
+    # Find Tense, if it exists
+    # otherwise mark it as eternal
+    tense = NALSyntax.Tense.Eternal
+    for t in NALSyntax.Tense:
+        if t != NALSyntax.Tense.Eternal:
+            tense_idx = sentence_string.find(t.value)
+            if tense_idx != -1:  # found a tense
+                tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
+                break
+
+
+    # make sentence
     if punctuation == NALSyntax.Punctuation.Judgment:
         if freq is None:
             # No truth value, use default truth value
             freq = Config.DEFAULT_JUDGMENT_FREQUENCY
-            conf = Config.DEFAULT_JUDGMENT_CONFIDENCE
+            conf = Config.DEFAULT_EVENT_CONFIDENCE if tense != NALSyntax.Tense.Eternal else Config.DEFAULT_JUDGMENT_CONFIDENCE
         truth_values = None
         if statement.is_array:
             def create_truth_value_array(*coord_vars):
@@ -366,23 +419,15 @@ def new_sentence_from_string(sentence_string: str):
         if freq is None:
             # No truth value, use default truth value
             freq = Config.DEFAULT_GOAL_FREQUENCY
-            conf = Config.DEFAULT_GOAL_CONFIDENCE
+            conf = Config.DEFAULT_EVENT_CONFIDENCE if tense != NALSyntax.Tense.Eternal else Config.DEFAULT_GOAL_CONFIDENCE
         sentence = Goal(statement, DesireValue(freq,conf))
     else:
         assert False,"Error: No Punctuation!"
 
-    # Find Tense, if it exists
-    # otherwise mark it as eternal
-    tense = NALSyntax.Tense.Eternal
-    for t in NALSyntax.Tense:
-        if t != NALSyntax.Tense.Eternal:
-            tense_idx = sentence_string.find(t.value)
-            if tense_idx != -1:  # found a tense
-                tense = NALSyntax.Tense.get_tense_from_string(sentence_string[tense_idx: tense_idx + len(t.value)])
-                break
+
 
     if tense == NALSyntax.Tense.Present:
-        #Mark present tense event as happening right now!
+        # Mark present tense event as happening right now!
         sentence.stamp.occurrence_time = Global.Global.get_current_cycle_number()
 
     return sentence

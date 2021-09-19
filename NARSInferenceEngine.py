@@ -3,6 +3,8 @@
     Created: March 8, 2021
     Purpose: Given premises, performs proper inference and returns the resultant sentences as Tasks.
 """
+import time
+
 import Asserts
 import Config
 import Global
@@ -17,12 +19,28 @@ import NARSDataStructures.Other
 import NALSyntax
 
 
-def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
+def do_semantic_inference_two_premise(j1, j2):
+    if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+
+    try:
+        if isinstance(j1, NALGrammar.Sentences.Goal) and isinstance(j2, NALGrammar.Sentences.Judgment):
+            results = do_semantic_inference_goal_judgment(j1,j2)
+        else:
+            results = do_semantic_inference_two_judgment(j1, j2)
+    except Exception as error:
+        assert False,"ERROR: Inference error " + str(error) + " between " + str(j1) + " and " + str(j2)
+
+    if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
+        "Inference took " + str((time.time() - before) * 1000) + "ms")
+
+    return results
+
+def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     """
         Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
         The resultant sentence's evidential base is merged from its parents.
 
-        :param j1: Sentence (Goal, Question, or Judgment)
+        :param j1: Sentence (Question or Judgment)
         :param j2: Semantically related belief (Judgment)
 
         :assume j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
@@ -30,6 +48,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
         :returns An array of the derived Tasks, or an empty array if the inputs have evidential overlap
     """
+
     Asserts.assert_sentence(j1)
     Asserts.assert_sentence(j2)
 
@@ -54,7 +73,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
     j1_statement = j1.statement
     j2_statement = j2.statement
 
-    # same order copula
+    # same statement
     if j1_statement == j2_statement:
         """
         # Revision
@@ -298,8 +317,8 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             """
             derived_sentence = NALInferenceRules.Syllogistic.Resemblance(j1, j2)  # S<->P
             add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-    elif (isinstance(j1.statement,NALGrammar.Sentences.StatementTerm) and not j1.statement.is_first_order())\
-            or (isinstance(j2.statement,NALGrammar.Sentences.StatementTerm) and not j2.statement.is_first_order()):
+    elif (isinstance(j1.statement,NALGrammar.Terms.StatementTerm) and not j1.statement.is_first_order())\
+            or (isinstance(j2.statement,NALGrammar.Terms.StatementTerm) and not j2.statement.is_first_order()):
         # One premise is a higher-order statement
         """
                 j1 = S==>P or S<=>P
@@ -308,7 +327,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 j1 = A-->B or A<->B
                 j2 = S==>P or S<=>P
         """
-        if isinstance(j2.statement,NALGrammar.Sentences.StatementTerm) and not j2.statement.is_first_order():
+        if isinstance(j2.statement,NALGrammar.Terms.StatementTerm) and not j2.statement.is_first_order():
             """
                 j1 = A-->B or A<->B 
                 j2 = S==>P or S<=>P
@@ -317,7 +336,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             j1, j2 = j2, j1
             swapped = True
 
-        assert (isinstance(j1.statement,NALGrammar.Sentences.StatementTerm) and not j1.statement.is_first_order()),"ERROR"
+        assert (isinstance(j1.statement,NALGrammar.Terms.StatementTerm) and not j1.statement.is_first_order()),"ERROR"
 
         """
             j1 = S==>P or S<=>P
@@ -346,14 +365,10 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 """
                     j2 = P
                 """
-
-                if isinstance(j2,NALGrammar.Sentences.Goal):
-                    # j2 = P! or (P ==> D)
-                    derived_sentence = NALInferenceRules.Conditional.ConditionalGoalDeduction(j1, j2)  # S!
-                else:
-                    # j2 = P. or (E ==> P)
-                    derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2)  # S.
-                add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+                # j2 = P. or (E ==> P)
+                pass
+                #derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2)  # S.
+                #add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
             elif NALSyntax.TermConnector.is_conjunction(j1.statement.get_subject_term().connector) and not NALSyntax.Copula.is_symmetric(j1.statement.get_copula()):
                 """
                     j1 = (C1 && C2 && ..CN && S) ==> P
@@ -362,11 +377,12 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 pass
                 # derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # (C1 && C2 && ..CN) ==> P
                 # add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
-    elif (isinstance(j1.statement, NALGrammar.Sentences.CompoundTerm) and
-          isinstance(j2.statement, NALGrammar.Sentences.StatementTerm) and
+
+    elif (isinstance(j1.statement, NALGrammar.Terms.CompoundTerm) and
+          isinstance(j2.statement, NALGrammar.Terms.StatementTerm) and
             NALSyntax.TermConnector.is_conjunction(j1.statement.connector))\
-            or (isinstance(j2.statement, NALGrammar.Sentences.CompoundTerm) and
-                isinstance(j1.statement, NALGrammar.Sentences.StatementTerm) and
+            or (isinstance(j2.statement, NALGrammar.Terms.CompoundTerm) and
+                isinstance(j1.statement, NALGrammar.Terms.StatementTerm) and
                 NALSyntax.TermConnector.is_conjunction(j2.statement.connector)):
         """
                 j1 = (A &/ B)
@@ -375,7 +391,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
                 j1 = A
                 j2 = (A &/ B)
         """
-        if isinstance(j2.statement,NALGrammar.Sentences.CompoundTerm):
+        if isinstance(j2.statement,NALGrammar.Terms.CompoundTerm):
             """
                 j1 = A
                 j2 = (A &/ B)
@@ -388,13 +404,7 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
             j1 = (A &/ B)
             j2 = A
         """
-        if isinstance(j1, NALGrammar.Sentences.Goal) and j1.statement.subterms[0] == j2.statement:
-            """
-                j1 = (A &/ B)!
-                j2 = A.
-            """
-            derived_sentence = NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1,j2)  # B!
-            add_to_derived_sentences(derived_sentence,all_derived_sentences,j1,j2)
+        pass
 
     if swapped:
         # restore sentences
@@ -414,14 +424,82 @@ def do_semantic_inference_two_premise(j1: NALGrammar.Sentences, j2: NALGrammar.S
 
     return all_derived_sentences
 
+def do_semantic_inference_goal_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
+    """
+        Derives a new task by performing the appropriate inference rules on the given semantically related sentences.
+        The resultant sentence's evidential base is merged from its parents.
+
+        :param j1: Sentence (Goal)
+        :param j2: Semantically related belief (Judgment)
+
+        :assume j1 and j2 have distinct evidential bases B1 and B2: B1 ⋂ B2 = Ø
+                (no evidential overlap)
+
+        :returns An array of the derived Tasks, or an empty array if the inputs have evidential overlap
+    """
+    Asserts.assert_sentence(j1)
+    Asserts.assert_sentence(j2)
+
+    if Config.DEBUG: Global.Global.debug_print(
+        "Trying inference between: " + j1.get_formatted_string() + " and " + j2.get_formatted_string())
+
+    """
+    ===============================================
+    ===============================================
+        Pre-Processing
+    ===============================================
+    ===============================================
+    """
+
+    if j1.value.confidence == 0 or j2.value.confidence == 0:
+        if Config.DEBUG: Global.Global.debug_print("Can't do inference between negative premises")
+        return [] # can't do inference with 2 entirely negative premises
+
+
+    all_derived_sentences = []
+
+    j1_statement = j1.statement # goal statement
+    j2_statement = j2.statement
+
+    if isinstance(j1_statement, NALGrammar.Terms.StatementTerm):
+        if not NALSyntax.Copula.is_first_order(j2_statement.get_copula()):
+            if not NALSyntax.Copula.is_symmetric(j2_statement.get_copula()):
+                if j2_statement.get_predicate_term() == j1_statement:
+                    # j1 = P!, j2 = S=>P!
+                    derived_sentence = NALInferenceRules.Conditional.ConditionalGoalDeduction(j1, j2)  #:- S! i.e. (P ==> D)
+                    add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+        else:
+            pass
+    elif isinstance(j1_statement, NALGrammar.Terms.CompoundTerm):
+        if NALSyntax.TermConnector.is_conjunction(j1_statement.connector):
+            # j1 = (C &/ S)!, j2 = C. )
+            derived_sentence = NALInferenceRules.Conditional.SimplifyConjunctiveGoal(j1, j2)  # S!
+            add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+    else:
+        assert False,"ERROR"
+
+
+    """
+    ===============================================
+    ===============================================
+        Post-Processing
+    ===============================================
+    ===============================================
+    """
+
+    if Config.DEBUG: Global.Global.debug_print("Derived " + str(len(all_derived_sentences)) + " inference results.")
+
+    return all_derived_sentences
+
 def do_temporal_inference_two_premise(A: NALGrammar.Sentences, B: NALGrammar.Sentences) -> [NARSDataStructures.Other.Task]:
     derived_sentences = []
+
+    derived_sentence = NALInferenceRules.Temporal.TemporalIntersection(A,B) # A &/ B or  A &/ B or B &/ A
+    add_to_derived_sentences(derived_sentence,derived_sentences,A,B)
 
     derived_sentence = NALInferenceRules.Temporal.TemporalInduction(A, B) # A =|> B or A =/> B or B =/> A
     add_to_derived_sentences(derived_sentence,derived_sentences,A,B)
 
-    derived_sentence = NALInferenceRules.Temporal.TemporalIntersection(A,B) # A &/ B or  A &/ B or B &/ A
-    add_to_derived_sentences(derived_sentence,derived_sentences,A,B)
 
     """
     ===============================================

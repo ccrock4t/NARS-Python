@@ -36,7 +36,8 @@ class ItemContainer:
         :return: True if the item is in the Bag;
                     False otherwise
         """
-        return Item.get_key_from_object(object) in self.item_lookup_dict
+        key = Item.get_key_from_object(object)
+        return self.item_lookup_dict.get(key, None) is not None
 
     def __iter__(self):
         return iter(self.item_lookup_dict.values())
@@ -92,8 +93,7 @@ class ItemContainer:
             :return: Item peeked from the data structure
         """
         assert key is not None, "Key cannot be none when peeking with a key!"
-        if key not in self.item_lookup_dict: return None
-        return self.item_lookup_dict[key]
+        return self.item_lookup_dict.get(key, None)
 
 class Item:
     """
@@ -118,25 +118,19 @@ class Item:
                 priority = object.sentence.value.confidence
             else:
                 priority = 0.95
-            quality = 0.01
         elif isinstance(object, NARSMemory.Concept):
-            quality = 0.01
-            priority = 0.990
+            priority = 0.95
         else:
-            quality = 0.01
-            priority = 0.5
+            priority = 0.50
 
         if priority is not None:
             if isinstance(object, NARSDataStructures.Other.Task):
                 self.key = id
             else:
                 self.key = Item.get_key_from_object(object)
-            self.budget = Item.Budget(priority=priority, quality=quality)
+            self.budget = Item.Budget(priority=priority)
         else:
             assert False,"ERROR: No priority for item."
-
-
-
 
     @classmethod
     def get_key_from_object(cls, object):
@@ -159,27 +153,23 @@ class Item:
                + str(self.object) \
                + " " \
                + NALSyntax.StatementSyntax.BudgetMarker.value \
-               + "{:.3f}".format(self.budget.priority) \
+               + "{:.2f}".format(self.budget.get_priority()) \
                + NALSyntax.StatementSyntax.BudgetMarker.value
 
 
-    def strengthen(self,multiplier= Config.PRIORITY_STRENGTHEN_VALUE):
+    def strengthen(self,multiplier=Config.PRIORITY_STRENGTHEN_VALUE):
         """
             Increase this item's priority to a high value
         """
-        self.budget.priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.priority,multiplier)
-        if self.budget.priority > 0.95: self.budget.priority = 0.95
+        new_priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.get_priority(), multiplier)
+        self.budget.set_priority(new_priority)
 
     def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):
         """
             Decay this item's priority
         """
-        new_priority = self.budget.priority * multiplier
-        if new_priority < self.budget.quality: return # priority can't go below quality
-        self.budget.priority = round(new_priority, 3)
-
-    def get_bag_number(self):
-        return int(100*self.budget.priority)
+        new_priority = NALInferenceRules.ExtendedBooleanOperators.band(self.budget.get_priority(), multiplier)
+        self.budget.set_priority(new_priority)
 
     def get_gui_info(self):
         dict = {}
@@ -217,6 +207,29 @@ class Item:
             Priority determines how likely an item is to be selected,
             Quality defines the Item's base priority (its lowest possible priority)
         """
-        def __init__(self, priority=0.99, quality=0.01):
-            self.priority = priority
-            self.quality = quality
+        def __init__(self, priority=0.95, quality=0.02):
+            assert quality > 0,"ERROR: Quality must be above zero."
+            self.set_quality(quality)
+            self.set_priority(priority)
+
+
+        def set_priority(self,value):
+            if value < self.get_quality(): value = self.get_quality()  # priority can't go below quality
+            if value > 0.95: value = 0.95 # priority can't go above 0.95
+            self._priority = value
+            self.calc_priority_weight()
+
+        def calc_priority_weight(self):
+            self.priority_weight = round(100*self.get_priority())
+
+        def set_quality(self,value):
+            self._quality = value
+
+        def get_priority(self):
+            return self._priority
+
+        def get_priority_weight(self):
+            return self.priority_weight
+
+        def get_quality(self):
+            return self._quality

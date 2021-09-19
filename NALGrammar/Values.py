@@ -33,6 +33,7 @@ class DesireValue(EvidentialValue):
     """
 
     def __init__(self, frequency, confidence=Config.DEFAULT_GOAL_CONFIDENCE):
+        if confidence > 0.99: confidence = 0.99999
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \
@@ -51,6 +52,7 @@ class TruthValue(EvidentialValue):
     """
 
     def __init__(self, frequency=Config.DEFAULT_JUDGMENT_FREQUENCY, confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE):
+        if confidence > 0.99: confidence = 0.99999
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + '{0:.2f}'.format(self.frequency) \
