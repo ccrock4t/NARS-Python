@@ -1,4 +1,3 @@
-from NALGrammar.Arrays import Array
 import Config
 import Global
 import NALSyntax
@@ -18,12 +17,10 @@ from NALInferenceRules import TruthValueFunctions
     Created: October 9, 2020
     Purpose: Enforces Narsese grammar that is used throughout the project
 """
-class Sentence(Array):
+class Sentence:
     """
         sentence ::= <statement><punctuation> <tense> %<value>%
     """
-
-
     def __init__(self, statement, value, punctuation, occurrence_time=None):
         """
 
@@ -38,30 +35,12 @@ class Sentence(Array):
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
+        self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
 
-        if statement.is_array and hasattr(value, '__iter__') and value[1] is not None:
-            if isinstance(self,Judgment) or isinstance(self,Goal):
-                Array.__init__(self,statement.get_dimensions(),truth_values=value[1])
-                self.value = value[0]
-            else:
-                Array.__init__(self, statement.get_dimensions())
-                self.value = None
-        else:
-            #not an array
-            Array.__init__(self, None)
-            if hasattr(value, '__iter__'): # if its iterable, only use the primary truth-value
-                value = value[0]
-            self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
+        self.eternal_expectation = NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency,
+                                                                                     self.value.confidence)
 
-        # setup cached calculations
-        self.cached_calculations = {"expectation" : [-1, None],
-                                    "is_positive" : [-1, None],
-                                    "is_negative" : [-1, None],
-                                    "present_value" : [-1, None]
-                                    } # format: key: calculation, value: [working cycle, value]
-        if not self.is_event():
-            self.cached_calculations["expectation"] = (-1, NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency, self.value.confidence))
-
+        self.cached_present_value = [-1,None] # (working cycle #, present_value)
 
     def __str__(self):
         return self.get_formatted_string()
@@ -82,19 +61,12 @@ class Sentence(Array):
 
     def get_expectation(self):
         if self.is_event():
-            current_cycle = Global.Global.get_current_cycle_number()
-            if current_cycle != self.cached_calculations["expectation"][0]:
-                # out of date
-                time_projected_truth_value = self.get_present_value()
-                expectation = NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
-                                                                         time_projected_truth_value.confidence)
-                self.cached_calculations["expectation"] = [current_cycle, expectation]
-                return expectation
-            else:
-                # value is cached
-                return self.cached_calculations["expectation"][1]
+            time_projected_truth_value = self.get_present_value()
+            expectation = NALInferenceRules.TruthValueFunctions.Expectation(time_projected_truth_value.frequency,
+                                                                     time_projected_truth_value.confidence)
+            return expectation
         else:
-            return self.cached_calculations["expectation"][1]
+            return self.eternal_expectation
 
     def is_positive(self):
         """
@@ -102,17 +74,9 @@ class Sentence(Array):
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be positive."
 
-        current_cycle = Global.Global.get_current_cycle_number()
-        if current_cycle == self.cached_calculations["is_positive"][0]: return self.cached_calculations["is_positive"][1]
-
-        if self.is_event():
-            value = self.get_present_value()
-        else:
-            value = self.value
-
         is_positive = self.get_expectation() >= Config.POSITIVE_THRESHOLD
 
-        self.cached_calculations["is_positive"][1] = [current_cycle, is_positive]
+        if Config.DEBUG: Global.Global.debug_print("Is " + str(self.statement) + " positive? " + str(is_positive))
 
         return is_positive
 
@@ -122,18 +86,7 @@ class Sentence(Array):
         """
         assert not isinstance(self,Question),"ERROR: Question cannot be negative."
 
-        current_cycle = Global.Global.get_current_cycle_number()
-        if current_cycle == self.cached_calculations["is_negative"][0]: return self.cached_calculations["is_negative"][1]
-
-        if self.is_event():
-            value = self.get_present_value()
-        else:
-            # eternal statements are eternally valid
-            value = self.value
-
         is_negative = self.get_expectation() < Config.NEGATIVE_THRESHOLD
-
-        self.cached_calculations["is_negative"][1] = [current_cycle, is_negative]
 
         return is_negative
 
@@ -143,27 +96,29 @@ class Sentence(Array):
         """
         if self.is_event():
             current_cycle = Global.Global.get_current_cycle_number()
-            if current_cycle != self.cached_calculations["present_value"][0]:
-                decay = Config.EVENT_TRUTH_PROJECTION_DECAY
-                if isinstance(self,Goal):
-                    decay = Config.DESIRE_PROJECTION_DECAY
-                present_value = NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
-                                                               self.value.confidence,
-                                                               self.stamp.occurrence_time,
-                                                               Global.Global.get_current_cycle_number(),
-                                                               decay=decay)
-                self.cached_calculations["present_value"] = [current_cycle, present_value]
-                return present_value
-            else:
-                return self.cached_calculations["present_value"][1]
+            if self.cached_present_value[0] == current_cycle:
+                # cached value is still valid
+                return self.cached_present_value[1]
+            decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+            if isinstance(self,Goal):
+                decay = Config.DESIRE_PROJECTION_DECAY
+            present_value = NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
+                                                           self.value.confidence,
+                                                           self.stamp.occurrence_time,
+                                                           Global.Global.get_current_cycle_number(),
+                                                           decay=decay)
+
+            self.cached_present_value = [current_cycle, present_value]
+            return present_value
         else:
             return self.value
 
-    def get_formatted_string_no_id(self):
-        if isinstance(self.statement, NALGrammar.Terms.StatementTerm) or isinstance(self.statement,NALGrammar.Terms.CompoundTerm):
-            string = self.statement.get_formatted_string_with_interval()
+    def get_term_string_no_id(self):
+        if isinstance(self.statement,NALGrammar.Terms.CompoundTerm) \
+                and self.statement.connector is NALSyntax.TermConnector.SequentialConjunction:
+            string = self.statement.get_term_string_with_interval()
         else:
-            string = self.statement.get_formatted_string()
+            string = self.statement.get_term_string()
         string += str(self.punctuation.value)
         if self.is_event(): string = string + " " + self.get_tense().value
         if self.value is not None:
@@ -171,7 +126,7 @@ class Sentence(Array):
         return string
 
     def get_formatted_string(self):
-        string = self.get_formatted_string_no_id()
+        string = self.get_term_string_no_id()
         string = Global.Global.MARKER_SENTENCE_ID + str(self.stamp.id) + Global.Global.MARKER_ID_END + string
         return string
 
@@ -186,7 +141,7 @@ class Sentence(Array):
             dict[NARSGUI.NARSGUI.KEY_PASSES_DECISION] = "True" if NALInferenceRules.Local.Decision(self) else "False"
         else:
             dict[NARSGUI.NARSGUI.KEY_PASSES_DECISION] = None
-        dict[NARSGUI.NARSGUI.KEY_STRING_NOID] = self.get_formatted_string_no_id()
+        dict[NARSGUI.NARSGUI.KEY_STRING_NOID] = self.get_term_string_no_id()
         dict[NARSGUI.NARSGUI.KEY_ID] = str(self.stamp.id)
         dict[NARSGUI.NARSGUI.KEY_OCCURRENCE_TIME] = self.stamp.occurrence_time
         dict[NARSGUI.NARSGUI.KEY_SENTENCE_TYPE] = type(self).__name__
@@ -196,10 +151,15 @@ class Sentence(Array):
         dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in evidential_base_iterator]
         dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [str(interactedsentence) for interactedsentence in
                                            self.stamp.interacted_sentences]
-        dict[NARSGUI.NARSGUI.KEY_IS_ARRAY] = self.is_array
-        dict[NARSGUI.NARSGUI.KEY_ARRAY_IMAGE] = self.image_array if self.is_array and not isinstance(self,Question) else None
-        dict[NARSGUI.NARSGUI.KEY_ARRAY_ALPHA_IMAGE] = self.image_alpha_array if self.is_array and not isinstance(self,Question) else None
-        dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.element_string_array if self.is_array and not isinstance(self, Question) else None
+
+        is_array = isinstance(self.statement, NALGrammar.Terms.ArrayTerm)
+
+        dict[NARSGUI.NARSGUI.KEY_IS_ARRAY] = is_array
+        dict[NARSGUI.NARSGUI.KEY_ARRAY_IMAGE] = self.statement if is_array and not isinstance(self,Question) else None
+        dict[NARSGUI.NARSGUI.KEY_ARRAY_ALPHA_IMAGE] = np.ones(shape=self.statement.subterms.shape) if is_array and not isinstance(self,Question) else None
+        dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.statement.subterms if is_array and not isinstance(self,Question) else None
+        # END TODO
+
         dict[NARSGUI.NARSGUI.KEY_DERIVED_BY] = self.stamp.derived_by
         dict[NARSGUI.NARSGUI.KEY_PARENT_PREMISES] = str(self.stamp.parent_premises)
         return dict
@@ -404,15 +364,17 @@ def new_sentence_from_string(sentence_string: str):
             # No truth value, use default truth value
             freq = Config.DEFAULT_JUDGMENT_FREQUENCY
             conf = Config.DEFAULT_EVENT_CONFIDENCE if tense != NALSyntax.Tense.Eternal else Config.DEFAULT_JUDGMENT_CONFIDENCE
-        truth_values = None
-        if statement.is_array:
-            def create_truth_value_array(*coord_vars):
-                return TruthValue(freq, conf)
 
-            func_vectorized = np.vectorize(create_truth_value_array)
-            truth_values = np.fromfunction(function=func_vectorized, shape=statement.dim_lengths)
+        # if isinstance(statement,NALGrammar.Terms.ArrayTerm):
+        #     def create_truth_value_array(*indices):
+        #         return TruthValue(freq, conf)
+        #
+        #     func_vectorized = np.vectorize(create_truth_value_array)
+        #     truth_values = np.fromfunction(function=func_vectorized,
+        #                                    shape=statement.array.shape,
+        #                                    dtype=TruthValue)
 
-        sentence = Judgment(statement, (TruthValue(freq, conf),truth_values))
+        sentence = Judgment(statement, TruthValue(freq, conf))
     elif punctuation == NALSyntax.Punctuation.Question:
         sentence = Question(statement)
     elif punctuation == NALSyntax.Punctuation.Goal:

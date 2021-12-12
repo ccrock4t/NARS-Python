@@ -31,15 +31,22 @@ try:
     GLOBAL_BUFFER_CAPACITY = user_config["GLOBAL_BUFFER_CAPACITY"]
     CONCEPT_LINK_CAPACITY = user_config["CONCEPT_LINK_CAPACITY"]  # how many of each concept link can this NARS have?
 
+    """
+        Sensors
+    """
+    VISION_DIMENSIONS = (21,21)
 
     """
         GUI
     """
+    SILENT_MODE = user_config["SILENT_MODE"]  # the system will only output executed operations
     GUI_USE_INTERFACE = user_config["GUI_USE_INTERFACE"]
-    TIMING_DEBUG = user_config["TIMING_DEBUG"]  # set to true for useful timing debug statements
+    DEBUG_TIMING = user_config["TIMING_DEBUG"]  # set to true for useful timing debug statements
     DEBUG = user_config["DEBUG"]  # set to true for useful debug statements
     ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = user_config[
         "ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS"]  # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
+
+
 
     """
         Inference
@@ -90,7 +97,4 @@ try:
     DEFAULT_GOAL_FREQUENCY = user_config["DEFAULT_GOAL_FREQUENCY"]
 
 except:
-    assert  False,"Config could not be loaded."
-
-
-
+    assert False, "Config could not be loaded."

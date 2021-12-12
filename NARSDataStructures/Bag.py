@@ -3,14 +3,12 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
-import heapq
-import random
-from bisect import bisect
-
+import timeit as time
 import numpy as np
-
 import Config
+import Global
 import NARSDataStructures.ItemContainers
+
 
 class Bag(NARSDataStructures.ItemContainers.ItemContainer):
     """
@@ -23,18 +21,22 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
     """
 
     def __init__(self, item_type, capacity):
-        self.item_keys = np.array([]) # items contained in the bag
-        self.weights = np.array([]) # un-normalized probability weight vector (e.g. item priority)
+        # self.random = np.random(1337)
+        self.item_keys = np.array([])  # items contained in the bag
+        self.weights = np.array([])  # un-normalized probability weight vector (e.g. item priority)
         self.weights_sum = 0
-        self.item_key_to_index = {} # get item index from key
-        self.ordered_items = NARSDataStructures.Other.Depq() # for taking min and max
-        NARSDataStructures.ItemContainers.ItemContainer.__init__(self, item_type=item_type,capacity=capacity)
+        self.ordered_items = NARSDataStructures.Other.Depq()  # for taking min and max
+        NARSDataStructures.ItemContainers.ItemContainer.__init__(self, item_type=item_type, capacity=capacity)
 
     def __len__(self):
         return len(self.item_keys)
 
     def __iter__(self):
         return iter(list(self.item_lookup_dict.values()).__reversed__())
+
+    def clear(self):
+        self.__init__(item_type=self.item_type,
+                      capacity=self.capacity)
 
     def put(self, item):
         """
@@ -47,14 +49,12 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
         NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
-
-        self.item_keys = np.append(self.item_keys, item.key) # insert at last index
+        self.item_keys = np.append(self.item_keys, item.key)  # insert at last index
         weight = item.budget.get_priority_weight()
-        self.weights = np.append(self.weights,weight)  # insert at last index
+        self.weights = np.append(self.weights, weight)  # insert at last index
         self.weights_sum += weight
         priority = item.budget.get_priority()
         self.ordered_items.insert_object(item, priority)  # insert into ordered queue
-        self.item_key_to_index[item.key] = len(self.item_keys) - 1 # last index
 
         # remove lowest priority item if over capacity
         purged_item = None
@@ -71,11 +71,16 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
             :returns An item peeked from the Bag; None if item could not be peeked from the Bag
         """
         if len(self) == 0: return None  # no items
+        if Config.DEBUG_TIMING: before = time.default_timer()
 
         if key is None:
             item = self._peek_probabilistically()
+            if Config.DEBUG_TIMING: Global.Global.debug_print(
+                "Peek probabilistic took " + str((time.default_timer() - before) * 1000) + "ms")
         else:
-            item = NARSDataStructures.ItemContainers.ItemContainer.peek_using_key(self,key=key)
+            item = NARSDataStructures.ItemContainers.ItemContainer.peek_using_key(self, key=key)
+            if Config.DEBUG_TIMING: Global.Global.debug_print(
+                "Peek using key took " + str((time.default_timer() - before) * 1000) + "ms")
 
         return item
 
@@ -88,6 +93,9 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         concept_item = self.peek_using_key(key)
 
         # subtract current weight from sum
+        if concept_item is None or concept_item.budget is None:
+            yourmom = 1
+
         current_weight = concept_item.budget.get_priority_weight()
         self.weights_sum -= current_weight
 
@@ -95,14 +103,14 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         concept_item.budget.set_priority(new_priority)
 
         if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
-        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self,
+                                                                                                           concept_item)
 
         # insert new weight
         new_weight = concept_item.budget.get_priority_weight()
-        item_index = self.item_key_to_index[key]
-        self.weights[item_index] = new_weight
+        item_idx = np.where(self.item_keys == key)
+        self.weights[item_idx] = new_weight
         self.weights_sum += new_weight
-
 
     def strengthen_item(self, key):
         """
@@ -120,12 +128,13 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         concept_item.strengthen()
 
         if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
-        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self,
+                                                                                                           concept_item)
 
         # insert new weight
         new_weight = concept_item.budget.get_priority_weight()
-        item_index = self.item_key_to_index[key]
-        self.weights[item_index] = new_weight
+        item_idx = np.where(self.item_keys == key)
+        self.weights[item_idx] = new_weight
         self.weights_sum += new_weight
 
     def decay_item(self, key):
@@ -144,14 +153,14 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         concept_item.decay()
 
         if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
-        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, concept_item)
+        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self,
+                                                                                                           concept_item)
 
         # insert new weight
         new_weight = concept_item.budget.get_priority_weight()
-        item_index = self.item_key_to_index[key]
-        self.weights[item_index] = new_weight
+        item_idx = np.where(self.item_keys == key)
+        self.weights[item_idx] = new_weight
         self.weights_sum += new_weight
-
 
     def peek_max(self):
         """
@@ -171,11 +180,11 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         """
         assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
 
-        item_idx = self.item_key_to_index[key]
+        item_idx = np.where(self.item_keys == key)
 
         item = NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
 
-        self.item_keys = np.delete(self.item_keys,item_idx)
+        self.item_keys = np.delete(self.item_keys, item_idx)
         self.weights = np.delete(self.weights, item_idx)
         self.weights_sum -= item.budget.get_priority_weight()
 
@@ -196,11 +205,11 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
             :returns (item, index of item in the current bucket)
         """
         if len(self) == 0: return None, None
-        normalized_weights = self.weights / self.weights_sum
-        try:
-            key = np.random.choice(self.item_keys, p=normalized_weights)
-        except:
-            assert False, "ERROR: " + str(self.weights_sum) + " and " + str(np.sum(self.weights)) + " with len " + str(
-                len(self.item_keys)) + " and len " + str(len(self.weights))
+        if self.weights_sum > 0:
+            normalized_weights = self.weights / self.weights_sum
+        else:
+            # the weights are all zero
+            avg = 1.0 / len(self.weights)
+            normalized_weights = [avg] * len(self.weights)  # use uniform rates
+        key = np.random.choice(self.item_keys, p=normalized_weights)
         return self.item_lookup_dict[key]
-

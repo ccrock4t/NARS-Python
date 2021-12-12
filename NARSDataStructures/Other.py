@@ -1,4 +1,5 @@
 import random
+import timeit as time
 
 import Asserts
 import NALGrammar.Sentences
@@ -11,6 +12,7 @@ import depq
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+
 
 class Depq():
     def __init__(self):
@@ -71,6 +73,7 @@ class Depq():
         if len(self.depq) == 0: return None
         return self.depq.last()
 
+
 class Table(Depq):
     """
         NARS Table, stored within Concepts.
@@ -88,13 +91,13 @@ class Table(Depq):
         """
             Insert a Sentence into the depq, sorted by confidence (time-projected confidence if it's an event).
         """
-        assert (isinstance(sentence,self.item_type)), "Cannot insert sentence into a Table of different punctuation"
+        assert (isinstance(sentence, self.item_type)), "Cannot insert sentence into a Table of different punctuation"
 
-        confidence = sentence.value.confidence
+        priority = sentence.value.confidence
         if sentence.is_event():
-            confidence = sentence.get_present_value().confidence
+            priority = sentence.stamp.occurrence_time
 
-        Depq.insert_object(self, sentence, confidence)
+        Depq.insert_object(self, sentence, priority)
 
         if len(self) > self.capacity:
             Depq.extract_min(self)
@@ -134,9 +137,12 @@ class Table(Depq):
         :param j:
         :return:
         """
-        for (belief, confidence) in self: # loop starting with max confidence
-            if NALGrammar.Sentences.may_interact(j,belief):
+        if Config.DEBUG_TIMING: before = time.default_timer()
+        for (belief, confidence) in self:  # loop starting with max confidence
+            if NALGrammar.Sentences.may_interact(j, belief):
                 return belief
+        if Config.DEBUG_TIMING: Global.Global.debug_print(
+            " Peek highest confidence interable took " + str((time.default_timer() - before) * 1000) + "ms")
         return None
 
 
@@ -150,11 +156,11 @@ class Task:
         self.sentence = sentence
         self.creation_timestamp: int = Global.Global.get_current_cycle_number()  # save the task's creation time
         self.is_from_input: bool = is_input_task
-        #only used for question tasks
+        # only used for question tasks
         self.needs_to_be_answered_in_output: bool = is_input_task
 
     def get_term(self):
         return self.sentence.statement
 
     def __str__(self):
-        return "TASK: " + self.sentence.get_formatted_string_no_id()
+        return "TASK: " + self.sentence.get_term_string_no_id()

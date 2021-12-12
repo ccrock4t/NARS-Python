@@ -1,3 +1,6 @@
+from math import sin
+from tkinter import filedialog
+
 import Config
 import NALSyntax
 import NARSDataStructures
@@ -9,6 +12,8 @@ from PIL import Image, ImageTk, ImageOps
 import Global
 import tkinter as tk
 import numpy as np
+
+from NALGrammar.Terms import StatementTerm
 
 """
     GUI code
@@ -23,13 +28,14 @@ class NARSGUI:
     gui_total_cycles_lbl = None
     gui_total_cycles_stringvar = None
     gui_play_pause_button = None
-    gui_show_non_statement_concepts = False
+    gui_show_atomic_concepts = False
 
     # Internal Data vars
     # listboxes
-    gui_global_buffer_listbox = None  # output for tasks in global buffer
+    gui_narsese_buffer_listbox = None  # output for tasks in global buffer
+    gui_vision_buffer_listbox = None
     gui_memory_listbox = None  # output for concepts in memory bag
-    gui_event_buffer_listbox = None  # output for tasks in event buffer
+    gui_temporal_module_listbox = None  # output for tasks in event buffer
 
     # arrays
     gui_global_buffer_full_contents = []
@@ -37,8 +43,9 @@ class NARSGUI:
     gui_event_buffer_full_contents = []
 
     # labels
-    gui_event_buffer_output_label = None
-    gui_global_buffer_output_label = None
+    gui_temporal_module_output_label = None
+    gui_narsese_buffer_output_label = None
+    gui_vision_buffer_output_label = None
     gui_concepts_bag_output_label = None
 
     # dictionary of data structure name to listbox
@@ -110,7 +117,7 @@ class NARSGUI:
 
         # internal data output
         # insert item sorted by priority
-        if listbox is self.gui_event_buffer_listbox:
+        if listbox is self.gui_temporal_module_listbox:
             idx_to_insert = tk.END
         else:
             string_list = listbox.get(0, tk.END)  # get all items in the listbox
@@ -129,13 +136,13 @@ class NARSGUI:
         if listbox is self.gui_memory_listbox:
             self.gui_memory_full_contents.insert(
                 len(self.gui_memory_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
-            if NARSGUI.is_statement_string(msg) or self.gui_show_non_statement_concepts:
+            if NARSGUI.is_statement_string(msg) or self.gui_show_atomic_concepts:
                 listbox.insert(idx_to_insert, msg)
-        elif listbox is self.gui_event_buffer_listbox:
+        elif listbox is self.gui_temporal_module_listbox:
             self.gui_event_buffer_full_contents.insert(
                 len(self.gui_event_buffer_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
             listbox.insert(idx_to_insert, msg)
-        elif listbox is self.gui_global_buffer_listbox:
+        elif listbox is self.gui_narsese_buffer_listbox:
             self.gui_global_buffer_full_contents.insert(
                 len(self.gui_global_buffer_full_contents) if idx_to_insert == tk.END else idx_to_insert, msg)
             listbox.insert(idx_to_insert, msg)
@@ -144,7 +151,7 @@ class NARSGUI:
 
     @classmethod
     def is_statement_string(cls, msg):
-        return NALSyntax.Copula.contains_top_level_copula(msg) or NALSyntax.TermConnector.contains_conjunction(msg)
+        return NALSyntax.Copula.contains_top_level_copula(msg) or NALSyntax.TermConnector.contains_higher_level_connector(msg)
 
     def remove_from_output(self, msg, data_structure_info=None, length=0):
         """
@@ -171,7 +178,7 @@ class NARSGUI:
                 i = i + 1
             del self.gui_memory_full_contents[i]
             # if non-statement and not showing non-statements, don't bother trying to remove it from memory GUI output
-            if not NARSGUI.is_statement_string(msg) and not self.gui_show_non_statement_concepts: return
+            if not NARSGUI.is_statement_string(msg) and not self.gui_show_atomic_concepts: return
 
         string_list = listbox.get(0, tk.END)
         idx_to_remove = -1
@@ -190,11 +197,11 @@ class NARSGUI:
 
         contents = None
 
-        if listbox is self.gui_global_buffer_listbox:
+        if listbox is self.gui_narsese_buffer_listbox:
             contents = self.gui_global_buffer_full_contents
         elif listbox is self.gui_memory_listbox:
             contents = None  # already removed at beginning of function
-        elif listbox is self.gui_event_buffer_listbox:
+        elif listbox is self.gui_temporal_module_listbox:
             contents = self.gui_event_buffer_full_contents
 
         if contents is not None: contents.pop(idx_to_remove)
@@ -211,11 +218,11 @@ class NARSGUI:
         if listbox is self.gui_memory_listbox:
             label_txt = "Memory - Concepts "
             label = self.gui_concepts_bag_output_label
-        elif listbox is self.gui_event_buffer_listbox:
-            label = self.gui_event_buffer_output_label
-        elif listbox is self.gui_global_buffer_listbox:
-            label_txt = "Global Task "
-            label = self.gui_global_buffer_output_label
+        elif listbox is self.gui_temporal_module_listbox:
+            label = self.gui_temporal_module_output_label
+        elif listbox is self.gui_narsese_buffer_listbox:
+            label_txt = "Narsese "
+            label = self.gui_narsese_buffer_output_label
 
         if label is None: return
         label.config(
@@ -225,14 +232,14 @@ class NARSGUI:
     def clear_listbox(self, listbox=None):
         listbox.delete(0, tk.END)
 
-    def toggle_show_non_statement_concepts(self):
+    def toggle_show_atomic_concepts(self):
         """
             Toggles showing atomic concepts in the memory listbox
         :return:
         """
-        self.gui_show_non_statement_concepts = not self.gui_show_non_statement_concepts
+        self.gui_show_atomic_concepts = not self.gui_show_atomic_concepts
         self.clear_listbox(self.gui_memory_listbox)
-        if self.gui_show_non_statement_concepts:
+        if self.gui_show_atomic_concepts:
             for concept_string in self.gui_memory_full_contents:
                 self.gui_memory_listbox.insert(tk.END, concept_string)
         else:
@@ -254,16 +261,19 @@ class NARSGUI:
         window = tk.Tk()
         window.title("NARS in Python - Interface")
         window.geometry("1900x700")
-        self.execute_interface_gui(window, data_structure_IDs, data_structure_capacities)
+        self.execute_main_interface_gui(window, data_structure_IDs, data_structure_capacities)
 
         # main GUI loop
         def handle_pipes(self):
             while self.gui_string_pipe.poll():  # check if there are messages to be received
                 (command, msg, data_structure_info, data_structure_length) = self.gui_string_pipe.recv()
                 if command == "print":
-                    self.print_to_output(msg=msg, data_structure_info=data_structure_info, length=data_structure_length)
+                    self.print_to_output(msg=msg,
+                                         data_structure_info=data_structure_info,
+                                         length=data_structure_length)
                 elif command == "remove":
-                    self.remove_from_output(msg=msg, data_structure_info=data_structure_info,
+                    self.remove_from_output(msg=msg,
+                                            data_structure_info=data_structure_info,
                                             length=data_structure_length)
                 elif command == "clear":
                     self.clear_listbox(data_structure_id=data_structure_info)
@@ -271,6 +281,8 @@ class NARSGUI:
                     self.set_paused(msg)
                 elif command == "cycles":
                     self.gui_total_cycles_stringvar.set(msg)
+                else:
+                    assert False, "ERROR: INCORRECT COMMAND!"
 
             window.after(1, handle_pipes, self)
 
@@ -300,7 +312,7 @@ class NARSGUI:
         self.set_paused(not self.paused)
         self.gui_string_pipe.send(("paused", self.paused))
 
-    def execute_interface_gui(self, window, data_structure_IDs, data_structure_capacities):
+    def execute_main_interface_gui(self, window, data_structure_IDs, data_structure_capacities):
         """
             Setup the interface GUI window, displaying the system's components
         """
@@ -325,7 +337,7 @@ class NARSGUI:
         self.gui_total_cycles_lbl = tk.Label(window, textvariable=self.gui_total_cycles_stringvar)
         self.gui_total_cycles_lbl.grid(row=1, column=4, columnspan=2, sticky='n')
 
-        speed_slider_lbl = tk.Label(window, text="Cycle Delay in millisec: ")
+        speed_slider_lbl = tk.Label(window, text="Working Cycle Duration in ms: ")
         speed_slider_lbl.grid(row=2, column=4, columnspan=2, sticky='s')
 
         self.gui_play_pause_button = tk.Button(window, text="", command=self.toggle_paused)
@@ -346,8 +358,8 @@ class NARSGUI:
         self.gui_working_cycle_duration_slider.set(min_slider)
         slider_changed()  # set delay to max value
 
-        checkbutton = tk.Checkbutton(window, text='Show non-statement concepts', onvalue=1,
-                                     offvalue=0, command=self.toggle_show_non_statement_concepts)
+        checkbutton = tk.Checkbutton(window, text='Show atomic concepts', onvalue=1,
+                                     offvalue=0, command=self.toggle_show_atomic_concepts)
         checkbutton.grid(row=4, column=5)
 
         # input GUI
@@ -373,65 +385,105 @@ class NARSGUI:
         listbox_height = 40
         listbox_width = 80
 
-        ((global_task_buffer_ID, _), (event_buffer_ID, _), (memory_bag_ID, _)) = data_structure_IDs
+        ((narsese_buffer_ID, _), (vision_buffer_ID, _), (temporal_module_ID, _), (memory_bag_ID, _)) = data_structure_IDs
 
         """
             Event buffer internal contents GUI
         """
         row = 0
         column = 6
-        self.gui_event_buffer_output_label = tk.Label(window)
-        self.gui_event_buffer_output_label.grid(row=row, column=column, sticky='w')
+        self.gui_temporal_module_output_label = tk.Label(window, borderwidth=1, relief="solid")
+        self.gui_temporal_module_output_label.grid(row=row, column=column, sticky='w')
 
         row += 1
         buffer_scrollbar = tk.Scrollbar(window)
         buffer_scrollbar.grid(row=row, column=column + 1, sticky='ns')
-        self.gui_event_buffer_listbox = tk.Listbox(window,
-                                                   height=listbox_height // 3,
-                                                   width=listbox_width, font=('', 8),
-                                                   yscrollcommand=buffer_scrollbar.set)
-        self.gui_event_buffer_listbox.grid(row=row, column=column, columnspan=1)
-        self.dict_listbox_from_id[event_buffer_ID] = self.gui_event_buffer_listbox
+        self.gui_temporal_module_listbox = tk.Listbox(window,
+                                                      height=listbox_height // 3,
+                                                      width=listbox_width, font=('', 8),
+                                                      yscrollcommand=buffer_scrollbar.set)
+        self.gui_temporal_module_listbox.grid(row=row, column=column, columnspan=1)
+        self.dict_listbox_from_id[temporal_module_ID] = self.gui_temporal_module_listbox
 
         """
             Global Buffer internal contents GUI
         """
+
         row += 1
-        self.gui_global_buffer_output_label = tk.Label(window)
-        self.gui_global_buffer_output_label.grid(row=row,
-                                                 column=column,
-                                                 sticky='w')
+        self.gui_narsese_buffer_output_label = tk.Label(window,borderwidth=1, relief="solid")
+        self.gui_narsese_buffer_output_label.grid(row=row,
+                                                  column=column,
+                                                  sticky='w')
 
         row += 1
         buffer_scrollbar = tk.Scrollbar(window)
         buffer_scrollbar.grid(row=row,
                               column=column + 1,
-                              rowspan=4,
                               sticky='ns')
-        self.gui_global_buffer_listbox = tk.Listbox(window,
-                                                    height=2 * listbox_height // 3,
-                                                    width=listbox_width,
-                                                    font=('', 8),
-                                                    yscrollcommand=buffer_scrollbar.set)
-        self.gui_global_buffer_listbox.grid(row=row,
-                                            column=column,
-                                            columnspan=1,
-                                            rowspan=4)
-        self.dict_listbox_from_id[global_task_buffer_ID] = self.gui_global_buffer_listbox
+        self.gui_narsese_buffer_listbox = tk.Listbox(window,
+                                                     height= 2* listbox_height // 3,
+                                                     width=listbox_width,
+                                                     font=('', 8),
+                                                     yscrollcommand=buffer_scrollbar.set)
+
+        self.gui_narsese_buffer_listbox.grid(row=row,
+                                             column=column,
+                                             columnspan=1)
+
+        self.dict_listbox_from_id[narsese_buffer_ID] = self.gui_narsese_buffer_listbox
+
+        # CREATE VISION WINDOW
+        vision_window = tk.Toplevel()
+        vision_window.title("Supervised Learning - Visual Images")
+        vision_window.geometry('512x550')
+
+        ZOOM = 16
+        WIDTH = 28
+        HEIGHT = 28
+
+        canvas = tk.Canvas(vision_window, width=WIDTH* ZOOM, height=HEIGHT* ZOOM, bg="#000000")
+        empty_img = tk.PhotoImage(width=(WIDTH * ZOOM), height=(HEIGHT * ZOOM))
+        self.current_vision_img = None
+        vision_canvas_image = canvas.create_image((WIDTH*ZOOM / 2, HEIGHT *ZOOM / 2), image=empty_img, state="normal")
+
+        def load_visual_image(self):
+            filename = filedialog.askopenfilename(title='Load a visual image')
+            new_img = Image.open(filename)
+            self.current_vision_img = ImageTk.PhotoImage(new_img.resize((WIDTH * ZOOM, HEIGHT *ZOOM), Image.NEAREST))
+            canvas.itemconfig(vision_canvas_image, image=self.current_vision_img)
+            strings_pipe.send(("visualimage", new_img) ) # send user input to NARS
+
+        # create button to load image
+        button = tk.Button(vision_window, text="Load Image", command=lambda: load_visual_image(self))
+
+        def send_label_event(self, string):
+            strings_pipe.send(("visualimagelabel", string))  # send user input to NARS
+
+        label = tk.Label(vision_window, text="Enter a label for the image:")
+        label_input = tk.Entry(vision_window)
+        label_button = tk.Button(vision_window, text="Send Label Event", command=lambda: send_label_event(self, label_input.get()))
+
+        button.pack()
+        canvas.pack()
+        label.pack()
+        label_input.pack()
+        label_button.pack()
+
 
         """
             Memory internal contents GUI
         """
         row -= 3
-        self.gui_concepts_bag_output_label = tk.Label(window)
+        self.gui_concepts_bag_output_label = tk.Label(window, borderwidth=1, relief="solid")
         self.gui_concepts_bag_output_label.grid(row=row,
                                                 column=column + 3,
                                                 sticky='w')
 
         row += 1
+        column += 3
         concept_bag_scrollbar = tk.Scrollbar(window)
         concept_bag_scrollbar.grid(row=row,
-                                   column=column + 4,
+                                   column=column + 1,
                                    rowspan=6,
                                    sticky='ns')
         self.gui_memory_listbox = tk.Listbox(window,
@@ -440,7 +492,7 @@ class NARSGUI:
                                              font=('', 8),
                                              yscrollcommand=concept_bag_scrollbar.set)
         self.gui_memory_listbox.grid(row=row,
-                                     column=column + 3,
+                                     column=column,
                                      columnspan=1,
                                      rowspan=6)
         self.dict_listbox_from_id[memory_bag_ID] = self.gui_memory_listbox
@@ -455,7 +507,8 @@ class NARSGUI:
                 length = 1  # system starts with self concept
             else:
                 length = 0
-            self.update_datastructure_labels((id, name), length)
+            if id != vision_buffer_ID:
+                self.update_datastructure_labels((id, name), length)
 
         window.focus()
 
@@ -498,14 +551,14 @@ class NARSGUI:
 
             data_structure_name = ""
             if event.widget is self.gui_memory_listbox:
-                ID = item_string[
-                     item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.find(
-                         NALSyntax.StatementSyntax.BudgetMarker.value) - 1]  # remove ID and priority, concept term string is the key
+                ID = item_string[ item_string.rfind(Global.Global.MARKER_ID_END) + len(Global.Global.MARKER_ID_END):item_string.rfind(
+                         NALSyntax.StatementSyntax.End.value) + 1]  # extract term string
                 data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
             else:
                 # clicked concept within another concept
                 ID = item_string
                 data_structure_name = self.get_data_structure_name_from_listbox(self.gui_memory_listbox)
+
             self.gui_object_pipe.send(("getitem", ID, data_structure_name))
             item = self.gui_object_pipe.recv()
 
@@ -812,9 +865,10 @@ class NARSGUI:
                                  content_click_callback=self.listbox_sentence_item_click_callback)
 
         MAX_IMAGE_SIZE = 2000
-        image_array = sentence_to_draw[NARSGUI.KEY_ARRAY_IMAGE]
-        image_alpha_array = sentence_to_draw[NARSGUI.KEY_ARRAY_ALPHA_IMAGE]
-        if is_array and image_array is not None:
+
+        if is_array:
+            image_array = sentence_to_draw[NARSGUI.KEY_ARRAY_IMAGE].subterms
+            image_alpha_array = sentence_to_draw[NARSGUI.KEY_ARRAY_ALPHA_IMAGE]
             column += 2
 
             # set image defaults
@@ -845,7 +899,8 @@ class NARSGUI:
                         offset = 0  # initialize
                     else:
                         offset = 3 if event.delta > 0 else -3
-                    pil_image = Image.fromarray(np.swapaxes(image_array, axis1=0, axis2=1))
+
+                    pil_image = Image.fromarray(np.swapaxes(image_array, axis1=1, axis2=2))
                     # pil_image = ImageOps.flip(pil_image).rotate(angle=90)
                     if gui_array_use_confidence_opacity[0]:
                         pil_alpha = Image.fromarray(image_alpha_array, mode="L")
@@ -887,7 +942,7 @@ class NARSGUI:
 
                     # iterate over each element and draw a pixel for it
                     if len(image_array.shape) == 2:
-                        for (x, y), pixel_value in np.ndenumerate(image_array):
+                        for (y, x), pixel_value in np.ndenumerate(image_array):
                             f = tk.Frame(image_frame[0], width=PIXELS_PER_ELEMENT[0],
                                          height=PIXELS_PER_ELEMENT[0])
                             f.grid(row=y, column=x, columnspan=1, rowspan=1)
@@ -895,26 +950,26 @@ class NARSGUI:
                             f.columnconfigure(0, weight=1)
                             f.grid_propagate(0)
 
-                            element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][x, y]
+                            element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][y, x]
                             img_array = np.array([
                                 [
                                     [
-                                        [pixel_value]
+                                        [255 if isinstance(pixel_value,StatementTerm) else 0]
                                     ]
                                 ],
                                 [
                                     [
-                                        [pixel_value]
+                                        [255 if isinstance(pixel_value,StatementTerm) else 0]
                                     ]
                                 ],
                                 [
                                     [
-                                        [pixel_value]
+                                        [255 if isinstance(pixel_value,StatementTerm) else 0]
                                     ]
                                 ],
                                 [
                                     [
-                                        [image_alpha_array[(x, y)]]
+                                        [255]#[image_alpha_array[(y, x)]]
                                     ]
                                 ]
                             ])
@@ -934,7 +989,7 @@ class NARSGUI:
                             button.grid(sticky="NWSE")
                             CreateToolTip(button, text=(element_string))
 
-                    if len(image_array.shape) == 3:
+                    elif len(image_array.shape) == 3:
                         for (x, y, z), pixel_value in np.ndenumerate(image_array):
                             if z > 0: continue  # only iterate through first layer
                             f = tk.Frame(image_frame[0], width=PIXELS_PER_ELEMENT[0],

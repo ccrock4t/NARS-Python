@@ -23,13 +23,14 @@ def revision():
 
     output = NALInferenceRules.Local.Revision(j1, j2)
 
-    success_criteria = NALGrammar.Sentences.Judgment(NALGrammar.Terms.StatementTerm.from_string("(S-->P)"), value=NALInferenceRules.TruthValueFunctions.F_Revision(j1.value.frequency,
-                                                                                                                                                                       j1.value.confidence,
-                                                                                                                                                                       j2.value.frequency,
-                                                                                                                                                                       j2.value.confidence))
+    success_criteria = NALGrammar.Sentences.Judgment(statement=NALGrammar.Terms.StatementTerm.from_string("(S-->P)"),
+                                                     value=NALInferenceRules.TruthValueFunctions.F_Revision(j1.value.frequency,
+                                                                                                           j1.value.confidence,
+                                                                                                           j2.value.frequency,
+                                                                                                           j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success,"TEST FAILURE: Revision test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success,"TEST FAILURE: Revision test failed: " + output.get_term_string_no_id()
 
 
 def first_order_deduction():
@@ -50,9 +51,9 @@ def first_order_deduction():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: First-order Deduction test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: First-order Deduction test failed: " + output.get_term_string_no_id()
 
 def first_order_induction():
     """
@@ -72,9 +73,9 @@ def first_order_induction():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: First-order Induction test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: First-order Induction test failed: " + output.get_term_string_no_id()
 
 def first_order_abduction():
     """
@@ -94,8 +95,8 @@ def first_order_abduction():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success,"TEST FAILURE: First-order Abduction test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success,"TEST FAILURE: First-order Abduction test failed: " + output.get_term_string_no_id()
 
 def first_order_analogy():
     """
@@ -115,9 +116,9 @@ def first_order_analogy():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: First-order Analogy test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: First-order Analogy test failed: " + output.get_term_string_no_id()
 
 def first_order_intensional_composition():
     """
@@ -144,8 +145,8 @@ def first_order_intensional_composition():
                                                                                                                                                                        j2.value.confidence))
 
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success, "TEST FAILURE: Intensional Composition - Extensional intersection test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success, "TEST FAILURE: Intensional Composition - Extensional intersection test failed: " + output.get_term_string_no_id()
     """
         Intensional intersection
     """
@@ -156,8 +157,8 @@ def first_order_intensional_composition():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success, "TEST FAILURE: Intensional Composition - Intensional intersection test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success, "TEST FAILURE: Intensional Composition - Intensional intersection test failed: " + output.get_term_string_no_id()
 
     """
         Extensional difference
@@ -169,8 +170,8 @@ def first_order_intensional_composition():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success, "TEST FAILURE: Intensional Composition Extensional difference test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success, "TEST FAILURE: Intensional Composition Extensional difference test failed: " + output.get_term_string_no_id()
 
     """
         Swapped Extensional difference
@@ -184,9 +185,9 @@ def first_order_intensional_composition():
                                                          j1.value.frequency,
                                                          j1.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: Intensional Composition Swapped Extensional difference test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: Intensional Composition Swapped Extensional difference test failed: " + output.get_term_string_no_id()
 
 def first_order_extensional_composition():
     """
@@ -213,8 +214,8 @@ def first_order_extensional_composition():
                                                                                                                                                                        j2.value.confidence))
 
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success, "TEST FAILURE: Intensional Composition - Extensional intersection test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success, "TEST FAILURE: Intensional Composition - Extensional intersection test failed: " + output.get_term_string_no_id()
     """
         Intensional intersection
     """
@@ -225,8 +226,8 @@ def first_order_extensional_composition():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success, "TEST FAILURE: Intensional Composition - Intensional intersection test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success, "TEST FAILURE: Intensional Composition - Intensional intersection test failed: " + output.get_term_string_no_id()
 
     """
         Intensional difference
@@ -238,8 +239,8 @@ def first_order_extensional_composition():
                                                                                                                                                                        j2.value.frequency,
                                                                                                                                                                        j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success, "TEST FAILURE: Intensional Composition Intensional difference test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success, "TEST FAILURE: Intensional Composition Intensional difference test failed: " + output.get_term_string_no_id()
 
     """
         Swapped Intensional difference
@@ -253,9 +254,9 @@ def first_order_extensional_composition():
                                                          j1.value.frequency,
                                                          j1.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: Intensional Composition Swapped Intensional difference test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: Intensional Composition Swapped Intensional difference test failed: " + output.get_term_string_no_id()
 
 def first_order_exemplification():
     """
@@ -277,9 +278,9 @@ def first_order_exemplification():
                                                          j2.value.frequency,
                                                          j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: Exemplification test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: Exemplification test failed: " + output.get_term_string_no_id()
 
 
 def extensional_image():
@@ -295,7 +296,7 @@ def extensional_image():
     outputs = NALInferenceRules.Immediate.ExtensionalImage(j1)
 
     for output in outputs:
-        assert output.value.frequency == j1.value.frequency and output.value.confidence == j1.value.confidence,"TEST FAILURE: Extensional Image test failed: " + output.get_formatted_string_no_id()
+        assert output.value.frequency == j1.value.frequency and output.value.confidence == j1.value.confidence,"TEST FAILURE: Extensional Image test failed: " + output.get_term_string_no_id()
 
 
 
@@ -320,8 +321,8 @@ def conditional_analogy():
                                                          j2.value.frequency,
                                                          j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success,"TEST FAILURE: Conditional Analogy test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success,"TEST FAILURE: Conditional Analogy test failed: " + output.get_term_string_no_id()
 
 def conditional_deduction():
     """
@@ -343,8 +344,8 @@ def conditional_deduction():
                                                          j2.value.frequency,
                                                          j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
-    assert success,"TEST FAILURE: Conditional Deduction test failed: " + output.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
+    assert success,"TEST FAILURE: Conditional Deduction test failed: " + output.get_term_string_no_id()
 
 def conditional_abduction():
     """
@@ -366,9 +367,9 @@ def conditional_abduction():
                                                          j2.value.frequency,
                                                          j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success,"TEST FAILURE: Conditional Abduction test failed: " + output.get_formatted_string_no_id()
+    assert success,"TEST FAILURE: Conditional Abduction test failed: " + output.get_term_string_no_id()
 
 def conditional_conjunctional_deduction():
     """
@@ -392,9 +393,9 @@ def conditional_conjunctional_deduction():
                                                          j2.value.frequency,
                                                          j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success, "TEST FAILURE: Conditional Conjunctional Deduction test failed: " + output.get_formatted_string_no_id()
+    assert success, "TEST FAILURE: Conditional Conjunctional Deduction test failed: " + output.get_term_string_no_id()
 
 def conditional_conjunctional_abduction():
     """
@@ -416,9 +417,9 @@ def conditional_conjunctional_abduction():
                                                          j2.value.frequency,
                                                          j2.value.confidence))
 
-    success = output.get_formatted_string_no_id() == success_criteria.get_formatted_string_no_id()
+    success = output.get_term_string_no_id() == success_criteria.get_term_string_no_id()
 
-    assert success, "TEST FAILURE: Conditional Conjunctional Abduction test failed: " + output.get_formatted_string_no_id()
+    assert success, "TEST FAILURE: Conditional Conjunctional Abduction test failed: " + output.get_term_string_no_id()
 
 def main():
     revision()

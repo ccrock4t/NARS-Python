@@ -56,12 +56,8 @@ def F_Contraposition(f, c):
         wn = AND(NOT(f), c)
         :return: F_cnt: Truth-Value (f,c)
     """
-    wp = 0
-    wn = ExtendedBooleanOperators.band(ExtendedBooleanOperators.bnot(f), c)
-    w = wn
-    f_cnt, c_cnt = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
-
-    return NALGrammar.Values.TruthValue(f_cnt, c_cnt)
+    #todo
+    return NALGrammar.Values.TruthValue(f, ExtendedBooleanOperators.band(f, c))
 
 
 def F_Deduction(f1, c1, f2, c2):
@@ -124,9 +120,6 @@ def F_Induction(f1, c1, f2, c2):
     w = ExtendedBooleanOperators.band(f2, c1, c2)
     f_ind, c_ind = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.Values.TruthValue(f_ind, c_ind)
-
-    ExtendedBooleanOperators.band(f1, f2) * ExtendedBooleanOperators.bnot (ExtendedBooleanOperators.bor(f2))
-
 
 
 def F_Exemplification(f1, c1, f2, c2):
@@ -218,21 +211,6 @@ def Expectation(f, c):
     """
     return c * (f - 0.5) + 0.5
 
-def Goal_Expectation(f, c):
-    """
-        Expectation
-
-        -----------------
-
-         Input:
-            f: frequency
-
-            c: confidence
-
-         Returns:
-            expectation value
-    """
-    return c * (f - 0.5) + 0.5
 
 def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_function):
     """
@@ -245,8 +223,8 @@ def TruthFunctionOnArray(truth_value_array_1, truth_value_array_2, truth_value_f
     if truth_value_array_1 is None and truth_value_array_2 is None: return None
     if truth_value_array_1 is not None and truth_value_array_2 is not None: assert truth_value_array_1.shape == truth_value_array_2.shape,"ERROR: Truth value arrays must be the same shape"
 
-    def function(*coord_vars):
-        coords = tuple([int(var) for var in coord_vars])
+    def function(*indices):
+        coords = tuple([int(var) for var in indices])
         truth_value_1 = truth_value_array_1[coords]
         if truth_value_array_2 is None:
             # single truth value

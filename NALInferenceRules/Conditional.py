@@ -45,7 +45,6 @@ def ConditionalAnalogy(j1, j2):
                                                                  TruthValueFunctions.F_Analogy)
 
 
-
 def ConditionalJudgmentDeduction(j1, j2):
     """
         Conditional Judgment Deduction
@@ -64,7 +63,7 @@ def ConditionalJudgmentDeduction(j1, j2):
                                                             + j1.get_formatted_string() \
                                                             + " and " \
                                                             + j2.get_formatted_string()
-    result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term() # P
+    result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_predicate_term()  # P
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
@@ -91,12 +90,13 @@ def ConditionalJudgmentAbduction(j1, j2):
                                                               + " and " \
                                                               + j2.get_formatted_string()
 
-    result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term() # S
+    result_statement: NALGrammar.Terms.StatementTerm = j1.statement.get_subject_term()  # S
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
                                                                  result_statement,
                                                                  TruthValueFunctions.F_Abduction)
+
 
 def ConditionalGoalDeduction(j1, j2):
     """
@@ -107,7 +107,7 @@ def ConditionalGoalDeduction(j1, j2):
 
             j2: Implication Statement (S ==> P) <f2, c2>
         Evidence:
-            F_abduction
+            F_deduction
         Returns:
             :- S! <f3, c3> (S ==> D)
     """
@@ -117,12 +117,40 @@ def ConditionalGoalDeduction(j1, j2):
                                                               + " and " \
                                                               + j2.get_formatted_string()
 
-    result_statement: NALGrammar.Terms.StatementTerm = j2.statement.get_subject_term() # S
+    result_statement: NALGrammar.Terms.StatementTerm = j2.statement.get_subject_term()  # S
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
                                                                  result_statement,
                                                                  TruthValueFunctions.F_Deduction)
+
+
+def ConditionalGoalInduction(j1, j2):
+    """
+        Conditional Goal Induction
+
+        Input:
+            j1: Goal Event (S!) <f1, c1> {tense}, i.e. (S ==> D)
+
+            j2: Implication Statement (S ==> P) <f2, c2>
+        Evidence:
+            F_induction
+        Returns:
+            :- P! <f3, c3> (P ==> D)
+    """
+    Asserts.assert_sentence_forward_implication(j2)
+    assert j1.statement == j2.statement.get_subject_term(), "Error: Invalid inputs to Conditional Goal Induction: " \
+                                                            + j1.get_formatted_string() \
+                                                            + " and " \
+                                                            + j2.get_formatted_string()
+
+    result_statement: NALGrammar.Terms.StatementTerm = j2.statement.get_predicate_term()  # S
+
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Induction)
+
 
 def SimplifyConjunctiveGoal(j1, j2):
     """
@@ -139,23 +167,23 @@ def SimplifyConjunctiveGoal(j1, j2):
     """
     remaining_subterms = j1.statement.subterms.copy()
     found_idx = -1
-    for i,subterm in enumerate(j1.statement.subterms):
+    for i, subterm in enumerate(j1.statement.subterms):
         if subterm == j2.statement:
             found_idx = i
 
-    assert i != -1, "Error: Invalid inputs to Conditional Goal Deduction: " \
-                                                              + j1.get_formatted_string() \
-                                                              + " and " \
-                                                              + j2.get_formatted_string()
-
+    assert i != -1, "Error: Invalid inputs to Simplify conjuctive goal (deduction): " \
+                    + j1.get_formatted_string() \
+                    + " and " \
+                    + j2.get_formatted_string()
 
     remaining_subterms.pop(found_idx)
-    new_intervals = []
-    if len(j1.statement.intervals) > 0:
-        new_intervals = j1.statement.intervals.copy().pop(found_idx)
+
     if len(remaining_subterms) == 1:
         result_statement = remaining_subterms[0]
     else:
+        new_intervals = []
+        if len(j1.statement.intervals) > 0:
+            new_intervals = j1.statement.intervals.copy().pop(found_idx)
         result_statement = NALGrammar.Terms.CompoundTerm(subterms=remaining_subterms,
                                                          term_connector=j1.statement.connector,
                                                          intervals=new_intervals)
@@ -166,11 +194,57 @@ def SimplifyConjunctiveGoal(j1, j2):
                                                                  TruthValueFunctions.F_Deduction)
 
 
+def SimplifyNegatedConjunctiveGoal(j1, j2):
+    """
+        Conditional Goal Deduction
+
+        Input:
+            j1: Goal Event (--,(A &/ B))!<f1, c1> , i.e. ((A &/ B) ==> D)
+
+            j2: Belief (A) <f2, c2> {tense}
+        Evidence:
+            F_abduction
+        Returns:
+            :- B! <f3, c3> (B ==> D)
+    """
+    remaining_subterms = j1.statement.subterms[0].subterms.copy()
+    found_idx = -1
+    for i, subterm in enumerate(remaining_subterms):
+        if subterm == j2.statement:
+            found_idx = i
+
+    assert i != -1, "Error: Invalid inputs to Simplify negated conjuctive goal (induction): " \
+                    + j1.get_formatted_string() \
+                    + " and " \
+                    + j2.get_formatted_string()
+
+    remaining_subterms.pop(found_idx)
+
+    if len(remaining_subterms) == 1:
+        result_statement = NALGrammar.Terms.CompoundTerm(subterms=remaining_subterms,
+                                                         term_connector=j1.statement.connector)
+
+    else:
+        new_intervals = []
+        if len(j1.statement.intervals) > 0:
+            new_intervals = j1.statement.intervals.copy().pop(found_idx)
+        result_statement = NALGrammar.Terms.CompoundTerm(subterms=remaining_subterms,
+                                                         term_connector=j1.statement.connector,
+                                                         intervals=new_intervals)
+
+    return HelperFunctions.create_resultant_sentence_two_premise(j1,
+                                                                 j2,
+                                                                 result_statement,
+                                                                 TruthValueFunctions.F_Induction)
+
+
 """
     Conditional Conjunctional Rules
     --------------------------------
     Conditional Rules w/ Conjunctions
 """
+
+
 def ConditionalConjunctionalDeduction(j1, j2):
     """
         Conditional Conjunctional Deduction
@@ -192,9 +266,9 @@ def ConditionalConjunctionalDeduction(j1, j2):
     elif isinstance(j1, NALGrammar.Sentences.Goal):
         subject_term: NALGrammar.Terms.CompoundTerm = j1.statement
     else:
-        assert False,"ERROR"
+        assert False, "ERROR"
 
-    new_subterms = list(set(subject_term.subterms) - {j2.statement}) # subtract j2 from j1 subject subterms
+    new_subterms = list(set(subject_term.subterms) - {j2.statement})  # subtract j2 from j1 subject subterms
 
     if len(new_subterms) > 1:
         # recreate the conjunctional compound with the new subterms
@@ -209,7 +283,7 @@ def ConditionalConjunctionalDeduction(j1, j2):
             new_subterms.pop()
             new_compound_subject_term = NALGrammar.Terms.CompoundTerm(new_subterms, subject_term.connector)
         else:
-            assert False,"ERROR: Invalid inputs to Conditional Conjunctional Deduction " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+            assert False, "ERROR: Invalid inputs to Conditional Conjunctional Deduction " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     if isinstance(j1, NALGrammar.Sentences.Judgment):
         result_statement = NALGrammar.Terms.StatementTerm(new_compound_subject_term, j1.statement.get_predicate_term(),
@@ -217,12 +291,13 @@ def ConditionalConjunctionalDeduction(j1, j2):
     elif isinstance(j1, NALGrammar.Sentences.Goal):
         result_statement = new_compound_subject_term
     else:
-        assert False,"ERROR"
+        assert False, "ERROR"
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
                                                                  result_statement,
                                                                  TruthValueFunctions.F_Deduction)
+
 
 def ConditionalConjunctionalAbduction(j1, j2):
     """
@@ -254,7 +329,8 @@ def ConditionalConjunctionalAbduction(j1, j2):
 
     set_difference_of_terms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
 
-    if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in set_difference_of_terms])
+    if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str(
+        [term.get_formatted_string() for term in set_difference_of_terms])
 
     result_statement: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
 

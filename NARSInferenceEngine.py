@@ -3,7 +3,7 @@
     Created: March 8, 2021
     Purpose: Given premises, performs proper inference and returns the resultant sentences as Tasks.
 """
-import time
+import timeit as time
 
 import Asserts
 import Config
@@ -15,12 +15,14 @@ import NALInferenceRules.Composition
 import NALInferenceRules.Local
 import NALInferenceRules.Conditional
 import NALInferenceRules.Temporal
+import NALInferenceRules.HelperFunctions
 import NARSDataStructures.Other
+
 import NALSyntax
 
 
 def do_semantic_inference_two_premise(j1, j2):
-    if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+    if Config.DEBUG_TIMING: before = time.default_timer()
 
     try:
         if isinstance(j1, NALGrammar.Sentences.Goal) and isinstance(j2, NALGrammar.Sentences.Judgment):
@@ -30,8 +32,8 @@ def do_semantic_inference_two_premise(j1, j2):
     except Exception as error:
         assert False,"ERROR: Inference error " + str(error) + " between " + str(j1) + " and " + str(j2)
 
-    if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
-        "Inference took " + str((time.time() - before) * 1000) + "ms")
+    if Config.DEBUG_TIMING: Global.Global.debug_print(
+        "Two-premise Inference took " + str((time.default_timer() - before) * 1000) + "ms")
 
     return results
 
@@ -461,20 +463,29 @@ def do_semantic_inference_goal_judgment(j1: NALGrammar.Sentences, j2: NALGrammar
     j1_statement = j1.statement # goal statement
     j2_statement = j2.statement
 
-    if isinstance(j1_statement, NALGrammar.Terms.StatementTerm):
-        if not NALSyntax.Copula.is_first_order(j2_statement.get_copula()):
-            if not NALSyntax.Copula.is_symmetric(j2_statement.get_copula()):
-                if j2_statement.get_predicate_term() == j1_statement:
-                    # j1 = P!, j2 = S=>P!
-                    derived_sentence = NALInferenceRules.Conditional.ConditionalGoalDeduction(j1, j2)  #:- S! i.e. (P ==> D)
-                    add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
-        else:
-            pass
-    elif isinstance(j1_statement, NALGrammar.Terms.CompoundTerm):
+
+    if not NALSyntax.Copula.is_first_order(j2_statement.get_copula()):
+        if not NALSyntax.Copula.is_symmetric(j2_statement.get_copula()):
+            if j2_statement.get_predicate_term() == j1_statement:
+                # j1 = P!, j2 = S=>P!
+                derived_sentence = NALInferenceRules.Conditional.ConditionalGoalDeduction(j1, j2)  #:- S! i.e. (P ==> D)
+                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+            elif j2_statement.get_subject_term() == j1_statement:
+                # j1 = S!, j2 = (S=>P).
+                derived_sentence = NALInferenceRules.Conditional.ConditionalGoalInduction(j1,j2)  #:- P! i.e. (P ==> D)
+                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+    elif NALSyntax.Copula.is_first_order(j2_statement.get_copula()):
         if NALSyntax.TermConnector.is_conjunction(j1_statement.connector):
             # j1 = (C &/ S)!, j2 = C. )
             derived_sentence = NALInferenceRules.Conditional.SimplifyConjunctiveGoal(j1, j2)  # S!
             add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+        elif j1_statement.connector == NALSyntax.TermConnector.Negation:
+            # j1 = (--,G)!, j2 = C. )
+            if NALSyntax.TermConnector.is_conjunction(j1_statement.subterms[0].connector):
+                # j1 = (--,(A &/ B))!, j2 = A. )
+                derived_sentence = NALInferenceRules.Conditional.SimplifyNegatedConjunctiveGoal(j1, j2)  # B!
+                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+
     else:
         assert False,"ERROR"
 
@@ -521,39 +532,51 @@ def do_inference_one_premise(j):
 
         :returns An array of the derived Tasks
     """
-    derived_sentences = []
+    if Config.DEBUG_TIMING: before = time.default_timer()
 
-    if j.statement.get_statement_connector() is not None: return derived_sentences
+    derived_sentences = []
+    if j.statement.is_first_order(): return derived_sentences # only higher order
+    if j.statement.connector is not None or j.stamp.from_one_premise_inference: return derived_sentences # connectors are too complicated
+    if j.statement.get_subject_term().connector == NALSyntax.TermConnector.Negation \
+            or j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Negation:
+        return derived_sentences
 
     if isinstance(j, NALGrammar.Sentences.Judgment):
         # Negation (--,(S-->P))
-        derived_sentence = NALInferenceRules.Immediate.Negation(j)
-        add_to_derived_sentences(derived_sentence,derived_sentences,j)
+        #derived_sentence = NALInferenceRules.Immediate.Negation(j)
+        #add_to_derived_sentences(derived_sentence,derived_sentences,j)
 
         # Conversion (P --> S) or (P ==> S)
-        if not j.stamp.from_one_premise_inference \
-                and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
-                and j.value.frequency > 0:
-            derived_sentence = NALInferenceRules.Immediate.Conversion(j)
-            add_to_derived_sentences(derived_sentence,derived_sentences,j)
+        # if not j.stamp.from_one_premise_inference \
+        #         and not NALSyntax.Copula.is_symmetric(j.statement.get_copula()) \
+        #         and j.value.frequency > 0:
+        #     derived_sentence = NALInferenceRules.Immediate.Conversion(j)
+        #     add_to_derived_sentences(derived_sentence,derived_sentences,j)
 
         # Contraposition  ((--,P) ==> (--,S))
-        if j.statement.get_copula() == NALSyntax.Copula.Implication and j.value.frequency < 1:
-            derived_sentence = NALInferenceRules.Immediate.Contraposition(j)
-            add_to_derived_sentences(derived_sentence,derived_sentences,j)
+        if NALSyntax.Copula.is_implication(j.statement.get_copula()) and \
+                isinstance(j.statement.get_subject_term(),NALGrammar.Terms.CompoundTerm) and NALSyntax.TermConnector.is_conjunction(j.statement.get_subject_term().connector):
+            contrapositive = NALInferenceRules.Immediate.Contraposition(j)
+            add_to_derived_sentences(contrapositive,derived_sentences,j)
+
+            # contrapositive_with_conversion = NALInferenceRules.Immediate.Conversion(contrapositive)
+            # add_to_derived_sentences(contrapositive_with_conversion, derived_sentences, j)
 
         # Image
-        if isinstance(j.statement.get_subject_term(), NALGrammar.Terms.CompoundTerm) \
-            and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product\
-                and j.statement.get_copula() == NALSyntax.Copula.Inheritance:
-            derived_sentence_list = NALInferenceRules.Immediate.ExtensionalImage(j)
-            for derived_sentence in derived_sentence_list:
-                add_to_derived_sentences(derived_sentence,derived_sentences,j)
-        elif isinstance(j.statement.get_predicate_term(), NALGrammar.Terms.CompoundTerm) \
-            and j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Product:
-            derived_sentence_list = NALInferenceRules.Immediate.IntensionalImage(j)
-            for derived_sentence in derived_sentence_list:
-                add_to_derived_sentences(derived_sentence,derived_sentences,j)
+        # if isinstance(j.statement.get_subject_term(), NALGrammar.Terms.CompoundTerm) \
+        #     and j.statement.get_subject_term().connector == NALSyntax.TermConnector.Product\
+        #         and j.statement.get_copula() == NALSyntax.Copula.Inheritance:
+        #     derived_sentence_list = NALInferenceRules.Immediate.ExtensionalImage(j)
+        #     for derived_sentence in derived_sentence_list:
+        #         add_to_derived_sentences(derived_sentence,derived_sentences,j)
+        # elif isinstance(j.statement.get_predicate_term(), NALGrammar.Terms.CompoundTerm) \
+        #     and j.statement.get_predicate_term().connector == NALSyntax.TermConnector.Product:
+        #     derived_sentence_list = NALInferenceRules.Immediate.IntensionalImage(j)
+        #     for derived_sentence in derived_sentence_list:
+        #         add_to_derived_sentences(derived_sentence,derived_sentences,j)
+
+    if Config.DEBUG_TIMING: Global.Global.debug_print(
+        "One-premise Inference took " + str((time.default_timer() - before) * 1000) + "ms")
 
     return derived_sentences
 

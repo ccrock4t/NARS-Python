@@ -1,4 +1,4 @@
-import time
+import timeit as time
 
 import numpy as np
 
@@ -7,7 +7,7 @@ import NALGrammar.Sentences
 import Global
 import NALSyntax
 import NARSDataStructures
-import queue
+import NALInferenceRules.TruthValueFunctions
 
 """
     Author: Christian Hahm
@@ -15,19 +15,49 @@ import queue
     Purpose: Parses an input string and converts it into a Narsese Task which is fed into NARS' task buffer
 """
 
-input_queue = queue.Queue()
-vision_sensor_keyword = "vision:"
+pended_input_data_queue = []
+VISION_KEYWORD = "vision:"
 
 
 def get_user_input():
-    userinput = ""
+    userinputstr = ""
 
-    while userinput != "exit":
-        userinput = input("")
-        add_input_string(userinput)
+    global pended_input_data_queue
+    while userinputstr != "exit":
+        userinputstr = input("")
+        pended_input_data_queue.append(userinputstr)
 
 
-def add_input_string(input_string: str):
+def parse_and_queue_input_string(input_string: str):
+    """
+        Parses any input string and queues the resultant Narsese sentences to the input buffer.
+
+        If the input string is a command, executes the command instead.
+    :param input_string:
+    :return:
+    """
+    if is_sensory_array_input_string(input_string):
+        # don't split by lines, this is array input
+        sentence = parse_input_line(input_string)
+        pended_input_data_queue.append(sentence)
+    else:
+        # treat each line as a separate input
+        lines = input_string.splitlines(False)
+        for line in lines:
+            sentence = parse_input_line(line)
+            pended_input_data_queue.append(sentence)
+
+
+
+
+def parse_input_line(input_string: str):
+    """
+        Parses one line of an input string and returns the resultant Narsese sentence.
+
+        If the input string is a command, executes the command instead.
+    :param input_string:
+    :return:
+    """
     input_string = input_string.replace(" ", "")  # remove all spaces
     try:
         NARS = Global.Global.NARS
@@ -44,55 +74,85 @@ def add_input_string(input_string: str):
             load_input()
         else:
             while Global.Global.NARS is None:
-                print("Waiting for NARS to start up...")
+                Global.Global.print_to_output("Waiting for NARS to start up...")
                 time.sleep(1.0)
 
-            if is_sensory_input_string(input_string):
+            if is_sensory_array_input_string(input_string):
                 # sensory array input (a matrix of RGB or brightness values)
-                sentence = process_visual_sensory_input(input_string[len(vision_sensor_keyword):])
+                sentence = parse_visual_sensory_string(input_string[len(VISION_KEYWORD):])
             else:
                 # regular Narsese input
                 sentence = NALGrammar.Sentences.new_sentence_from_string(input_string)
-            add_input_sentence(sentence)
+
+            return sentence
     except AssertionError as msg:
-        Global.Global.print_to_output("INPUT REJECTED: " + str(msg))
+        Global.Global.print_to_output("WARNING: INPUT REJECTED: " + str(msg))
+    return None
 
 
-def add_input_sentence(sentence: NALGrammar.Sentences.Sentence):
-    """
-        Pend a sentence to be processed.
-        :param sentence:
-    """
-    input_queue.put(item=sentence)
-
-
-def process_pending_sentence():
+def process_input_channel():
     """
         Processes the next pending sentence from the input buffer if one exists
+
+        return: whether statement was processed
     """
-    if input_queue.qsize() > 0:
-        sentence = input_queue.get()
-        process_sentence(sentence)
-    if Config.DEBUG: Global.Global.debug_print("Input Channel Size: " + str(input_queue.qsize()))
+    if len(pended_input_data_queue) > 0:
+        data = pended_input_data_queue.pop()
+        if isinstance(data, NALGrammar.Sentences.Sentence):
+            # turn sentences into tasks
+            process_sentence_into_task(data)
+        elif type(data) is tuple:
+            if data[0] == VISION_KEYWORD:
+                img = data[1]
+                img_array = np.array(img)
+                vision_signal = transduce_raw_vision_array(img_array)
+                # tuple holds spatial truth values
+                Global.Global.NARS.vision_buffer.set_array(vision_signal)
 
 
-def process_sentence(sentence: NALGrammar.Sentences.Sentence):
+def process_sentence_into_task(sentence: NALGrammar.Sentences.Sentence):
     """
-        Given a Sentence, ingest it into NARS
+        Put a sentence into a NARS task, then do something with the Task
         :param sentence:
     """
-    Global.Global.print_to_output("IN: " + sentence.get_formatted_string())
+    if not Config.SILENT_MODE: Global.Global.print_to_output("IN: " + sentence.get_formatted_string())
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
     if sentence.is_event():
-        if isinstance(sentence, NALGrammar.Sentences.Judgment):
-            # put events on the temporal chain
-            Global.Global.NARS.temporal_module.put_new(task)
         # process the task into NARS
-        Global.Global.NARS.global_buffer.put_new(task)
+        Global.Global.NARS.process_task(task)
     else:
-        Global.Global.NARS.global_buffer.put_new(task)
+        Global.Global.NARS.narsese_buffer.put_new(task)
+
+def transduce_raw_vision_array(img_array):
+    """
+        Transduce raw vision data into NARS truth-values
+        :param img_array:
+        :return: python array of NARS truth values, with the same dimensions as given raw data
+    """
+    max_value = 255
+
+    def create_truth_value_array(*indices):
+        coords = tuple([int(var) for var in indices])
+        if len(coords) == 1:
+            pixel_value = float(img_array[coords[0]])
+        elif len(coords) == 2:
+            pixel_value = float(img_array[coords[0]][coords[1]])
+        elif len(coords) == 3:
+            pixel_value = float(img_array[coords[2]][coords[1]][coords[0]])
+
+        f = pixel_value / max_value
+        c = 0.99
+
+        return NALGrammar.Sentences.TruthValue(f,c)
+
+
+    func_vectorized = np.vectorize(create_truth_value_array)
+    expectation_array = np.fromfunction(function=func_vectorized,
+                                        shape=img_array.shape)
+
+    return expectation_array
 
 
 def load_input(filename="input.nal"):
@@ -103,17 +163,18 @@ def load_input(filename="input.nal"):
         with open(filename, "r") as f:
             Global.Global.print_to_output("LOADING INPUT FILE: " + filename)
             for line in f.readlines():
-                add_input_string(line)
+                parse_and_queue_input_string(line)
+            np.array()
             Global.Global.print_to_output("LOAD INPUT SUCCESS")
     except:
         Global.Global.print_to_output("LOAD INPUT FAIL")
 
 
-def is_sensory_input_string(input_string):
-    return input_string[0:len(vision_sensor_keyword)] == vision_sensor_keyword
+def is_sensory_array_input_string(input_string):
+    return input_string[0:len(VISION_KEYWORD)] == VISION_KEYWORD
 
 
-def process_visual_sensory_input(input_string):
+def parse_visual_sensory_string(input_string):
     """
         Convert a 3d array of RGB or a 2d array of brightness values to Narsese.
 
@@ -148,13 +209,6 @@ def process_visual_sensory_input(input_string):
     input_string = input_string.replace("\r", "")
     input_string = input_string[1:-1]
 
-    subject_str = "V" + str(Global.Global.NARS.memory.get_next_percept_id())
-    predicate_term = NALGrammar.Terms.Term.from_string("[BRIGHT]")
-
-    x_length = 1
-    y_length = 1
-    z_length = 1
-
     array_idx_start_marker = NALSyntax.StatementSyntax.ArrayElementIndexStart.value
     array_idx_end_marker = NALSyntax.StatementSyntax.ArrayElementIndexEnd.value
 
@@ -163,7 +217,7 @@ def process_visual_sensory_input(input_string):
         pixel_value_array = input_string.split(",")
         x_length = len(pixel_value_array)
         dim_lengths = (x_length,)  # how many elements in a row
-        return pixel_value_array, dim_lengths
+        return np.array(pixel_value_array)
 
     def parse_2D_array(input_string):
         # 2D array
@@ -188,8 +242,7 @@ def process_visual_sensory_input(input_string):
         x_length = len(pixel_value_array[0])  # how many elements in a row
         y_length = len(pixel_value_array)  # how many rows
 
-        dim_lengths = (x_length, y_length)
-        return pixel_value_array, dim_lengths
+        return np.array(pixel_value_array)
 
     def parse_3D_array(input_string):
         # 3D array
@@ -213,63 +266,17 @@ def process_visual_sensory_input(input_string):
 
         pixel_value_array.append(parse_2D_array(piece)[0])
 
-        x_length = len(pixel_value_array[0][0])  # how many elements in a row
-        y_length = len(pixel_value_array[0])  # how many rows
-        z_length = len(pixel_value_array)  # how many layers
-        dim_lengths = (x_length, y_length, z_length)
-
-        return pixel_value_array, dim_lengths
+        return np.array(pixel_value_array)
 
     if input_string[0] != array_idx_start_marker:
-        pixel_value_array, dim_lengths = parse_1D_array(input_string)
+        pixel_value_array = parse_1D_array(input_string)
     else:
         if input_string[1] != array_idx_start_marker:
-            pixel_value_array, dim_lengths = parse_2D_array(input_string)
+            pixel_value_array = parse_2D_array(input_string)
         else:
-            pixel_value_array, dim_lengths = parse_3D_array(input_string)
+            pixel_value_array = parse_3D_array(input_string)
 
-    # fast fourier transform
-    f = np.fft.fft2(pixel_value_array) #todo does this work on rgb image?
-    fshift = np.fft.fftshift(f)
-    pixel_value_array = 20*np.log(np.abs(fshift))
+    queue_visual_sensory_image_array(pixel_value_array)
 
-    #create Narsese array
-
-    atomic_array_term = NALGrammar.Terms.ArrayTerm(name=subject_str,
-                                             dimensions=dim_lengths)
-    statement_array_term = NALGrammar.Terms.StatementTerm(subject_term=NALGrammar.Terms.CompoundTerm(subterms=[atomic_array_term],
-                                                                                         term_connector=NALSyntax.TermConnector.ExtensionalSetStart),
-                                                    predicate_term=predicate_term,
-                                                    copula=NALSyntax.Copula.Inheritance)
-
-    max_value = np.max(pixel_value_array)
-
-    def create_truth_value_array(*coord_vars):
-        coords = tuple([int(var) for var in coord_vars])
-        if len(coords) == 1:
-            pixel_value = float(pixel_value_array[coords[0]])
-        elif len(coords) == 2:
-            pixel_value = float(pixel_value_array[coords[1]][coords[0]])
-        elif len(coords) == 3:
-            pixel_value = float(pixel_value_array[coords[2]][coords[1]][coords[0]])
-        coords = atomic_array_term.convert_absolute_indices_to_relative_indices(coords)
-        c = 0
-        for coord in coords:
-            c += (1.0 - abs(coord))
-        c /= len(dim_lengths)
-
-        f = pixel_value / max_value
-        if c >= 1:
-            c = 0.99
-        elif c <= 0.0:
-            c = 0.0
-        return NALGrammar.Values.TruthValue(frequency=f, confidence=c)
-
-    func_vectorized = np.vectorize(create_truth_value_array)
-    truth_value_list = np.fromfunction(function=func_vectorized, shape=dim_lengths)
-
-    default_truth_value = NALGrammar.Values.TruthValue(frequency=Config.DEFAULT_JUDGMENT_FREQUENCY,
-                                                confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE)
-
-    return NALGrammar.Sentences.Judgment(statement=statement_array_term,
-                               value=(default_truth_value, truth_value_list))
+def queue_visual_sensory_image_array(img_array):
+    pended_input_data_queue.append((VISION_KEYWORD, img_array))

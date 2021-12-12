@@ -38,12 +38,12 @@ class Global:
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
         if cls.NARS is None: return
-        print(msg, flush=True)
         data_structure_name = None
         data_structure_len = 0
+        if data_structure is None: print(msg)
         if not(data_structure is cls.NARS.memory.concepts_bag or
                data_structure is cls.NARS.temporal_module or
-               data_structure is cls.NARS.global_buffer or
+               data_structure is cls.NARS.narsese_buffer or
                data_structure is None): return # must be a valid data structure
         if data_structure is not None:
             data_structure_name = (str(data_structure), type(data_structure).__name__)
@@ -60,6 +60,9 @@ class Global:
             Remove a message from an output GUI box
         """
         if  cls.NARS_string_pipe is None: return
+        if not(data_structure is cls.NARS.memory.concepts_bag or
+               data_structure is cls.NARS.temporal_module or
+               data_structure is cls.NARS.narsese_buffer): return
         cls.NARS_string_pipe.send(("remove", msg, (str(data_structure), type(data_structure).__name__),len(data_structure)))
 
     @classmethod
@@ -77,7 +80,7 @@ class Global:
 
     @classmethod
     def create_inherent_terms(cls):
-        cls.TERM_SELF = NALGrammar.Terms.Term.from_string("{SELF}")
-        cls.TERM_IMAGE_PLACEHOLDER = NALGrammar.Terms.Term.from_string("_")
+        cls.TERM_SELF = NALGrammar.Terms.from_string("{SELF}")
+        cls.TERM_IMAGE_PLACEHOLDER = NALGrammar.Terms.from_string("_")
 
 Global.create_inherent_terms()

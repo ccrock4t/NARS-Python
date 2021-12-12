@@ -20,16 +20,18 @@ import NARS
 
 class GUIProcess(multiprocessing.Process):
     def __init__(self):
-        NARS_object = Global.Global.NARS
-        global_task_buffer_ID = (str(NARS_object.global_buffer), type(NARS_object.global_buffer).__name__)
-        global_task_buffer_capacity = NARS_object.global_buffer.capacity
-        event_buffer_ID = (str(NARS_object.temporal_module), type(NARS_object.temporal_module).__name__)
-        event_buffer_capacity = NARS_object.temporal_module.capacity
+        NARS_object: NARS = Global.Global.NARS
+        narsese_buffer_ID = (str(NARS_object.narsese_buffer), type(NARS_object.narsese_buffer).__name__)
+        narsese_buffer_capacity = NARS_object.narsese_buffer.capacity
+        vision_buffer_ID = (str(NARS_object.vision_buffer), type(NARS_object.narsese_buffer).__name__)
+        vision_buffer_dims = str(NARS_object.vision_buffer.array.shape)
+        temporal_module_ID = (str(NARS_object.temporal_module), type(NARS_object.temporal_module).__name__)
+        temporal_module_capacity = NARS_object.temporal_module.capacity
         memory_bag_ID = (str(NARS_object.memory.concepts_bag), type(NARS_object.memory.concepts_bag).__name__)
         memory_bag_capacity = NARS_object.memory.concepts_bag.capacity
 
-        data_structure_IDs = (global_task_buffer_ID , event_buffer_ID, memory_bag_ID)
-        data_structure_capacities = (global_task_buffer_capacity, event_buffer_capacity, memory_bag_capacity)
+        data_structure_IDs = (narsese_buffer_ID, vision_buffer_ID, temporal_module_ID, memory_bag_ID)
+        data_structure_capacities = (narsese_buffer_capacity, vision_buffer_dims, temporal_module_capacity, memory_bag_capacity)
 
         # multiprocess pipe to pass objects between NARS and GUI Processes
         pipe_gui_objects, pipe_NARS_objects = multiprocessing.Pipe()  # 2-way object request pipe

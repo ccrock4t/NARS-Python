@@ -19,6 +19,9 @@ def get_truthvalue_from_evidence(wp, w):
         Returns:
             frequency, confidence
     """
+    if wp == 0 and w == 0:
+        # special case, 0/0
+        f = 0
     if wp == w:
         f = 1.0
     else:
@@ -70,7 +73,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
         # Judgment or Goal
         # Get Truth Value
 
-        if j1.is_event() and j2.is_event():
+        if False and j1.is_event() and j2.is_event():
             (f1, c1) = (j1.value.frequency, j1.value.confidence)
             proj_value = NALInferenceRules.Local.Value_Projection(j2, j1.stamp.occurrence_time)
             (f2, c2) = proj_value.frequency, proj_value.confidence
@@ -78,7 +81,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
             (f1, c1) = (j1.value.frequency, j1.value.confidence)
             (f2, c2) = (j2.value.frequency, j2.value.confidence)
         result_truth_array = None
-        if j1.is_array and j2.is_array:
+        if isinstance(j1, NALGrammar.Terms.ArrayTerm) and isinstance(j2, NALGrammar.Terms.ArrayTerm):
             result_truth, result_truth_array = TruthFunctionOnArrayAndRevise(j1.truth_values,
                                                                         j2.truth_values,
                                                                         truth_value_function=truth_value_function)
@@ -104,7 +107,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
                 occurrence_time = j2.stamp.occurrence_time
 
         if result_type == NALGrammar.Sentences.Judgment:
-            result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
+            result = NALGrammar.Sentences.Judgment(result_statement, result_truth,
                                                    occurrence_time=occurrence_time)
         elif result_type == NALGrammar.Sentences.Goal:
             # if isinstance(result_statement,NALGrammar.Terms.CompoundTerm):
@@ -112,7 +115,7 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
             #     if result_statement is None:
             #         return None # goal is already true
 
-            result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array), occurrence_time=occurrence_time)
+            result = NALGrammar.Sentences.Goal(result_statement, result_truth, occurrence_time=occurrence_time)
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
 
@@ -140,10 +143,7 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
         result_truth_array = None
         if result_truth is None:
             if truth_value_function is None:
-                if result_type == NALGrammar.Sentences.Judgment:
-                    result_truth = NALGrammar.Values.TruthValue(j.value.frequency,j.value.confidence)
-                elif result_type == NALGrammar.Sentences.Goal:
-                    result_truth = NALGrammar.Values.DesireValue(j.value.frequency, j.value.confidence)
+                result_truth = j.value #NALGrammar.Values.TruthValue(j.value.frequency,j.value.confidence)
             else:
                 if j.is_array:
                     result_truth_array = TruthFunctionOnArray(j.truth_values, None, truth_value_function)

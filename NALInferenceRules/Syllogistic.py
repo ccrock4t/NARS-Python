@@ -19,8 +19,8 @@ def Deduction(j1, j2):
     """
         Deduction (Strong syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (M --> P <f1, c1>)
@@ -50,8 +50,8 @@ def Analogy(j1, j2):
     """
         Analogy (Strong syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (M --> P <f1, c1>)
@@ -106,8 +106,8 @@ def Resemblance(j1, j2):
     """
         Resemblance (Strong syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (M <-> P <f1, c1>)
@@ -159,8 +159,8 @@ def Abduction(j1, j2):
     """
         Abduction (Weak syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (P --> M <f1, c1>)
@@ -188,8 +188,8 @@ def Induction(j1, j2):
     """
         Induction (Weak syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (M --> P <f1, c1>)
@@ -217,8 +217,8 @@ def Exemplification(j1, j2):
     """
         Exemplification (Weak syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (P --> M <f1, c1>)
@@ -244,8 +244,8 @@ def Comparison(j1, j2):
     """
         Comparison (Weak syllogism)
 
-        Assumes: j1 and j2 do not have evidential overlap
         -----------------
+        Assumes: j1 and j2 do not have evidential overlap
 
         Input:
             j1: Sentence (M --> P <f1, c1>)
@@ -277,11 +277,10 @@ def Comparison(j1, j2):
                                                           j1.statement.get_subject_term(),
                                                           copula)
     else:
-        assert (
-            False), "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
+        assert False, "Error: Invalid inputs to nal_comparison: " + j1.get_formatted_string() + " and " + j2.get_formatted_string()
 
     if j1.is_array and j2.is_array:
-        truth_function = TruthValueFunctions.F_Array_Element_Comparison
+        truth_function = TruthValueFunctions.F_Comparison#F_Array_Element_Comparison
     else:
         truth_function = TruthValueFunctions.F_Comparison
 

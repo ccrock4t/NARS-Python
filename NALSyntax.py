@@ -61,6 +61,7 @@ class TermConnector(enum.Enum):
     SequentialConjunction = "&/"
     ParallelConjunction = "&|"
 
+    # Array
     Array = "@"
 
     @classmethod
@@ -114,6 +115,15 @@ class TermConnector(enum.Enum):
                 cls.SequentialConjunction.value in string or
                 cls.ParallelConjunction.value in string)
 
+    @classmethod
+    def contains_higher_level_connector(cls,string):
+        return (cls.Negation.value in string \
+                or cls.Conjunction.value in string\
+                or cls.Disjunction.value in string
+                or cls.SequentialConjunction.value in string
+                or cls.ParallelConjunction.value in string \
+                or cls.Array.value in string)
+
 
     @classmethod
     def get_set_end_connector_from_set_start_connector(cls, start_connector):
@@ -161,6 +171,12 @@ class Copula(enum.Enum):
     PredictiveEquivalence = "</>"
     ConcurrentEquivalence = "<|>"
 
+
+    @classmethod
+    def is_implication(cls, copula):
+        return copula is cls.Implication \
+               or copula is cls.PredictiveImplication \
+               or copula is cls.RetrospectiveImplication \
 
     @classmethod
     def is_first_order(cls, copula):
@@ -239,7 +255,7 @@ class Punctuation(enum.Enum):
     Judgment = "."
     Question = "?"  # on truth-value
     Goal = "!"
-    Quest = "@"  # on desire-value
+    Quest = "`"  # on desire-value #todo, decide value for Quest since @ is used for array now
 
     @classmethod
     def is_punctuation(cls, value):

@@ -1,5 +1,7 @@
 import random
-import time
+import timeit as time
+
+import numpy as np
 
 import Asserts
 import Config
@@ -63,39 +65,37 @@ class Memory:
         new_concept = Concept(term)
 
         # put into data structure
-        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
-        self.concepts_bag.put_new(new_concept)
-        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
-            "Put new concept item took " + str((time.time() - before) * 1000) + "ms")
+        if Config.DEBUG_TIMING: before = time.default_timer()
+        self.concepts_bag.put_new(new_concept) # add to bag
+        if Config.DEBUG_TIMING: Global.Global.debug_print(
+            "Put new concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         if isinstance(term, NALGrammar.Terms.CompoundTerm):
-            for subterm in term.subterms:
+            for i, subterm in np.ndenumerate(term.subterms):
                 # get/create subterm concepts
-                if not isinstance(subterm, NALGrammar.Terms.VariableTerm) \
-                        and not isinstance(subterm,
-                                           NALGrammar.Terms.ArrayTermElementTerm):  # don't create concepts for variables or array elements
+                if not isinstance(subterm, NALGrammar.Terms.VariableTerm):  # don't create concepts for variables or array elements
                     subconcept = self.peek_concept(subterm)
                     # do term linking with subterms
-                    new_concept.set_term_link(subconcept)
+                    new_concept.set_term_links(subconcept)
 
         elif isinstance(term, NALGrammar.Terms.StatementTerm):
             subject_concept = self.peek_concept(term.get_subject_term())
             predicate_concept = self.peek_concept(term.get_predicate_term())
 
-            if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
-            subject_concept.set_term_link(new_concept)
-            predicate_concept.set_term_link(new_concept)
-            if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
-                "Set term links concept item took " + str((time.time() - before) * 1000) + "ms")
+            if Config.DEBUG_TIMING: before = time.default_timer()
+            new_concept.set_term_links(subject_concept)
+            new_concept.set_term_links(predicate_concept)
+            if Config.DEBUG_TIMING: Global.Global.debug_print(
+                "Set term links concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
             if not term.is_first_order():
                 # implication statement
                 # do prediction/explanation linking with subterms
-                if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+                if Config.DEBUG_TIMING: before = time.default_timer()
                 subject_concept.set_prediction_link(new_concept)
                 predicate_concept.set_explanation_link(new_concept)
-                if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
-                    "Set implication links concept item took " + str((time.time() - before) * 1000) + "ms")
+                if Config.DEBUG_TIMING: Global.Global.debug_print(
+                    "Set implication links concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         return self.concepts_bag.peek(concept_key)
 
@@ -112,102 +112,82 @@ class Memory:
                those concepts will be created.
 
               :param term: The term naming the concept to peek
-              :return Concept named by the term
+              :return Concept item named by the term
           """
         if isinstance(term, NALGrammar.Terms.VariableTerm): return None #todo created concepts for closed variable terms
-        if isinstance(term,NALGrammar.Terms.ArrayTermElementTerm) \
-                or (isinstance(term,NALGrammar.Terms.StatementTerm) \
-                and isinstance(term.get_subject_term(),NALGrammar.Terms.CompoundTerm)
-                and isinstance(term.get_subject_term().subterms[0], NALGrammar.Terms.ArrayTermElementTerm)): return None  # todo created concepts for closed variable terms
 
         # try to find the existing concept
         concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
 
-        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+        if Config.DEBUG_TIMING: before = time.default_timer()
         concept_item: NARSDataStructures.ItemContainers.Item = self.concepts_bag.peek(concept_key)
-        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
-            "Peek concept item took " + str((time.time() - before) * 1000) + "ms")
+        if Config.DEBUG_TIMING: Global.Global.debug_print(
+            "Peek concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         if concept_item is not None:
             return concept_item  # return if it already exists
 
         # it doesn't exist
         # it must be created along with its sub-concepts if necessary
-        if Config.DEBUG or Config.TIMING_DEBUG: before = time.time()
+        if Config.DEBUG_TIMING: before = time.default_timer()
         concept_item = self.conceptualize_term(term)
-        if Config.DEBUG or Config.TIMING_DEBUG: Global.Global.debug_print(
-            "Conceptualize concept item took " + str((time.time() - before) * 1000) + "ms")
+        if Config.DEBUG_TIMING: Global.Global.debug_print(
+            "Conceptualize concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         return concept_item
 
-    def get_semantically_related_concepts(self, statement_concept):
+
+    def get_semantically_related_concept(self, statement_concept):
         """
             Get concepts (named by a Statement Term) that are semantically related to the given concept.
 
             Using term-links, returns a concept with the same copula order; one for the subject and one for the predicate.
 
-            For a first-order statement, will also try to return higher-order concepts based on implication links
+            For a first-order statement, may try to instead return higher-order concepts based on implication links
 
             :param statement_concept - Statement-Term Concept for which to find a semantically related Statement-Term concept
 
             :return Statement-Term Concepts semantically related to param: `statement_concept`
         """
-        related_concepts = [statement_concept] # a concept is related to itself
+
+        count = 0
+        related_concept = None
 
         if len(statement_concept.term_links) != 0:
-            term_linked_concept = statement_concept.term_links.peek().object
+            while count < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
+                    and (related_concept is None
+                        or
+                         (related_concept is not None and not isinstance(related_concept.term,NALGrammar.Terms.StatementTerm))):
 
-            if isinstance(term_linked_concept.term, NALGrammar.Terms.AtomicTerm):
-                # atomic term concept
-                related_statement_concept = term_linked_concept.term_links.peek().object # peek additional term links to get another statement term
+                shared_term_concept = statement_concept.term_links.peek().object
+                if statement_concept.term.is_first_order():
+                    # S --> P
+                    if len(statement_concept.term_links) != 0:
+                        shared_term_concept = statement_concept.term_links.peek().object
+                        if isinstance(shared_term_concept.term, NALGrammar.Terms.AtomicTerm):
+                            # atomic term concept (S)
+                            related_concept = shared_term_concept.term_links.peek().object # peek additional term links to get another statement term
+                        elif isinstance(shared_term_concept.term, NALGrammar.Terms.CompoundTerm):
+                            # Compound term concept (S & B)
+                            related_concept = shared_term_concept.term_links.peek().object
+                        elif isinstance(shared_term_concept.term, NALGrammar.Terms.StatementTerm):
+                            # implication statement (S-->P) ==> B
+                            related_concept = shared_term_concept
+                else:
+                    # S ==> P
+                    # term linked concept is A-->B
+                    if len(shared_term_concept.prediction_links) == 0 and shared_term_concept.explanation_links == 0:
+                        continue
+                    elif len(shared_term_concept.prediction_links) != 0 and len(shared_term_concept.explanation_links) == 0:
+                        bag = shared_term_concept.prediction_links
+                    elif len(shared_term_concept.explanation_links) != 0 and len(shared_term_concept.prediction_links) == 0:
+                        bag = shared_term_concept.explanation_links
+                    else:
+                        bag = random.choice([shared_term_concept.prediction_links,shared_term_concept.explanation_links])
 
-                related_concepts.append(related_statement_concept)
-            else:
-                if isinstance(term_linked_concept.term, NALGrammar.Terms.StatementTerm):
-                    # the term-linked sentence is high-order statement concept
-                    # return this statement concept
-                    related_concepts.append(term_linked_concept)
+                    related_concept = bag.peek().object
 
-                    # if it's first-order, that means the original concept is higher-order
-                    # so also try for a related higher-order concept below
-
-                # the initially related concept is compound, not atomic, so we can't just peek the term links once
-                # we need to search until we find a statement concept
-                related_concept = None
-                attempts = 0
-                while attempts < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
-                    and (related_concept is None \
-                    or not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm)):
-                    related_concept_item = term_linked_concept.term_links.peek()
-
-                    if related_concept_item is not None: related_concept = related_concept_item.object
-                    attempts += 1
-                if related_concept is not None and isinstance(related_concept.term,
-                                                                  NALGrammar.Terms.StatementTerm): related_concepts.append(related_concept)
-
-
-        return related_concepts
-
-    def get_random_link(self, concept):
-        """
-            Randomly gets a term link, prediction link, or explanation link to/from this concept.
-            :param concept: A concept representing an first-order statement
-            :return: An immediately linked concept
-        """
-        possible_link_bags = []
-        if len(concept.term_links) > 0:
-            possible_link_bags.append(concept.term_links)
-
-        if len(concept.prediction_links) > 0:
-            possible_link_bags.append(concept.prediction_links)
-
-        if len(concept.explanation_links) > 0:
-            possible_link_bags.append(concept.explanation_links)
-
-        # the concept has every type of link
-        links_to_peek = random.choice(possible_link_bags)
-
-        return links_to_peek.peek()
+        return related_concept
 
     def get_best_explanation(self, j):
         """
@@ -222,9 +202,9 @@ class Memory:
             explanation_concept: Concept = explanation_concept_item.object  # A =/> B
             if len(explanation_concept.belief_table) == 0: continue
 
-            belief = explanation_concept.belief_table.peek()
+            belief = explanation_concept.belief_table.peek_highest_confidence_interactable(j)
 
-            if NALGrammar.Sentences.may_interact(j,belief):
+            if belief is not None:
                 if best_explanation_belief is None:
                     best_explanation_belief = belief
                 else:
@@ -244,19 +224,19 @@ class Memory:
         best_explanation_belief = None
         count = 0
         MAX_ATTEMPTS = Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF
-        MAX_ATTEMPTS = 3
+
         while count < MAX_ATTEMPTS:
             item = statement_concept.explanation_links.peek()
             explanation_concept: Concept = item.object  # A =/> B
 
             if explanation_concept.term.get_subject_term().contains_positive():
                 # (A &/ B) =/> C and A.
-                belief = explanation_concept.belief_table.peek_highest_confidence_interactable(j)
-                if belief is None:
-                    continue
-                else:
-                    best_explanation_belief = belief
-                    break
+                belief = explanation_concept.belief_table.peek()
+                if belief is not None:
+                    if best_explanation_belief is None:
+                        best_explanation_belief = belief
+                    else:
+                        best_explanation_belief = NALInferenceRules.Local.Choice(belief,best_explanation_belief)
 
             count += 1
 
@@ -266,6 +246,37 @@ class Memory:
 
         return best_explanation_belief
 
+    def get_prediction_preferred_with_true_postcondition(self, j):
+        """
+            Gets the best explanation belief for the given sentence's statement
+            that the sentence is able to interact with
+        :param statement_concept:
+        :return:
+        """
+        statement_concept: Concept = self.peek_concept(j.statement) # B
+        if len(statement_concept.prediction_links) == 0: return
+        best_prediction_belief = None
+        count = 0
+        MAX_ATTEMPTS = Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF
+        while count < MAX_ATTEMPTS:
+            item = statement_concept.prediction_links.peek()
+            prediction_concept: Concept = item.object  # A =/> B
+
+            if prediction_concept.term.get_predicate_term().contains_positive():
+                # (A &/ B) =/> C and A.
+                belief = prediction_concept.belief_table.peek_highest_confidence_interactable(j)
+                if belief is None:
+                    continue
+                elif best_prediction_belief is None:
+                    best_prediction_belief = belief
+                    break
+            count += 1
+
+        if best_prediction_belief is None:
+            item = statement_concept.prediction_links.peek()
+            best_prediction_belief = item.object.belief_table.peek_highest_confidence_interactable(j)
+
+        return best_prediction_belief
 
     def get_random_bag_prediction(self, j):
         """
@@ -280,10 +291,6 @@ class Memory:
         prediction_concept_item = statement_concept.prediction_links.peek()
         prediction_concept = prediction_concept_item.object
         prediction_belief = prediction_concept.belief_table.peek()
-
-        # update explanation link
-        statement_concept.prediction_links.change_priority(prediction_concept_item.key,
-                                                  prediction_belief.get_expectation())
 
         return prediction_belief
 
@@ -301,12 +308,45 @@ class Memory:
         explanation_concept = explanation_concept_item.object
         explanation_belief = explanation_concept.belief_table.peek_highest_confidence_interactable(j)
 
-        # update explanation link
-        if explanation_belief is not None:
-            concept.explanation_links.change_priority(explanation_concept_item.key,
-                                                      explanation_belief.get_expectation())
-
         return explanation_belief
+
+    def get_random_explanation_preferred_with_true_precondition(self, j):
+        """
+            Returns random explanation belief
+        :param j:
+        :return:
+        """
+        concept = self.peek_concept(j.statement)
+        best_belief = None
+        count = 0
+        MAX_ATTEMPTS = Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF
+        while count < MAX_ATTEMPTS:
+            explanation_concept_item = concept.explanation_links.peek()
+            explanation_concept = explanation_concept_item.object
+            if len(explanation_concept.belief_table ) == 0: continue
+            belief = explanation_concept.belief_table.peek()
+
+            if belief is not None:
+                if best_belief is None:
+                    best_belief = belief
+                else:
+                    belief_is_pos_conj = NALSyntax.TermConnector.is_conjunction(
+                        belief.statement.get_subject_term().connector) and belief.statement.get_subject_term().contains_positive()
+
+                    best_belief_is_pos_conj = NALSyntax.TermConnector.is_conjunction(
+                        best_belief.statement.get_subject_term().connector) and best_belief.statement.get_subject_term().contains_positive()
+
+                    if belief_is_pos_conj and not best_belief_is_pos_conj:
+                        best_belief = belief
+                    elif best_belief_is_pos_conj and not belief_is_pos_conj:
+                        pass
+                    else:
+                        best_belief = NALInferenceRules.Local.Choice(best_belief, belief) # new best belief?
+
+            count += 1
+
+        return best_belief
+
 
     def get_best_prediction(self, j):
         """
@@ -329,7 +369,7 @@ class Memory:
 
         return best_belief
 
-    def get_best_explanation_with_op_precondition(self, j):
+    def get_best_explanation_with_true_precondition(self, j):
         """
             Returns the best prediction belief for a given belief
         :param j:
@@ -342,7 +382,9 @@ class Memory:
             if len(concept.belief_table ) == 0: continue
             belief = concept.belief_table.peek()
 
-            if belief is not None and belief.statement.contains_op():
+            if belief is not None and\
+                NALSyntax.TermConnector.is_conjunction(belief.statement.get_subject_term().connector) and\
+                belief.statement.get_subject_term().contains_positive():
                 if best_belief is None:
                     best_belief = belief
                 else:
@@ -351,38 +393,33 @@ class Memory:
         return best_belief
 
 
-    def get_prediction_with_highest_desired_postcondition(self, j):
+    def get_prediction_with_desired_postcondition(self, statement_concept):
         """
             Returns the best prediction belief and and highest desired postcondition for a given belief
         :param j:
         :return:
         """
-        concept = self.peek_concept(j.statement)
-        best_prediction = None
-        most_desired_prediction, most_desired_postcondition = None, None
+        prediction_links = statement_concept.prediction_links
+        if len(prediction_links) == 0: return None
+        best_prediction_belief = None
+        count = 0
+        MAX_ATTEMPTS = Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF
+        while count < MAX_ATTEMPTS:
+            item = prediction_links.peek()
+            prediction_concept: Concept = item.object  # A =/> B
 
-        for prediction_concept_item in concept.prediction_links:
-            prediction_concept = prediction_concept_item.object
-            if len(prediction_concept.belief_table ) == 0: continue
-            prediction = prediction_concept.belief_table.peek()
-
-            if prediction is not None:
-                if best_prediction is None:
-                    best_prediction = prediction
-                else:
-                    best_prediction = NALInferenceRules.Local.Choice(best_prediction, prediction) # new best belief?
-
-                post_condition_concept = self.peek_concept(prediction.statement.get_predicate_term())
-                if len(post_condition_concept.desire_table) > 0:
-                    if most_desired_prediction is None:
-                        most_desired_prediction, most_desired_postcondition = prediction, post_condition_concept.desire_table.peek()
+            if self.peek_concept(prediction_concept.term.get_predicate_term()).is_desired():
+                # (A &/ B) =/> C and A.
+                belief = prediction_concept.belief_table.peek()
+                if belief is not None:
+                    if best_prediction_belief is None:
+                        best_prediction_belief = belief
                     else:
-                        better_post = NALInferenceRules.Local.Choice(most_desired_postcondition, post_condition_concept.desire_table.peek())  # new best belief?
-                        if better_post != most_desired_postcondition:
-                            most_desired_prediction, most_desired_postcondition = prediction, better_post
+                        best_prediction_belief = NALInferenceRules.Local.Choice(best_prediction_belief, belief)  # new best belief?
 
+            count += 1
 
-        return [best_prediction,most_desired_prediction]
+        return best_prediction_belief
 
     def get_random_positive_prediction(self, j):
         """
@@ -480,16 +517,20 @@ class Concept:
         Asserts.assert_term(term)
         self.term = term  # concept's unique term
         self.term_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)  # Bag of related concepts (related by term)
+        self.subterm_links = NARSDataStructures.Bag.Bag(item_type=Concept,
+                                                     capacity=Config.CONCEPT_LINK_CAPACITY)  # Bag of related concepts (related by term)
+        self.superterm_links = NARSDataStructures.Bag.Bag(item_type=Concept,
+                                                     capacity=Config.CONCEPT_LINK_CAPACITY)  # Bag of related concepts (related by term)
         self.belief_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Judgment)
         self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal, capacity=1)
         self.prediction_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
         self.explanation_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
 
     def __str__(self):
-        return self.get_formatted_string()
+        return self.get_term_string()
 
     def __eq__(self, other):
-        return self.get_formatted_string() == other.get_formatted_string()
+        return self.get_term_string() == other.get_formatted_string()
 
     def get_term(self):
         return self.term
@@ -508,6 +549,10 @@ class Concept:
         if len(self.belief_table) == 0: return False
         return self.belief_table.peek().is_positive()
 
+    def term_contains_positive(self):
+        if len(self.belief_table) == 0: return False
+        return self.belief_table.peek().statement.contains_positive()
+
     def get_expectation(self):
         """
             :return: If the highest-confidence belief says this statement is true
@@ -516,15 +561,30 @@ class Concept:
         belief = self.belief_table.peek()
         return belief.get_expectation()
 
-    def set_term_link(self, concept):
+    def set_term_links(self, subterm_concept):
         """
-            Set a bidirectional term link between 2 concepts
+            Set a bidirectional term link between 2 concepts and the subterm/superterm link
             Does nothing if the link already exists
+
+            :param subterm concept to this superterm concept (self)
         """
-        assert_concept(concept)
-        if concept in self.term_links: return  # already linked
-        self.term_links.put_new(concept)
-        concept.term_links.put_new(self)
+        assert_concept(subterm_concept)
+        if subterm_concept in self.term_links: return  # already linked
+
+        # add to term links
+        item = self.term_links.put_new(subterm_concept)
+        self.term_links.change_priority(item.key, new_priority=0.5)
+
+        item = subterm_concept.term_links.put_new(self)
+        subterm_concept.term_links.change_priority(item.key, new_priority=0.5)
+
+        # add to subterm links
+        item = self.subterm_links.put_new(subterm_concept)
+        self.subterm_links.change_priority(item.key, new_priority=0.5)
+
+        # add to superterm links
+        item = subterm_concept.superterm_links.put_new(self)
+        subterm_concept.superterm_links.change_priority(item.key, new_priority=0.5)
 
     def remove_term_link(self, concept):
         """
@@ -543,7 +603,7 @@ class Concept:
         """
         assert_concept(concept)
         if concept in self.prediction_links: return  # already linked
-        self.prediction_links.put_new(concept)
+        concept_item = self.prediction_links.put_new(concept)
 
     def remove_prediction_link(self, concept):
         """
@@ -563,6 +623,7 @@ class Concept:
         if concept in self.explanation_links: return  # already linked
         concept_item = self.explanation_links.put_new(concept)
 
+
     def remove_explanation_link(self, concept):
         """
             Remove a bidirectional term link between this concept and another concept
@@ -572,11 +633,11 @@ class Concept:
         assert (concept in self.explanation_links), concept + "must be in prediction links."
         self.explanation_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
 
-    def get_formatted_string(self):
+    def get_term_string(self):
         """
             A concept is named by its term
         """
-        return self.term.get_formatted_string()
+        return self.term.get_term_string()
 
 
 # Asserts

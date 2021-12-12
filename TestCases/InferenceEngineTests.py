@@ -42,7 +42,7 @@ def check_success(output_q: [], success_criteria: [str]):
     """
     output = []
     while len(output_q) > 0:  # read and store result in log file
-        output.append(output_q.pop().get_formatted_string_no_id())
+        output.append(output_q.pop().get_term_string_no_id())
 
     success = True
     failed_criterion = ""
@@ -73,7 +73,7 @@ def revision():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Local.Revision(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Local.Revision(j1, j2).get_term_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -94,7 +94,7 @@ def first_order_deduction():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Syllogistic.Deduction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Deduction(j1, j2).get_term_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -115,8 +115,8 @@ def first_order_induction():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Syllogistic.Induction(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Syllogistic.Induction(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Induction(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Induction(j2, j1).get_term_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -137,8 +137,8 @@ def first_order_abduction():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Syllogistic.Abduction(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Syllogistic.Abduction(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Abduction(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Abduction(j2, j1).get_term_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -158,7 +158,7 @@ def first_order_analogy():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Syllogistic.Analogy(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Analogy(j1, j2).get_term_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -181,10 +181,10 @@ def first_order_intensional_composition():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.ExtensionalDifference(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.ExtensionalDifference(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.ExtensionalDifference(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.ExtensionalDifference(j2, j1).get_term_string_no_id())
 
     success, failed_criterion = check_success(output_q, success_criteria)
 
@@ -207,10 +207,10 @@ def first_order_extensional_composition():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.IntensionalDifference(j1, j2).get_formatted_string_no_id())
-    success_criteria.append(NALInferenceRules.Composition.IntensionalDifference(j2, j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.ConjunctionOrExtensionalIntersection(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.DisjunctionOrIntensionalIntersection(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.IntensionalDifference(j1, j2).get_term_string_no_id())
+    success_criteria.append(NALInferenceRules.Composition.IntensionalDifference(j2, j1).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Extensional Composition test failed: " + failed_criterion
@@ -229,7 +229,7 @@ def first_order_exemplification():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Syllogistic.Exemplification(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Syllogistic.Exemplification(j1, j2).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Exemplification test failed: " + failed_criterion
@@ -248,7 +248,7 @@ def extensional_image():
     output_q = run_test(j1)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Immediate.ExtensionalImage(j1).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Immediate.ExtensionalImage(j1).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Extensional Image test failed: " + failed_criterion
@@ -267,7 +267,7 @@ def conditional_analogy():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Conditional.ConditionalAnalogy(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalAnalogy(j1, j2).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Conditional Analogy test failed: " + failed_criterion
@@ -286,7 +286,7 @@ def conditional_deduction():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Conditional Deduction test failed: " + failed_criterion
@@ -305,7 +305,7 @@ def conditional_abduction():
     output_q = run_test(j1,j2)
 
     success_criteria = []
-    success_criteria.append(NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2).get_formatted_string_no_id())
+    success_criteria.append(NALInferenceRules.Conditional.ConditionalJudgmentAbduction(j1, j2).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success,"TEST FAILURE: Conditional Abduction test failed: " + failed_criterion
@@ -326,7 +326,7 @@ def conditional_conjunctional_deduction():
 
     success_criteria = []
     success_criteria.append(
-        NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1, j2).get_formatted_string_no_id())
+        NALInferenceRules.Conditional.ConditionalConjunctionalDeduction(j1, j2).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success, "TEST FAILURE: Conditional Conjunctional Deduction test failed: " + failed_criterion
@@ -345,7 +345,7 @@ def conditional_conjunctional_abduction():
 
     success_criteria = []
     success_criteria.append(
-        NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1, j2).get_formatted_string_no_id())
+        NALInferenceRules.Conditional.ConditionalConjunctionalAbduction(j1, j2).get_term_string_no_id())
     success, failed_criterion = check_success(output_q, success_criteria)
 
     assert success, "TEST FAILURE: Conditional Conjunctional Abduction test failed: " + failed_criterion

@@ -13,6 +13,7 @@ import Asserts
 import Config
 import Global
 import NALGrammar
+import NALSyntax
 from NALInferenceRules import HelperFunctions, TruthValueFunctions
 
 
@@ -23,7 +24,7 @@ def Revision(j1, j2):
         Assumes: j1 and j2 do not have evidential overlap
         -----------------
 
-        Revises two instances of the same sentence with different truth values.
+        Revises two instances of the same statement / sentence with different truth values.
 
         Input:
           j1: Sentence (Statement <f1, c1>)
@@ -35,18 +36,10 @@ def Revision(j1, j2):
     Asserts.assert_sentence(j1)
     Asserts.assert_sentence(j2)
     assert (
-            j1.statement.get_formatted_string() == j2.statement.get_formatted_string()), "Cannot revise sentences for 2 different statements"
+            j1.statement.get_term_string() == j2.statement.get_term_string()), "Cannot revise sentences for 2 different statements"
 
-    if isinstance(j1.statement, NALGrammar.Terms.StatementTerm):
-        new_interval = HelperFunctions.interval_weighted_average(interval1=j1.statement.interval,
-                                                                 interval2=j2.statement.interval,
-                                                                 weight1=j1.value.confidence,
-                                                                 weight2=j2.value.confidence)
-        result_statement = NALGrammar.Terms.StatementTerm(subject_term=j1.statement.get_subject_term(),
-                                                          predicate_term=j1.statement.get_predicate_term(),
-                                                          copula=j1.statement.get_copula(),
-                                                          interval=new_interval)
-    elif isinstance(j1.statement, NALGrammar.Terms.CompoundTerm):
+    if isinstance(j1.statement, NALGrammar.Terms.CompoundTerm) \
+            and j1.statement.connector == NALSyntax.TermConnector.SequentialConjunction:
         new_intervals = []
         for i in range(len(j1.statement.intervals)):
             new_interval = HelperFunctions.interval_weighted_average(interval1=j1.statement.intervals[i],
@@ -58,10 +51,7 @@ def Revision(j1, j2):
                                                          term_connector=j1.statement.connector,
                                                          intervals=new_intervals)
     else:
-        assert False,"ERROR: Invalid inputs to Revision"
-
-
-
+        result_statement = j1.statement
 
     return HelperFunctions.create_resultant_sentence_two_premise(j1,
                                                                  j2,
