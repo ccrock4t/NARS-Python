@@ -81,8 +81,7 @@ def main():
     print('Starting NARS in the shell.')
 
     # Finally, run NARS in the shell
-    Global.Global.NARS.memory.conceptualize_term(Global.Global.TERM_SELF)
-    Global.Global.NARS.run()
+    Global.Global.NARS.startup_and_run()
 
 
 if __name__ == "__main__":

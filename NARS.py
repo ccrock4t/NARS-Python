@@ -32,6 +32,8 @@ class NARS:
     """
 
     def __init__(self):
+        Global.Global.NARS = self # global vars are part of NARS
+
         self.narsese_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task,
                                                                 capacity=Config.GLOBAL_BUFFER_CAPACITY)
         self.vision_buffer = NARSDataStructures.Buffers.SpatialBuffer(dimensions=Config.VISION_DIMENSIONS)
@@ -48,7 +50,11 @@ class NARS:
         # keeps track of number of working cycles per second
         self.cycles_per_second_timer = timeit.default_timer()
         self.last_working_cycle = 0
+        self.memory.conceptualize_term(Global.Global.TERM_SELF)
 
+
+    def startup_and_run(self):
+        self.run()
 
     def run(self):
         """
@@ -86,28 +92,19 @@ class NARS:
         # debug
         if timeit.default_timer() - self.cycles_per_second_timer > 1.0:
             self.cycles_per_second_timer = timeit.default_timer()
-            if Config.DEBUG_TIMING: print('Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
+            print('Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
             self.last_working_cycle = Global.Global.get_current_cycle_number()
 
-        # GUI
-        if Config.GUI_USE_INTERFACE: Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None, 0))
-
         # do stuff with buffer and memory while there is time
-        delay = 1.0
-        delay_scale = 10000.0
-        while (timeit.default_timer() - self.cycle_begin_time) * 1000 < Config.TAU_WORKING_CYCLE_DURATION:
-            rand = random.random()
-            if rand < Config.MINDFULNESS:
-                # OBSERVE
-                if Config.DEBUG_TIMING: before = timeit.default_timer()
-                self.Observe()
-                if Config.DEBUG_TIMING: Global.Global.debug_print("Observe took " + str((timeit.default_timer() - before) * 1000) + "ms")
-            else:
-                time.sleep(delay / delay_scale) # slow the system down a bit, otherwise it breaks
-                # CONSIDER
-                if Config.DEBUG_TIMING: before = timeit.default_timer()
-                self.Consider()
-                if Config.DEBUG_TIMING: Global.Global.debug_print("Consider took " + str((timeit.default_timer() - before) * 1000) + "ms")
+        # OBSERVE
+        if Config.DEBUG_TIMING: before = timeit.default_timer()
+        self.Observe()
+        if Config.DEBUG_TIMING: Global.Global.debug_print("Observe took " + str((timeit.default_timer() - before) * 1000) + "ms")
+
+        # CONSIDER
+        if Config.DEBUG_TIMING: before = timeit.default_timer()
+        self.Consider()
+        if Config.DEBUG_TIMING: Global.Global.debug_print("Consider took " + str((timeit.default_timer() - before) * 1000) + "ms")
 
         # now execute operations
         if Config.DEBUG_TIMING: before = timeit.default_timer()
@@ -142,7 +139,7 @@ class NARS:
             Process temporal chaining
         """
         if len(self.temporal_module) > 0:
-            self.temporal_module.temporal_chaining_3()
+            self.temporal_module.temporal_chaining_2()
 
 
     def Observe(self):
@@ -280,6 +277,12 @@ class NARS:
             Global.Global.print_to_output("LOAD MEMORY FAIL")
 
     def handle_gui_pipes(self):
+        if Global.Global.NARS_object_pipe is None: return
+
+        # GUI
+        Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None, 0))
+
+
         while Global.Global.NARS_object_pipe.poll():
             # for blocking communication only, when the sender expects a result.
             # This checks for a message request from the GUI
@@ -450,8 +453,7 @@ class NARS:
         statement_concept = self.memory.peek_concept(statement_term)
 
         # try a Revision on another belief in the table
-        if not j1.is_event():
-
+        if j1.is_event():
             # revision
             j2 = statement_concept.belief_table.peek_highest_confidence_interactable(j1)
             if j2 is not None:
@@ -466,7 +468,10 @@ class NARS:
             for result in results:
                 self.narsese_buffer.put_new(NARSDataStructures.Other.Task(result))
         else:
-            pass
+            results = self.process_sentence_semantic_inference(j1, related_concept)
+            for result in results:
+                self.narsese_buffer.put_new(NARSDataStructures.Other.Task(result))
+
             # # it is an event
             # if isinstance(j1.statement, NALGrammar.Terms.StatementTerm) and\
             #         len(statement_concept.superterm_links) > 0 and\
@@ -676,7 +681,17 @@ class NARS:
         if related_concept is None:
             if Config.DEBUG: Global.Global.debug_print("Processing: Peeking randomly related concept")
             if Config.DEBUG_TIMING: before = timeit.default_timer()
-            related_concept = self.memory.get_semantically_related_concept(statement_concept)
+            if isinstance(statement_term, NALGrammar.Terms.ArrayTerm):
+                related_concept = statement_concept.prediction_links.peek()
+            elif isinstance(statement_term, NALGrammar.Terms.StatementTerm) \
+                    and not statement_term.is_first_order():
+                    subject_term = statement_term.get_subject_term()
+                    related_concept = self.memory.peek_concept(subject_term)
+            else:
+                self.memory.get_semantically_related_concept(statement_concept)
+
+            if related_concept is None: self.memory.get_semantically_related_concept(statement_concept)
+            if related_concept is None: return []
             if Config.DEBUG_TIMING: Global.Global.debug_print(
                 " Consider get semantically related concept " + str((timeit.default_timer() - before) * 1000) + "ms")
         else:

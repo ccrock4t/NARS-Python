@@ -10,7 +10,7 @@ class Global:
         NARS vars
     """
     NARS = None  # variable to hold NARS instance
-    paused = True
+    paused = False
 
     """
         Terms

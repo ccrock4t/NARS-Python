@@ -92,10 +92,6 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         """
         concept_item = self.peek_using_key(key)
 
-        # subtract current weight from sum
-        if concept_item is None or concept_item.budget is None:
-            yourmom = 1
-
         current_weight = concept_item.budget.get_priority_weight()
         self.weights_sum -= current_weight
 

@@ -242,6 +242,53 @@ class TemporalModule(ItemContainer):
     def get_most_recent_event_task(self):
         return self.temporal_chain[-1].object
 
+    def temporal_chaining_2(self):
+        """
+            Perform temporal chaining
+
+            produce all possible forward implication statements using temporal induction and intersection
+                A =/> B
+
+            for the latest statement in the chain
+        """
+        if not self.temporal_chain_has_changes: return []
+        NARS = self.NARS
+        results = []
+        temporal_chain = self.temporal_chain
+        num_of_events = len(temporal_chain)
+
+        event_task_B = self.get_most_recent_event_task()
+        event_B = event_task_B.sentence
+
+        def process_sentence(derived_sentence):
+            if derived_sentence is not None:
+                results.append(derived_sentence)
+                if NARS is not None:
+                    task = Task(derived_sentence)
+                    NARS.narsese_buffer.put_new(task)
+
+        # produce all possible forward implication statements using temporal induction and intersection
+        # A &/ C,
+        # A =/> C
+        # and
+        # (A &/ B) =/> C
+        for i in range(0, num_of_events - 1):  # and do induction with events occurring afterward
+            event_task_A = temporal_chain[i].object
+            event_A = event_task_A.sentence
+
+            # produce statements (A =/> C) and (A &/ C)
+            derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
+
+            for derived_sentence in derived_sentences:
+                # if isinstance(derived_sentence.statement, NALGrammar.Terms.StatementTerm): continue  # ignore simple implications
+                process_sentence(derived_sentence)
+
+
+        self.temporal_chain_has_changes = False
+
+        return results
+
+
     def temporal_chaining_3(self):
         """
             Perform temporal chaining

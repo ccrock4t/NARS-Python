@@ -114,6 +114,26 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
     ===============================================
     ===============================================
     """
+    #todo arrayterms
+    if isinstance(j1.statement, NALGrammar.Terms.ArrayTerm):
+        if isinstance(j2.statement,NALGrammar.Terms.StatementTerm) \
+            and not j2.statement.is_first_order():
+            if j2.statement.get_copula() == NALSyntax.Copula.Implication \
+                or  j2.statement.get_copula() == NALSyntax.Copula.PredictiveImplication:
+                derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j2, j1)  # S-->P
+                add_to_derived_sentences(derived_sentence, all_derived_sentences, j2, j1)
+                return all_derived_sentences
+
+    if isinstance(j2.statement, NALGrammar.Terms.ArrayTerm):
+        if isinstance(j1.statement,NALGrammar.Terms.StatementTerm) \
+            and not j1.statement.is_first_order():
+            if j1.statement.get_copula() == NALSyntax.Copula.Implication \
+                or j1.statement.get_copula() == NALSyntax.Copula.PredictiveImplication:
+                derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2)  # S-->P
+                add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
+                return all_derived_sentences
+    # todo arrayterms ^^
+
     swapped = False
 
     if isinstance(j1.statement,NALGrammar.Terms.StatementTerm) and isinstance(j2.statement,NALGrammar.Terms.StatementTerm) and \
