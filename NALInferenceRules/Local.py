@@ -145,7 +145,7 @@ def Projection(j, occurrence_time):
     """
         Projection.
 
-        Returns j projected to the given occurrence time.
+        Returns a sentence j projected to the given occurrence time.
 
         :param j:
         :param occurrence_time: occurrence time to project j to
@@ -178,7 +178,7 @@ def Value_Projection(j,occurrence_time):
     """
         Projection; only returns a value
 
-        Returns j's value projected to the given occurrence time.
+        Returns j's truth value projected to the given occurrence time.
 
         :param j:
         :param occurrence_time: occurrence time to project j to

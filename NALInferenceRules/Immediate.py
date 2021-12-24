@@ -28,7 +28,7 @@ def Negation(j):
          Returns:
     """
     Asserts.assert_sentence(j)
-    result_statement = NALGrammar.Terms.StatementTerm(j.statement, statement_connector=NALSyntax.TermConnector.Negation)
+    result_statement = NALGrammar.Terms.CompoundTerm(subterms=[j.statement], term_connector=NALSyntax.TermConnector.Negation)
     return NALInferenceRules.HelperFunctions.create_resultant_sentence_one_premise(j, result_statement, NALInferenceRules.TruthValueFunctions.F_Negation)
 
 

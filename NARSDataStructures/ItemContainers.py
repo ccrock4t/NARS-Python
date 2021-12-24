@@ -45,6 +45,14 @@ class ItemContainer:
     def __getitem__(self, key):
         return self.item_lookup_dict[key]
 
+    def put_new(self, object):
+        """
+            Place a NEW Item into the container.
+        """
+        item = NARSDataStructures.ItemContainers.Item(object, self.get_next_item_id())
+        self._put_into_lookup_dict(item)  # Item Container
+        return item
+
     def _put_into_lookup_dict(self, item):
         """
             Puts item into lookup table and GUI
@@ -72,15 +80,6 @@ class ItemContainer:
 
         return item
 
-    def put_new(self, object):
-        """
-
-        :param object: object to insert into the item
-        :param dont_insert_into_bag:
-        :return:
-        """
-        item = Item(object, self.get_next_item_id())
-        return self.put(item)
 
     def _take_min(self):
         assert False, "Take smallest priority item not defined for generic Item Container!"
@@ -128,9 +127,9 @@ class Item:
 
         elif isinstance(object, NARSMemory.Concept):
             if isinstance(object.term, NALGrammar.Terms.ArrayTerm):
-                quality = 0.05
+                pass
             elif isinstance(object.term, NALGrammar.Terms.StatementTerm) and not object.term.is_first_order():
-                quality = 0.05
+                pass
             # if isinstance(object.term,NALGrammar.Terms.CompoundTerm) and object.term.connector == NALSyntax.TermConnector.Negation:
             #     priority = 0.0
             #     quality = 0.0
@@ -219,8 +218,7 @@ class Item:
             dict[NARSGUI.NARSGUI.KEY_SENTENCE_STRING] = str(self.object.sentence)
             dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in
                                                               self.object.sentence.stamp.evidential_base]
-            dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [str(interactedsentence) for interactedsentence in
-                                                                   self.object.sentence.stamp.interacted_sentences]
+            dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = []
 
         return dict
 
@@ -233,7 +231,7 @@ class Item:
 
         def __init__(self, priority=None, quality=None):
             if quality is None:
-                quality = 0.0
+                quality = 0.2
             self.set_quality(quality)
 
             if priority is None: priority = quality
@@ -246,7 +244,7 @@ class Item:
             self.calc_priority_weight()
 
         def calc_priority_weight(self):
-            self.priority_weight = round(100 * self.get_priority())
+            self.priority_bucket = min(99,round(100 * self.get_priority()))
 
         def set_quality(self, value):
             self._quality = value
@@ -254,8 +252,8 @@ class Item:
         def get_priority(self):
             return self._priority
 
-        def get_priority_weight(self):
-            return self.priority_weight
+        def get_priority_bucket(self):
+            return self.priority_bucket
 
         def get_quality(self):
             return self._quality

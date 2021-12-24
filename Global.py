@@ -37,18 +37,20 @@ class Global:
 
     @classmethod
     def print_to_output(cls, msg, data_structure=None):
-        if cls.NARS is None: return
-        data_structure_name = None
-        data_structure_len = 0
-        if data_structure is None: print(msg)
-        if not(data_structure is cls.NARS.memory.concepts_bag or
-               data_structure is cls.NARS.temporal_module or
-               data_structure is cls.NARS.narsese_buffer or
-               data_structure is None): return # must be a valid data structure
-        if data_structure is not None:
-            data_structure_name = (str(data_structure), type(data_structure).__name__)
-            data_structure_len = len(data_structure)
-        if Config.GUI_USE_INTERFACE: cls.NARS_string_pipe.send(("print", msg, data_structure_name, data_structure_len))
+        try:
+            data_structure_name = None
+            data_structure_len = 0
+            if data_structure is None: print(msg)
+            if not(data_structure is cls.NARS.memory.concepts_bag or
+                   data_structure is cls.NARS.temporal_module or
+                   data_structure is cls.NARS.global_buffer or
+                   data_structure is None): return # must be a valid data structure
+            if data_structure is not None:
+                data_structure_name = (str(data_structure), type(data_structure).__name__)
+                data_structure_len = len(data_structure)
+            if Config.GUI_USE_INTERFACE: cls.NARS_string_pipe.send(("print", msg, data_structure_name, data_structure_len))
+        except:
+            print(msg)
 
     @classmethod
     def clear_output_gui(cls, data_structure=None):
@@ -59,10 +61,10 @@ class Global:
         """
             Remove a message from an output GUI box
         """
-        if  cls.NARS_string_pipe is None: return
+        if cls.NARS_string_pipe is None: return
         if not(data_structure is cls.NARS.memory.concepts_bag or
                data_structure is cls.NARS.temporal_module or
-               data_structure is cls.NARS.narsese_buffer): return
+               data_structure is cls.NARS.global_buffer): return
         cls.NARS_string_pipe.send(("remove", msg, (str(data_structure), type(data_structure).__name__),len(data_structure)))
 
     @classmethod
@@ -76,7 +78,8 @@ class Global:
 
     @classmethod
     def debug_print(cls,msg):
-        print(str(cls.get_current_cycle_number()) + ": " + msg)
+        if msg is None: return
+        print(str(cls.get_current_cycle_number()) + ": gb(" + str(len(cls.NARS.global_buffer)) + "): " + msg)
 
     @classmethod
     def create_inherent_terms(cls):

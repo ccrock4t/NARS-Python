@@ -9,6 +9,8 @@
             Assumes the given sentences do not have evidential overlap.
             Does combine evidential bases in the Resultant Sentence.
 """
+import numpy as np
+
 import Asserts
 import NALGrammar
 import NALSyntax
@@ -166,17 +168,14 @@ def SimplifyConjunctiveGoal(j1, j2):
             :- S! <f3, c3> (S ==> D)
     """
     remaining_subterms = j1.statement.subterms.copy()
-    found_idx = -1
-    for i, subterm in enumerate(j1.statement.subterms):
-        if subterm == j2.statement:
-            found_idx = i
+    found_idx = np.where(remaining_subterms == j2.statement)
 
-    assert i != -1, "Error: Invalid inputs to Simplify conjuctive goal (deduction): " \
+    assert found_idx != -1, "Error: Invalid inputs to Simplify conjuctive goal (deduction): " \
                     + j1.get_formatted_string() \
                     + " and " \
                     + j2.get_formatted_string()
 
-    remaining_subterms.pop(found_idx)
+    remaining_subterms = np.delete(remaining_subterms, found_idx)
 
     if len(remaining_subterms) == 1:
         result_statement = remaining_subterms[0]

@@ -93,9 +93,7 @@ class Table(Depq):
         """
         assert (isinstance(sentence, self.item_type)), "Cannot insert sentence into a Table of different punctuation"
 
-        priority = sentence.value.confidence
-        if sentence.is_event():
-            priority = sentence.stamp.occurrence_time
+        priority = sentence.get_present_value().confidence
 
         Depq.insert_object(self, sentence, priority)
 
@@ -116,7 +114,10 @@ class Table(Depq):
 
             Returns None if depq is empty
         """
-        return Depq.peek_max(self)
+        max = self.take()
+        if max is not None:
+            self.put(max)
+        return max
 
     def peek_random(self):
         """
@@ -137,12 +138,9 @@ class Table(Depq):
         :param j:
         :return:
         """
-        if Config.DEBUG_TIMING: before = time.default_timer()
         for (belief, confidence) in self:  # loop starting with max confidence
             if NALGrammar.Sentences.may_interact(j, belief):
                 return belief
-        if Config.DEBUG_TIMING: Global.Global.debug_print(
-            " Peek highest confidence interable took " + str((time.default_timer() - before) * 1000) + "ms")
         return None
 
 

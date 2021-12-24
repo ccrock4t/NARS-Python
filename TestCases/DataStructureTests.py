@@ -54,7 +54,8 @@ def test_table_overflow_purge():
     """
         Test if table stays within capacity when it overflows.
     """
-    test_data_structure = NARSDataStructures.Other.Table(item_type=NALGrammar.Sentences.Judgment)
+    test_data_structure = NARSDataStructures.Other.\
+        Table(item_type=NALGrammar.Sentences.Judgment)
     items_added = 0
     max_capacity = NARS.Config.TABLE_DEFAULT_CAPACITY
     for i in range(0, max_capacity + 5):

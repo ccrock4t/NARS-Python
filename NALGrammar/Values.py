@@ -13,10 +13,11 @@ class EvidentialValue:
     """
 
     def __init__(self, frequency, confidence):
-        assert (isinstance(frequency, float) and frequency >= 0.0 and frequency <= 1.0), "ERROR: Frequency must be a float in [0,1]"
-        assert (isinstance(confidence, float) and confidence >= 0.0 and confidence < 1.0), "ERROR: Confidence must be a float [0,1)"
-        self.frequency = frequency
-        self.confidence = confidence
+        if "{:.2f}".format(confidence) == "1.00": confidence = 0.99
+        assert (frequency >= 0.0 and frequency <= 1.0), "ERROR: Frequency " + str(frequency) + " must be in [0,1]"
+        assert (confidence >= 0.0 and confidence < 1.0), "ERROR: Confidence must be in [0,1)"
+        self.frequency = float(frequency)
+        self.confidence = float(confidence)
 
     def get_formatted_string(self):
         assert False, "Formatted string not defined for Evidential Value base class"
@@ -52,7 +53,6 @@ class TruthValue(EvidentialValue):
     """
 
     def __init__(self, frequency=Config.DEFAULT_JUDGMENT_FREQUENCY, confidence=Config.DEFAULT_JUDGMENT_CONFIDENCE):
-        if confidence > 0.99: confidence = 0.99999
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + '{0:.2f}'.format(self.frequency) \

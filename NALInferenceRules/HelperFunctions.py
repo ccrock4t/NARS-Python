@@ -73,21 +73,16 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
         # Judgment or Goal
         # Get Truth Value
 
-        if False and j1.is_event() and j2.is_event():
+        if j1.is_event() and j2.is_event():
             (f1, c1) = (j1.value.frequency, j1.value.confidence)
             proj_value = NALInferenceRules.Local.Value_Projection(j2, j1.stamp.occurrence_time)
             (f2, c2) = proj_value.frequency, proj_value.confidence
         else:
-            (f1, c1) = (j1.value.frequency, j1.value.confidence)
-            (f2, c2) = (j2.value.frequency, j2.value.confidence)
-        result_truth_array = None
-        if isinstance(j1, NALGrammar.Terms.ArrayTerm) and isinstance(j2, NALGrammar.Terms.ArrayTerm):
-            result_truth, result_truth_array = TruthFunctionOnArrayAndRevise(j1.truth_values,
-                                                                        j2.truth_values,
-                                                                        truth_value_function=truth_value_function)
-        else:
-            result_truth = truth_value_function(f1, c1, f2, c2)
+            (f1, c1) = (j1.get_present_value().frequency, j1.get_present_value().confidence)
+            (f2, c2) = (j2.get_present_value().frequency, j2.get_present_value().confidence)
 
+
+        result_truth = truth_value_function(f1, c1, f2, c2)
         occurrence_time = None
 
         # if the result is a first-order statement,  or a compound statement, it may need an occurrence time
@@ -96,7 +91,8 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
                 or (not isinstance(result_statement, NALGrammar.Terms.StatementTerm)
                     and isinstance(result_statement, NALGrammar.Terms.CompoundTerm)
                     and not NALSyntax.TermConnector.is_first_order(result_statement.connector)):
-            if isinstance(result_statement, NALGrammar.Terms.StatementTerm) and j1.is_event() and j2.is_event():
+            if isinstance(result_statement, NALGrammar.Terms.StatementTerm) \
+                    and j1.is_event() and j2.is_event():
                 if j1.stamp.occurrence_time > j2.stamp.occurrence_time:
                     occurrence_time = j1.stamp.occurrence_time
                 else:
@@ -110,11 +106,6 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
             result = NALGrammar.Sentences.Judgment(result_statement, result_truth,
                                                    occurrence_time=occurrence_time)
         elif result_type == NALGrammar.Sentences.Goal:
-            # if isinstance(result_statement,NALGrammar.Terms.CompoundTerm):
-            #     result_statement, result_truth = simplify_implication_subject_or_goal(result_statement, result_truth)
-            #     if result_statement is None:
-            #         return None # goal is already true
-
             result = NALGrammar.Sentences.Goal(result_statement, result_truth, occurrence_time=occurrence_time)
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
@@ -136,7 +127,7 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
     :param result_truth: Optional truth result
     :return:
     """
-
+    result_statement = NALGrammar.Terms.simplify(result_statement)
     result_type = type(j)
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal:
         # Get Truth Value
@@ -145,16 +136,14 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
             if truth_value_function is None:
                 result_truth = j.value #NALGrammar.Values.TruthValue(j.value.frequency,j.value.confidence)
             else:
-                if j.is_array:
-                    result_truth_array = TruthFunctionOnArray(j.truth_values, None, truth_value_function)
                 result_truth = truth_value_function(j.value.frequency, j.value.confidence)
 
 
         if result_type == NALGrammar.Sentences.Judgment:
-            result = NALGrammar.Sentences.Judgment(result_statement, (result_truth, result_truth_array),
+            result = NALGrammar.Sentences.Judgment(result_statement, result_truth,
                                                    occurrence_time=j.stamp.occurrence_time)
         elif result_type == NALGrammar.Sentences.Goal:
-            result = NALGrammar.Sentences.Goal(result_statement, (result_truth, result_truth_array),
+            result = NALGrammar.Sentences.Goal(result_statement, result_truth,
                                                occurrence_time=j.stamp.occurrence_time)
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
@@ -174,6 +163,11 @@ def stamp_and_print_inference_rule(sentence, inference_rule, parent_sentences):
     sentence.stamp.derived_by = "Structural Transformation" if inference_rule is None else inference_rule.__name__
 
     sentence.stamp.parent_premises = []
+
+    if isinstance(sentence.statement, NALGrammar.Terms.StatementTerm) \
+            and not sentence.statement.is_first_order():
+        x=1
+        #todo remove
 
     parent_strings = []
     for parent in parent_sentences:

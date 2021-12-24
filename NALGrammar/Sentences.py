@@ -40,8 +40,6 @@ class Sentence:
         self.eternal_expectation = NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency,
                                                                                      self.value.confidence)
 
-        self.cached_present_value = [-1,None] # (working cycle #, present_value)
-
     def __str__(self):
         return self.get_formatted_string()
 
@@ -95,10 +93,6 @@ class Sentence:
             If this is an event, project its value to the current time
         """
         if self.is_event():
-            current_cycle = Global.Global.get_current_cycle_number()
-            if self.cached_present_value[0] == current_cycle:
-                # cached value is still valid
-                return self.cached_present_value[1]
             decay = Config.EVENT_TRUTH_PROJECTION_DECAY
             if isinstance(self,Goal):
                 decay = Config.DESIRE_PROJECTION_DECAY
@@ -108,17 +102,12 @@ class Sentence:
                                                            Global.Global.get_current_cycle_number(),
                                                            decay=decay)
 
-            self.cached_present_value = [current_cycle, present_value]
             return present_value
         else:
             return self.value
 
     def get_term_string_no_id(self):
-        if isinstance(self.statement,NALGrammar.Terms.CompoundTerm) \
-                and self.statement.connector is NALSyntax.TermConnector.SequentialConjunction:
-            string = self.statement.get_term_string_with_interval()
-        else:
-            string = self.statement.get_term_string()
+        string = self.statement.get_term_string()
         string += str(self.punctuation.value)
         if self.is_event(): string = string + " " + self.get_tense().value
         if self.value is not None:
@@ -149,14 +138,12 @@ class Sentence:
         next(
             evidential_base_iterator)  # skip the first element, which is just the sentence's ID so it' already displayed
         dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in evidential_base_iterator]
-        dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [str(interactedsentence) for interactedsentence in
-                                           self.stamp.interacted_sentences]
+        dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [] #todo remove
 
         is_array = isinstance(self.statement, NALGrammar.Terms.ArrayTerm)
 
         dict[NARSGUI.NARSGUI.KEY_IS_ARRAY] = is_array
         dict[NARSGUI.NARSGUI.KEY_ARRAY_IMAGE] = self.statement if is_array and not isinstance(self,Question) else None
-        dict[NARSGUI.NARSGUI.KEY_ARRAY_ALPHA_IMAGE] = np.ones(shape=self.statement.subterms.shape) if is_array and not isinstance(self,Question) else None
         dict[NARSGUI.NARSGUI.KEY_ARRAY_ELEMENT_STRINGS] = self.statement.subterms if is_array and not isinstance(self,Question) else None
         # END TODO
 
@@ -198,6 +185,7 @@ class Goal(Sentence):
     """
 
     def __init__(self, statement, value, occurrence_time=None):
+        self.executed = False
         Asserts.assert_valid_statement(statement)
         Sentence.__init__(self,
                           statement,
@@ -221,8 +209,7 @@ class Stamp:
         self.occurrence_time = occurrence_time
         self.sentence = self_sentence
         self.evidential_base = EvidentialBase(self_sentence=self_sentence)
-        self.interacted_sentences = []  # list of sentence this sentence has already interacted with
-        self.derived_by = None
+        self.derived_by = None # none if input task
         self.parent_premises = []
         self.from_one_premise_inference = False # is this sentence derived from one-premise inference?
 

@@ -19,14 +19,14 @@ class Term:
     """
         Base class for all terms.
     """
-    string_to_term_archive = {}  # a dictionary of existing terms to prevent duplicate term creation. Key: term string ; Value: term
 
     def __init__(self,
                  term_string):
         assert isinstance(term_string, str), term_string + " must be a str"
         self.string = term_string
+        self.syntactic_complexity = None
         self.syntactic_complexity = self._calculate_syntactic_complexity()
-        Term.string_to_term_archive[self.string] = self
+        string_to_term_dict[self.string] = self
 
 
     def get_term_string(self):
@@ -113,6 +113,7 @@ class VariableTerm(Term):
         return cls(variable_name, type, dependency_list)
 
     def _calculate_syntactic_complexity(self):
+        if self.syntactic_complexity is not None: return self.syntactic_complexity
         if self.dependency_list is None:
             return 1
         else:
@@ -296,6 +297,7 @@ class CompoundTerm(Term):
             the compound term. The connector adds 1 complexity,
             and the subterms syntactic complexities are summed as well.
         """
+        if self.syntactic_complexity is not None: return self.syntactic_complexity
         count = 0
         if self.connector is not None:
             count = 1  # the term connector
@@ -453,6 +455,7 @@ class StatementTerm(Term):
             the compound term. The connector adds 1 complexity,
             and the subterms syntactic complexities are summed as well.
         """
+        if self.syntactic_complexity is not None: return self.syntactic_complexity
         count = 1  # the copula
         for subterm in self.subterms:
             count = count + subterm._calculate_syntactic_complexity()
@@ -569,13 +572,15 @@ class ArrayTerm(CompoundTerm):
     ARRAY_NEGATIVE_ELEMENT = 'N'
 
     def __init__(self,
-                 spatial_subterms):
+                 spatial_subterms,
+                 center):
         """
             :param spatial_subterms: a spatial multi-dimensional array of first-order StatementTerms (or their negations).
 
             todo: support more than 2D
         """
         self.dimensions = spatial_subterms.shape
+        self.center = center
         assert len(self.dimensions) == 2,"ERROR: Array Term only supports 2D arrays"
         CompoundTerm.__init__(self,
                               subterms=spatial_subterms,
@@ -587,7 +592,8 @@ class ArrayTerm(CompoundTerm):
         :return:
         """
         y_length, x_length = self.dimensions
-        string = str(y_length) + 'x' + str(x_length) + 'x'
+        string = str(self.center[0]) + '-' + str(self.center[1]) \
+                + '_' + str(y_length) + 'x' + str(x_length) + '_'
         for indices, element_term in np.ndenumerate(self.subterms):
             if isinstance(element_term, StatementTerm):
                 string += self.ARRAY_POSITIVE_ELEMENT

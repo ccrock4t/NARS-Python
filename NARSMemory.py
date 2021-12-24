@@ -60,17 +60,15 @@ class Memory:
         """
         Asserts.assert_term(term)
         concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
-        assert (self.concepts_bag.peek(concept_key) is None), "Cannot create new concept. Concept already exists."
+        assert not (concept_key in self.concepts_bag.item_lookup_dict), "Cannot create new concept. Concept already exists."
         # create new concept
         new_concept = Concept(term)
 
         # put into data structure
-        if Config.DEBUG_TIMING: before = time.default_timer()
         self.concepts_bag.put_new(new_concept) # add to bag
-        if Config.DEBUG_TIMING: Global.Global.debug_print(
-            "Put new concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
-        if isinstance(term, NALGrammar.Terms.CompoundTerm):
+        if isinstance(term, NALGrammar.Terms.CompoundTerm) and not isinstance(term,NALGrammar.Terms.ArrayTerm):
+            #todo allow array elements
             for i, subterm in np.ndenumerate(term.subterms):
                 # get/create subterm concepts
                 if not isinstance(subterm, NALGrammar.Terms.VariableTerm):  # don't create concepts for variables or array elements
@@ -82,20 +80,14 @@ class Memory:
             subject_concept = self.peek_concept(term.get_subject_term())
             predicate_concept = self.peek_concept(term.get_predicate_term())
 
-            if Config.DEBUG_TIMING: before = time.default_timer()
             new_concept.set_term_links(subject_concept)
             new_concept.set_term_links(predicate_concept)
-            if Config.DEBUG_TIMING: Global.Global.debug_print(
-                "Set term links concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
             if not term.is_first_order():
                 # implication statement
                 # do prediction/explanation linking with subterms
-                if Config.DEBUG_TIMING: before = time.default_timer()
                 subject_concept.set_prediction_link(new_concept)
                 predicate_concept.set_explanation_link(new_concept)
-                if Config.DEBUG_TIMING: Global.Global.debug_print(
-                    "Set implication links concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         return self.concepts_bag.peek(concept_key)
 
@@ -119,20 +111,14 @@ class Memory:
         # try to find the existing concept
         concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
 
-        if Config.DEBUG_TIMING: before = time.default_timer()
         concept_item: NARSDataStructures.ItemContainers.Item = self.concepts_bag.peek(concept_key)
-        if Config.DEBUG_TIMING: Global.Global.debug_print(
-            "Peek concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         if concept_item is not None:
             return concept_item  # return if it already exists
 
-        # it doesn't exist
+        # if it doesn't exist
         # it must be created along with its sub-concepts if necessary
-        if Config.DEBUG_TIMING: before = time.default_timer()
         concept_item = self.conceptualize_term(term)
-        if Config.DEBUG_TIMING: Global.Global.debug_print(
-            "Conceptualize concept item took " + str((time.default_timer() - before) * 1000) + "ms")
 
         return concept_item
 
@@ -152,40 +138,39 @@ class Memory:
 
         count = 0
         related_concept = None
-
-        if len(statement_concept.term_links) != 0:
-            while count < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
-                    and (related_concept is None
-                        or
-                         (related_concept is not None and not isinstance(related_concept.term,NALGrammar.Terms.StatementTerm))):
-
-                shared_term_concept = statement_concept.term_links.peek().object
-                if statement_concept.term.is_first_order():
-                    # S --> P
-                    if len(statement_concept.term_links) != 0:
-                        shared_term_concept = statement_concept.term_links.peek().object
-                        if isinstance(shared_term_concept.term, NALGrammar.Terms.AtomicTerm):
-                            # atomic term concept (S)
-                            related_concept = shared_term_concept.term_links.peek().object # peek additional term links to get another statement term
-                        elif isinstance(shared_term_concept.term, NALGrammar.Terms.CompoundTerm):
-                            # Compound term concept (S & B)
-                            related_concept = shared_term_concept.term_links.peek().object
-                        elif isinstance(shared_term_concept.term, NALGrammar.Terms.StatementTerm):
-                            # implication statement (S-->P) ==> B
-                            related_concept = shared_term_concept
+        if len(statement_concept.term_links) == 0: return None
+        while count < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
+                and (related_concept is None
+                    or
+                     (related_concept is not None and not isinstance(related_concept.term,NALGrammar.Terms.StatementTerm))):
+            count += 1
+            shared_term_concept = statement_concept.term_links.peek().object
+            if statement_concept.term.is_first_order():
+                # S --> P
+                if len(statement_concept.term_links) != 0:
+                    shared_term_concept = statement_concept.term_links.peek().object
+                    if isinstance(shared_term_concept.term, NALGrammar.Terms.AtomicTerm):
+                        # atomic term concept (S)
+                        related_concept = shared_term_concept.term_links.peek().object # peek additional term links to get another statement term
+                    elif isinstance(shared_term_concept.term, NALGrammar.Terms.CompoundTerm):
+                        # Compound term concept (S & B)
+                        related_concept = shared_term_concept.term_links.peek().object
+                    elif isinstance(shared_term_concept.term, NALGrammar.Terms.StatementTerm):
+                        # implication statement (S-->P) ==> B
+                        related_concept = shared_term_concept
+            else:
+                # S ==> P
+                # term linked concept is A-->B
+                if len(shared_term_concept.prediction_links) == 0 and len(shared_term_concept.explanation_links) == 0:
+                    continue
+                elif len(shared_term_concept.prediction_links) != 0 and len(shared_term_concept.explanation_links) == 0:
+                    bag = shared_term_concept.prediction_links
+                elif len(shared_term_concept.explanation_links) != 0 and len(shared_term_concept.prediction_links) == 0:
+                    bag = shared_term_concept.explanation_links
                 else:
-                    # S ==> P
-                    # term linked concept is A-->B
-                    if len(shared_term_concept.prediction_links) == 0 and shared_term_concept.explanation_links == 0:
-                        continue
-                    elif len(shared_term_concept.prediction_links) != 0 and len(shared_term_concept.explanation_links) == 0:
-                        bag = shared_term_concept.prediction_links
-                    elif len(shared_term_concept.explanation_links) != 0 and len(shared_term_concept.prediction_links) == 0:
-                        bag = shared_term_concept.explanation_links
-                    else:
-                        bag = random.choice([shared_term_concept.prediction_links,shared_term_concept.explanation_links])
+                    bag = random.choice([shared_term_concept.prediction_links,shared_term_concept.explanation_links])
 
-                    related_concept = bag.peek().object
+                related_concept = bag.peek().object
 
         return related_concept
 
@@ -522,7 +507,7 @@ class Concept:
         self.superterm_links = NARSDataStructures.Bag.Bag(item_type=Concept,
                                                      capacity=Config.CONCEPT_LINK_CAPACITY)  # Bag of related concepts (related by term)
         self.belief_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Judgment)
-        self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal, capacity=1)
+        self.desire_table = NARSDataStructures.Other.Table(NALGrammar.Sentences.Goal)
         self.prediction_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
         self.explanation_links = NARSDataStructures.Bag.Bag(item_type=Concept, capacity=Config.CONCEPT_LINK_CAPACITY)
 

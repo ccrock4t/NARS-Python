@@ -71,7 +71,6 @@ class NARSGUI:
     KEY_LIST_EVIDENTIAL_BASE = "ListEvidentialBase"
     KEY_LIST_INTERACTED_SENTENCES = "ListInteractedSentences"
     KEY_ARRAY_IMAGE = "ArrayImage"
-    KEY_ARRAY_ALPHA_IMAGE = "ArrayAlphaImage"
     KEY_ARRAY_ELEMENT_STRINGS = "ArrayElementStrings"
 
     KEY_KEY = "Key"
@@ -170,12 +169,10 @@ class NARSGUI:
         if listbox is self.gui_memory_listbox:
             # if memory listbox, non-statement concept
             # remove it from memory contents
-            i = 0
-            for row in self.gui_memory_full_contents:
+            for i,row in enumerate(self.gui_memory_full_contents):
                 row_id = row[len(Global.Global.MARKER_ITEM_ID):row.rfind(Global.Global.MARKER_ID_END)]
                 if msg_id == row_id:
                     break
-                i = i + 1
             del self.gui_memory_full_contents[i]
             # if non-statement and not showing non-statements, don't bother trying to remove it from memory GUI output
             if not NARSGUI.is_statement_string(msg) and not self.gui_show_atomic_concepts: return
@@ -431,43 +428,6 @@ class NARSGUI:
                                              columnspan=1)
 
         self.dict_listbox_from_id[narsese_buffer_ID] = self.gui_narsese_buffer_listbox
-
-        # CREATE VISION WINDOW
-        vision_window = tk.Toplevel()
-        vision_window.title("Supervised Learning - Visual Images")
-        vision_window.geometry('512x550')
-
-        ZOOM = 16
-        WIDTH = 28
-        HEIGHT = 28
-
-        canvas = tk.Canvas(vision_window, width=WIDTH* ZOOM, height=HEIGHT* ZOOM, bg="#000000")
-        empty_img = tk.PhotoImage(width=(WIDTH * ZOOM), height=(HEIGHT * ZOOM))
-        self.current_vision_img = None
-        vision_canvas_image = canvas.create_image((WIDTH*ZOOM / 2, HEIGHT *ZOOM / 2), image=empty_img, state="normal")
-
-        def load_visual_image(self):
-            filename = filedialog.askopenfilename(title='Load a visual image')
-            new_img = Image.open(filename)
-            self.current_vision_img = ImageTk.PhotoImage(new_img.resize((WIDTH * ZOOM, HEIGHT *ZOOM), Image.NEAREST))
-            canvas.itemconfig(vision_canvas_image, image=self.current_vision_img)
-            strings_pipe.send(("visualimage", new_img) ) # send user input to NARS
-
-        # create button to load image
-        button = tk.Button(vision_window, text="Load Image", command=lambda: load_visual_image(self))
-
-        def send_label_event(self, string):
-            strings_pipe.send(("visualimagelabel", string))  # send user input to NARS
-
-        label = tk.Label(vision_window, text="Enter a label for the image:")
-        label_input = tk.Entry(vision_window)
-        label_button = tk.Button(vision_window, text="Send Label Event", command=lambda: send_label_event(self, label_input.get()))
-
-        button.pack()
-        canvas.pack()
-        label.pack()
-        label_input.pack()
-        label_button.pack()
 
 
         """
@@ -868,7 +828,6 @@ class NARSGUI:
 
         if is_array:
             image_array = sentence_to_draw[NARSGUI.KEY_ARRAY_IMAGE].subterms
-            image_alpha_array = sentence_to_draw[NARSGUI.KEY_ARRAY_ALPHA_IMAGE]
             column += 2
 
             # set image defaults
@@ -951,33 +910,14 @@ class NARSGUI:
                             f.grid_propagate(0)
 
                             element_string = sentence_to_draw[NARSGUI.KEY_ARRAY_ELEMENT_STRINGS][y, x]
-                            img_array = np.array([
+                            img_array = np.array(
                                 [
-                                    [
-                                        [255 if isinstance(pixel_value,StatementTerm) else 0]
-                                    ]
-                                ],
-                                [
-                                    [
-                                        [255 if isinstance(pixel_value,StatementTerm) else 0]
-                                    ]
-                                ],
-                                [
-                                    [
-                                        [255 if isinstance(pixel_value,StatementTerm) else 0]
-                                    ]
-                                ],
-                                [
-                                    [
-                                        [255]#[image_alpha_array[(y, x)]]
-                                    ]
-                                ]
-                            ])
+                                    [255 if isinstance(pixel_value,StatementTerm) else 0]
+                                ])
 
-                            img_array = img_array.T
-                            img = Image.fromarray(img_array, mode="RGBA")
-                            if not gui_array_use_confidence_opacity[0]:
-                                img = img.convert(mode="RGB")
+                            # img_array = img_array.T
+                            img = Image.fromarray(img_array, mode="L")
+                            # if not gui_array_use_confidence_opacity[0]:
 
                             img = img.resize((PIXELS_PER_ELEMENT[0], PIXELS_PER_ELEMENT[0]), Image.NEAREST)
                             button = tk.Button(f,

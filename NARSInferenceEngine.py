@@ -22,7 +22,6 @@ import NALSyntax
 
 
 def do_semantic_inference_two_premise(j1, j2):
-    if Config.DEBUG_TIMING: before = time.default_timer()
 
     try:
         if isinstance(j1, NALGrammar.Sentences.Goal) and isinstance(j2, NALGrammar.Sentences.Judgment):
@@ -31,9 +30,6 @@ def do_semantic_inference_two_premise(j1, j2):
             results = do_semantic_inference_two_judgment(j1, j2)
     except Exception as error:
         assert False,"ERROR: Inference error " + str(error) + " between " + str(j1) + " and " + str(j2)
-
-    if Config.DEBUG_TIMING: Global.Global.debug_print(
-        "Two-premise Inference took " + str((time.default_timer() - before) * 1000) + "ms")
 
     return results
 
@@ -76,7 +72,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
     j2_statement = j2.statement
 
     # same statement
-    if j1_statement == j2_statement:
+    if j1_statement == j2_statement :
         """
         # Revision
         # j1 = j2
@@ -92,20 +88,6 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
     if j1.value.frequency == 0 or j2.value.frequency == 0:
         if Config.DEBUG: Global.Global.debug_print("Can't do inference between negative premises")
         return [] # can't do inference with 2 entirely negative premises
-
-    # Time Projection between j1 and j2
-    # j2 is projected to be used with j1
-    #if isinstance(j1, NALGrammar.Sentences.Judgment):
-    # if j2.is_event():
-    #     eternalized_j2 = NALInferenceRules.Local.Eternalization(j2)
-    #     if j1.is_event():
-    #         projected_j2 = NALInferenceRules.Local.Projection(j2, j1.stamp.occurrence_time)
-    #         if projected_j2.value.confidence > eternalized_j2.value.confidence:
-    #             j2 = projected_j2
-    #         else:
-    #             j2 = eternalized_j2
-    #     else:
-    #         j2 = eternalized_j2
 
     """
     ===============================================
@@ -552,7 +534,6 @@ def do_inference_one_premise(j):
 
         :returns An array of the derived Tasks
     """
-    if Config.DEBUG_TIMING: before = time.default_timer()
 
     derived_sentences = []
     if j.statement.is_first_order(): return derived_sentences # only higher order
@@ -594,9 +575,6 @@ def do_inference_one_premise(j):
         #     derived_sentence_list = NALInferenceRules.Immediate.IntensionalImage(j)
         #     for derived_sentence in derived_sentence_list:
         #         add_to_derived_sentences(derived_sentence,derived_sentences,j)
-
-    if Config.DEBUG_TIMING: Global.Global.debug_print(
-        "One-premise Inference took " + str((time.default_timer() - before) * 1000) + "ms")
 
     return derived_sentences
 

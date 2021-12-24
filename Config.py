@@ -20,6 +20,7 @@ try:
     k = user_config["k"]  # evidential horizon
     T = user_config["T"]  # decision rule (goal decision-making) threshold
     MINDFULNESS = user_config["MINDFULNESS"]
+    TIMES_TO_CONSIDER = user_config["TIMES_TO_CONSIDER"]
 
     TAU_WORKING_CYCLE_DURATION = user_config["TAU_WORKING_CYCLE_DURATION"]  # time in milliseconds per working cycle
 
@@ -34,14 +35,13 @@ try:
     """
         Sensors
     """
-    VISION_DIMENSIONS = (21,21)
+    VISION_DIMENSIONS = (28,28)
 
     """
         GUI
     """
     SILENT_MODE = user_config["SILENT_MODE"]  # the system will only output executed operations
     GUI_USE_INTERFACE = user_config["GUI_USE_INTERFACE"]
-    DEBUG_TIMING = user_config["TIMING_DEBUG"]  # set to true for useful timing debug statements
     DEBUG = user_config["DEBUG"]  # set to true for useful debug statements
     ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = user_config[
         "ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS"]  # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences

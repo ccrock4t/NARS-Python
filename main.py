@@ -10,7 +10,6 @@
 import threading
 import multiprocessing
 import Config
-
 import Global
 import InputChannel
 import NARSGUI
@@ -21,9 +20,9 @@ import NARS
 class GUIProcess(multiprocessing.Process):
     def __init__(self):
         NARS_object: NARS = Global.Global.NARS
-        narsese_buffer_ID = (str(NARS_object.narsese_buffer), type(NARS_object.narsese_buffer).__name__)
-        narsese_buffer_capacity = NARS_object.narsese_buffer.capacity
-        vision_buffer_ID = (str(NARS_object.vision_buffer), type(NARS_object.narsese_buffer).__name__)
+        narsese_buffer_ID = (str(NARS_object.global_buffer), type(NARS_object.global_buffer).__name__)
+        narsese_buffer_capacity = NARS_object.global_buffer.capacity
+        vision_buffer_ID = (str(NARS_object.vision_buffer), type(NARS_object.global_buffer).__name__)
         vision_buffer_dims = str(NARS_object.vision_buffer.array.shape)
         temporal_module_ID = (str(NARS_object.temporal_module), type(NARS_object.temporal_module).__name__)
         temporal_module_capacity = NARS_object.temporal_module.capacity
@@ -55,7 +54,7 @@ class GUIProcess(multiprocessing.Process):
 
 
 
-def main():
+def main(start=True):
     """
         This is where the program starts
         Creates threads, populates globals, and runs the NARS.
@@ -76,12 +75,14 @@ def main():
                                            daemon=True)
     shell_input_thread.start()
 
-    Global.Global.set_paused(False)
+    if start:
+        # Finally, run NARS in the shell
+        Global.Global.set_paused(False)
+        print('Starting NARS in the shell.')
+        Global.Global.NARS.startup_and_run()
 
-    print('Starting NARS in the shell.')
 
-    # Finally, run NARS in the shell
-    Global.Global.NARS.startup_and_run()
+
 
 
 if __name__ == "__main__":

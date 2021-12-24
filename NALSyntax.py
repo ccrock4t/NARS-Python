@@ -90,7 +90,8 @@ class TermConnector(enum.Enum):
                     connector is cls.Conjunction or
                     connector is cls.Disjunction or
                     connector is cls.SequentialConjunction or
-                    connector is cls.ParallelConjunction)
+                    connector is cls.ParallelConjunction or
+                    connector is cls.Array)
 
     @classmethod
     def is_order_invariant(cls, connector):
@@ -117,13 +118,11 @@ class TermConnector(enum.Enum):
 
     @classmethod
     def contains_higher_level_connector(cls,string):
-        return (cls.Negation.value in string \
-                or cls.Conjunction.value in string\
-                or cls.Disjunction.value in string
-                or cls.SequentialConjunction.value in string
-                or cls.ParallelConjunction.value in string \
-                or cls.Array.value in string)
-
+        for connector in cls:
+            if not cls.is_first_order(connector):
+                # higher order connector
+                if connector.value in string: return True
+        return False
 
     @classmethod
     def get_set_end_connector_from_set_start_connector(cls, start_connector):

@@ -17,6 +17,7 @@ import NALInferenceRules.TruthValueFunctions
 
 pended_input_data_queue = []
 VISION_KEYWORD = "vision:"
+NARSESE_KEYWORD = "narsese:"
 
 
 def get_user_input():
@@ -37,15 +38,13 @@ def parse_and_queue_input_string(input_string: str):
     :return:
     """
     if is_sensory_array_input_string(input_string):
+        #todo broken
         # don't split by lines, this is array input
         sentence = parse_input_line(input_string)
         pended_input_data_queue.append(sentence)
     else:
         # treat each line as a separate input
-        lines = input_string.splitlines(False)
-        for line in lines:
-            sentence = parse_input_line(line)
-            pended_input_data_queue.append(sentence)
+        pended_input_data_queue.append((NARSESE_KEYWORD,input_string))
 
 
 
@@ -98,16 +97,20 @@ def process_input_channel():
     """
     if len(pended_input_data_queue) > 0:
         data = pended_input_data_queue.pop()
-        if isinstance(data, NALGrammar.Sentences.Sentence):
-            # turn sentences into tasks
-            process_sentence_into_task(data)
-        elif type(data) is tuple:
-            if data[0] == VISION_KEYWORD:
+        if data[0] == NARSESE_KEYWORD:
+            input_string = data[1]
+            # turn strings into sentences
+            lines = input_string.splitlines(False)
+            for line in lines:
+                sentence = parse_input_line(line)
+                # turn sentences into tasks
+                process_sentence_into_task(sentence)
+        elif data[0] == VISION_KEYWORD:
                 img = data[1]
                 img_array = np.array(img)
-                vision_signal = transduce_raw_vision_array(img_array)
+
                 # tuple holds spatial truth values
-                Global.Global.NARS.vision_buffer.set_array(vision_signal)
+                Global.Global.NARS.vision_buffer.set_image(img_array)
 
 
 def process_sentence_into_task(sentence: NALGrammar.Sentences.Sentence):
@@ -119,41 +122,7 @@ def process_sentence_into_task(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-    if sentence.is_event():
-        # process the task into NARS
-        Global.Global.NARS.process_task(task)
-    else:
-        Global.Global.NARS.narsese_buffer.put_new(task)
-
-def transduce_raw_vision_array(img_array):
-    """
-        Transduce raw vision data into NARS truth-values
-        :param img_array:
-        :return: python array of NARS truth values, with the same dimensions as given raw data
-    """
-    max_value = 255
-
-    def create_truth_value_array(*indices):
-        coords = tuple([int(var) for var in indices])
-        if len(coords) == 1:
-            pixel_value = float(img_array[coords[0]])
-        elif len(coords) == 2:
-            pixel_value = float(img_array[coords[0]][coords[1]])
-        elif len(coords) == 3:
-            pixel_value = float(img_array[coords[2]][coords[1]][coords[0]])
-
-        f = pixel_value / max_value
-        c = 0.99
-
-        return NALGrammar.Sentences.TruthValue(f,c)
-
-
-    func_vectorized = np.vectorize(create_truth_value_array)
-    expectation_array = np.fromfunction(function=func_vectorized,
-                                        shape=img_array.shape)
-
-    return expectation_array
-
+    Global.Global.NARS.global_buffer.put_new(task)
 
 def load_input(filename="input.nal"):
     """

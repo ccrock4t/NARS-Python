@@ -15,7 +15,7 @@ from NARSDataStructures.Other import Depq, Task
 import NALInferenceRules
 import NALGrammar
 import numpy as np
-
+import NARSDataStructures
 
 class Buffer(ItemContainer, Depq):
     """
@@ -27,16 +27,17 @@ class Buffer(ItemContainer, Depq):
         ItemContainer.__init__(self, item_type=item_type, capacity=capacity)  # Item Container
         Depq.__init__(self)  # Depq
 
-    def put(self, item):
+    def put_new(self, object):
         """
             Insert an Item into the Buffer, sorted by priority.
 
             :returns Item that was purged if the inserted item caused an overflow
         """
-        assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
+        assert (isinstance(object, self.item_type)), "item object must be of type " + str(self.item_type)
+        item = NARSDataStructures.ItemContainers.Item(object, self.get_next_item_id())
+        self._put_into_lookup_dict(item)  # Item Container
 
         Depq.insert_object(self, item, item.budget.get_priority())  # Depq
-        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
         purged_item = None
         if len(self) > self.capacity:
@@ -81,37 +82,46 @@ class SpatialBuffer():
         :param dimensions: dimensions of the 2d buffer as a tuple (y, x)
         """
         assert len(dimensions) == 2, "ERROR: Spatial buffer only support 2D structures"
+        self.dimensions = dimensions
         self.array = np.full(shape=dimensions,
                              fill_value=NALGrammar.Sentences.TruthValue(0.0,0.9))
         self.components_bag = Bag(item_type=tuple,
                                            capacity=100000)
         self.img = np.empty(shape=dimensions)
-        self.label = None
+        self.last_taken_img_array = None
 
         # initialize with uniform probabilility
         for indices, truth_value in np.ndenumerate(self.array):
             item = self.components_bag.put_new(indices)
             self.components_bag.change_priority(item.key, 0.5)
 
-    def set_array(self, array):
+    def clear(self):
+        self.set_image(np.empty(shape=self.array.shape))
+
+    def set_image(self, img):
+        self.img = img
+        truth_array = self.transduce_raw_vision_array(img)
+        self._set_array(array=truth_array)
+
+
+    def _set_array(self, array):
         """
             Set all elements of the spatial buffer.
             All of the current elements are removed.
 
             :param array: array of truth-values representing sensation signal values in a topographical mapping
         """
-        assert len(array.shape) == len(self.array.shape),\
+        assert array.shape == self.dimensions,\
             "ERROR: Data dimensions are incompatible with Spatial Buffer dimensions " \
-            + str(array.shape) + " and " + str(self.array.shape)
+            + str(array.shape) + " and " + str(self.dimensions)
 
         self.components_bag.clear()
         self.array = array
         for indices, truth_value in np.ndenumerate(array):
-            # indices = (y,x)
-            expectation = NALInferenceRules.TruthValueFunctions.Expectation(truth_value.frequency,truth_value.confidence)
-            priority = abs(expectation - 0.5) # 0 and 1 are strong signals, so preferred.
+            priority = truth_value.frequency
             self.components_bag.put_new(indices)
             self.components_bag.change_priority(Item.get_key_from_object(indices), priority)
+
 
 
     def take(self):
@@ -130,15 +140,11 @@ class SpatialBuffer():
         min_x, min_y = min(element1_idx_x, element2_idx_x), min(element1_idx_y, element2_idx_y)
         max_x, max_y = max(element1_idx_x, element2_idx_x), max(element1_idx_y, element2_idx_y)
 
+        # min_x, min_y = 0,0
+        # max_x, max_y = 28,28
+
         # extract subset of elements inside the bounding box (inclusive)
         truth_val_subset = self.array[min_y:max_y+1, min_x:max_x+1]
-
-        # calculate size of bounding box
-        x_length = max_x - min_x + 1
-        y_length = max_y - min_y + 1
-
-        # create array string
-        dimension_str = str(y_length) + 'x' + str(x_length)
 
         # create the common predicat
         predicate_name = 'BRIGHT'
@@ -164,7 +170,7 @@ class SpatialBuffer():
             else:
                 element = NALGrammar.Terms.CompoundTerm([positive_statement],
                                                           term_connector=NALSyntax.TermConnector.Negation)
-                truth_value =NALInferenceRules.TruthValueFunctions.F_Negation(truth_value.frequency,
+                truth_value = NALInferenceRules.TruthValueFunctions.F_Negation(truth_value.frequency,
                                                                               truth_value.confidence)
 
             if array_truth_value is None:
@@ -177,14 +183,56 @@ class SpatialBuffer():
             elements_array[indices] = element
 
 
-        statement = NALGrammar.Terms.ArrayTerm(spatial_subterms=elements_array)
+        statement = NALGrammar.Terms.ArrayTerm(spatial_subterms=elements_array,
+                                               center=(min_x,min_y))
 
         # create a corresponding judgment with the compound
         array_judgment = NALGrammar.Sentences.Judgment(statement=statement,
                                                       value=array_truth_value,
                                                        occurrence_time=Global.Global.get_current_cycle_number())
 
+        self.last_taken_img_array = np.zeros(self.img.shape)
+        self.last_taken_img_array[min_y:max_y+1, min_x:max_x+1] = self.img[min_y:max_y+1, min_x:max_x+1]
         return array_judgment
+
+    def transduce_raw_vision_array(self, img_array):
+        """
+            Transduce raw vision data into NARS truth-values
+            :param img_array:
+            :return: python array of NARS truth values, with the same dimensions as given raw data
+        """
+        # fft_array = np.fft.fft2(img_array)
+        # fshift = np.fft.fftshift(fft_array)
+        # magnitude_spectrum = 20 * np.log(np.abs(fshift))
+
+        max_value = 255
+
+        def create_2d_truth_value_array(*indices):
+            coords = tuple([int(var) for var in indices])
+            y,x = coords
+            pixel_value = float(img_array[y, x])
+
+            f = pixel_value / max_value
+            if f > 1: f = 1
+            # c = 0
+            #
+            # relative_indices = []
+            # offsets = (img_array.shape[1]-1)/2, (img_array.shape[0]-1)/2
+            # for i in range(2):
+            #     relative_indices.append((indices[i] - offsets[i]) / offsets[i])
+            # #
+            # for idx in relative_indices:
+            #     c += (1.0 - abs(idx))
+            # c /= len(coords)
+            c = Config.DEFAULT_EVENT_CONFIDENCE
+
+            return NALGrammar.Sentences.TruthValue(f, c)
+
+        func_vectorized = np.vectorize(create_2d_truth_value_array)
+        truth_value_array = np.fromfunction(function=func_vectorized,
+                                            shape=img_array.shape)
+
+        return truth_value_array
 
 
 class TemporalModule(ItemContainer):
@@ -201,9 +249,6 @@ class TemporalModule(ItemContainer):
         self.NARS = NARS
         # temporal chaining
         self.temporal_chain = []
-        self.temporal_chain_max_results_length = capacity * (
-                    capacity + 1) / 2 - 1  # maximum number of results created by temporal chaining
-        self.temporal_chain_has_changes = False  # have any changes to the temporal chain since last time it was processed?
 
         # anticipation
         self.anticipations_queue = []
@@ -218,29 +263,32 @@ class TemporalModule(ItemContainer):
     def __getitem__(self, index):
         return self.temporal_chain[index]
 
-    def put(self, item):
+    def put_new(self, object):
         """
             Put the newest item onto the end of the buffer.
         """
-        if not isinstance(item, Item):
-            item = Item(item, self.get_next_item_id())
+        assert (isinstance(object, self.item_type)), "item object must be of type " + str(self.item_type)
 
-        assert (isinstance(item.object, self.item_type)), "item object must be of type " + str(self.item_type)
+        item = Item(object, self.get_next_item_id())
+        self._put_into_lookup_dict(item)  # Item Container
 
         # add to buffer
         self.temporal_chain.append(item)
-        self.temporal_chain_has_changes = True
-        ItemContainer._put_into_lookup_dict(self, item)  # Item Container
 
         # update temporal chain
         if len(self.temporal_chain) > self.capacity:
             popped_item = self.temporal_chain.pop(0)
             ItemContainer._take_from_lookup_dict(self, popped_item.key)
 
-        return
+        self.process_temporal_chaining()
+
+
+    def process_temporal_chaining(self):
+        if len(self) > 0:
+            self.temporal_chaining_2()
 
     def get_most_recent_event_task(self):
-        return self.temporal_chain[-1].object
+        return self.temporal_chain[-1]
 
     def temporal_chaining_2(self):
         """
@@ -251,40 +299,37 @@ class TemporalModule(ItemContainer):
 
             for the latest statement in the chain
         """
-        if not self.temporal_chain_has_changes: return []
         NARS = self.NARS
         results = []
         temporal_chain = self.temporal_chain
         num_of_events = len(temporal_chain)
 
-        event_task_B = self.get_most_recent_event_task()
+        event_task_B = self.get_most_recent_event_task().object
         event_B = event_task_B.sentence
+
+        if isinstance(event_B.statement, NALGrammar.Terms.ArrayTerm): return #todo remove this. temporarily prevent arrays in postconditions
 
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
                 results.append(derived_sentence)
                 if NARS is not None:
                     task = Task(derived_sentence)
-                    NARS.narsese_buffer.put_new(task)
+                    NARS.global_buffer.put_new(task)
 
         # produce all possible forward implication statements using temporal induction and intersection
-        # A &/ C,
-        # A =/> C
-        # and
-        # (A &/ B) =/> C
-        for i in range(0, num_of_events - 1):  # and do induction with events occurring afterward
+        # A &/ B,
+        # A =/> B
+        for i in range(0,num_of_events-1):  # and do induction with events occurring afterward
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
-            # produce statements (A =/> C) and (A &/ C)
+            if not isinstance(event_A.statement, NALGrammar.Terms.ArrayTerm): continue #todo remove. Only allow arrays in preconditions
+
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 
             for derived_sentence in derived_sentences:
                 # if isinstance(derived_sentence.statement, NALGrammar.Terms.StatementTerm): continue  # ignore simple implications
                 process_sentence(derived_sentence)
-
-
-        self.temporal_chain_has_changes = False
 
         return results
 
@@ -315,7 +360,7 @@ class TemporalModule(ItemContainer):
                 results.append(derived_sentence)
                 if NARS is not None:
                     task = Task(derived_sentence)
-                    NARS.narsese_buffer.put_new(task)
+                    NARS.global_buffer.put_new(task)
 
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ C,
@@ -380,7 +425,7 @@ class TemporalModule(ItemContainer):
                 results.append(derived_sentence)
                 if NARS is not None:
                     task = Task(derived_sentence)
-                    NARS.narsese_buffer.put_new(task)
+                    NARS.global_buffer.put_new(task)
 
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ C,
@@ -428,7 +473,6 @@ class TemporalModule(ItemContainer):
             # form new anticipation from observed event
         """
         return #todo
-        if Config.DEBUG_TIMING: before = time.default_timer()
 
         random_prediction = self.NARS.memory.get_random_bag_prediction(observed_event)
 
@@ -437,8 +481,6 @@ class TemporalModule(ItemContainer):
             self.anticipate_from_concept(self.NARS.memory.peek_concept(random_prediction.statement),
                                          random_prediction)
 
-        if Config.DEBUG_TIMING: Global.Global.debug_print(
-            "Forming anticipation from event took " + str((time.default_timer() - before) * 1000) + "ms")
 
     def anticipate_from_concept(self, higher_order_anticipation_concept, best_belief=None):
         """
@@ -501,7 +543,7 @@ class TemporalModule(ItemContainer):
                         Global.Global.debug_print(str(
                             anticipated_postcondition_concept) + " DISAPPOINT - FAILED ANTICIPATION, NEGATIVE EVIDENCE FOR " + str(
                             sentence))
-                    self.NARS.narsese_buffer.put_new(Task(sentence))
+                    self.NARS.global_buffer.put_new(Task(sentence))
                 self.anticipations_queue.pop(i)
                 self.current_anticipation = None
                 i -= 1
