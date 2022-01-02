@@ -25,7 +25,7 @@ class ItemContainer:
         self.item_lookup_dict = dict()  # for accessing Item by key
         self.next_item_id = 0
         self.capacity = capacity
-        self.item_archive = {}
+        #self.item_archive = {}
 
     def __contains__(self, object):
         """
@@ -45,6 +45,10 @@ class ItemContainer:
     def __getitem__(self, key):
         return self.item_lookup_dict[key]
 
+    def _clear(self):
+        self.item_lookup_dict = dict()
+        self.next_item_id = 0
+
     def put_new(self, object):
         """
             Place a NEW Item into the container.
@@ -63,7 +67,7 @@ class ItemContainer:
 
         if Config.GUI_USE_INTERFACE:
             Global.Global.print_to_output(str(item), data_structure=self)  # draw to GUI
-            self.item_archive[item.key] = item
+            #self.item_archive[item.key] = item
 
     def _take_from_lookup_dict(self, key):
         """
@@ -117,25 +121,26 @@ class Item:
         :param object: object to wrap in the item
         :param container: the Item Container instance that will contain this item
         """
+        self.bucket = None
         self.object = object
         self.id = id
         priority = None
         quality = None
         if isinstance(object, NARSDataStructures.Other.Task):
             if isinstance(object.sentence, NALGrammar.Sentences.Judgment):
-                priority = object.sentence.value.confidence
+                priority = object.sentence.get_present_value().confidence
 
         elif isinstance(object, NARSMemory.Concept):
-            if isinstance(object.term, NALGrammar.Terms.ArrayTerm):
+            if isinstance(object.term, NALGrammar.Terms.SpatialTerm):
                 pass
             elif isinstance(object.term, NALGrammar.Terms.StatementTerm) and not object.term.is_first_order():
                 pass
             # if isinstance(object.term,NALGrammar.Terms.CompoundTerm) and object.term.connector == NALSyntax.TermConnector.Negation:
             #     priority = 0.0
             #     quality = 0.0
-            # if isinstance(object.term,NALGrammar.Terms.CompoundTerm):
-            #     priority = 0.0
-            #     quality = 0.0
+            # if isinstance(object.term,NALGrammar.Terms.StatementTerm) and object.term.is_first_order():
+            #      priority = 0.0
+            #      quality = 0.8
 
         # assign ID
         if isinstance(object, NARSDataStructures.Other.Task):
@@ -174,19 +179,7 @@ class Item:
                 + str(self.id) + Global.Global.MARKER_ID_END \
                 + str(self.object)
 
-    def strengthen(self, multiplier=Config.PRIORITY_STRENGTHEN_VALUE):
-        """
-            Increase this item's priority to a high value
-        """
-        new_priority = NALInferenceRules.ExtendedBooleanOperators.bor(self.budget.get_priority(), multiplier)
-        self.budget.set_priority(new_priority)
 
-    def decay(self, multiplier=Config.PRIORITY_DECAY_MULTIPLIER):
-        """
-            Decay this item's priority
-        """
-        new_priority = NALInferenceRules.ExtendedBooleanOperators.band(self.budget.get_priority(), multiplier)
-        self.budget.set_priority(new_priority)
 
     def get_gui_info(self):
         dict = {}
@@ -231,29 +224,29 @@ class Item:
 
         def __init__(self, priority=None, quality=None):
             if quality is None:
-                quality = 0.2
+                quality = 0.00
             self.set_quality(quality)
 
             if priority is None: priority = quality
             self.set_priority(priority)
 
+        def __str__(self):
+            return NALSyntax.StatementSyntax.BudgetMarker.value \
+                   + str(self.get_priority()) \
+                   + NALSyntax.StatementSyntax.TruthValDivider.value \
+                   + str(self.get_quality()) \
+                   + NALSyntax.StatementSyntax.BudgetMarker.value
+
         def set_priority(self, value):
             if value < self.get_quality(): value = self.get_quality()  # priority can't go below quality
-            if value > 0.999: value = 0.999  # priority can't got too close to 1
+            if value > 0.99: value = 0.99  # priority can't got too close to 1
             self._priority = value
-            self.calc_priority_weight()
-
-        def calc_priority_weight(self):
-            self.priority_bucket = min(99,round(100 * self.get_priority()))
 
         def set_quality(self, value):
             self._quality = value
 
         def get_priority(self):
             return self._priority
-
-        def get_priority_bucket(self):
-            return self.priority_bucket
 
         def get_quality(self):
             return self._quality

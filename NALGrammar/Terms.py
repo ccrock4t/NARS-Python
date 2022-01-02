@@ -180,7 +180,7 @@ class CompoundTerm(Term):
                     # todo accept intervals from input
                     self.intervals = [1] * (len(subterms) - 1)
 
-                self.string_with_interval = self._create_term_string_with_interval()
+                #self.string_with_interval = self._create_term_string_with_interval()
             elif term_connector == NALSyntax.TermConnector.ParallelConjunction:
                 # (A &| B ...)
                 # interval of 0
@@ -203,9 +203,9 @@ class CompoundTerm(Term):
 
                 for subterm in subterms:
                     # decompose the set into an intersection of singleton sets
-                    singleton_set_subterm = CompoundTerm.from_string(term_connector.value + str(
-                        subterm) + NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(
-                        term_connector).value)
+                    singleton_set_subterm = CompoundTerm(subterms=[subterm],
+                                                         term_connector=NALSyntax.TermConnector.get_set_end_connector_from_set_start_connector(term_connector))
+
                     singleton_set_subterms.append(singleton_set_subterm)
 
                 self.subterms = singleton_set_subterms
@@ -252,7 +252,7 @@ class CompoundTerm(Term):
         return self.is_intensional_set() or self.is_extensional_set()
 
     def get_term_string_with_interval(self):
-        return self.string_with_interval
+        return None #self.string_with_interval
 
     def _create_term_string_with_interval(self):
         if self.is_set():
@@ -417,7 +417,6 @@ class StatementTerm(Term):
 
         self.is_operation = self.calculate_is_operation()
 
-        self.string_with_interval = self._create_term_string_with_interval()
         Term.__init__(self, term_string=self._create_term_string())
 
     @classmethod
@@ -563,7 +562,7 @@ class StatementTerm(Term):
             term_connector=NALSyntax.TermConnector.Negation)
 
 
-class ArrayTerm(CompoundTerm):
+class SpatialTerm(CompoundTerm):
     """
         Higher-order Compound with a spatial component.
     """
@@ -585,6 +584,7 @@ class ArrayTerm(CompoundTerm):
         CompoundTerm.__init__(self,
                               subterms=spatial_subterms,
                               term_connector=NALSyntax.TermConnector.Array)
+        self.subterms = None
 
     def _create_term_string(self):
         """
@@ -600,6 +600,7 @@ class ArrayTerm(CompoundTerm):
             elif isinstance(element_term, CompoundTerm) \
                     and element_term.connector == NALSyntax.TermConnector.Negation:
                 string += self.ARRAY_NEGATIVE_ELEMENT
+
         return NALSyntax.StatementSyntax.Start.value \
                 + NALSyntax.TermConnector.Array.value \
                 + string \
@@ -712,6 +713,7 @@ def simplify(term):
 
         :returns The simplified term
     """
+    return term #todo
     simplified_term = term
 
     if isinstance(term, StatementTerm):

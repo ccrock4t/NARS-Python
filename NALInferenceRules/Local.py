@@ -153,9 +153,9 @@ def Projection(j, occurrence_time):
     """
     Asserts.assert_sentence(j)
 
-    decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+    decay = Config.PROJECTION_DECAY_EVENT
     if isinstance(j, NALGrammar.Sentences.Goal):
-        decay = Config.DESIRE_PROJECTION_DECAY
+        decay = Config.PROJECTION_DECAY_DESIRE
     result_truth = TruthValueFunctions.F_Projection(j.value.frequency,
                                                     j.value.confidence,
                                                     j.stamp.occurrence_time,
@@ -186,9 +186,9 @@ def Value_Projection(j,occurrence_time):
     """
     Asserts.assert_sentence(j)
 
-    decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+    decay = Config.PROJECTION_DECAY_EVENT
     if isinstance(j, NALGrammar.Sentences.Goal):
-        decay = Config.DESIRE_PROJECTION_DECAY
+        decay = Config.PROJECTION_DECAY_DESIRE
     result_truth = TruthValueFunctions.F_Projection(j.value.frequency,
                                                     j.value.confidence,
                                                     j.stamp.occurrence_time,

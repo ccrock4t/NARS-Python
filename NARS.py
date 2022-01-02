@@ -37,6 +37,10 @@ class NARS:
     """
 
     def __init__(self):
+        if Config.USE_PROFILER:
+            self.pr = cProfile.Profile()
+            self.pr.enable()
+
         self.prev_take_time = -1
 
         Global.Global.NARS = self # global vars are part of NARS
@@ -59,8 +63,6 @@ class NARS:
         self.cycles_per_second_timer = timeit.default_timer()
         self.last_working_cycle = 0
         self.memory.conceptualize_term(Global.Global.TERM_SELF)
-
-        self.profiler = cProfile.Profile()
 
 
 
@@ -90,15 +92,14 @@ class NARS:
             Performs 1 working cycle.
             In each working cycle, NARS either *Observes* OR *Considers*:
         """
-       #self.profiler.enable()
 
+        #time.sleep(0.1)
         self.memory.current_cycle_number += 1
 
         # debug
         if timeit.default_timer() - self.cycles_per_second_timer > 1.0:
             self.cycles_per_second_timer = timeit.default_timer()
-            Global.Global.debug_print(
-                'Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
+            Global.Global.debug_print('Cycles per second: ' + str(Global.Global.get_current_cycle_number() - self.last_working_cycle))
             self.last_working_cycle = Global.Global.get_current_cycle_number()
 
         # track when the cycle began
@@ -113,18 +114,17 @@ class NARS:
         # OBSERVE
         #self.Observe()
         vision_sentence = self.vision_buffer.take()
-        self.process_task(NARSDataStructures.Other.Task(vision_sentence))
+        self.global_buffer.put_new(NARSDataStructures.Other.Task(vision_sentence))
 
         # global buffer
-        while len(self.global_buffer) > 0:
+        buffer_len = len(self.global_buffer)
+        tasks_left = buffer_len
+        while tasks_left > 0:
             task_item = self.global_buffer.take()
             # process task
             self.process_task(task_item.object)
+            tasks_left -= 1
 
-
-        # CONSIDER
-        for i in range(Config.TIMES_TO_CONSIDER):
-            self.Consider()
 
         # now execute operations
         self.execute_operation_queue()
@@ -137,10 +137,10 @@ class NARS:
             Global.Global.debug_print("anticipations queue: " + str(len(self.temporal_module.anticipations_queue)))
             Global.Global.debug_print("global buffer: " + str(len(self.global_buffer)))
 
+        if Config.USE_PROFILER:
+            pstats.Stats(self.pr).sort_stats('tottime').print_stats(10) #tottime is time spent in the function alone, cumtime is including subfunctions
+            self.pr.enable()
 
-        self.profiler.disable()
-        # stats = pstats.Stats(self.profiler).sort_stats('ncalls')
-        # stats.print_stats()
 
     def do_working_cycles(self, cycles: int):
         """
@@ -189,12 +189,12 @@ class NARS:
         # debugs
         if Config.DEBUG:
             string = "Considering concept: " + str(concept.term)
-            if concept_item is not None: string += " $" + str(concept_item.budget.get_priority()) + "$"
+            if concept_item is not None: string +=  str(concept_item.budget)
             if len(concept.belief_table) > 0: string += " expectation: " + str(concept.belief_table.peek().get_expectation())
             if len(concept.desire_table) > 0: string += " desirability: " + str(concept.desire_table.peek().get_desirability())
             Global.Global.debug_print(string)
 
-        if Config.DEBUG: Global.Global.debug_print("CONSIDER: " + str(concept))
+        #Global.Global.debug_print("CONSIDER: " + str(concept))
 
         if concept is not None and attempts != max_attempts:
             #process a belief and desire
@@ -344,8 +344,8 @@ class NARS:
         task_statement_term = j.statement
         if task_statement_term.contains_variable(): return  # todo handle variables
 
-        statement_concept_item = self.memory.peek_concept_item(task_statement_term)
-        statement_concept = statement_concept_item.object
+        # statement_concept_item = self.memory.peek_concept_item(task_statement_term)
+        # statement_concept = statement_concept_item.object
 
 
         # get (or create if necessary) statement concept, and sub-term concepts recursively
@@ -355,13 +355,14 @@ class NARS:
             self.process_question_task(task)
         elif isinstance(j, NALGrammar.Sentences.Goal):
             self.process_goal_task(task)
-            statement_concept_item.budget.set_quality(0.80)
-            if not task.sentence.is_event():
-                self.memory.concepts_bag.change_priority(key=statement_concept_item.key,
-                                                         new_priority=0.70)
-            else:
-                self.memory.concepts_bag.strengthen_item(key=statement_concept_item.key)
 
+        #     if not task.sentence.is_event():
+        #         statement_concept_item.budget.set_quality(0.99)
+        #         self.memory.concepts_bag.change_priority(key=statement_concept_item.key,
+        #                                                  new_priority=0.99)
+        #
+        # self.memory.concepts_bag.strengthen_item(key=statement_concept_item.key)
+        #print("concept strengthen " + str(statement_concept_item.key) + " to " + str(statement_concept_item.budget))
 
 
     def process_judgment_task(self, task: NARSDataStructures.Other.Task):
@@ -385,19 +386,18 @@ class NARS:
         task_statement_concept = self.memory.peek_concept(j.statement)
 
         # todo commented out immediate inference because it floods the system
-        derived_sentences = []#NARSInferenceEngine.do_inference_one_premise(j)
-        for derived_sentence in derived_sentences:
-           self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
+        # derived_sentences = []#NARSInferenceEngine.do_inference_one_premise(j)
+        # for derived_sentence in derived_sentences:
+        #    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
-        if j.is_event():
-            # anticipate event j
-            pass #todo self.temporal_module.anticipate_from_event(j)
+        # if j.is_event():
+        #     # anticipate event j
+        #     pass #todo self.temporal_module.anticipate_from_event(j)
 
         task_statement_concept.belief_table.put(j)
 
-        # do regular semantic inference
-        results = self.process_judgment_sentence(j,revise=False)
-
+        current_belief = task_statement_concept.belief_table.peek()
+        self.process_judgment_sentence(current_belief)
 
         if Config.DEBUG:
             string = "Integrated new BELIEF Task: " + j.get_formatted_string() + "from "
@@ -418,20 +418,6 @@ class NARS:
 
         # get terms from sentence
         statement_term = j1.statement
-
-        # get (or create if necessary) statement concept, and sub-term concepts recursively
-        statement_concept = self.memory.peek_concept(statement_term)
-
-        if revise:
-            #try a Revision on another belief in the table
-            #revision
-            j2 = statement_concept.belief_table.peek_highest_confidence_interactable(j1)
-            if j2 is not None:
-                if Config.DEBUG: Global.Global.debug_print(
-                    "Revising belief: " + j1.get_formatted_string())
-                derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
-                for derived_sentence in derived_sentences:
-                    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
 
         # do regular semantic inference
         results = self.process_sentence_semantic_inference(j1)
@@ -491,8 +477,9 @@ class NARS:
         # store the most confident desire
         task_statement_concept.desire_table.put(j)
 
+        current_desire = task_statement_concept.desire_table.peek()
 
-        self.process_goal_sentence(task.sentence, revise=False)
+        self.process_goal_sentence(current_desire)
 
         if Config.DEBUG:
             string = "Integrated new GOAL Task: " + j.get_formatted_string() + "from "
@@ -501,7 +488,7 @@ class NARS:
             Global.Global.debug_print(string)
 
 
-    def process_goal_sentence(self, j: NALGrammar.Sentences.Goal, revise=True):
+    def process_goal_sentence(self, j: NALGrammar.Sentences.Goal):
         """
             Continued processing for Goal
 
@@ -514,22 +501,15 @@ class NARS:
 
         statement_concept: NARSMemory.Concept = self.memory.peek_concept(statement)
 
-        if revise:
-            # revision
-            j2 = statement_concept.desire_table.peek_highest_confidence_interactable(j)
-            if j2 is not None:
-                if Config.DEBUG: Global.Global.debug_print(
-                    "Revising belief: " + j.get_formatted_string())
-                derived_sentences = NARSInferenceEngine.do_semantic_inference_two_premise(j, j2)
-                for derived_sentence in derived_sentences:
-                    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
-
         # see if it should be pursued
         should_pursue = NALInferenceRules.Local.Decision(j)
         if not should_pursue:
-            if statement.is_op():
-                if Config.DEBUG: Global.Global.debug_print("Operation failed decision-making rule " + j.get_formatted_string())
+            #Global.Global.debug_print("Goal failed decision-making rule " + j.get_formatted_string())
+            if Config.DEBUG and statement.is_op():
+                Global.Global.debug_print("Operation failed decision-making rule " + j.get_formatted_string())
             return  # Failed decision-making rule
+        else:
+            pass#Global.Global.debug_print("Goal passed decision-making rule " + j.get_formatted_string())
 
 
         # at this point the system wants to pursue this goal.
@@ -566,8 +546,6 @@ class NARS:
                         results = NARSInferenceEngine.do_semantic_inference_two_premise(j, belief)
                         for result in results:
                             self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
-                            #self.process_task(NARSDataStructures.Other.Task(result))
-
                         return # done deriving goals
                     else:
                         if Config.DEBUG: Global.Global.debug_print(str(subterm_concept.term) + " was not positive to split conjunction.")
@@ -631,6 +609,7 @@ class NARS:
 
             #todo handle variables
         """
+        results = []
         if Config.DEBUG: Global.Global.debug_print("Processing: " + j1.get_formatted_string())
         statement_term = j1.statement
         # get (or create if necessary) statement concept, and sub-term concepts recursively
@@ -638,7 +617,7 @@ class NARS:
 
         if related_concept is None:
             if Config.DEBUG: Global.Global.debug_print("Processing: Peeking randomly related concept")
-            if isinstance(statement_term, NALGrammar.Terms.ArrayTerm):
+            if isinstance(statement_term, NALGrammar.Terms.SpatialTerm):
                 if len(statement_concept.prediction_links) > 0:
                     related_concept = statement_concept.prediction_links.peek().object
             elif isinstance(statement_term, NALGrammar.Terms.StatementTerm) \
@@ -650,6 +629,8 @@ class NARS:
                     and j1.is_event():
                 if len(statement_concept.explanation_links) > 0:
                     related_concept = statement_concept.explanation_links.peek().object
+                elif len(statement_concept.superterm_links) > 0:
+                    related_concept = statement_concept.superterm_links.peek().object
             else:
                 related_concept = self.memory.get_semantically_related_concept(statement_concept)
 
@@ -659,13 +640,22 @@ class NARS:
             Global.Global.debug_print("Processing: Using related concept " + str(related_concept))
 
         # check for a belief we can interact with
-        j2 = related_concept.belief_table.peek_highest_confidence_interactable(j1)
+        j2 = related_concept.belief_table.peek_random()
 
         if j2 is None:
             if Config.DEBUG: Global.Global.debug_print('No related beliefs found for ' + j1.get_formatted_string())
-            return []  # done if can't interact
+            return results  # done if can't interact
 
         results = NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
+
+        # check for a belief we can interact with
+        j2 = related_concept.desire_table.peek_random()
+
+        if j2 is None:
+            if Config.DEBUG: Global.Global.debug_print('No related goals found for ' + j1.get_formatted_string())
+            return results # done if can't interact
+
+        results += NARSInferenceEngine.do_semantic_inference_two_premise(j1, j2)
 
         return results
 

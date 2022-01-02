@@ -20,7 +20,8 @@ try:
     k = user_config["k"]  # evidential horizon
     T = user_config["T"]  # decision rule (goal decision-making) threshold
     MINDFULNESS = user_config["MINDFULNESS"]
-    TIMES_TO_CONSIDER = user_config["TIMES_TO_CONSIDER"]
+    BAG_GRANULARITY = user_config["BAG_GRANULARITY"]
+    FOCUS = user_config["FOCUS"]
 
     TAU_WORKING_CYCLE_DURATION = user_config["TAU_WORKING_CYCLE_DURATION"]  # time in milliseconds per working cycle
 
@@ -45,22 +46,21 @@ try:
     DEBUG = user_config["DEBUG"]  # set to true for useful debug statements
     ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS = user_config[
         "ARRAY_SENTENCES_DRAW_INDIVIDUAL_ELEMENTS"]  # whether or not to draw each individual element / pixel of an array sentence. Turning this to False results in GUI speedup when viewing array sentences
-
+    USE_PROFILER = user_config["USE_PROFILER"]
 
 
     """
         Inference
     """
-    DESIRE_PROJECTION_DECAY = user_config["DESIRE_PROJECTION_DECAY"]
-    EVENT_TRUTH_PROJECTION_DECAY = user_config["EVENT_TRUTH_PROJECTION_DECAY"]
-    INTERVAL_SCALE = user_config["INTERVAL_SCALE"]  # higher scale is more granular
+    PROJECTION_DECAY_DESIRE = user_config["PROJECTION_DECAY_DESIRE"]
+    PROJECTION_DECAY_EVENT = user_config["PROJECTION_DECAY_EVENT"]
 
     NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT = user_config[
         "NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT"]  # The number of times to look for a semantically related concept to interact with
     NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF = user_config[
         "NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_BELIEF"]  # The number of times to look for a semantically related belief to interact with
-    PRIORITY_DECAY_MULTIPLIER = user_config[
-        "PRIORITY_DECAY_MULTIPLIER"]  # value in [0,1] multiplied w/ priority during priority decay
+    PRIORITY_DECAY_VALUE = user_config[
+        "PRIORITY_DECAY_VALUE"]  # value in [0,1] weaken band w/ priority during priority decay
     PRIORITY_STRENGTHEN_VALUE = user_config[
         "PRIORITY_STRENGTHEN_VALUE"]  # priority strengthen bor multiplier when concept is activated
 
@@ -84,17 +84,16 @@ try:
         Default Input Task Values
     """
     DEFAULT_JUDGMENT_FREQUENCY = user_config["DEFAULT_JUDGMENT_FREQUENCY"]
-    DEFAULT_JUDGMENT_CONFIDENCE = user_config["DEFAULT_JUDGMENT_CONFIDENCE"]
+    DEFAULT_GOAL_FREQUENCY = user_config["DEFAULT_GOAL_FREQUENCY"]
+
     DEFAULT_DISAPPOINT_CONFIDENCE = user_config["DEFAULT_DISAPPOINT_CONFIDENCE"]
-    DEFAULT_GOAL_CONFIDENCE = user_config["DEFAULT_GOAL_CONFIDENCE"]
-    DEFAULT_EVENT_CONFIDENCE = user_config["DEFAULT_EVENT_CONFIDENCE"]
 
     DEFAULT_JUDGMENT_PRIORITY = user_config["DEFAULT_JUDGMENT_PRIORITY"]
     DEFAULT_QUESTION_PRIORITY = user_config["DEFAULT_QUESTION_PRIORITY"]
     DEFAULT_GOAL_PRIORITY = user_config["DEFAULT_GOAL_PRIORITY"]
     DEFAULT_QUEST_PRIORITY = user_config["DEFAULT_QUEST_PRIORITY"]
 
-    DEFAULT_GOAL_FREQUENCY = user_config["DEFAULT_GOAL_FREQUENCY"]
+
 
 except:
     assert False, "Config could not be loaded."

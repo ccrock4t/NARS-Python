@@ -35,7 +35,7 @@ def calculate_syntactic_complexity_test():
 
 def array_term_indexing_test():
     array_term_name = "M"
-    array_term = NALGrammar.Terms.ArrayTerm(name=array_term_name, dimensions=(5, 5)) # create a 5x5 array term
+    array_term = NALGrammar.Terms.SpatialTerm(name=array_term_name, dimensions=(5, 5)) # create a 5x5 array term
 
     array_element_term = array_term[0.1,0.1]
     expected_string = (NALSyntax.TermConnector.Array.value +

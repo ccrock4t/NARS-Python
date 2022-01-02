@@ -22,6 +22,7 @@ import NALSyntax
 
 
 def do_semantic_inference_two_premise(j1, j2):
+    if not NALGrammar.Sentences.may_interact(j1,j2): return []
 
     try:
         if isinstance(j1, NALGrammar.Sentences.Goal) and isinstance(j2, NALGrammar.Sentences.Judgment):
@@ -97,7 +98,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
     ===============================================
     """
     #todo arrayterms
-    if isinstance(j1.statement, NALGrammar.Terms.ArrayTerm):
+    if isinstance(j1.statement, NALGrammar.Terms.SpatialTerm):
         if isinstance(j2.statement,NALGrammar.Terms.StatementTerm) \
             and not j2.statement.is_first_order():
             if j2.statement.get_copula() == NALSyntax.Copula.Implication \
@@ -106,7 +107,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
                 add_to_derived_sentences(derived_sentence, all_derived_sentences, j2, j1)
                 return all_derived_sentences
 
-    if isinstance(j2.statement, NALGrammar.Terms.ArrayTerm):
+    if isinstance(j2.statement, NALGrammar.Terms.SpatialTerm):
         if isinstance(j1.statement,NALGrammar.Terms.StatementTerm) \
             and not j1.statement.is_first_order():
             if j1.statement.get_copula() == NALSyntax.Copula.Implication \

@@ -75,7 +75,7 @@ def assert_valid_statement(t):
     """
     assert (isinstance(t, NALGrammar.Terms.StatementTerm)) \
            or (isinstance(t, NALGrammar.Terms.CompoundTerm) and not NALSyntax.TermConnector.is_first_order(t.connector)) \
-           or (isinstance(t, NALGrammar.Terms.ArrayTerm)), str(t) + " term must be a valid Statement"
+           or (isinstance(t, NALGrammar.Terms.SpatialTerm)), str(t) + " term must be a valid Statement"
 
 def assert_statement_term(t):
     assert (isinstance(t, NALGrammar.Terms.StatementTerm)), str(t) + " must be a Statement Term"

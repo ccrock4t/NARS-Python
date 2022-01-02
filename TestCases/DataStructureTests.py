@@ -100,7 +100,7 @@ def test_buffer_removemin():
         # make sentence <a --> b>. %0.9;c%
         sentence = NALGrammar.Sentences.Judgment(
             NALGrammar.Terms.StatementTerm(NALGrammar.Terms.from_string("a"),
-                                           NALGrammar.Terms0.from_string("b"), NALSyntax.Copula.Inheritance),
+                                           NALGrammar.Terms.from_string("b"), NALSyntax.Copula.Inheritance),
             NALGrammar.Values.TruthValue(0.9, 0.9))
         item = NARSDataStructures.ItemContainers.Item(NARSDataStructures.Other.Task(sentence), -1)
         item.budget.set_priority(p)

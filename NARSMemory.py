@@ -27,7 +27,9 @@ class Memory:
     next_percept_id = 0
 
     def __init__(self):
-        self.concepts_bag = NARSDataStructures.Bag.Bag(item_type=Concept,capacity=Config.MEMORY_CONCEPT_CAPACITY)
+        self.concepts_bag = NARSDataStructures.Bag.Bag(item_type=Concept,
+                                                       capacity=Config.MEMORY_CONCEPT_CAPACITY,
+                                                       granularity=1000)
         self.current_cycle_number = 0
 
     def __len__(self):
@@ -49,7 +51,7 @@ class Memory:
         """
             Get the number of concepts that exist in memory
         """
-        return self.concepts_bag.count
+        return len(self.concepts_bag)
 
     def conceptualize_term(self, term):
         """
@@ -67,7 +69,7 @@ class Memory:
         # put into data structure
         self.concepts_bag.put_new(new_concept) # add to bag
 
-        if isinstance(term, NALGrammar.Terms.CompoundTerm) and not isinstance(term,NALGrammar.Terms.ArrayTerm):
+        if isinstance(term, NALGrammar.Terms.CompoundTerm) and not isinstance(term, NALGrammar.Terms.SpatialTerm):
             #todo allow array elements
             for i, subterm in np.ndenumerate(term.subterms):
                 # get/create subterm concepts
@@ -140,9 +142,7 @@ class Memory:
         related_concept = None
         if len(statement_concept.term_links) == 0: return None
         while count < Config.NUMBER_OF_ATTEMPTS_TO_SEARCH_FOR_SEMANTICALLY_RELATED_CONCEPT \
-                and (related_concept is None
-                    or
-                     (related_concept is not None and not isinstance(related_concept.term,NALGrammar.Terms.StatementTerm))):
+                and (related_concept is None):
             count += 1
             shared_term_concept = statement_concept.term_links.peek().object
             if statement_concept.term.is_first_order():
@@ -153,8 +153,13 @@ class Memory:
                         # atomic term concept (S)
                         related_concept = shared_term_concept.term_links.peek().object # peek additional term links to get another statement term
                     elif isinstance(shared_term_concept.term, NALGrammar.Terms.CompoundTerm):
-                        # Compound term concept (S & B)
-                        related_concept = shared_term_concept.term_links.peek().object
+                        if shared_term_concept.term.is_first_order():
+                            # the subject or predicate is a first-order compound
+                            related_concept = shared_term_concept.term_links.peek().object # peek additional term links to get a statement term
+                            if not isinstance(related_concept.term, NALGrammar.Terms.StatementTerm): related_concept = None
+                        else:
+                            # this statement is in a higher-order compound, we can use it in inference
+                            related_concept = shared_term_concept
                     elif isinstance(shared_term_concept.term, NALGrammar.Terms.StatementTerm):
                         # implication statement (S-->P) ==> B
                         related_concept = shared_term_concept
@@ -227,7 +232,7 @@ class Memory:
 
         if best_explanation_belief is None:
             item = statement_concept.explanation_links.peek()
-            best_explanation_belief = item.object.belief_table.peek_highest_confidence_interactable(j)
+            best_explanation_belief = item.object.belief_table.peek_random()
 
         return best_explanation_belief
 
@@ -259,7 +264,7 @@ class Memory:
 
         if best_prediction_belief is None:
             item = statement_concept.prediction_links.peek()
-            best_prediction_belief = item.object.belief_table.peek_highest_confidence_interactable(j)
+            best_prediction_belief = item.object.belief_table.peek_random()
 
         return best_prediction_belief
 
@@ -291,7 +296,7 @@ class Memory:
 
         explanation_concept_item = concept.explanation_links.peek()
         explanation_concept = explanation_concept_item.object
-        explanation_belief = explanation_concept.belief_table.peek_highest_confidence_interactable(j)
+        explanation_belief = explanation_concept.belief_table.peek_random()
 
         return explanation_belief
 
@@ -589,6 +594,7 @@ class Concept:
         assert_concept(concept)
         if concept in self.prediction_links: return  # already linked
         concept_item = self.prediction_links.put_new(concept)
+        self.prediction_links.change_priority(concept_item.key, new_priority=0.99)
 
     def remove_prediction_link(self, concept):
         """
@@ -607,6 +613,7 @@ class Concept:
         assert_concept(concept)
         if concept in self.explanation_links: return  # already linked
         concept_item = self.explanation_links.put_new(concept)
+        self.explanation_links.change_priority(concept_item.key,new_priority=0.99)
 
 
     def remove_explanation_link(self, concept):

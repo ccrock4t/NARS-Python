@@ -5,7 +5,7 @@ import Global
 import NALGrammar
 import NALSyntax
 from NALInferenceRules.TruthValueFunctions import TruthFunctionOnArrayAndRevise, TruthFunctionOnArray, F_Deduction, \
-    F_Revision
+    F_Revision, F_Abduction
 
 import NALInferenceRules.Local
 
@@ -72,35 +72,17 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal:
         # Judgment or Goal
         # Get Truth Value
-
-        if j1.is_event() and j2.is_event():
-            (f1, c1) = (j1.value.frequency, j1.value.confidence)
-            proj_value = NALInferenceRules.Local.Value_Projection(j2, j1.stamp.occurrence_time)
-            (f2, c2) = proj_value.frequency, proj_value.confidence
-        else:
-            (f1, c1) = (j1.get_present_value().frequency, j1.get_present_value().confidence)
-            (f2, c2) = (j2.get_present_value().frequency, j2.get_present_value().confidence)
-
+        (f1, c1) = (j1.get_present_value().frequency, j1.get_present_value().confidence)
+        (f2, c2) = (j2.get_present_value().frequency, j2.get_present_value().confidence)
 
         result_truth = truth_value_function(f1, c1, f2, c2)
         occurrence_time = None
 
-        # if the result is a first-order statement,  or a compound statement, it may need an occurrence time
-        if (isinstance(result_statement, NALGrammar.Terms.StatementTerm)
-            and NALSyntax.Copula.is_first_order(result_statement.get_copula())) \
-                or (not isinstance(result_statement, NALGrammar.Terms.StatementTerm)
-                    and isinstance(result_statement, NALGrammar.Terms.CompoundTerm)
-                    and not NALSyntax.TermConnector.is_first_order(result_statement.connector)):
-            if isinstance(result_statement, NALGrammar.Terms.StatementTerm) \
-                    and j1.is_event() and j2.is_event():
-                if j1.stamp.occurrence_time > j2.stamp.occurrence_time:
-                    occurrence_time = j1.stamp.occurrence_time
-                else:
-                    occurrence_time = j2.stamp.occurrence_time
-            elif j1.is_event():
-                occurrence_time = j1.stamp.occurrence_time
-            elif j2.is_event():
-                occurrence_time = j2.stamp.occurrence_time
+        # if the result is a first-order statement,  or a higher-order compound statement, it may need an occurrence time
+        higher_order_statement = isinstance(result_statement,
+                                            NALGrammar.Terms.StatementTerm) and not result_statement.is_first_order()
+        if (j1.is_event() or j2.is_event()) and not higher_order_statement:
+            occurrence_time = Global.Global.get_current_cycle_number()
 
         if result_type == NALGrammar.Sentences.Judgment:
             result = NALGrammar.Sentences.Judgment(result_statement, result_truth,
@@ -110,9 +92,16 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
 
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+
+    if not result.is_event():
+        # merge in the parent sentences' evidential bases
+        result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)
+        result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j2)
+    else:
+        # event evidential bases expire too quickly to track
+        pass
+
+
     stamp_and_print_inference_rule(result, truth_value_function, [j1,j2])
 
     return result
@@ -148,9 +137,6 @@ def create_resultant_sentence_one_premise(j, result_statement, truth_value_funct
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
 
-    # merge in the parent sentences' evidential bases
-    result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j)
-    result.stamp.from_one_premise_inference = True
 
     if truth_value_function is None:
         stamp_and_print_inference_rule(result, truth_value_function, j.stamp.parent_premises)
@@ -174,8 +160,11 @@ def stamp_and_print_inference_rule(sentence, inference_rule, parent_sentences):
         sentence.stamp.parent_premises.append(parent)
         parent_strings.append(str(parent))
 
-    if Config.DEBUG: Global.Global.debug_print(sentence.stamp.derived_by + " derived " + sentence.__class__.__name__ + sentence.get_formatted_string()
-                                               + " by parents " + str(parent_strings))
+
+    # if inference_rule is F_Deduction or inference_rule is F_Abduction:
+    #     Global.Global.debug_print(sentence.stamp.derived_by
+    #                           + " derived " + sentence.__class__.__name__ + sentence.get_formatted_string()
+    #                           + " by parents " + str(parent_strings))
 
 def premise_result_type(j1,j2):
     """
@@ -204,3 +193,6 @@ def convert_from_interval(interval):
 
 def interval_weighted_average(interval1, interval2, weight1, weight2):
     return round((interval1*weight1 + interval2*weight2)/(weight1 + weight2))
+
+def get_unit_evidence():
+    return 1 / (1 + Config.k)

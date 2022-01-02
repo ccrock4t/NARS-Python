@@ -93,9 +93,9 @@ class Sentence:
             If this is an event, project its value to the current time
         """
         if self.is_event():
-            decay = Config.EVENT_TRUTH_PROJECTION_DECAY
+            decay = Config.PROJECTION_DECAY_EVENT
             if isinstance(self,Goal):
-                decay = Config.DESIRE_PROJECTION_DECAY
+                decay = Config.PROJECTION_DECAY_DESIRE
             present_value = NALInferenceRules.TruthValueFunctions.F_Projection(self.value.frequency,
                                                            self.value.confidence,
                                                            self.stamp.occurrence_time,
@@ -140,7 +140,7 @@ class Sentence:
         dict[NARSGUI.NARSGUI.KEY_LIST_EVIDENTIAL_BASE] = [str(evidence) for evidence in evidential_base_iterator]
         dict[NARSGUI.NARSGUI.KEY_LIST_INTERACTED_SENTENCES] = [] #todo remove
 
-        is_array = isinstance(self.statement, NALGrammar.Terms.ArrayTerm)
+        is_array = isinstance(self.statement, NALGrammar.Terms.SpatialTerm)
 
         dict[NARSGUI.NARSGUI.KEY_IS_ARRAY] = is_array
         dict[NARSGUI.NARSGUI.KEY_ARRAY_IMAGE] = self.statement if is_array and not isinstance(self,Question) else None
@@ -245,12 +245,12 @@ class EvidentialBase:
 
     def merge_sentence_evidential_base_into_self(self, sentence):
         """
-            Merge a Sentence's evidential base into self, including the Sentence itself.
+            Merge a Sentence's evidential base into self.
             This function assumes the base to merge does not have evidential overlap with this base
             #todo figure out good way to store evidential bases such that older evidence is purged on overflow
         """
-        for sentence in sentence.stamp.evidential_base:
-            self.base.append(sentence)
+        for e_sentence in sentence.stamp.evidential_base:
+            self.base.append(e_sentence)
 
         while len(self.base) > Config.MAX_EVIDENTIAL_BASE_LENGTH:
             self.base.pop(0)
@@ -326,12 +326,7 @@ def new_sentence_from_string(sentence_string: str):
 
     # create the statement
     statement_string = sentence_string[start_idx:end_idx + 1]
-
-    # create standard statement from string
-    if NALSyntax.TermConnector.is_string_a_term_connector(statement_string[1:3]):
-        statement = NALGrammar.Terms.simplify(NALGrammar.Terms.CompoundTerm.from_string(statement_string))
-    else:
-        statement = NALGrammar.Terms.simplify(NALGrammar.Terms.StatementTerm.from_string(statement_string))
+    statement = NALGrammar.Terms.simplify(NALGrammar.Terms.from_string(statement_string))
 
 
     # Find Tense, if it exists
@@ -347,29 +342,11 @@ def new_sentence_from_string(sentence_string: str):
 
     # make sentence
     if punctuation == NALSyntax.Punctuation.Judgment:
-        if freq is None:
-            # No truth value, use default truth value
-            freq = Config.DEFAULT_JUDGMENT_FREQUENCY
-            conf = Config.DEFAULT_EVENT_CONFIDENCE if tense != NALSyntax.Tense.Eternal else Config.DEFAULT_JUDGMENT_CONFIDENCE
-
-        # if isinstance(statement,NALGrammar.Terms.ArrayTerm):
-        #     def create_truth_value_array(*indices):
-        #         return TruthValue(freq, conf)
-        #
-        #     func_vectorized = np.vectorize(create_truth_value_array)
-        #     truth_values = np.fromfunction(function=func_vectorized,
-        #                                    shape=statement.array.shape,
-        #                                    dtype=TruthValue)
-
         sentence = Judgment(statement, TruthValue(freq, conf))
     elif punctuation == NALSyntax.Punctuation.Question:
         sentence = Question(statement)
     elif punctuation == NALSyntax.Punctuation.Goal:
-        if freq is None:
-            # No truth value, use default truth value
-            freq = Config.DEFAULT_GOAL_FREQUENCY
-            conf = Config.DEFAULT_EVENT_CONFIDENCE if tense != NALSyntax.Tense.Eternal else Config.DEFAULT_GOAL_CONFIDENCE
-        sentence = Goal(statement, DesireValue(freq,conf))
+        sentence = Goal(statement, DesireValue(freq, conf))
     else:
         assert False,"Error: No Punctuation!"
 

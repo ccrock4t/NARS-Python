@@ -95,7 +95,7 @@ def process_input_channel():
 
         return: whether statement was processed
     """
-    if len(pended_input_data_queue) > 0:
+    while len(pended_input_data_queue) > 0:
         data = pended_input_data_queue.pop()
         if data[0] == NARSESE_KEYWORD:
             input_string = data[1]

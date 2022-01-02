@@ -3,6 +3,7 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
+import math
 import timeit as time
 
 import Config
@@ -86,8 +87,7 @@ class SpatialBuffer():
         self.array = np.full(shape=dimensions,
                              fill_value=NALGrammar.Sentences.TruthValue(0.0,0.9))
         self.components_bag = Bag(item_type=tuple,
-                                           capacity=100000)
-        self.img = np.empty(shape=dimensions)
+                                  capacity=1000)
         self.last_taken_img_array = None
 
         # initialize with uniform probabilility
@@ -95,7 +95,7 @@ class SpatialBuffer():
             item = self.components_bag.put_new(indices)
             self.components_bag.change_priority(item.key, 0.5)
 
-    def clear(self):
+    def blank_image(self):
         self.set_image(np.empty(shape=self.array.shape))
 
     def set_image(self, img):
@@ -115,12 +115,15 @@ class SpatialBuffer():
             "ERROR: Data dimensions are incompatible with Spatial Buffer dimensions " \
             + str(array.shape) + " and " + str(self.dimensions)
 
-        self.components_bag.clear()
         self.array = array
+        self.components_bag.clear()
         for indices, truth_value in np.ndenumerate(array):
-            priority = truth_value.frequency
+            e = NALInferenceRules.TruthValueFunctions.Expectation(truth_value.frequency,
+                                                                         truth_value.confidence)
+            priority = 2*abs(e - 0.5)
             self.components_bag.put_new(indices)
             self.components_bag.change_priority(Item.get_key_from_object(indices), priority)
+
 
 
 
@@ -161,10 +164,8 @@ class SpatialBuffer():
             expectation = NALInferenceRules.TruthValueFunctions.Expectation(truth_value.frequency,
                                                                             truth_value.confidence)
             subject_name = str(y) + "_" + str(x)
-            subject_term = NALGrammar.Terms.AtomicTerm(term_string=subject_name)
-            positive_statement = NALGrammar.Terms.StatementTerm(subject_term=subject_term,
-                                                       predicate_term=predicate_term,
-                                                       copula=NALSyntax.Copula.Inheritance)
+            positive_statement = NALGrammar.Terms.from_string("("+ subject_name + "-->" + predicate_name + ")")
+
             if expectation > Config.POSITIVE_THRESHOLD:
                 element = positive_statement
             else:
@@ -183,16 +184,17 @@ class SpatialBuffer():
             elements_array[indices] = element
 
 
-        statement = NALGrammar.Terms.ArrayTerm(spatial_subterms=elements_array,
-                                               center=(min_x,min_y))
+        statement = NALGrammar.Terms.SpatialTerm(spatial_subterms=elements_array,
+                                                 center=(min_x,min_y))
 
         # create a corresponding judgment with the compound
         array_judgment = NALGrammar.Sentences.Judgment(statement=statement,
                                                       value=array_truth_value,
                                                        occurrence_time=Global.Global.get_current_cycle_number())
 
-        self.last_taken_img_array = np.zeros(self.img.shape)
-        self.last_taken_img_array[min_y:max_y+1, min_x:max_x+1] = self.img[min_y:max_y+1, min_x:max_x+1]
+        last_taken_img_array = np.zeros(shape=self.img.shape)
+        last_taken_img_array[min_y:max_y+1, min_x:max_x+1] = self.img[min_y:max_y+1, min_x:max_x+1]
+        self.last_taken_img_array = last_taken_img_array  # store for visualization
         return array_judgment
 
     def transduce_raw_vision_array(self, img_array):
@@ -208,23 +210,22 @@ class SpatialBuffer():
         max_value = 255
 
         def create_2d_truth_value_array(*indices):
+
+            focus = Config.FOCUS # higher focus means confidence dropoff in periphery occurs faster.
             coords = tuple([int(var) for var in indices])
             y,x = coords
             pixel_value = float(img_array[y, x])
 
             f = pixel_value / max_value
             if f > 1: f = 1
-            # c = 0
-            #
-            # relative_indices = []
-            # offsets = (img_array.shape[1]-1)/2, (img_array.shape[0]-1)/2
-            # for i in range(2):
-            #     relative_indices.append((indices[i] - offsets[i]) / offsets[i])
-            # #
-            # for idx in relative_indices:
-            #     c += (1.0 - abs(idx))
-            # c /= len(coords)
-            c = Config.DEFAULT_EVENT_CONFIDENCE
+
+            relative_indices = []
+            offsets = (img_array.shape[0]-1)/2, (img_array.shape[1]-1)/2
+            for i in range(2):
+                relative_indices.append((indices[i] - offsets[i]) / offsets[i])
+
+            unit = NALInferenceRules.HelperFunctions.get_unit_evidence()
+            c = unit*math.exp(-1*((relative_indices[0]**2 / (focus**2)) + (relative_indices[1]**2 / (focus**2))))
 
             return NALGrammar.Sentences.TruthValue(f, c)
 
@@ -307,7 +308,7 @@ class TemporalModule(ItemContainer):
         event_task_B = self.get_most_recent_event_task().object
         event_B = event_task_B.sentence
 
-        if isinstance(event_B.statement, NALGrammar.Terms.ArrayTerm): return #todo remove this. temporarily prevent arrays in postconditions
+        if isinstance(event_B.statement, NALGrammar.Terms.SpatialTerm): return #todo remove this. temporarily prevent arrays in postconditions
 
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
@@ -323,7 +324,7 @@ class TemporalModule(ItemContainer):
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
-            if not isinstance(event_A.statement, NALGrammar.Terms.ArrayTerm): continue #todo remove. Only allow arrays in preconditions
+            if not isinstance(event_A.statement, NALGrammar.Terms.SpatialTerm): continue #todo remove. Only allow arrays in preconditions
 
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 

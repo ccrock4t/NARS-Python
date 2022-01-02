@@ -6,6 +6,7 @@ import NALGrammar.Sentences
 import Config
 import Global
 import depq
+import NALInferenceRules
 
 """
     Author: Christian Hahm
@@ -93,8 +94,25 @@ class Table(Depq):
         """
         assert (isinstance(sentence, self.item_type)), "Cannot insert sentence into a Table of different punctuation"
 
-        priority = sentence.get_present_value().confidence
+        if len(self) > 0:
+            if sentence.is_event():
+                current_event = self.take()
+                if NALGrammar.Sentences.may_interact(sentence, current_event):
+                    # print("revising event " + str(sentence) + " and " + str(current_event))
+                    sentence = NALInferenceRules.Local.Revision(sentence, current_event)
+                    # print("revised event " + str(sentence) + " from " + str())
+                else:
+                    sentence = NALInferenceRules.Local.Choice(sentence, current_event, only_confidence=True)
+                    #print("choice event " + str(sentence))
+            else:
+                existing_interactable = self.peek_highest_confidence_interactable(sentence)
+                if existing_interactable is not None:
+                    revised = NALInferenceRules.Local.Revision(sentence, existing_interactable)
+                    priority = revised.get_present_value().confidence
+                    Depq.insert_object(self, revised, priority)
 
+
+        priority = sentence.get_present_value().confidence
         Depq.insert_object(self, sentence, priority)
 
         if len(self) > self.capacity:
