@@ -1,4 +1,5 @@
 import glob
+import math
 import queue
 import random
 import threading
@@ -41,14 +42,13 @@ for i in range(10):
 
 current_trial = -1
 
-def load_dataset(length,digit_folder_list,bit=False):
+def load_dataset(length,digit_folder_list,bit=False,percent_of_train_img=0.25):
     x_train = []
     y_train = []
     x_test = []
     y_test = []
 
-    percent_of_train_img = 0.25
-    files_per_digit = length // (2 if bit else 10)
+    files_per_digit = round(length / (2 if bit else 10))
     cutoff = round(percent_of_train_img * files_per_digit)
 
     for folder_name in digit_folder_list:
@@ -123,6 +123,7 @@ def binary_memorization():
                                                     digit_folder_list=digit_folder_list,
                                                     bit=True)
 
+
     x = np.concatenate((x_train, x_test), axis=0)
     y = np.concatenate((y_train, y_test), axis=0)
 
@@ -146,19 +147,26 @@ def binary_memorization():
 
 def digit_memorization():
     restart_NARS()
-    training_cycles = 150
+    training_cycles = 1500
 
-    images_per_class = 5
+    images_per_class = 1
     dataset_len = 10*images_per_class
-    x =[]
-    y =[]
+    x = []
+    y = []
     digit_folder_list = glob.glob(directory + '*')
 
     x_train, y_train, x_test, y_test = load_dataset(length=dataset_len,
                                                     digit_folder_list=digit_folder_list)
 
-    x = np.concatenate((x_train, x_test), axis=0)
-    y = np.concatenate((y_train, y_test), axis=0)
+    if len(y_train) == 0:
+        x = x_test
+        y = y_test
+    elif len(y_test) == 0:
+        x = x_train
+        y = y_train
+    else:
+        x = np.concatenate((x_train, x_test), axis=0)
+        y = np.concatenate((y_train, y_test), axis=0)
 
 
     """
@@ -182,7 +190,7 @@ def binary_classification():
 
     length = 120
     assert length % 2 == 0, "ERROR: must use divisible by 2 number to create equal dataset"
-    training_cycles = 500
+    training_cycles = 750
 
     digit_folder_list = [glob.glob(directory + '0')[0], glob.glob(directory + '1')[0]]
 
@@ -208,14 +216,16 @@ def binary_classification():
 
 def digit_classification():
     restart_NARS()
-    length = 200
+    length = 100
     assert length % 10 == 0, "ERROR: must use divisible by 2 number to create equal dataset"
-    training_cycles = 1000
+    training_cycles = 500
 
 
     digit_folder_list = glob.glob(directory + '*')
     x_train, y_train, x_test, y_test = load_dataset(length=length,
-                                                    digit_folder_list=digit_folder_list)
+                                                    digit_folder_list=digit_folder_list,
+                                                    bit=False,
+                                                    percent_of_train_img=0.5)
 
     """
         Training Phase
@@ -524,7 +534,7 @@ def test(bit,
         accuracy = round(correct_examples_total_cnt / (test_idx + 1) * 100, 2)
         print("=========== System predicted " + str(prediction) + " and actual was " + str(label_y))
         print('=========== Trial Accuracy so far: ' + str(accuracy) + "%")
-        if test_idx == 10 and accuracy < 0.001:
+        if test_idx >= 10 and accuracy < 0.001:
             print("Aborting trial, parameters could not identify anything in 10 images.")
         global_gui.update_test_accuracy(accuracy=accuracy)
 
@@ -591,7 +601,7 @@ def learn_best_params():
                     # 1 will be positive
                     new_param += inc
             elif key == 'FOCUS':
-                inc = random.random() * 0.3
+                inc = random.random()
                 if sign == 0 and new_param - inc > 0.0:
                     # 0 will be negative
                     new_param -= inc
@@ -678,8 +688,8 @@ def run_trials(q, current_best_score):
         current_trial = trial
         #score = binary_memorization()
         #score = digit_memorization()
-        score = binary_classification()
-        # result = supervised_learning_MNIST_digit_dataset()
+        #score = binary_classification()
+        score = digit_classification()
 
         print("===== TRIAL " + str(trial+1) + " ACCURACY: " + str(score) + "%")
         sum_of_scores += score
@@ -701,16 +711,16 @@ def run_trials(q, current_best_score):
     q.put(avg_score)
 
 def test_main():
-    time.sleep(10)
-    #learn_best_params()
+    time.sleep(1)
+    learn_best_params()
     #supervised_learning_binary_one_example()
 
 
-    q = queue.Queue()
-    t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
-    t.start()
-    t.join()
-    global_gui.create_final_score_popup_window(final_score=q.get(block=True))
+    # q = queue.Queue()
+    # t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
+    # t.start()
+    # t.join()
+    # global_gui.create_final_score_popup_window(final_score=q.get(block=True))
 
     time.sleep(10)
 
@@ -721,7 +731,7 @@ def test_main():
 
 if __name__ == "__main__":
     global_gui = MNISTVisionTestGUI()
-    global_gui.gui_disabled = False
+    global_gui.gui_disabled = True
     if global_gui.gui_disabled:
         global_gui.start()
     else:

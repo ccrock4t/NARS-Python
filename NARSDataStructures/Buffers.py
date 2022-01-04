@@ -187,6 +187,21 @@ class SpatialBuffer():
         statement = NALGrammar.Terms.SpatialTerm(spatial_subterms=elements_array,
                                                  center=(min_x,min_y))
 
+        # account for small translations in 8 direction
+        # if max_x < (self.dimensions[1]-1):
+        #     statement = NALGrammar.Terms.SpatialTerm(spatial_subterms=elements_array,
+        #                                              center=(min_x+1,min_y))
+        # if min_x > 0:
+        #     statement = NALGrammar.Terms.SpatialTerm(spatial_subterms=elements_array,
+        #                                              center=(min_x-1,min_y))
+        # if max_y < (self.dimensions[0]-1):
+        #     statement = NALGrammar.Terms.SpatialTerm(spatial_subterms=elements_array,
+        #                                              center=(min_x,min_y+1))
+        # if min_y > 0:
+        #     statement = NALGrammar.Terms.SpatialTerm(spatial_subterms=elements_array,
+        #                                              center=(min_x,min_y-1))
+
+
         # create a corresponding judgment with the compound
         array_judgment = NALGrammar.Sentences.Judgment(statement=statement,
                                                       value=array_truth_value,
@@ -210,7 +225,6 @@ class SpatialBuffer():
         max_value = 255
 
         def create_2d_truth_value_array(*indices):
-
             focus = Config.FOCUS # higher focus means confidence dropoff in periphery occurs faster.
             coords = tuple([int(var) for var in indices])
             y,x = coords
@@ -225,7 +239,7 @@ class SpatialBuffer():
                 relative_indices.append((indices[i] - offsets[i]) / offsets[i])
 
             unit = NALInferenceRules.HelperFunctions.get_unit_evidence()
-            c = unit*math.exp(-1*((relative_indices[0]**2 / (focus**2)) + (relative_indices[1]**2 / (focus**2))))
+            c = unit*math.exp(-1*(focus ** 2)*((relative_indices[0]**2) + (relative_indices[1]**2)))
 
             return NALGrammar.Sentences.TruthValue(f, c)
 

@@ -29,7 +29,7 @@ class Memory:
     def __init__(self):
         self.concepts_bag = NARSDataStructures.Bag.Bag(item_type=Concept,
                                                        capacity=Config.MEMORY_CONCEPT_CAPACITY,
-                                                       granularity=1000)
+                                                       granularity=5000)
         self.current_cycle_number = 0
 
     def __len__(self):
