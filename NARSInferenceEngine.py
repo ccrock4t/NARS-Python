@@ -98,7 +98,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
     ===============================================
     """
     #todo arrayterms
-    if isinstance(j1.statement, NALGrammar.Terms.SpatialTerm):
+    if isinstance(j1.statement, NALGrammar.Terms.CompoundTerm):
         if isinstance(j2.statement,NALGrammar.Terms.StatementTerm) \
             and not j2.statement.is_first_order():
             if j2.statement.get_copula() == NALSyntax.Copula.Implication \
@@ -107,7 +107,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
                 add_to_derived_sentences(derived_sentence, all_derived_sentences, j2, j1)
                 return all_derived_sentences
 
-    if isinstance(j2.statement, NALGrammar.Terms.SpatialTerm):
+    if isinstance(j2.statement, NALGrammar.Terms.CompoundTerm):
         if isinstance(j1.statement,NALGrammar.Terms.StatementTerm) \
             and not j1.statement.is_first_order():
             if j1.statement.get_copula() == NALSyntax.Copula.Implication \

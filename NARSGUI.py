@@ -13,7 +13,7 @@ import Global
 import tkinter as tk
 import numpy as np
 
-from NALGrammar.Terms import StatementTerm
+import NALGrammar.Terms
 
 """
     GUI code

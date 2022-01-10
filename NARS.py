@@ -43,7 +43,6 @@ class NARS:
 
         self.prev_take_time = -1
 
-        Global.Global.NARS = self # global vars are part of NARS
         self.memory = NARSMemory.Memory()
         self.global_buffer = NARSDataStructures.Buffers.Buffer(item_type=NARSDataStructures.Other.Task,
                                                                capacity=Config.GLOBAL_BUFFER_CAPACITY)
@@ -64,6 +63,13 @@ class NARS:
         self.last_working_cycle = 0
         self.memory.conceptualize_term(Global.Global.TERM_SELF)
 
+        self.last_vision_sentences = [None, None, None]
+        self.last_vision_sentences2 = [None, None, None]
+
+        Global.Global.NARS = self # global vars are part of NARS
+        Global.Global.ARRAY_NEGATIVE_ELEMENT = NALGrammar.Terms.from_string('(--,(arrayEl-->negative))')
+        Global.Global.ARRAY_NEGATIVE_SENTENCE = NALGrammar.Sentences.Judgment(statement=Global.Global.ARRAY_NEGATIVE_ELEMENT.subterms[0],
+                                                     value=NALGrammar.Values.TruthValue(frequency=0.0))
 
 
     def startup_and_run(self):
@@ -113,8 +119,43 @@ class NARS:
 
         # OBSERVE
         #self.Observe()
-        vision_sentence = self.vision_buffer.take()
-        self.global_buffer.put_new(NARSDataStructures.Other.Task(vision_sentence))
+        # todo begin spatial take vvv
+        vision_sentences = self.vision_buffer.take()
+
+
+        # single array
+
+        # for vision_sentence in vision_sentences:
+        #     if vision_sentence is not None:
+        #         self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
+
+
+        # multi-event conjunction
+
+        for vision_sentence in vision_sentences:
+            for last_vision_sentence in self.last_vision_sentences:
+                if vision_sentence is not None \
+                        and last_vision_sentence is not None:
+                    if vision_sentence.statement == last_vision_sentence.statement: continue
+
+                    result_statement = NALGrammar.Terms.CompoundTerm([vision_sentence.statement,
+                                                                      last_vision_sentence.statement],
+                                                                     NALSyntax.TermConnector.Conjunction)
+                    value = NALInferenceRules.TruthValueFunctions.F_Intersection(vision_sentence.value.frequency,
+                                                                         vision_sentence.value.confidence,
+                                                                         last_vision_sentence.value.frequency,
+                                                                         last_vision_sentence.value.confidence)
+
+                    value = NALGrammar.Values.TruthValue(frequency=value.frequency,
+                                                         confidence=value.confidence)
+                    result = NALGrammar.Sentences.Judgment(statement=result_statement,
+                                                           value=value,
+                                                           occurrence_time=Global.Global.get_current_cycle_number())
+                    self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(result))
+
+        self.last_vision_sentences = vision_sentences
+
+        # todo end spatial take ^^
 
         # global buffer
         buffer_len = len(self.global_buffer)
@@ -136,6 +177,7 @@ class NARS:
             Global.Global.debug_print("operation queue: " + str(len(self.operation_queue)))
             Global.Global.debug_print("anticipations queue: " + str(len(self.temporal_module.anticipations_queue)))
             Global.Global.debug_print("global buffer: " + str(len(self.global_buffer)))
+
 
         if Config.USE_PROFILER:
             pstats.Stats(self.pr).sort_stats('tottime').print_stats(10) #tottime is time spent in the function alone, cumtime is including subfunctions
@@ -279,7 +321,7 @@ class NARS:
                 statement_start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
                 statement_end_idx = sentence_string.rfind(NALSyntax.StatementSyntax.End.value)
                 statement_string = sentence_string[statement_start_idx:statement_end_idx+1]
-                term = NALGrammar.Terms.string_to_term_dict[statement_string]
+                term = NALGrammar.Terms.from_string(statement_string)
                 concept_item = self.memory.peek_concept_item(term)
                 concept = concept_item.object
 
@@ -356,6 +398,7 @@ class NARS:
         elif isinstance(j, NALGrammar.Sentences.Goal):
             self.process_goal_task(task)
 
+
         #     if not task.sentence.is_event():
         #         statement_concept_item.budget.set_quality(0.99)
         #         self.memory.concepts_bag.change_priority(key=statement_concept_item.key,
@@ -372,18 +415,24 @@ class NARS:
 
             :param Judgment Task to process
         """
+
         Asserts.assert_task(task)
 
         j = task.sentence
-        if j.is_event() and j.stamp.derived_by is None:
+        if j.is_event():
             # only put non-derived atomic events in temporal module for now
-            Global.Global.NARS.temporal_module.put_new(task)
+            Global.Global.NARS.temporal_module.PUT_NEW(task)
 
         if isinstance(j.statement, NALGrammar.Terms.CompoundTerm)\
             and j.statement.connector == NALSyntax.TermConnector.Negation:
             j = NALInferenceRules.Immediate.Negation(j)
 
-        task_statement_concept = self.memory.peek_concept(j.statement)
+        task_statement_concept_item = self.memory.peek_concept_item(j.statement)
+        if task_statement_concept_item is None: return
+
+        self.memory.concepts_bag.strengthen_item_quality(task_statement_concept_item.key)
+
+        task_statement_concept = task_statement_concept_item.object
 
         # todo commented out immediate inference because it floods the system
         # derived_sentences = []#NARSInferenceEngine.do_inference_one_premise(j)
@@ -395,6 +444,8 @@ class NARS:
         #     pass #todo self.temporal_module.anticipate_from_event(j)
 
         task_statement_concept.belief_table.put(j)
+
+        if not Config.Testing: return
 
         current_belief = task_statement_concept.belief_table.peek()
         self.process_judgment_sentence(current_belief)
@@ -422,7 +473,7 @@ class NARS:
         # do regular semantic inference
         results = self.process_sentence_semantic_inference(j1)
         for result in results:
-            self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(result))
 
 
     def process_question_task(self, task):
@@ -473,6 +524,8 @@ class NARS:
             Insert it into the desire table or revise with the most confident desire
         """
         task_statement_concept = self.memory.peek_concept(j.statement)
+        self.memory.concepts_bag.change_quality(j.statement,
+                                                new_quality=0.999)
 
         # store the most confident desire
         task_statement_concept.desire_table.put(j)
@@ -545,7 +598,7 @@ class NARS:
                         # the first component of the goal is positive, do inference and derive the remaining goal component
                         results = NARSInferenceEngine.do_semantic_inference_two_premise(j, belief)
                         for result in results:
-                            self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+                            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(result))
                         return # done deriving goals
                     else:
                         if Config.DEBUG: Global.Global.debug_print(str(subterm_concept.term) + " was not positive to split conjunction.")
@@ -563,7 +616,7 @@ class NARS:
                         # the first component of the goal is negative, do inference and derive the remaining goal component
                         results = NARSInferenceEngine.do_semantic_inference_two_premise(j, belief)
                         for result in results:
-                            self.global_buffer.put_new(NARSDataStructures.Other.Task(result))
+                            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(result))
 
                         return # done deriving goals
 
@@ -617,13 +670,15 @@ class NARS:
 
         if related_concept is None:
             if Config.DEBUG: Global.Global.debug_print("Processing: Peeking randomly related concept")
-            if isinstance(statement_term, NALGrammar.Terms.SpatialTerm):
+
+            if isinstance(statement_term, NALGrammar.Terms.CompoundTerm):
                 if len(statement_concept.prediction_links) > 0:
                     related_concept = statement_concept.prediction_links.peek().object
             elif isinstance(statement_term, NALGrammar.Terms.StatementTerm) \
                     and not statement_term.is_first_order():
-                    subject_term = statement_term.get_subject_term()
-                    related_concept = self.memory.peek_concept(subject_term)
+                pass
+                    # subject_term = statement_term.get_subject_term()
+                    # related_concept = self.memory.peek_concept(subject_term)
             elif isinstance(statement_term, NALGrammar.Terms.StatementTerm) \
                     and statement_term.is_first_order() \
                     and j1.is_event():
@@ -634,13 +689,13 @@ class NARS:
             else:
                 related_concept = self.memory.get_semantically_related_concept(statement_concept)
 
-            if related_concept is None: self.memory.get_semantically_related_concept(statement_concept)
-            if related_concept is None: return []
+            if related_concept is None: return results
         else:
             Global.Global.debug_print("Processing: Using related concept " + str(related_concept))
 
+
         # check for a belief we can interact with
-        j2 = related_concept.belief_table.peek_random()
+        j2 = related_concept.belief_table.peek()
 
         if j2 is None:
             if Config.DEBUG: Global.Global.debug_print('No related beliefs found for ' + j1.get_formatted_string())

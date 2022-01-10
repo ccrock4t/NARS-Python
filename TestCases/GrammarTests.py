@@ -38,21 +38,21 @@ def array_term_indexing_test():
     array_term = NALGrammar.Terms.SpatialTerm(name=array_term_name, dimensions=(5, 5)) # create a 5x5 array term
 
     array_element_term = array_term[0.1,0.1]
-    expected_string = (NALSyntax.TermConnector.Array.value +
-                                                         array_term_name +
-                                                         NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
+    expected_string = (NALSyntax.TermConnector.ArrayConjunction.value +
+                       array_term_name +
+                       NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
                                                          "0.0, 0.0" +
-                                                         NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
+                       NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
     assert array_element_term.get_formatted_string() == expected_string, "ERROR: " + expected_string
     array_element_term = array_term[-1.0, 0.0]
-    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.Array.value +
+    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.ArrayConjunction.value +
                                                          array_term_name +
                                                          NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
                                                          "-1.0, 0.0" +
                                                          NALSyntax.StatementSyntax.ArrayElementIndexEnd.value)
 
     array_element_term = array_term[1.0, 0.5]
-    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.Array.value +
+    assert array_element_term.get_formatted_string() == (NALSyntax.TermConnector.ArrayConjunction.value +
                                                          array_term_name +
                                                          NALSyntax.StatementSyntax.ArrayElementIndexStart.value +
                                                          "1.0, 0.5" +

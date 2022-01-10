@@ -1,12 +1,10 @@
+import gc
 import glob
-import math
 import queue
 import random
 import threading
 import time
-from operator import add
 
-import NALInferenceRules
 
 import numpy as np
 
@@ -42,32 +40,41 @@ for i in range(10):
 
 current_trial = -1
 
-def load_dataset(length,digit_folder_list,bit=False,percent_of_train_img=0.25):
+digit_to_image_dataset = {}
+digit_folder_list = glob.glob(directory + '*')
+for folder_name in digit_folder_list:
+    digit = folder_name[-1]
+    digit = int(digit)
+    x_fname_list = glob.glob(folder_name + "/*.png")
+    this_x_list = []
+    this_y_list = [digit] * len(x_fname_list)
+    for fname in x_fname_list:
+        this_x_list.append(np.array(Image.open(fname)))
+    digit_to_image_dataset[digit] = (np.array(this_x_list),np.array(this_y_list))
+
+
+def load_dataset(length,bit=False,percent_of_train_img=0.25):
     x_train = []
     y_train = []
     x_test = []
     y_test = []
 
-    files_per_digit = round(length / (2 if bit else 10))
+    num_of_digits = 2 if bit else 10
+
+    files_per_digit = round(length / num_of_digits)
     cutoff = round(percent_of_train_img * files_per_digit)
 
-    for folder_name in digit_folder_list:
-        digit = folder_name[-1]
-        digit = int(digit)
-        x_fname_list = glob.glob(folder_name + "/*.png")
-        this_x_list = []
-        this_y_list = [digit] * len(x_fname_list)
-        for fname in x_fname_list:
-            this_x_list.append(np.array(Image.open(fname)))
-
+    for digit in range(num_of_digits):
+        dataset_x, dataset_y = digit_to_image_dataset[digit]
         # shuffle and trim to desired length
-        p = np.random.permutation(len(this_x_list))
-        this_x_list, this_y_list = list(np.array(this_x_list)[p][0:files_per_digit]), list(np.array(this_y_list)[p][0:files_per_digit])
+        p = np.random.permutation(len(dataset_x))
+        this_x_list, this_y_list = list(dataset_x[p][0:files_per_digit]), list(dataset_y[p][0:files_per_digit])
 
         x_train += this_x_list[0:cutoff]
         y_train += this_y_list[0:cutoff]
         x_test += this_x_list[cutoff:]
         y_test += this_y_list[cutoff:]
+
 
     # shuffle
     p = np.random.permutation(len(x_train))
@@ -106,7 +113,6 @@ def seed_goals(bit):
     for i in range(quantity):
         label = "(&/,(" + str(i) + " --> SEEN),((*,{SELF}) --> press_digit_" + str(i) + "))! :|: %1.0;0.99%"
         InputChannel.parse_and_queue_input_string(label)
-        # Global.Global.NARS.do_working_cycle()
 
 
 def binary_memorization():
@@ -115,12 +121,8 @@ def binary_memorization():
 
     images_per_class = 5
     dataset_len = 2*images_per_class
-    x =[]
-    y =[]
-    digit_folder_list = [glob.glob(directory + '0')[0], glob.glob(directory + '1')[0]]
 
     x_train, y_train, x_test, y_test = load_dataset(length=dataset_len,
-                                                    digit_folder_list=digit_folder_list,
                                                     bit=True)
 
 
@@ -147,7 +149,7 @@ def binary_memorization():
 
 def digit_memorization():
     restart_NARS()
-    training_cycles = 1500
+    training_cycles = 500
 
     images_per_class = 1
     dataset_len = 10*images_per_class
@@ -155,8 +157,7 @@ def digit_memorization():
     y = []
     digit_folder_list = glob.glob(directory + '*')
 
-    x_train, y_train, x_test, y_test = load_dataset(length=dataset_len,
-                                                    digit_folder_list=digit_folder_list)
+    x_train, y_train, x_test, y_test = load_dataset(length=dataset_len)
 
     if len(y_train) == 0:
         x = x_test
@@ -195,7 +196,6 @@ def binary_classification():
     digit_folder_list = [glob.glob(directory + '0')[0], glob.glob(directory + '1')[0]]
 
     x_train, y_train, x_test, y_test = load_dataset(length=length,
-                                                    digit_folder_list=digit_folder_list,
                                                     bit=True)
 
     """
@@ -216,14 +216,10 @@ def binary_classification():
 
 def digit_classification():
     restart_NARS()
-    length = 100
-    assert length % 10 == 0, "ERROR: must use divisible by 2 number to create equal dataset"
-    training_cycles = 500
+    length = 200
+    training_cycles = 100
 
-
-    digit_folder_list = glob.glob(directory + '*')
     x_train, y_train, x_test, y_test = load_dataset(length=length,
-                                                    digit_folder_list=digit_folder_list,
                                                     bit=False,
                                                     percent_of_train_img=0.5)
 
@@ -454,7 +450,9 @@ class MNISTVisionTestGUI:
         buttonExample.pack()
 
 def train(x_train, y_train, cycles):
+    Config.Testing = False
     print('Begin Training Phase')
+
 
     global_gui.toggle_test_buttons(on=False)
     for train_idx,img_array in enumerate(x_train):
@@ -465,6 +463,8 @@ def train(x_train, y_train, cycles):
         label = digit_to_label[y_train[train_idx]]
         print('TRAINING digit ' + str(y_train[train_idx]) \
             + ':\nFile: #' + str(train_idx + 1) + "/" + str(len(x_train)) + ' for ' + str(cycles) + ' cycles')
+
+        break_time(Config.EVENT_BUFFER_CAPACITY)
         for i in range(cycles):
             Global.Global.NARS.do_working_cycle()
             InputChannel.parse_and_queue_input_string(label)
@@ -475,7 +475,9 @@ def train(x_train, y_train, cycles):
 def test(bit,
          x_test,
          y_test):
-    break_duration = 150
+    TIMEOUT = 1500 # in working cycles
+    Config.Testing = True
+    break_duration = 100
     print('Begin Testing Phase')
     # run tests
     global_gui.toggle_test_buttons(on=True)
@@ -508,9 +510,8 @@ def test(bit,
         # let NARS think and come to a prediction
         prediction = -1
         i = 0
-        while prediction == -1 and i < 3000: #
+        while prediction == -1 and i < TIMEOUT: #
             Global.Global.NARS.do_working_cycle()
-
             global_gui.set_status_label('TESTING:\nFile: #' + str(test_idx+1) + "/" + str(len(x_test)) + '\nCycle ' + str(i))
             global_gui.update_sliders()
 
@@ -534,9 +535,13 @@ def test(bit,
         accuracy = round(correct_examples_total_cnt / (test_idx + 1) * 100, 2)
         print("=========== System predicted " + str(prediction) + " and actual was " + str(label_y))
         print('=========== Trial Accuracy so far: ' + str(accuracy) + "%")
-        if test_idx >= 10 and accuracy < 0.001:
-            print("Aborting trial, parameters could not identify anything in 10 images.")
+
         global_gui.update_test_accuracy(accuracy=accuracy)
+
+        if test_idx >= 9 and accuracy < 0.001:
+            print("Aborting trial, parameters could not identify anything in 10 tests.")
+            break
+
 
 
     # print('======= CYCLE SUBTOTALS ========')
@@ -563,10 +568,11 @@ def test(bit,
 
 
 def learn_best_params():
-    current_params = {'PROJECTION_DECAY_DESIRE': Config.PROJECTION_DECAY_DESIRE,
-                      'PROJECTION_DECAY_EVENT': Config.PROJECTION_DECAY_EVENT,
-                      'T':  Config.T,
-                      'FOCUS': Config.FOCUS,
+    # current_params = {'PROJECTION_DECAY_DESIRE': Config.PROJECTION_DECAY_DESIRE,
+    #                   'PROJECTION_DECAY_EVENT': Config.PROJECTION_DECAY_EVENT,
+    current_params = {'T':  Config.T,
+                      'FOCUSX': Config.FOCUSX,
+                      'FOCUSY': Config.FOCUSY,
                       'k': Config.k}
 
     best_params = current_params.copy()
@@ -593,14 +599,14 @@ def learn_best_params():
             sign = random.randint(0, 1)
 
             if key == 'k':
-                inc = random.randint(1,10)
+                inc = random.random()
                 if sign == 0 and new_param - inc >= 1:
                     # 0 will be negative
                     new_param += -1*inc
                 else:
                     # 1 will be positive
                     new_param += inc
-            elif key == 'FOCUS':
+            elif key == 'FOCUSX' or key == 'FOCUSY':
                 inc = random.random()
                 if sign == 0 and new_param - inc > 0.0:
                     # 0 will be negative
@@ -609,24 +615,26 @@ def learn_best_params():
                     # 1 will be positive
                     new_param += inc
             else:
+                inc = random.random()
                 if sign == 0:
                     # 0 will be negative
-                    new_param += -1 * random.random() * new_param
+                    new_param += -1 * inc * new_param
                 else:
                     # 1 will be positive
-                    new_param += random.random() * (1 - new_param)
+                    new_param += inc * (1 - new_param)
 
-            if key == 'T' and new_param < 0.5: new_param = 0.5
+            if key == 'T' and new_param < 0.55: new_param = 0.55
 
             if new_param < 0.00001: new_param = 0.00001
 
             current_params[key] = new_param
 
         # set NARS Params
-        Config.PROJECTION_DECAY_DESIRE = current_params['PROJECTION_DECAY_DESIRE']
-        Config.PROJECTION_DECAY_EVENT = current_params['PROJECTION_DECAY_EVENT']
+        # Config.PROJECTION_DECAY_DESIRE = current_params['PROJECTION_DECAY_DESIRE']
+        # Config.PROJECTION_DECAY_EVENT = current_params['PROJECTION_DECAY_EVENT']
         Config.T = current_params['T']
-        Config.FOCUS = current_params['FOCUS']
+        Config.FOCUSX = current_params['FOCUSX']
+        Config.FOCUSY = current_params['FOCUSY']
         Config.k = current_params['k']
 
         print('--TRYING NEW PARAMS--')
@@ -634,12 +642,11 @@ def learn_best_params():
             print('trying new ' + str(key) + ': ' + str(current_params[key]))
 
         q = queue.Queue()
-        t = threading.Thread(target=run_trials, args=[q, current_best_score], daemon=True)
+        t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
         t.start()
         t.join()
+        avg_result = q.get(block=True)#run_trials(current_best_score)
 
-        avg_result = q.get(block=True,
-                        timeout=0)
         if avg_result is None:
             print("!!! Score for these parameters could not keep up with the current best. Skipping them and Reverting Configs to best...")
             current_params = best_params.copy()
@@ -674,17 +681,20 @@ def learn_best_params():
 def restart_NARS():
     Config.GUI_USE_INTERFACE = False
     Config.SILENT_MODE = True
+    if Global.Global.NARS is not None: del Global.Global.NARS
     Global.Global.NARS = NARS.NARS()
     Global.Global.set_paused(False)
+    gc.collect()
 
 
 def run_trials(q, current_best_score):
-    assert q is not None, "ERROR"
+    global current_trial
     sum_of_scores = 0
-    trials = 3
+    trials = 1
+
     for trial in range(trials):
         print("===== STARTING TRIAL " + str(trial+1) + " / " + str(trials))
-        global current_trial
+
         current_trial = trial
         #score = binary_memorization()
         #score = digit_memorization()
@@ -704,8 +714,7 @@ def run_trials(q, current_best_score):
             if theoretical_best < current_best_score:
                 # if the system can theoretically be perfect in the next trials and still have a worse average
                 # accuracy than the current best, just skip this configuration altogether
-                q.put(None)
-                return
+                return None
 
     avg_score = round(sum_of_scores / trials, 2)
     q.put(avg_score)
@@ -715,12 +724,14 @@ def test_main():
     learn_best_params()
     #supervised_learning_binary_one_example()
 
-
     # q = queue.Queue()
     # t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
     # t.start()
     # t.join()
+
     # global_gui.create_final_score_popup_window(final_score=q.get(block=True))
+    # score = run_trials(0)
+    # global_gui.create_final_score_popup_window(final_score=score)
 
     time.sleep(10)
 

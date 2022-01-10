@@ -21,7 +21,9 @@ try:
     T = user_config["T"]  # decision rule (goal decision-making) threshold
     MINDFULNESS = user_config["MINDFULNESS"]
     BAG_GRANULARITY = user_config["BAG_GRANULARITY"]
-    FOCUS = user_config["FOCUS"]
+    FOCUSX = user_config["FOCUSX"]
+    FOCUSY = user_config["FOCUSY"]
+    Testing = False #todo remove
 
     TAU_WORKING_CYCLE_DURATION = user_config["TAU_WORKING_CYCLE_DURATION"]  # time in milliseconds per working cycle
 

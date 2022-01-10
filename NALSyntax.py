@@ -62,7 +62,8 @@ class TermConnector(enum.Enum):
     ParallelConjunction = "&|"
 
     # Array
-    Array = "@"
+    ArrayConjunction = "@&"
+    ArrayDisjunction = "@|"
 
     @classmethod
     def is_string_a_term_connector(cls, value):
@@ -91,7 +92,7 @@ class TermConnector(enum.Enum):
                     connector is cls.Disjunction or
                     connector is cls.SequentialConjunction or
                     connector is cls.ParallelConjunction or
-                    connector is cls.Array)
+                    connector is cls.ArrayConjunction)
 
     @classmethod
     def is_order_invariant(cls, connector):

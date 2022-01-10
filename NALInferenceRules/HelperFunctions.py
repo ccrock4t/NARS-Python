@@ -72,15 +72,21 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     if result_type == NALGrammar.Sentences.Judgment or result_type == NALGrammar.Sentences.Goal:
         # Judgment or Goal
         # Get Truth Value
-        (f1, c1) = (j1.get_present_value().frequency, j1.get_present_value().confidence)
-        (f2, c2) = (j2.get_present_value().frequency, j2.get_present_value().confidence)
+        higher_order_statement = isinstance(result_statement,
+                                            NALGrammar.Terms.StatementTerm) and not result_statement.is_first_order()
+
+        if higher_order_statement:
+            (f1, c1) = (j1.value.frequency, j1.value.confidence)
+            (f2, c2) = (j2.value.frequency, j2.value.confidence)
+        else:
+            (f1, c1) = (j1.get_present_value().frequency, j1.get_present_value().confidence)
+            (f2, c2) = (j2.get_present_value().frequency, j2.get_present_value().confidence)
 
         result_truth = truth_value_function(f1, c1, f2, c2)
         occurrence_time = None
 
         # if the result is a first-order statement,  or a higher-order compound statement, it may need an occurrence time
-        higher_order_statement = isinstance(result_statement,
-                                            NALGrammar.Terms.StatementTerm) and not result_statement.is_first_order()
+
         if (j1.is_event() or j2.is_event()) and not higher_order_statement:
             occurrence_time = Global.Global.get_current_cycle_number()
 
@@ -150,21 +156,33 @@ def stamp_and_print_inference_rule(sentence, inference_rule, parent_sentences):
 
     sentence.stamp.parent_premises = []
 
-    if isinstance(sentence.statement, NALGrammar.Terms.StatementTerm) \
-            and not sentence.statement.is_first_order():
-        x=1
-        #todo remove
 
     parent_strings = []
     for parent in parent_sentences:
         sentence.stamp.parent_premises.append(parent)
-        parent_strings.append(str(parent))
+
+        if isinstance(parent.statement, NALGrammar.Terms.SpatialTerm):
+            parent_strings.append("CENTER: " + str(parent.statement.center) + " | DIM:"
+                                  + str(parent.statement.dimensions) + " " + str(parent.value)
+                                  + " -- pooled? " + str(parent.statement.of_spatial_terms))
+        elif isinstance(parent.statement, NALGrammar.Terms.CompoundTerm) and not isinstance(parent, NALGrammar.Sentences.Goal):
+            parent_strings.append("CENTER1: " + str(parent.statement.subterms[0].center) + " | DIM:"
+                                  + str(parent.statement.subterms[0].dimensions)
+                                  + " -- pooled? " + str(parent.statement.subterms[0].of_spatial_terms)
+                                  + " " + str(parent.value))
+
+            parent_strings.append("CENTER2: " + str(parent.statement.subterms[1].center) + " | DIM:"
+                                  + str(parent.statement.subterms[1].dimensions) + " " + str(parent.value)
+                                  + " -- pooled? " + str(parent.statement.subterms[1].of_spatial_terms))
+
+        else:
+            parent_strings.append("other " + str(parent.value))
 
 
-    # if inference_rule is F_Deduction or inference_rule is F_Abduction:
-    #     Global.Global.debug_print(sentence.stamp.derived_by
-    #                           + " derived " + sentence.__class__.__name__ + sentence.get_formatted_string()
-    #                           + " by parents " + str(parent_strings))
+    if inference_rule is F_Deduction and isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.statement.is_first_order():
+        Global.Global.debug_print(sentence.stamp.derived_by
+                              + " derived " + sentence.get_formatted_string()
+                              + " by parents " + str(parent_strings))
 
 def premise_result_type(j1,j2):
     """

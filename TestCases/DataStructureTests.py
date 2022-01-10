@@ -132,7 +132,7 @@ def test_concept_termlinking():
     assert (len(conceptA.term_links) == 0), "TEST FAILURE: Concept " + str(conceptA) + " does not have 0 termlinks"
     assert (len(conceptB.term_links) == 1), "TEST FAILURE: Concept " + str(conceptB) + " does not have 1 termlink"
 
-    take = statement_concept.term_links.take_using_key(NARSDataStructures.ItemContainers.Item.get_key_from_object(
+    take = statement_concept.term_links.TAKE_USING_KEY(NARSDataStructures.ItemContainers.Item.get_key_from_object(
         conceptB)).object  # take out the only remaining concept (concept B)
 
     assert (take == conceptB), "TEST FAILURE: Removed concept was not Concept 'B'"
@@ -148,7 +148,7 @@ def test_bag_overflow_purge():
     items_added = 0
 
     for i in range(0, max_capacity + 5):
-        test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
+        test_data_structure.PUT_NEW(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         items_added += 1
         if items_added <= max_capacity:
             assert len(
@@ -168,7 +168,7 @@ def test_bag_clear():
     items_added = 0
 
     for i in range(0, max_capacity):
-        test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
+        test_data_structure.PUT_NEW(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         items_added += 1
         if items_added <= max_capacity:
             assert len(
@@ -189,7 +189,7 @@ def test_bag_priority_changing():
 
     expected_values = {}
     for i in range(0, max_capacity):
-        item = test_data_structure.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
+        item = test_data_structure.PUT_NEW(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         new_priority = random.random()
         test_data_structure.change_priority(item.key, new_priority)
         expected_values[item.key] = item.get_bag_number()
@@ -218,7 +218,7 @@ def test_bag_priority_changing():
 
     expected_values = {}
     for i in range(0, max_capacity):
-        item = bag.put_new(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
+        item = bag.PUT_NEW(NALGrammar.Sentences.new_sentence_from_string("(a-->b)."))
         new_priority = random.random()
         bag.change_priority(item.key, new_priority)
         expected_values[item.key] = new_priority
@@ -242,7 +242,7 @@ def test_4_event_temporal_chaining():
                                                                  capacity=capacity)
 
         for i in range(capacity):
-            event_buffer.put_new(NARSDataStructures.Other.Task(
+            event_buffer.PUT_NEW(NARSDataStructures.Other.Task(
                 NALGrammar.Sentences.new_sentence_from_string("(a" + str(i) + "-->b" + str(i) + "). :|:")))
 
         actual = len(event_buffer.temporal_chaining_4())

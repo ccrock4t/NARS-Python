@@ -141,20 +141,13 @@ def F_Comparison(f1, c1, f2, c2):
     f3, c3 = NALInferenceRules.HelperFunctions.get_truthvalue_from_evidence(wp, w)
     return NALGrammar.Values.TruthValue(f3, c3)
 
-def F_Array_Element_Comparison(f1, c1, f2, c2):
-    """
-        :return: F_array_com: Truth-Value (f,c)
-    """
-    f3 = ExtendedBooleanOperators.bnot(abs(f1-f2))
-    c3 = ExtendedBooleanOperators.band(c1, c2)
-    return NALGrammar.Values.TruthValue(f3, c3)
 
 def F_Intersection(f1, c1, f2, c2):
     """
     :return: F_int: Truth-Value (f,c)
     """
-    f_int = ExtendedBooleanOperators.band(f1, f2)
-    c_int = ExtendedBooleanOperators.band(c1, c2)
+    f_int = ExtendedBooleanOperators.band_average(f1, f2)
+    c_int = ExtendedBooleanOperators.band_average(c1, c2)
     return NALGrammar.Values.TruthValue(f_int, c_int)
 
 
@@ -163,7 +156,7 @@ def F_Union(f1, c1, f2, c2):
     :return: F_uni: Truth-Value (f,c)
     """
     f3 = ExtendedBooleanOperators.bor(f1, f2)
-    c3 = ExtendedBooleanOperators.band(c1, c2)
+    c3 = ExtendedBooleanOperators.band_average(c1, c2)
     return NALGrammar.Values.TruthValue(f3, c3)
 
 

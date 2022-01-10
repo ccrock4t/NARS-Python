@@ -17,6 +17,8 @@ class Global:
     """
     TERM_SELF = None
     TERM_IMAGE_PLACEHOLDER = None
+    ARRAY_NEGATIVE_ELEMENT = None
+    ARRAY_NEGATIVE_SENTENCE = None
 
     """
         ID markers
@@ -79,12 +81,12 @@ class Global:
     @classmethod
     def debug_print(cls,msg):
         if msg is None: return
-        # print(str(cls.get_current_cycle_number())
-        #       + ": gb(" + str(len(cls.NARS.global_buffer)) + "): "
-        #       + ": mem(" + str(len(cls.NARS.memory.concepts_bag)) + "/" + str(cls.NARS.memory.concepts_bag.capacity) + "): "
-        #       + msg)
         print(str(cls.get_current_cycle_number())
-              + ": gb(" + str(len(cls.NARS.global_buffer)) + "): " + msg)
+              + ": gb(" + str(len(cls.NARS.global_buffer)) + "): "
+              + ": mem(" + str(len(cls.NARS.memory.concepts_bag)) + "/" + str(cls.NARS.memory.concepts_bag.capacity) + "): "
+              + msg)
+        # print(str(cls.get_current_cycle_number())
+        #       + ": gb(" + str(len(cls.NARS.global_buffer)) + "): " + msg)
 
     @classmethod
     def create_inherent_terms(cls):

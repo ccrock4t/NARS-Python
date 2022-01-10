@@ -27,6 +27,25 @@ def band(*argv):
         res = res * arg
     return res
 
+def band_average(*argv):
+    """
+        Boolean AND, with an exponent inversely proportional to the number of terms being ANDed.
+
+        -----------------
+
+        Input:
+            argv: NAL Boolean Values
+
+        Returns:
+            (argv1*argv2*...*argvn)^(1/n)
+    """
+    res = 1
+    for arg in argv:
+        res = res * arg
+    exp = 1 / len(argv)
+    return res ** exp
+
+
 
 def bor(*argv):
     """

@@ -122,7 +122,7 @@ def process_sentence_into_task(sentence: NALGrammar.Sentences.Sentence):
     # create new task
     task = NARSDataStructures.Other.Task(sentence, is_input_task=True)
 
-    Global.Global.NARS.global_buffer.put_new(task)
+    Global.Global.NARS.global_buffer.PUT_NEW(task)
 
 def load_input(filename="input.nal"):
     """

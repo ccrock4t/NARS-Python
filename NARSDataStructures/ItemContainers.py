@@ -10,6 +10,7 @@ import NALGrammar
 import NARSMemory
 import Config
 import NARSDataStructures.Other
+import NARSDataStructures.Bag
 import NALInferenceRules
 
 
@@ -49,7 +50,7 @@ class ItemContainer:
         self.item_lookup_dict = dict()
         self.next_item_id = 0
 
-    def put_new(self, object):
+    def PUT_NEW(self, object):
         """
             Place a NEW Item into the container.
         """
@@ -125,10 +126,12 @@ class Item:
         self.object = object
         self.id = id
         priority = None
+
         quality = None
         if isinstance(object, NARSDataStructures.Other.Task):
             if isinstance(object.sentence, NALGrammar.Sentences.Judgment):
                 priority = object.sentence.get_present_value().confidence
+
 
         elif isinstance(object, NARSMemory.Concept):
             if isinstance(object.term, NALGrammar.Terms.SpatialTerm):
@@ -172,9 +175,11 @@ class Item:
 
     def __str__(self):
         return NALSyntax.StatementSyntax.BudgetMarker.value \
-                + "{:.2f}".format(self.budget.get_priority()) \
-                + NALSyntax.StatementSyntax.BudgetMarker.value \
-                + " " \
+                + "{:.5f}".format(self.budget.get_priority()) \
+               + NALSyntax.StatementSyntax.TruthValDivider.value \
+               + "{:.5f}".format(self.budget.get_quality()) \
+               + NALSyntax.StatementSyntax.BudgetMarker.value \
+               + " " \
                 + Global.Global.MARKER_ITEM_ID \
                 + str(self.id) + Global.Global.MARKER_ID_END \
                 + str(self.object)
@@ -223,8 +228,7 @@ class Item:
         """
 
         def __init__(self, priority=None, quality=None):
-            if quality is None:
-                quality = 0.00
+            if quality is None: quality = 0
             self.set_quality(quality)
 
             if priority is None: priority = quality
@@ -238,11 +242,14 @@ class Item:
                    + NALSyntax.StatementSyntax.BudgetMarker.value
 
         def set_priority(self, value):
-            if value < self.get_quality(): value = self.get_quality()  # priority can't go below quality
-            if value > 0.99: value = 0.99  # priority can't got too close to 1
+            # if value < self.get_quality(): value = self.get_quality()  # priority can't go below quality
+            if value > 0.99999999: value = 0.99999999  # priority can't got too close to 1
+            if value < 0: value = 0  # priority can't go below 0
             self._priority = value
 
         def set_quality(self, value):
+            if value > 0.99999999: value = 0.99999999  # quality can't got too close to 1
+            if value < 0: value = 0  # priority can't go below 0
             self._quality = value
 
         def get_priority(self):

@@ -8,9 +8,12 @@ import math
 import random
 
 import sortedcontainers
+import priorityq
 
 import Config
 import NARSDataStructures.ItemContainers
+
+import NARSDataStructures.Other
 import NALInferenceRules
 
 
@@ -26,9 +29,12 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
     def __init__(self, item_type, capacity, granularity=Config.BAG_GRANULARITY):
         self.level = 0
-        self.buckets = {}
+        self.priority_buckets = {}
+        self.quality_buckets = {} # store by inverted quality for deletion
+        self.granularity = granularity
         for i in range(granularity):
-            self.buckets[i] = None
+            self.priority_buckets[i] = None
+            self.quality_buckets[i] = None
         NARSDataStructures.ItemContainers.ItemContainer.__init__(self, item_type=item_type, capacity=capacity)
 
     def __len__(self):
@@ -39,11 +45,12 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
     def clear(self):
         self.level = 0
-        for i in range(len(self.buckets)):
-            self.buckets[i] = None
+        for i in range(self.granularity):
+            self.priority_buckets[i] = None
+            self.quality_buckets[i] = None
         NARSDataStructures.ItemContainers.ItemContainer._clear(self)
 
-    def put_new(self, object):
+    def PUT_NEW(self, object):
         """
             Place a NEW Item into the bag.
 
@@ -51,13 +58,15 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
             :returns the new item
         """
         assert (isinstance(object, self.item_type)), "item object must be of type " + str(self.item_type)
-        item = NARSDataStructures.ItemContainers.ItemContainer.put_new(self,object)
 
         # remove lowest priority item if over capacity
-        if len(self) > self.capacity:
-            purged_item = self._take_min()
+        if len(self) == self.capacity:
+            purged_item = self._TAKE_MIN()
 
+        # add new item
+        item = NARSDataStructures.ItemContainers.ItemContainer.PUT_NEW(self, object)
         self.add_item_to_bucket(item)
+        self.add_item_to_quality_bucket(item)
 
         return item
 
@@ -71,7 +80,7 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         if len(self) == 0: return None  # no items
 
         if key is None:
-            item = self._peek_probabilistically()
+            item = self._peek_probabilistically(buckets=self.priority_buckets)
         else:
             item = NARSDataStructures.ItemContainers.ItemContainer.peek_using_key(self, key=key)
 
@@ -85,35 +94,72 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         """
         item = self.peek_using_key(key)
 
-        self.remove_item_from_bucket(item=item)
+        self.remove_item_from_its_bucket(item=item)
 
         # change item priority attribute, and GUI if necessary
         item.budget.set_priority(new_priority)
 
-        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
-        if Config.GUI_USE_INTERFACE: NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self,
-                                                                                                           item)
+        # if Config.GUI_USE_INTERFACE:
+        #     NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        #     NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self,item)
         # add to new bucket
         self.add_item_to_bucket(item=item)
 
+
+    def change_quality(self, key, new_quality):
+        item = self.peek_using_key(key)
+
+        # remove from sorted
+        self.remove_item_from_its_quality_bucket(item)
+
+        # change item quality
+        item.budget.set_quality(new_quality)
+
+        # if Config.GUI_USE_INTERFACE:
+        #     NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        #     NARSDataStructures.ItemContainers.ItemContainer._put_into_lookup_dict(self, item)
+
+        # add back to sorted
+        self.add_item_to_quality_bucket(item=item)
+
+
     def add_item_to_bucket(self,item):
         # add to appropriate bucket
-        bucket_num = self.calc_bucket_num_from_priority(item.budget.get_priority())
-        if self.buckets[bucket_num] is None: self.buckets[bucket_num] = sortedcontainers.SortedList()
-        bucket = self.buckets[bucket_num]
-        bucket.add(id(item))
+        bucket_num = self.calc_bucket_num_from_value(item.budget.get_priority())
+        if self.priority_buckets[bucket_num] is None:
+            self.priority_buckets[bucket_num] = sortedcontainers.SortedList()
+        bucket = self.priority_buckets[bucket_num]
+        bucket.add((id(item),item)) # convert to ID so
         item.bucket_num = bucket_num
 
-    def remove_item_from_bucket(self,item):
+
+    def remove_item_from_its_bucket(self, item):
         # take from bucket
-        bucket = self.buckets[item.bucket_num]
-        bucket.remove(id(item))
+        bucket = self.priority_buckets[item.bucket_num]
+        bucket.remove((id(item),item))
+        if len(bucket) == 0:
+            self.priority_buckets[item.bucket_num] = None
         item.bucket_num = None
 
+    def add_item_to_quality_bucket(self, item):
+        # add to appropriate bucket
+        bucket_num = self.calc_bucket_num_from_value(1-item.budget.get_quality()) # higher quality should have lower probability of being selected for deletion
+        if self.quality_buckets[bucket_num] is None: self.quality_buckets[bucket_num] = sortedcontainers.SortedList()
+        bucket = self.quality_buckets[bucket_num]
+        bucket.add((id(item),item))
+        item.quality_bucket_num = bucket_num
 
-    def strengthen_item(self, key, multiplier=Config.PRIORITY_STRENGTHEN_VALUE):
+    def remove_item_from_its_quality_bucket(self, item):
+        # take from bucket
+        bucket = self.quality_buckets[item.quality_bucket_num]
+        bucket.remove((id(item),item))
+        if len(bucket) == 0:
+            self.quality_buckets[item.quality_bucket_num] = None
+        item.quality_bucket_num = None
+
+    def strengthen_item_priority(self, key, multiplier=Config.PRIORITY_STRENGTHEN_VALUE):
         """
-            Decays an item in the bag
+            Strenghtens an item in the bag
         :param key:
         :return:
         """
@@ -121,6 +167,19 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         # change item priority attribute, and GUI if necessary
         new_priority = NALInferenceRules.ExtendedBooleanOperators.bor(item.budget.get_priority(), multiplier)
         self.change_priority(key, new_priority=new_priority)
+
+
+    def strengthen_item_quality(self, key):
+        """
+            Decays an item in the bag
+        :param key:
+        :return:
+        """
+        item = self.peek_using_key(key)
+        # change item priority attribute, and GUI if necessary
+        new_quality = NALInferenceRules.ExtendedBooleanOperators.bor(item.budget.get_quality(), 0.1)
+        self.change_quality(key, new_quality=new_quality)
+
 
 
     def decay_item(self, key, multiplier=Config.PRIORITY_DECAY_VALUE):
@@ -133,7 +192,7 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         new_priority = NALInferenceRules.ExtendedBooleanOperators.band(item.budget.get_priority(), multiplier)
         self.change_priority(key, new_priority=new_priority)
 
-    def take_using_key(self, key):
+    def TAKE_USING_KEY(self, key):
         """
         Take an item from the bag using the key
 
@@ -142,52 +201,54 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         """
         assert (key in self.item_lookup_dict), "Given key does not exist in this bag"
         item = NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, key)
+        self.remove_item_from_its_bucket(item=item)
+        self.remove_item_from_its_quality_bucket(item)
         return item
 
 
-    def _take_min(self):
+    def _TAKE_MIN(self):
         """
-            :returns the lowest priority item taken from the Bag
+            :returns the lowest quality item taken from the Bag
         """
-        #todo buckets
-        print('Taking Min')
-        item = None
         try:
-            item = self.ordered_items.extract_min()
-            self.take_using_key(item.key)
+            item = self._peek_probabilistically(buckets=self.quality_buckets)
+            assert (item.key in self.item_lookup_dict), "Given key does not exist in this bag"
+            item = NARSDataStructures.ItemContainers.ItemContainer._take_from_lookup_dict(self, item.key)
+            self.remove_item_from_its_bucket(item=item)
+            self.remove_item_from_its_quality_bucket(item)
         except:
-            pass
+            item = None
         return item
 
 
-    def _peek_probabilistically(self):
+    def _peek_probabilistically(self, buckets):
         """
             Probabilistically selects a priority value / bucket, then peeks an item from that bucket.
 
             :returns (item, index of item in the current bucket)
         """
         if len(self) == 0: return None, None
-        self.level = random.randint(0, len(self.buckets)- 1)
+        self.level = random.randint(0, self.granularity - 1)
         while True:
-            level_bucket = self.buckets[self.level]
+            level_bucket = buckets[self.level]
             if level_bucket is None or len(level_bucket) == 0:
-                self.level = (self.level + 1) % len(self.buckets)
+                self.level = (self.level + 1) % self.granularity
                 continue
 
             # try to go into bucket
-            rnd = random.randint(0,len(self.buckets)-1)
+            rnd = random.randint(0, self.granularity  - 1)
 
             threshold = self.level
             if rnd <= threshold:
                 # use this bucket
                 break
             else:
-                self.level = (self.level + 1) % len(self.buckets)
+                self.level = (self.level + 1) % self.granularity
 
         rnd_idx = random.randint(0,len(level_bucket)-1)
-        item_id = level_bucket[rnd_idx]
-        item = ctypes.cast(item_id, ctypes.py_object).value
+        _, item = level_bucket[rnd_idx]
+
         return item
 
-    def calc_bucket_num_from_priority(self, priority):
-        return math.floor(priority * len(self.buckets))
+    def calc_bucket_num_from_value(self, val):
+        return min(math.floor(val * self.granularity), self.granularity - 1)

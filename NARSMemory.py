@@ -29,7 +29,7 @@ class Memory:
     def __init__(self):
         self.concepts_bag = NARSDataStructures.Bag.Bag(item_type=Concept,
                                                        capacity=Config.MEMORY_CONCEPT_CAPACITY,
-                                                       granularity=5000)
+                                                       granularity=10000)
         self.current_cycle_number = 0
 
     def __len__(self):
@@ -60,6 +60,10 @@ class Memory:
             :param term: The term naming the concept to create
             :returns New Concept item created from the term
         """
+        if Config.Testing \
+                and (isinstance(term, NALGrammar.Terms.CompoundTerm)
+                and isinstance(term.subterms[0],NALGrammar.Terms.SpatialTerm)) \
+                or isinstance(term,NALGrammar.Terms.SpatialTerm): return
         Asserts.assert_term(term)
         concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
         assert not (concept_key in self.concepts_bag.item_lookup_dict), "Cannot create new concept. Concept already exists."
@@ -67,7 +71,7 @@ class Memory:
         new_concept = Concept(term)
 
         # put into data structure
-        self.concepts_bag.put_new(new_concept) # add to bag
+        self.concepts_bag.PUT_NEW(new_concept) # add to bag
 
         if isinstance(term, NALGrammar.Terms.CompoundTerm) and not isinstance(term, NALGrammar.Terms.SpatialTerm):
             #todo allow array elements
@@ -79,8 +83,8 @@ class Memory:
                     new_concept.set_term_links(subconcept)
 
         elif isinstance(term, NALGrammar.Terms.StatementTerm):
-            subject_concept = self.peek_concept(term.get_subject_term())
-            predicate_concept = self.peek_concept(term.get_predicate_term())
+            subject_concept: Concept = self.peek_concept(term.get_subject_term())
+            predicate_concept: Concept = self.peek_concept(term.get_predicate_term())
 
             new_concept.set_term_links(subject_concept)
             new_concept.set_term_links(predicate_concept)
@@ -88,13 +92,17 @@ class Memory:
             if not term.is_first_order():
                 # implication statement
                 # do prediction/explanation linking with subterms
-                subject_concept.set_prediction_link(new_concept)
-                predicate_concept.set_explanation_link(new_concept)
+                if subject_concept is not None: subject_concept.set_prediction_link(new_concept)
+                if predicate_concept is not None: predicate_concept.set_explanation_link(new_concept)
 
-        return self.concepts_bag.peek(concept_key)
+        concept = self.concepts_bag.peek(concept_key)
+
+        return concept
 
     def peek_concept(self, term):
-        return self.peek_concept_item(term).object
+        item = self.peek_concept_item(term)
+        if item is None: return None
+        return item.object
 
     def peek_concept_item(self, term):
         """
@@ -558,23 +566,24 @@ class Concept:
 
             :param subterm concept to this superterm concept (self)
         """
+        if subterm_concept is None: return
         assert_concept(subterm_concept)
         if subterm_concept in self.term_links: return  # already linked
 
         # add to term links
-        item = self.term_links.put_new(subterm_concept)
-        self.term_links.change_priority(item.key, new_priority=0.5)
-
-        item = subterm_concept.term_links.put_new(self)
-        subterm_concept.term_links.change_priority(item.key, new_priority=0.5)
+        # item = self.term_links.PUT_NEW(subterm_concept)
+        # self.term_links.change_priority(item.key, new_priority=0.5)
+        #
+        # item = subterm_concept.term_links.PUT_NEW(self)
+        # subterm_concept.term_links.change_priority(item.key, new_priority=0.5)
 
         # add to subterm links
-        item = self.subterm_links.put_new(subterm_concept)
-        self.subterm_links.change_priority(item.key, new_priority=0.5)
-
-        # add to superterm links
-        item = subterm_concept.superterm_links.put_new(self)
-        subterm_concept.superterm_links.change_priority(item.key, new_priority=0.5)
+        # item = self.subterm_links.PUT_NEW(subterm_concept)
+        # self.subterm_links.change_priority(item.key, new_priority=0.5)
+        #
+        # # add to superterm links
+        # item = subterm_concept.superterm_links.PUT_NEW(self)
+        # subterm_concept.superterm_links.change_priority(item.key, new_priority=0.5)
 
     def remove_term_link(self, concept):
         """
@@ -583,17 +592,18 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.term_links), concept + "must be in term links."
-        self.term_links.take_using_key(key=NARSDataStructures.ItemContainers.Item.get_key_from_object(concept))
-        concept.term_links.take_using_key(key=NARSDataStructures.ItemContainers.Item.get_key_from_object(self))
+        self.term_links.TAKE_USING_KEY(key=NARSDataStructures.ItemContainers.Item.get_key_from_object(concept))
+        concept.term_links.TAKE_USING_KEY(key=NARSDataStructures.ItemContainers.Item.get_key_from_object(self))
 
     def set_prediction_link(self, concept):
         """
             Set a prediction link between 2 concepts
             Does nothing if the link already exists
         """
+        if concept is None: return
         assert_concept(concept)
         if concept in self.prediction_links: return  # already linked
-        concept_item = self.prediction_links.put_new(concept)
+        concept_item = self.prediction_links.PUT_NEW(concept)
         self.prediction_links.change_priority(concept_item.key, new_priority=0.99)
 
     def remove_prediction_link(self, concept):
@@ -603,16 +613,18 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.prediction_links), concept + "must be in prediction links."
-        self.prediction_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
+        self.prediction_links.TAKE_USING_KEY(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
 
     def set_explanation_link(self, concept):
         """
             Set an explanation between 2 concepts
             Does nothing if the link already exists
         """
+        if concept is None: return
+        return #todo remove
         assert_concept(concept)
         if concept in self.explanation_links: return  # already linked
-        concept_item = self.explanation_links.put_new(concept)
+        concept_item = self.explanation_links.PUT_NEW(concept)
         self.explanation_links.change_priority(concept_item.key,new_priority=0.99)
 
 
@@ -623,7 +635,7 @@ class Concept:
         """
         assert_concept(concept)
         assert (concept in self.explanation_links), concept + "must be in prediction links."
-        self.explanation_links.take_using_key(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
+        self.explanation_links.TAKE_USING_KEY(key=NARSDataStructures.ItemContainer.Item.get_key_from_object(concept))
 
     def get_term_string(self):
         """

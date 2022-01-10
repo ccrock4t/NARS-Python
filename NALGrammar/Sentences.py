@@ -66,6 +66,9 @@ class Sentence:
         else:
             return self.eternal_expectation
 
+    def get_eternal_expectation(self):
+        return self.eternal_expectation
+
     def is_positive(self):
         """
             :returns: Is this statement True? (does it have more positive evidence than negative evidence?)
@@ -235,6 +238,7 @@ class EvidentialBase:
         """
         :param id: Sentence ID
         """
+        self.sentence = self_sentence
         self.base = [self_sentence]  # array of sentences
 
     def __iter__(self):
@@ -261,6 +265,7 @@ class EvidentialBase:
             O(M + N)
             https://stackoverflow.com/questions/3170055/test-if-lists-share-any-items-in-python
         """
+        if self.sentence.is_event(): return False
         return not set(self.base).isdisjoint(other_base.base)
 
 

@@ -28,6 +28,9 @@ class Depq():
     def __getitem__(self, i):
         return self.depq[i][0]
 
+    def remove(self, item):
+        return self.depq.remove(item)
+
     def insert_object(self, object, priority):
         self.depq.insert(object, priority)
 
@@ -97,13 +100,7 @@ class Table(Depq):
         if len(self) > 0:
             if sentence.is_event():
                 current_event = self.take()
-                if NALGrammar.Sentences.may_interact(sentence, current_event):
-                    # print("revising event " + str(sentence) + " and " + str(current_event))
-                    sentence = NALInferenceRules.Local.Revision(sentence, current_event)
-                    # print("revised event " + str(sentence) + " from " + str())
-                else:
-                    sentence = NALInferenceRules.Local.Choice(sentence, current_event, only_confidence=True)
-                    #print("choice event " + str(sentence))
+                sentence = NALInferenceRules.Local.Revision(sentence, current_event)
             else:
                 existing_interactable = self.peek_highest_confidence_interactable(sentence)
                 if existing_interactable is not None:
