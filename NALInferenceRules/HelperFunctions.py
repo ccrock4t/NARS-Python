@@ -179,10 +179,10 @@ def stamp_and_print_inference_rule(sentence, inference_rule, parent_sentences):
             parent_strings.append("other " + str(parent.value))
 
 
-    if inference_rule is F_Deduction and isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.statement.is_first_order():
-        Global.Global.debug_print(sentence.stamp.derived_by
-                              + " derived " + sentence.get_formatted_string()
-                              + " by parents " + str(parent_strings))
+    # if inference_rule is F_Deduction and isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.statement.is_first_order():
+    #     Global.Global.debug_print(sentence.stamp.derived_by
+    #                           + " derived " + sentence.get_formatted_string()
+    #                           + " by parents " + str(parent_strings))
 
 def premise_result_type(j1,j2):
     """

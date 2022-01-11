@@ -216,12 +216,11 @@ def binary_classification():
 
 def digit_classification():
     restart_NARS()
-    length = 200
-    training_cycles = 100
-
+    length = 400
+    training_cycles = 125
     x_train, y_train, x_test, y_test = load_dataset(length=length,
                                                     bit=False,
-                                                    percent_of_train_img=0.5)
+                                                    percent_of_train_img=0.75)
 
     """
         Training Phase
@@ -690,7 +689,7 @@ def restart_NARS():
 def run_trials(q, current_best_score):
     global current_trial
     sum_of_scores = 0
-    trials = 1
+    trials = 3
 
     for trial in range(trials):
         print("===== STARTING TRIAL " + str(trial+1) + " / " + str(trials))
@@ -720,18 +719,16 @@ def run_trials(q, current_best_score):
     q.put(avg_score)
 
 def test_main():
-    time.sleep(1)
+    time.sleep(10)
     learn_best_params()
     #supervised_learning_binary_one_example()
 
-    # q = queue.Queue()
-    # t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
-    # t.start()
-    # t.join()
+    q = queue.Queue()
+    t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
+    t.start()
+    t.join()
 
-    # global_gui.create_final_score_popup_window(final_score=q.get(block=True))
-    # score = run_trials(0)
-    # global_gui.create_final_score_popup_window(final_score=score)
+    global_gui.create_final_score_popup_window(final_score=q.get(block=True))
 
     time.sleep(10)
 
@@ -742,7 +739,7 @@ def test_main():
 
 if __name__ == "__main__":
     global_gui = MNISTVisionTestGUI()
-    global_gui.gui_disabled = True
+    global_gui.gui_disabled = False
     if global_gui.gui_disabled:
         global_gui.start()
     else:

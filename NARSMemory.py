@@ -60,10 +60,6 @@ class Memory:
             :param term: The term naming the concept to create
             :returns New Concept item created from the term
         """
-        if Config.Testing \
-                and (isinstance(term, NALGrammar.Terms.CompoundTerm)
-                and isinstance(term.subterms[0],NALGrammar.Terms.SpatialTerm)) \
-                or isinstance(term,NALGrammar.Terms.SpatialTerm): return
         Asserts.assert_term(term)
         concept_key = NARSDataStructures.ItemContainers.Item.get_key_from_object(term)
         assert not (concept_key in self.concepts_bag.item_lookup_dict), "Cannot create new concept. Concept already exists."
@@ -125,6 +121,10 @@ class Memory:
 
         if concept_item is not None:
             return concept_item  # return if it already exists
+
+
+        if Config.Testing \
+                and (isinstance(term, NALGrammar.Terms.SpatialTerm) or (isinstance(term, NALGrammar.Terms.CompoundTerm) and isinstance(term.subterms[0], NALGrammar.Terms.SpatialTerm))): return
 
         # if it doesn't exist
         # it must be created along with its sub-concepts if necessary

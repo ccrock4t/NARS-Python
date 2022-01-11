@@ -120,40 +120,16 @@ class NARS:
         # OBSERVE
         #self.Observe()
         # todo begin spatial take vvv
-        vision_sentences = self.vision_buffer.take()
-
+        radii = [1]
+        vision_sentences = []
+        for radius in radii:
+            vision_sentences += self.vision_buffer.take(pool=False,radius=radius)
+            vision_sentences += self.vision_buffer.take(pool=True,radius=radius)
 
         # single array
-
-        # for vision_sentence in vision_sentences:
-        #     if vision_sentence is not None:
-        #         self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
-
-
-        # multi-event conjunction
-
         for vision_sentence in vision_sentences:
-            for last_vision_sentence in self.last_vision_sentences:
-                if vision_sentence is not None \
-                        and last_vision_sentence is not None:
-                    if vision_sentence.statement == last_vision_sentence.statement: continue
-
-                    result_statement = NALGrammar.Terms.CompoundTerm([vision_sentence.statement,
-                                                                      last_vision_sentence.statement],
-                                                                     NALSyntax.TermConnector.Conjunction)
-                    value = NALInferenceRules.TruthValueFunctions.F_Intersection(vision_sentence.value.frequency,
-                                                                         vision_sentence.value.confidence,
-                                                                         last_vision_sentence.value.frequency,
-                                                                         last_vision_sentence.value.confidence)
-
-                    value = NALGrammar.Values.TruthValue(frequency=value.frequency,
-                                                         confidence=value.confidence)
-                    result = NALGrammar.Sentences.Judgment(statement=result_statement,
-                                                           value=value,
-                                                           occurrence_time=Global.Global.get_current_cycle_number())
-                    self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(result))
-
-        self.last_vision_sentences = vision_sentences
+            if vision_sentence is not None:
+                self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
 
         # todo end spatial take ^^
 
@@ -423,9 +399,12 @@ class NARS:
             # only put non-derived atomic events in temporal module for now
             Global.Global.NARS.temporal_module.PUT_NEW(task)
 
+        if isinstance(task.sentence.statement, NALGrammar.Terms.SpatialTerm): return
+
         if isinstance(j.statement, NALGrammar.Terms.CompoundTerm)\
             and j.statement.connector == NALSyntax.TermConnector.Negation:
             j = NALInferenceRules.Immediate.Negation(j)
+
 
         task_statement_concept_item = self.memory.peek_concept_item(j.statement)
         if task_statement_concept_item is None: return
