@@ -216,11 +216,11 @@ def binary_classification():
 
 def digit_classification():
     restart_NARS()
-    length = 400
-    training_cycles = 125
+    length = 500
+    training_cycles = 200
     x_train, y_train, x_test, y_test = load_dataset(length=length,
                                                     bit=False,
-                                                    percent_of_train_img=0.75)
+                                                    percent_of_train_img=0.8)
 
     """
         Training Phase
@@ -719,7 +719,7 @@ def run_trials(q, current_best_score):
     q.put(avg_score)
 
 def test_main():
-    time.sleep(10)
+    time.sleep(1)
     learn_best_params()
     #supervised_learning_binary_one_example()
 
@@ -739,7 +739,7 @@ def test_main():
 
 if __name__ == "__main__":
     global_gui = MNISTVisionTestGUI()
-    global_gui.gui_disabled = False
+    global_gui.gui_disabled = True
     if global_gui.gui_disabled:
         global_gui.start()
     else:

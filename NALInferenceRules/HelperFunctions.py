@@ -161,28 +161,28 @@ def stamp_and_print_inference_rule(sentence, inference_rule, parent_sentences):
     for parent in parent_sentences:
         sentence.stamp.parent_premises.append(parent)
 
-        if isinstance(parent.statement, NALGrammar.Terms.SpatialTerm):
-            parent_strings.append("CENTER: " + str(parent.statement.center) + " | DIM:"
-                                  + str(parent.statement.dimensions) + " " + str(parent.value)
-                                  + " -- pooled? " + str(parent.statement.of_spatial_terms))
-        elif isinstance(parent.statement, NALGrammar.Terms.CompoundTerm) and not isinstance(parent, NALGrammar.Sentences.Goal):
-            parent_strings.append("CENTER1: " + str(parent.statement.subterms[0].center) + " | DIM:"
-                                  + str(parent.statement.subterms[0].dimensions)
-                                  + " -- pooled? " + str(parent.statement.subterms[0].of_spatial_terms)
-                                  + " " + str(parent.value))
+        # if isinstance(parent.statement, NALGrammar.Terms.SpatialTerm):
+        #     parent_strings.append("CENTER: " + str(parent.statement.center) + " | DIM:"
+        #                           + str(parent.statement.dimensions) + " " + str(parent.value)
+        #                           + " -- pooled? " + str(parent.statement.of_spatial_terms))
+        # elif isinstance(parent.statement, NALGrammar.Terms.CompoundTerm) and not isinstance(parent, NALGrammar.Sentences.Goal):
+        #     parent_strings.append("CENTER1: " + str(parent.statement.subterms[0].center) + " | DIM:"
+        #                           + str(parent.statement.subterms[0].dimensions)
+        #                           + " -- pooled? " + str(parent.statement.subterms[0].of_spatial_terms)
+        #                           + " " + str(parent.value))
+        #
+        #     parent_strings.append("CENTER2: " + str(parent.statement.subterms[1].center) + " | DIM:"
+        #                           + str(parent.statement.subterms[1].dimensions) + " " + str(parent.value)
+        #                           + " -- pooled? " + str(parent.statement.subterms[1].of_spatial_terms))
+        #
+        # else:
+        #     parent_strings.append("other " + str(parent.value))
 
-            parent_strings.append("CENTER2: " + str(parent.statement.subterms[1].center) + " | DIM:"
-                                  + str(parent.statement.subterms[1].dimensions) + " " + str(parent.value)
-                                  + " -- pooled? " + str(parent.statement.subterms[1].of_spatial_terms))
 
-        else:
-            parent_strings.append("other " + str(parent.value))
-
-
-    # if inference_rule is F_Deduction and isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.statement.is_first_order():
-    #     Global.Global.debug_print(sentence.stamp.derived_by
-    #                           + " derived " + sentence.get_formatted_string()
-    #                           + " by parents " + str(parent_strings))
+    if inference_rule is F_Deduction and isinstance(sentence, NALGrammar.Sentences.Judgment) and sentence.statement.is_first_order():
+        Global.Global.debug_print(sentence.stamp.derived_by
+                              + " derived " + sentence.get_formatted_string()
+                              + " by parents " + str(parent_strings))
 
 def premise_result_type(j1,j2):
     """

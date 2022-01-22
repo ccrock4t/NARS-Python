@@ -68,8 +68,8 @@ class NARS:
 
         Global.Global.NARS = self # global vars are part of NARS
         Global.Global.ARRAY_NEGATIVE_ELEMENT = NALGrammar.Terms.from_string('(--,(arrayEl-->negative))')
-        Global.Global.ARRAY_NEGATIVE_SENTENCE = NALGrammar.Sentences.Judgment(statement=Global.Global.ARRAY_NEGATIVE_ELEMENT.subterms[0],
-                                                     value=NALGrammar.Values.TruthValue(frequency=0.0))
+        Global.Global.ARRAY_NEGATIVE_SENTENCE = NALGrammar.Sentences.Judgment(statement=Global.Global.ARRAY_NEGATIVE_ELEMENT,
+                                                     value=NALGrammar.Values.TruthValue(frequency=1.0))
 
 
     def startup_and_run(self):
@@ -120,16 +120,14 @@ class NARS:
         # OBSERVE
         #self.Observe()
         # todo begin spatial take vvv
-        radii = [1]
-        vision_sentences = []
-        for radius in radii:
-            vision_sentences += self.vision_buffer.take(pool=False,radius=radius)
-            vision_sentences += self.vision_buffer.take(pool=True,radius=radius)
 
-        # single array
-        for vision_sentence in vision_sentences:
-            if vision_sentence is not None:
-                self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
+        vision_sentence = self.vision_buffer.take(pooled=False)
+        if vision_sentence is not None:
+            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
+
+        vision_sentence = self.vision_buffer.take(pooled=True)
+        if vision_sentence is not None:
+            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
 
         # todo end spatial take ^^
 
@@ -399,7 +397,7 @@ class NARS:
             # only put non-derived atomic events in temporal module for now
             Global.Global.NARS.temporal_module.PUT_NEW(task)
 
-        if isinstance(task.sentence.statement, NALGrammar.Terms.SpatialTerm): return
+        if task.sentence.stamp.derived_by is None: return
 
         if isinstance(j.statement, NALGrammar.Terms.CompoundTerm)\
             and j.statement.connector == NALSyntax.TermConnector.Negation:

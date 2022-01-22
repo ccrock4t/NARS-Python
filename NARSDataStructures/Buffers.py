@@ -87,19 +87,20 @@ class SpatialBuffer():
         self.dimensions = dimensions
         self.array = np.full(shape=dimensions,
                              fill_value=NALGrammar.Sentences.TruthValue(0.0,0.9))
-        self.pooled_array = None
-        self.components_bag = Bag(item_type=tuple,
+        self.components_bag = Bag(item_type=object,
                                   capacity=1000,
                                   granularity=100)
-        self.pooled_components_bag = Bag(item_type=tuple,
+
+        self.pooled_array = np.full(shape=dimensions,
+                             fill_value=NALGrammar.Sentences.TruthValue(0.0,0.9))
+        self.pooled_components_bag = Bag(item_type=object,
                                   capacity=1000,
                                   granularity=100)
+
         self.last_taken_img_array = None
+        self.last_sentence = None
 
         # initialize with uniform probabilility
-        for indices, truth_value in np.ndenumerate(self.array):
-            item = self.components_bag.PUT_NEW(indices)
-            self.components_bag.change_priority(item.key, 0.5)
 
     def blank_image(self):
         self.set_image(np.empty(shape=self.array.shape))
@@ -112,102 +113,105 @@ class SpatialBuffer():
         #     "ERROR: Data dimensions are incompatible with Spatial Buffer dimensions " \
         #     + str(event_array.shape) + " and " + str(self.dimensions)
 
-        self.array = self.create_pooled_sensation_array(original_event_array, stride=2)
+        self.array = self.create_pooled_sensation_array(original_event_array, stride=1)
         self.components_bag.clear()
-        self.pooled_components_bag.clear()
 
-        # maximum = 0
-        # for indices, sentence in np.ndenumerate(self.array):
-        #     e = NALInferenceRules.TruthValueFunctions.Expectation(sentence.value.frequency, sentence.value.confidence)
-        #     maximum = max(maximum, 2 * abs(e - 0.5))
+        maximum = 0
+        for indices, sentence in np.ndenumerate(self.array):
+            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
+                    and not (isinstance(sentence.statement,
+                                        NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
+                maximum = max(maximum, sentence.value.frequency * sentence.value.confidence)
 
         for indices, sentence in np.ndenumerate(self.array):
-            #e = NALInferenceRules.TruthValueFunctions.Expectation(sentence.value.frequency,sentence.value.confidence)
-            priority = sentence.value.frequency #2 * abs(e - 0.5) / maximum  # normalized priority
-            self.components_bag.PUT_NEW(indices)
-            self.components_bag.change_priority(Item.get_key_from_object(indices), priority)
+            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
+                and not (isinstance(sentence.statement,NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
+                priority = sentence.value.frequency * sentence.value.confidence / maximum
+                object = indices
+                self.components_bag.PUT_NEW(object)
+                self.components_bag.change_priority(Item.get_key_from_object(object), priority)
 
 
-        # now the pooled array
-        self.pooled_array = self.create_pooled_sensation_array(original_event_array, stride=1)
-        self.pooled_array = self.create_pooled_sensation_array(self.pooled_array, stride=2)
-        # maximum = 0
-        # for indices, sentence in np.ndenumerate(self.pooled_array):
-        #     e = NALInferenceRules.TruthValueFunctions.Expectation(sentence.value.frequency, sentence.value.confidence)
-        #     maximum = max(maximum, 2 * abs(e - 0.5))
+
+        # pooled
+        self.pooled_array = self.create_pooled_sensation_array(original_event_array, stride=2)
+        #self.pooled_array = self.create_pooled_sensation_array(self.pooled_array , stride=2)
+        self.pooled_components_bag.clear()
+
+        maximum = 0
+        for indices, sentence in np.ndenumerate(self.pooled_array):
+            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
+                    and not (isinstance(sentence.statement,
+                                        NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
+                maximum = max(maximum, sentence.value.frequency * sentence.value.confidence)
 
         for indices, sentence in np.ndenumerate(self.pooled_array):
-            #e = NALInferenceRules.TruthValueFunctions.Expectation(sentence.value.frequency,sentence.value.confidence)
-            priority = sentence.value.frequency  #2 * abs(e - 0.5) / maximum  # normalized priority
-            self.pooled_components_bag.PUT_NEW(indices)
-            self.pooled_components_bag.change_priority(Item.get_key_from_object(indices), priority)
+            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
+                    and not (isinstance(sentence.statement,
+                                        NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
+                priority = sentence.value.frequency * sentence.value.confidence / maximum
+                object = indices
+                self.pooled_components_bag.PUT_NEW(object)
+                self.pooled_components_bag.change_priority(Item.get_key_from_object(object), priority)
 
-        # maximum = 0
-        # for indices, sentence in np.ndenumerate(self.array):
-        #
-        #
-        # for indices, sentence in np.ndenumerate(self.array):
-        #
-        #     self.components_bag.PUT_NEW(indices)
-        #     self.components_bag.change_priority(Item.get_key_from_object(indices), priority)
-
-    def take(self, pool, radius):
+    def take(self, pooled):
         """
             Probabilistically select a spatial subset of the buffer.
             :return: an Array Judgment of the selected subset.
         """
-
-        if pool:
+        if pooled:
             bag = self.pooled_components_bag
+            array = self.pooled_array
         else:
             bag = self.components_bag
-
+            array = self.array
 
         # probabilistically peek the 2 vertices of the box
-
-
         # selection 1: small fixed windows
-        item = bag.peek()
-        radius = radius#random.randint(1,3)
-        element_idx_y, element_idx_x = item.object
 
-        min_x, min_y = max(element_idx_x - radius, 0),  max(element_idx_y - radius, 0)
-        max_x, max_y = min(element_idx_x + radius, self.array.shape[1]-1),  min(element_idx_y + radius, self.array.shape[0]-1)
+        indices = bag.peek()
+        if indices is None: return None
+
+        y, x = indices.object
+        radius = 1#random.randint(1,2)
+        min_x, min_y = max(x - radius, 0), max(y - radius, 0)
+        max_x, max_y = min(x + radius, array.shape[1] - 1), min(y + radius,
+                                                                                 array.shape[0] - 1)
+
+        extracted = array[min_y:max_y+1, min_x:max_x+1]
+        sentence_subset= []
+        for idx,sentence in np.ndenumerate(extracted):
+            if not (isinstance(sentence.statement, NALGrammar.Terms.CompoundTerm)
+                and sentence.statement.connector == NALSyntax.TermConnector.Negation):
+                sentence_subset.append(sentence)
+
+        total_truth = None
+        statement_subset = []
+        for sentence in sentence_subset:
+            if total_truth is None:
+                total_truth = sentence.value
+            else:
+                total_truth = NALInferenceRules.TruthValueFunctions.F_Intersection(sentence.value.frequency,
+                                                                     sentence.value.confidence,
+                                                                     total_truth.frequency,
+                                                                     total_truth.confidence)
+            statement_subset.append(sentence.statement)
 
 
-        # selection 2: bounding box from random features
-        # item1 = bag.peek()
-        # item2 = item1
-        # while item2 is item1:
-        #     item2 = bag.peek()
-        #
-        # element1_idx_y, element1_idx_x = item1.object
-        # element2_idx_y, element2_idx_x = item2.object
-        #
-        # min_x, min_y = min(element1_idx_x, element2_idx_x), min(element1_idx_y, element2_idx_y)
-        # max_x, max_y = max(element1_idx_x, element2_idx_x), max(element1_idx_y, element2_idx_y)
+        # create conjunction of features
+        statement = NALGrammar.Terms.CompoundTerm(subterms=statement_subset,
+                                                  term_connector=NALSyntax.TermConnector.Conjunction)
 
-        # extract subset of elements inside the bounding box (inclusive)
-        if pool:
-            event_subset = self.pooled_array[min_y:max_y + 1, min_x:max_x + 1]
-        else:
-            event_subset = self.array[min_y:max_y+1, min_x:max_x+1]
+        event_sentence = NALGrammar.Sentences.Judgment(statement=statement,
+                                      value=total_truth,
+                                      occurrence_time=Global.Global.get_current_cycle_number())
 
-        judgment = self.create_spatial_conjunction(event_subset)
 
-        judgments = [judgment]
+        # last_taken_img_array = np.zeros(shape=self.img.shape)
+        # last_taken_img_array[min_y+1:(max_y+1)+1, min_x+1:(max_x+1)+1] = self.img[min_y+1:(max_y+1)+1, min_x+1:(max_x+1)+1]
+        # self.last_taken_img_array = last_taken_img_array  # store for visualization
 
-        center = ((min_y, min_x), (max_y, max_x))
-        for j in judgments:
-            if j is not None:
-                j.statement.center = center
-
-        if not pool:
-            last_taken_img_array = np.zeros(shape=self.img.shape)
-            last_taken_img_array[min_y*2:(max_y+1)*2, 2*min_x:2*(max_x+1)] = self.img[min_y*2:(max_y+1)*2, 2*min_x:2*(max_x+1)]
-            self.last_taken_img_array = last_taken_img_array  # store for visualization
-
-        return judgments
+        return event_sentence
 
     def create_spatial_conjunction(self, subset):
         """
@@ -486,7 +490,10 @@ class TemporalModule(ItemContainer):
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
-            if not (isinstance(event_A.statement, NALGrammar.Terms.CompoundTerm) and NALSyntax.TermConnector.is_conjunction(event_A.statement.connector)): continue
+            if not (isinstance(event_A.statement, NALGrammar.Terms.CompoundTerm)
+                    and NALSyntax.TermConnector.is_conjunction(event_A.statement.connector)
+                    and isinstance(event_A.statement.subterms[0], NALGrammar.Terms.CompoundTerm)
+                    and NALSyntax.TermConnector.is_conjunction(event_A.statement.subterms[0].connector)): continue
 
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 
@@ -499,7 +506,7 @@ class TemporalModule(ItemContainer):
             Perform temporal chaining
 
             produce all possible forward implication statements using temporal induction and intersection
-                A =/> B
+                A && B
 
             for the latest statement in the chain
         """
@@ -510,7 +517,9 @@ class TemporalModule(ItemContainer):
         event_task_B = self.get_most_recent_event_task().object
         event_B = event_task_B.sentence
 
-        if not isinstance(event_B.statement, NALGrammar.Terms.SpatialTerm): return
+        if not (isinstance(event_B.statement, NALGrammar.Terms.CompoundTerm)
+                and NALSyntax.TermConnector.is_conjunction(event_B.statement.connector)
+                and (isinstance(event_B.statement.subterms[0], NALGrammar.Terms.SpatialTerm) or isinstance(event_B.statement.subterms[0], NALGrammar.Terms.StatementTerm))): return
 
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
@@ -523,7 +532,10 @@ class TemporalModule(ItemContainer):
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
-            if not isinstance(event_A.statement, NALGrammar.Terms.SpatialTerm): continue
+            if not (isinstance(event_A.statement, NALGrammar.Terms.CompoundTerm)
+                    and NALSyntax.TermConnector.is_conjunction(event_A.statement.connector)
+                    and (isinstance(event_A.statement.subterms[0], NALGrammar.Terms.SpatialTerm) or isinstance(
+                        event_A.statement.subterms[0], NALGrammar.Terms.StatementTerm))): return
 
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 
