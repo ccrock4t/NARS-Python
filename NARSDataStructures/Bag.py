@@ -3,12 +3,10 @@
     Created: December 24, 2020
     Purpose: Holds data structure implementations that are specific / custom to NARS
 """
-import ctypes
 import math
 import random
 
 import sortedcontainers
-import priorityq
 
 import Config
 import NARSDataStructures.ItemContainers

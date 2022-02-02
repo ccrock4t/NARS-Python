@@ -113,7 +113,7 @@ class SpatialBuffer():
         #     "ERROR: Data dimensions are incompatible with Spatial Buffer dimensions " \
         #     + str(event_array.shape) + " and " + str(self.dimensions)
 
-        self.array = self.create_pooled_sensation_array(original_event_array, stride=1)
+        self.array = np.array(original_event_array)
         self.components_bag.clear()
 
         maximum = 0
@@ -175,8 +175,7 @@ class SpatialBuffer():
         y, x = indices.object
         radius = 1#random.randint(1,2)
         min_x, min_y = max(x - radius, 0), max(y - radius, 0)
-        max_x, max_y = min(x + radius, array.shape[1] - 1), min(y + radius,
-                                                                                 array.shape[0] - 1)
+        max_x, max_y = min(x + radius, array.shape[1] - 1), min(y + radius,array.shape[0] - 1)
 
         extracted = array[min_y:max_y+1, min_x:max_x+1]
         sentence_subset= []
@@ -207,9 +206,13 @@ class SpatialBuffer():
                                       occurrence_time=Global.Global.get_current_cycle_number())
 
 
-        # last_taken_img_array = np.zeros(shape=self.img.shape)
-        # last_taken_img_array[min_y+1:(max_y+1)+1, min_x+1:(max_x+1)+1] = self.img[min_y+1:(max_y+1)+1, min_x+1:(max_x+1)+1]
-        # self.last_taken_img_array = last_taken_img_array  # store for visualization
+        if pooled:
+            img_min_x, img_min_y, img_max_x, img_max_y = 2*min_x, 2*min_y, 2*max_x, 2*max_y
+        else:
+            img_min_x, img_min_y, img_max_x, img_max_y = min_x, min_y, max_x, max_y
+        last_taken_img_array = np.zeros(shape=self.img.shape)
+        last_taken_img_array[img_min_y+1:(img_max_y+1)+1, img_min_x+1:(img_max_x+1)+1] = self.img[img_min_y+1:(img_max_y+1)+1, img_min_x+1:(img_max_x+1)+1]
+        self.last_taken_img_array = last_taken_img_array  # store for visualization
 
         return event_sentence
 

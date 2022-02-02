@@ -4,7 +4,7 @@ import queue
 import random
 import threading
 import time
-
+from keras.datasets import mnist
 
 import numpy as np
 
@@ -40,20 +40,29 @@ for i in range(10):
 
 current_trial = -1
 
+"""
+create dataset
+"""
 digit_to_image_dataset = {}
-digit_folder_list = glob.glob(directory + '*')
-for folder_name in digit_folder_list:
-    digit = folder_name[-1]
-    digit = int(digit)
-    x_fname_list = glob.glob(folder_name + "/*.png")
-    this_x_list = []
-    this_y_list = [digit] * len(x_fname_list)
-    for fname in x_fname_list:
-        this_x_list.append(np.array(Image.open(fname)))
-    digit_to_image_dataset[digit] = (np.array(this_x_list),np.array(this_y_list))
+for i in range(10):
+    digit_to_image_dataset[i] = [[],[]]
+(train_x, train_y), (test_x, test_y) = mnist.load_data()
+X = np.concatenate((train_x,test_x))
+Y = np.concatenate((train_y,test_y))
+# store digits
+for i in range(len(Y)):
+    x,y = X[i], Y[i]
+    digit_to_image_dataset[y][0].append(x)
+    digit_to_image_dataset[y][1].append(y)
+# convert to numpy
+for i in range(10):
+    digit_to_image_dataset[i] = (np.array(digit_to_image_dataset[i][0]), np.array(digit_to_image_dataset[i][1]))
 
 
 def load_dataset(length,bit=False,percent_of_train_img=0.25):
+    """
+        Load specific data from the dataset.
+    """
     x_train = []
     y_train = []
     x_test = []
@@ -98,7 +107,7 @@ def break_time(duration,clear_img=False):
         Global.Global.NARS.do_working_cycle()
         global_gui.set_status_label('BREAK:\ncycle ' + str(i) + ' / ' + str(duration) \
                                        + '\n' + str(round(i* 100 / duration, 2)) + "%")
-        global_gui.update_sliders()
+        global_gui.update_spotlight()
     print('END BREAK...')
 
 def seed_goals(bit):
@@ -254,7 +263,7 @@ class MNISTVisionTestGUI:
         window.title("NARS Vision Test")
         window.geometry("1000x650")
 
-        self.HEIGHT, self.WIDTH = np.array(Image.open(dir_0 + "/" + os.listdir(dir_0)[0])).shape
+        self.HEIGHT, self.WIDTH = 28,28
 
         HEIGHT, WIDTH, ZOOM = self.HEIGHT, self.WIDTH, self.ZOOM
 
@@ -291,21 +300,14 @@ class MNISTVisionTestGUI:
         self.digit_to_label_lights = {}
         self.digit_to_label_sliders = {}
         self.digit_to_label_slider_guilabel = {}
-        slider_row = 1
         column = 2
 
         self.NARS_guess_label = tk.Label(window, text="NARS Guess:")
 
         for i in range(10):
             light = tk.Button(window,text="    ",bg="black")
-            # slider = tk.Scale(window, from_=1.0, to=0.0, digits = 3, resolution = 0.01)
             label = tk.Label(window, text=i)
-            # slider.set(0.5)
-            # slider.grid(row=slider_row+1, column=column, columnspan=3)
-            #label.grid(row=slider_row + 2, column=column+2)
-
             self.digit_to_label_lights[i] = light
-            # self.digit_to_label_sliders[i] = slider
             self.digit_to_label_slider_guilabel[i] = label
             column += 3
 
@@ -336,21 +338,11 @@ class MNISTVisionTestGUI:
         if self.gui_disabled: return
         self.status_label.config(text=text)
 
-    def update_sliders(self):
+    def update_spotlight(self):
         if self.gui_disabled: return
         # update last attended image
         if Global.Global.NARS.vision_buffer.last_taken_img_array is not None:
             self.set_attended_image_array(Global.Global.NARS.vision_buffer.last_taken_img_array)
-
-        return
-        # update sliders
-        for i in range(10):
-            sentence = Global.Global.NARS.memory.peek_concept(digit_to_detected_term[i]).belief_table.peek()
-            if sentence is not None:
-                exp = sentence.get_expectation()
-                self.digit_to_label_sliders[i].set(exp)
-
-
 
     def get_predicted_digit(self):
         operation_statement = Global.Global.NARS.last_executed
@@ -469,7 +461,7 @@ def train(x_train, y_train, cycles):
             InputChannel.parse_and_queue_input_string(label)
             global_gui.set_status_label('TRAINING:\nFile: #' + str(train_idx+1) + "/" + str(len(x_train)) + '\nCycle ' + str(i) + ' / ' + str(cycles) \
                                            + '\n' + str(round(i * 100 / cycles, 2)) + "%")
-            global_gui.update_sliders()
+            global_gui.update_spotlight()
 
 def test(bit,
          x_test,
@@ -502,8 +494,6 @@ def test(bit,
         global_gui.update_gui_lights(predicted=-1, label_y=None)
         break_time(break_duration)
 
-        this_example_correct_cnt = 0
-        this_example_incorrect_cnt = 0
         print('TESTING next example, digit ' + str(label_y) + ':\nFile: #' + str(test_idx + 1) + "/" + str(len(x_test)))
 
         # let NARS think and come to a prediction
@@ -512,7 +502,7 @@ def test(bit,
         while prediction == -1 and i < TIMEOUT: #
             Global.Global.NARS.do_working_cycle()
             global_gui.set_status_label('TESTING:\nFile: #' + str(test_idx+1) + "/" + str(len(x_test)) + '\nCycle ' + str(i))
-            global_gui.update_sliders()
+            global_gui.update_spotlight()
 
             prediction = global_gui.get_predicted_digit()
             seed_goals(bit=bit)
@@ -542,11 +532,6 @@ def test(bit,
             break
 
 
-
-    # print('======= CYCLE SUBTOTALS ========')
-    # print('++ correct cycles:' + str(correct_cycles_cnt))
-    # print('++ incorrect cycles:' + str(incorrect_cycles_cnt))
-    # print('= TOTAL CYCLE Test Case Accuracy: ' + str(round(correct_cycles_cnt / (total_cycles_cnt) * 100, 2)) + "%")
     total_examples = len(x_test)
     total_accuracy = round(correct_examples_total_cnt / total_examples * 100, 2)
 
@@ -644,7 +629,7 @@ def learn_best_params():
         t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
         t.start()
         t.join()
-        avg_result = q.get(block=True)#run_trials(current_best_score)
+        avg_result = q.get(block=True)
 
         if avg_result is None:
             print("!!! Score for these parameters could not keep up with the current best. Skipping them and Reverting Configs to best...")
@@ -686,7 +671,7 @@ def restart_NARS():
     gc.collect()
 
 
-def run_trials(q, current_best_score):
+def run_trials(q, current_best_score, function=digit_classification):
     global current_trial
     sum_of_scores = 0
     trials = 3
@@ -695,10 +680,7 @@ def run_trials(q, current_best_score):
         print("===== STARTING TRIAL " + str(trial+1) + " / " + str(trials))
 
         current_trial = trial
-        #score = binary_memorization()
-        #score = digit_memorization()
-        #score = binary_classification()
-        score = digit_classification()
+        score = function()
 
         print("===== TRIAL " + str(trial+1) + " ACCURACY: " + str(score) + "%")
         sum_of_scores += score
@@ -718,11 +700,7 @@ def run_trials(q, current_best_score):
     avg_score = round(sum_of_scores / trials, 2)
     q.put(avg_score)
 
-def test_main():
-    time.sleep(1)
-    learn_best_params()
-    #supervised_learning_binary_one_example()
-
+def run_test():
     q = queue.Queue()
     t = threading.Thread(target=run_trials, args=[q, 0], daemon=True)
     t.start()
@@ -730,16 +708,22 @@ def test_main():
 
     global_gui.create_final_score_popup_window(final_score=q.get(block=True))
 
-    time.sleep(10)
+def test_main():
+    time.sleep(1)
 
-    #supervised_learning_MNIST_binary_dataset()
-    #supervised_learning_MNIST_digit_dataset()
+    learn_parameters = False
+    if learn_parameters:
+        learn_best_params()
+    else:
+        run_test()
+
+    time.sleep(10)
 
 
 
 if __name__ == "__main__":
     global_gui = MNISTVisionTestGUI()
-    global_gui.gui_disabled = True
+    global_gui.gui_disabled = False
     if global_gui.gui_disabled:
         global_gui.start()
     else:
