@@ -37,7 +37,8 @@ class Sentence:
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
         self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
 
-        self.eternal_expectation = NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency,
+        if self.punctuation != NALSyntax.Punctuation.Question:
+            self.eternal_expectation = NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency,
                                                                                      self.value.confidence)
 
     def __str__(self):
@@ -318,7 +319,7 @@ def new_sentence_from_string(sentence_string: str):
 
     # Find Truth Value, if it exists
     start_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
-    middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.TruthValDivider.value, punctuation_idx)
+    middle_truth_val_idx = sentence_string.find(NALSyntax.StatementSyntax.ValueSeparator.value, punctuation_idx)
     end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
 
     truth_value_found = not (start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx)

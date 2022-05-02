@@ -12,7 +12,7 @@ class StatementSyntax(enum.Enum):
     End = ")"
     TruthValMarker = "%"
     ExpectationMarker = "#"
-    TruthValDivider = ";"
+    ValueSeparator = ";"
     TermDivider = ","
     BudgetMarker = "$"
 

@@ -122,10 +122,6 @@ class Memory:
         if concept_item is not None:
             return concept_item  # return if it already exists
 
-
-        if Config.Testing \
-                and (isinstance(term, NALGrammar.Terms.SpatialTerm) or (isinstance(term, NALGrammar.Terms.CompoundTerm) and isinstance(term.subterms[0], NALGrammar.Terms.SpatialTerm))): return
-
         # if it doesn't exist
         # it must be created along with its sub-concepts if necessary
         concept_item = self.conceptualize_term(term)

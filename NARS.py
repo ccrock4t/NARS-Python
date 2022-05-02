@@ -82,6 +82,7 @@ class NARS:
         """
         while True:
             if Config.GUI_USE_INTERFACE:
+                time.sleep(0.1)
                 self.handle_gui_pipes()
 
             # global parameters
@@ -283,13 +284,16 @@ class NARS:
                 data_structure = None
                 if data_structure_id == str(self.temporal_module):
                     data_structure = self.temporal_module
+                    Global.Global.NARS_object_pipe.send(None)
                 elif data_structure_id == str(self.memory.concepts_bag):
                     data_structure = self.memory.concepts_bag
-                if data_structure is not None:
-                    item = None
-                    while item is None:
-                        item: NARSDataStructures.ItemContainers.Item = data_structure.peek_from_item_archive(key)
-                    Global.Global.NARS_object_pipe.send(item.get_gui_info())
+                    if data_structure is not None:
+                        item: NARSDataStructures.ItemContainers.Item = data_structure.peek(key)
+                        if item is None:
+                            Global.Global.NARS_object_pipe.send(None)
+                        else:
+                            Global.Global.NARS_object_pipe.send(item.get_gui_info())
+
             elif command == "getsentence":
                 sentence_string = key
                 statement_start_idx = sentence_string.find(NALSyntax.StatementSyntax.Start.value)
@@ -397,8 +401,6 @@ class NARS:
             # only put non-derived atomic events in temporal module for now
             Global.Global.NARS.temporal_module.PUT_NEW(task)
 
-        if task.sentence.stamp.derived_by is None: return
-
         if isinstance(j.statement, NALGrammar.Terms.CompoundTerm)\
             and j.statement.connector == NALSyntax.TermConnector.Negation:
             j = NALInferenceRules.Immediate.Negation(j)
@@ -421,8 +423,6 @@ class NARS:
         #     pass #todo self.temporal_module.anticipate_from_event(j)
 
         task_statement_concept.belief_table.put(j)
-
-        if not Config.Testing: return
 
         current_belief = task_statement_concept.belief_table.peek()
         self.process_judgment_sentence(current_belief)
@@ -465,6 +465,12 @@ class NARS:
         """
         Asserts.assert_task(task)
 
+        task_statement_concept_item = self.memory.peek_concept_item(task.sentence.statement)
+        if task_statement_concept_item is None: return
+
+        self.memory.concepts_bag.strengthen_item_quality(task_statement_concept_item.key)
+
+        task_statement_concept = task_statement_concept_item.object
         # get the best answer from concept belief table
         best_answer: NALGrammar.Sentences.Judgment = task_statement_concept.belief_table.peek_max()
         j1 = None

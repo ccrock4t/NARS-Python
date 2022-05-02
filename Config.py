@@ -23,7 +23,6 @@ try:
     BAG_GRANULARITY = user_config["BAG_GRANULARITY"]
     FOCUSX = user_config["FOCUSX"]
     FOCUSY = user_config["FOCUSY"]
-    Testing = False #todo remove
 
     TAU_WORKING_CYCLE_DURATION = user_config["TAU_WORKING_CYCLE_DURATION"]  # time in milliseconds per working cycle
 

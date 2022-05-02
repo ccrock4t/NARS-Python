@@ -41,7 +41,7 @@ class DesireValue(EvidentialValue):
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + "{:.2f}".format(self.frequency) \
-               + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
+               + str(NALSyntax.StatementSyntax.ValueSeparator.value) \
                + "{:.2f}".format(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value)
 
@@ -61,7 +61,7 @@ class TruthValue(EvidentialValue):
         super().__init__(frequency=frequency, confidence=confidence)
         self.formatted_string = str(NALSyntax.StatementSyntax.TruthValMarker.value) \
                + '{0:.2f}'.format(self.frequency) \
-               + str(NALSyntax.StatementSyntax.TruthValDivider.value) \
+               + str(NALSyntax.StatementSyntax.ValueSeparator.value) \
                + '{0:.10f}'.format(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value) \
 

@@ -441,10 +441,7 @@ class MNISTVisionTestGUI:
         buttonExample.pack()
 
 def train(x_train, y_train, cycles):
-    Config.Testing = False
     print('Begin Training Phase')
-
-
     global_gui.toggle_test_buttons(on=False)
     for train_idx,img_array in enumerate(x_train):
         img = Image.fromarray(img_array)
@@ -467,7 +464,6 @@ def test(bit,
          x_test,
          y_test):
     TIMEOUT = 1500 # in working cycles
-    Config.Testing = True
     break_duration = 100
     print('Begin Testing Phase')
     # run tests

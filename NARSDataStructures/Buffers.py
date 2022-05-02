@@ -470,7 +470,6 @@ class TemporalModule(ItemContainer):
 
             for the latest statement in the chain
         """
-        if Config.Testing: return
         NARS = self.NARS
         temporal_chain = self.temporal_chain
         num_of_events = len(temporal_chain)
@@ -657,16 +656,10 @@ class TemporalModule(ItemContainer):
                     if isinstance(derived_sentence.statement, NALGrammar.Terms.StatementTerm): continue  # ignore simple implications
                     process_sentence(derived_sentence) #todo A_C conjunction only
 
-            if Config.Testing or not isinstance(event_C.statement,
-                              NALGrammar.Terms.StatementTerm): continue  # todo remove this. temporarily prevent arrays in postconditions
-
 
             for j in range(i + 1, num_of_events - 1):
                 event_task_B = temporal_chain[j].object
                 event_B = event_task_B.sentence
-
-                if not isinstance(event_B.statement,
-                                  NALGrammar.Terms.SpatialTerm): continue  # todo remove this eventually. only arrays in precondition
 
                 conjunction_A_B = NALInferenceRules.Temporal.TemporalIntersection(event_A,
                                                                                   event_B)  # (A &/ B)

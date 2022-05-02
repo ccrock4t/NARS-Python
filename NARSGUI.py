@@ -120,16 +120,15 @@ class NARSGUI:
             idx_to_insert = tk.END
         else:
             string_list = listbox.get(0, tk.END)  # get all items in the listbox
-            msg_priority = msg[msg.find(NALSyntax.StatementSyntax.BudgetMarker.value) + 1:msg.rfind(
-                NALSyntax.StatementSyntax.BudgetMarker.value)]
+            msg_priority = NARSGUI.get_priority_from_string(msg)
             idx_to_insert = tk.END  # by default insert at the end
             i = 0
             for row in string_list:
-                row_priority = row[row.find(NALSyntax.StatementSyntax.BudgetMarker.value) + 1:row.rfind(
-                    NALSyntax.StatementSyntax.BudgetMarker.value)]
-                if float(msg_priority) > float(row_priority):
+                row_priority = NARSGUI.get_priority_from_string(row)
+                if msg_priority > row_priority:
                     idx_to_insert = i
                     break
+
                 i += 1
 
         if listbox is self.gui_memory_listbox:
@@ -147,6 +146,11 @@ class NARSGUI:
             listbox.insert(idx_to_insert, msg)
 
         self.update_datastructure_labels(data_structure_info, length=length)
+
+    @classmethod
+    def get_priority_from_string(cls, msg):
+        return float(msg[msg.find(NALSyntax.StatementSyntax.BudgetMarker.value) + 1:msg.find(
+                NALSyntax.StatementSyntax.ValueSeparator.value)])
 
     @classmethod
     def is_statement_string(cls, msg):

@@ -176,7 +176,7 @@ class Item:
     def __str__(self):
         return NALSyntax.StatementSyntax.BudgetMarker.value \
                 + "{:.5f}".format(self.budget.get_priority()) \
-               + NALSyntax.StatementSyntax.TruthValDivider.value \
+               + NALSyntax.StatementSyntax.ValueSeparator.value \
                + "{:.5f}".format(self.budget.get_quality()) \
                + NALSyntax.StatementSyntax.BudgetMarker.value \
                + " " \
@@ -237,7 +237,7 @@ class Item:
         def __str__(self):
             return NALSyntax.StatementSyntax.BudgetMarker.value \
                    + str(self.get_priority()) \
-                   + NALSyntax.StatementSyntax.TruthValDivider.value \
+                   + NALSyntax.StatementSyntax.ValueSeparator.value \
                    + str(self.get_quality()) \
                    + NALSyntax.StatementSyntax.BudgetMarker.value
 
