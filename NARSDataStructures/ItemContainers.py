@@ -244,7 +244,7 @@ class Item:
         def set_priority(self, value):
             # if value < self.get_quality(): value = self.get_quality()  # priority can't go below quality
             if value > 0.99999999: value = 0.99999999  # priority can't got too close to 1
-            if value < 0: value = 0  # priority can't go below 0
+            if value < 0.01: value = 0.01  # priority can't go below 0
             self._priority = value
 
         def set_quality(self, value):
