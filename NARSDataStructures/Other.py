@@ -177,3 +177,4 @@ class Task:
 
     def __str__(self):
         return "TASK: " + self.sentence.get_term_string_no_id()
+

@@ -234,7 +234,7 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
                 continue
 
             # try to go into bucket
-            rnd = random.randint(0, self.granularity  - 1)
+            rnd = random.randint(0, self.granularity - 1)
 
             threshold = self.level
             if rnd <= threshold:

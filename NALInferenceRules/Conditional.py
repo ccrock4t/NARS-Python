@@ -207,12 +207,9 @@ def SimplifyNegatedConjunctiveGoal(j1, j2):
             :- B! <f3, c3> (B ==> D)
     """
     remaining_subterms = j1.statement.subterms[0].subterms.copy()
-    found_idx = -1
-    for i, subterm in enumerate(remaining_subterms):
-        if subterm == j2.statement:
-            found_idx = i
+    found_idx = np.where(remaining_subterms == j2.statement)
 
-    assert i != -1, "Error: Invalid inputs to Simplify negated conjuctive goal (induction): " \
+    assert found_idx != -1, "Error: Invalid inputs to Simplify negated conjuctive goal (induction): " \
                     + j1.get_formatted_string() \
                     + " and " \
                     + j2.get_formatted_string()
@@ -328,8 +325,7 @@ def ConditionalConjunctionalAbduction(j1, j2):
 
     set_difference_of_terms = list(set(j1_subject_statement_terms) - set(j2_subject_statement_terms))
 
-    if len(set_difference_of_terms) != 1: assert False, "Error, should only have one term in set difference: " + str(
-        [term.get_formatted_string() for term in set_difference_of_terms])
+    assert len(set_difference_of_terms) == 1, "Error, should only have one term in set difference: " + str([term.get_formatted_string() for term in set_difference_of_terms])
 
     result_statement: NALGrammar.Terms.StatementTerm = set_difference_of_terms[0]
 

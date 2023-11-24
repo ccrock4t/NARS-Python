@@ -141,6 +141,7 @@ class NARS:
             self.process_task(task_item.object)
             tasks_left -= 1
 
+        self.Consider()
 
         # now execute operations
         self.execute_operation_queue()
@@ -559,7 +560,7 @@ class NARS:
         #     if should_inhibit:
         #         Global.Global.debug_print("Event was inhibited " + j.get_term_string())
         #         return  # Failed inhibition decision-making rule
-        if statement.is_op() and not j.statement.connector == NALSyntax.TermConnector.Negation:
+        if statement.is_op() and j.statement.connector != NALSyntax.TermConnector.Negation:
             #if not j.executed:
             self.queue_operation(j)
             #    j.executed = False

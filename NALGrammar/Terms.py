@@ -446,11 +446,10 @@ class CompoundTerm(Term):
                 connector_string = internal_string[0:2]  # Statement connector
             connector = NALSyntax.TermConnector.get_term_connector_from_string(connector_string)
 
-            if connector != NALSyntax.TermConnector.ArrayConjunction:
-                assert (internal_string[
-                            len(
-                                connector.value)] == NALSyntax.StatementSyntax.TermDivider.value), "Connector not followed by comma in CompoundTerm string " + compound_term_string
-                internal_string = internal_string[len(connector.value) + 1:]
+            assert (internal_string[
+                        len(
+                            connector.value)] == NALSyntax.StatementSyntax.TermDivider.value), "Connector not followed by comma in CompoundTerm string " + compound_term_string
+            internal_string = internal_string[len(connector.value) + 1:]
 
         assert (connector is not None), "Connector could not be parsed from CompoundTerm string."
 

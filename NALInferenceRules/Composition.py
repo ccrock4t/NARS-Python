@@ -48,8 +48,6 @@ def DisjunctionOrIntensionalIntersection(j1, j2):
     Asserts.assert_sentence_asymmetric(j2)
 
     # Statement
-    connector = None
-    copula = None
     if j1.statement.is_first_order() and j2.statement.is_first_order():
         connector = NALSyntax.TermConnector.IntensionalIntersection
         copula = NALSyntax.Copula.Inheritance

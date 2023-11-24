@@ -33,7 +33,6 @@ def TemporalIntersection(j1, j2):
             :- or Event (S &| P <f3, c3>)
     """
     assert j1.get_tense() != NALSyntax.Tense.Eternal and j2.get_tense() != NALSyntax.Tense.Eternal,"ERROR: Temporal Intersection needs events"
-    result = None
 
     j1_statement_term = j1.statement
     j2_statement_term = j2.statement

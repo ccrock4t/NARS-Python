@@ -97,7 +97,6 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
     ===============================================
     ===============================================
     """
-    #todo arrayterms
     if isinstance(j1.statement, NALGrammar.Terms.CompoundTerm):
         if isinstance(j2.statement,NALGrammar.Terms.StatementTerm) \
             and not j2.statement.is_first_order():
@@ -115,7 +114,6 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
                 derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2)  # S-->P
                 add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
                 return all_derived_sentences
-    # todo arrayterms ^^
 
     swapped = False
 

@@ -202,8 +202,6 @@ def binary_classification():
     assert length % 2 == 0, "ERROR: must use divisible by 2 number to create equal dataset"
     training_cycles = 750
 
-    digit_folder_list = [glob.glob(directory + '0')[0], glob.glob(directory + '1')[0]]
-
     x_train, y_train, x_test, y_test = load_dataset(length=length,
                                                     bit=True)
 
@@ -225,11 +223,11 @@ def binary_classification():
 
 def digit_classification():
     restart_NARS()
-    length = 500
+    length = 20
     training_cycles = 200
     x_train, y_train, x_test, y_test = load_dataset(length=length,
                                                     bit=False,
-                                                    percent_of_train_img=0.8)
+                                                    percent_of_train_img=0.5)
 
     """
         Training Phase
