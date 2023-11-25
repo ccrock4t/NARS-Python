@@ -123,7 +123,7 @@ class SpatialBuffer():
             else:
                 pixel_value = float(self.img[y, x])
             f = pixel_value / SpatialBuffer.MAX_PIXEL_VALUE
-            c = 0.5
+            c = NALInferenceRules.HelperFunctions.get_unit_evidence()
             event = self.create_pixel_event(subject_name=str(y) + "_" + str(x), f=f, c=c)
             quad_tree.value = event
         else:
@@ -155,7 +155,7 @@ class SpatialBuffer():
             truth_value = sentence.value
             frequency_sum += truth_value.frequency
             
-        spatial_conjunction = self.create_pixel_event("QUAD" + str(self.quadtree_id), f=frequency_sum/4, c=0.5)
+        spatial_conjunction = self.create_pixel_event("QUAD" + str(self.quadtree_id), f=frequency_sum/4, c=NALInferenceRules.HelperFunctions.get_unit_evidence())
         self.quadtree_id = self.quadtree_id + 1
 
         for quad_child in quad_tree.children:

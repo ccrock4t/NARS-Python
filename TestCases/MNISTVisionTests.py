@@ -20,10 +20,6 @@ import os
 import tkinter as tk
 
 
-directory = 'supervised_learning/'
-dir_0 = directory + '0/'
-dir_1 = directory + '1/'
-
 digit_to_label = {}
 digit_to_detected_term = {}
 for i in range(0,10):
@@ -223,8 +219,8 @@ def binary_classification():
 
 def digit_classification():
     restart_NARS()
-    length = 20
-    training_cycles = 200
+    length = 100
+    training_cycles = 5
     x_train, y_train, x_test, y_test = load_dataset(length=length,
                                                     bit=False,
                                                     percent_of_train_img=0.5)
@@ -450,7 +446,6 @@ def train(x_train, y_train, cycles):
         print('TRAINING digit ' + str(y_train[train_idx]) \
             + ':\nFile: #' + str(train_idx + 1) + "/" + str(len(x_train)) + ' for ' + str(cycles) + ' cycles')
 
-        break_time(Config.EVENT_BUFFER_CAPACITY)
         for i in range(cycles):
             Global.Global.NARS.do_working_cycle()
             InputChannel.parse_and_queue_input_string(label)
@@ -462,7 +457,7 @@ def test(bit,
          x_test,
          y_test):
     TIMEOUT = 1500 # in working cycles
-    break_duration = 100
+    break_duration = 10
     print('Begin Testing Phase')
     # run tests
     global_gui.toggle_test_buttons(on=True)
