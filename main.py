@@ -23,7 +23,7 @@ class GUIProcess(multiprocessing.Process):
         narsese_buffer_ID = (str(NARS_object.global_buffer), type(NARS_object.global_buffer).__name__)
         narsese_buffer_capacity = NARS_object.global_buffer.capacity
         vision_buffer_ID = (str(NARS_object.vision_buffer), type(NARS_object.global_buffer).__name__)
-        vision_buffer_dims = str(NARS_object.vision_buffer.array.shape)
+        vision_buffer_dims = str(NARS_object.vision_buffer.dimensions)
         temporal_module_ID = (str(NARS_object.temporal_module), type(NARS_object.temporal_module).__name__)
         temporal_module_capacity = NARS_object.temporal_module.capacity
         memory_bag_ID = (str(NARS_object.memory.concepts_bag), type(NARS_object.memory.concepts_bag).__name__)

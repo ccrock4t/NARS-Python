@@ -5,7 +5,7 @@ import Asserts
 
 import NALGrammar.Terms
 
-from NALGrammar.Values import TruthValue, DesireValue
+from NALGrammar.Values import TruthValue, DesireValue, EvidentialValue
 import NALInferenceRules
 import numpy as np
 
@@ -35,7 +35,7 @@ class Sentence:
         self.statement = statement
         self.punctuation: NALSyntax.Punctuation = punctuation
         self.stamp = Stamp(self_sentence=self,occurrence_time=occurrence_time)
-        self.value = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
+        self.value: EvidentialValue = value  # truth-value (for Judgment) or desire-value (for Goal) or None (for Question)
 
         if self.punctuation != NALSyntax.Punctuation.Question:
             self.eternal_expectation = NALInferenceRules.TruthValueFunctions.Expectation(self.value.frequency,

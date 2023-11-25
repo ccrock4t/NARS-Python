@@ -1,5 +1,6 @@
 import random
 import timeit as time
+from typing import List
 
 import Asserts
 import NALGrammar.Sentences
@@ -178,3 +179,22 @@ class Task:
     def __str__(self):
         return "TASK: " + self.sentence.get_term_string_no_id()
 
+class QuadTree:
+
+    MAXLEAFID = 32 # todo - make this vary
+    LEAFID = 0
+    def __init__(self):
+        self.children: List[QuadTree] = []
+        self.value = None
+        self.id = None
+
+    def Create4ChildrenRecursive(self, depth):
+        if(depth == 0):
+            self.id = (QuadTree.LEAFID // QuadTree.MAXLEAFID, QuadTree.LEAFID % QuadTree.MAXLEAFID) #(y,x)
+            QuadTree.LEAFID += 1
+            return
+
+        for _ in range(4):
+            child = QuadTree()
+            child.Create4ChildrenRecursive(depth-1)
+            self.children.append(child)

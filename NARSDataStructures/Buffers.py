@@ -6,14 +6,17 @@
 import math
 import random
 import timeit as time
+from typing import Tuple, List
 
 import Config
 import Global
 import NALSyntax
 import NARSInferenceEngine
+from NALGrammar.Sentences import Judgment
+from NALGrammar.Values import TruthValue
 from NARSDataStructures.Bag import Bag
 from NARSDataStructures.ItemContainers import ItemContainer, Item
-from NARSDataStructures.Other import Depq, Task
+from NARSDataStructures.Other import Depq, Task, QuadTree
 import NALInferenceRules
 import NALGrammar
 import numpy as np
@@ -78,331 +81,90 @@ class SpatialBuffer():
 
         The data is converted to Narsese when extracted.
     """
+    MAX_PIXEL_VALUE = 255
+    PREDICATE_NAME = 'Bright'
 
     def __init__(self, dimensions):
         """
         :param dimensions: dimensions of the 2d buffer as a tuple (y, x)
         """
         assert len(dimensions) == 2, "ERROR: Spatial buffer only support 2D structures"
-        self.dimensions = dimensions
-        self.array = np.full(shape=dimensions,
-                             fill_value=NALGrammar.Sentences.TruthValue(0.0,0.9))
-        self.components_bag = Bag(item_type=object,
-                                  capacity=1000,
-                                  granularity=100)
+        self.dimensions : Tuple = dimensions
 
-        self.pooled_array = np.full(shape=dimensions,
-                             fill_value=NALGrammar.Sentences.TruthValue(0.0,0.9))
-        self.pooled_components_bag = Bag(item_type=object,
-                                  capacity=1000,
-                                  granularity=100)
+        self.quadtree_leaves = np.empty(shape=(8,8), dtype=QuadTree)
+
+        # total image
+        # 1 node on level 0, the root
+        self.quadtree : QuadTree = QuadTree()
+
+        self.quadtree.Create4ChildrenRecursive(5) #2^5=32, therefore this allows for images that are 32x32 pixels, creating 1024 leaf nodes
 
         self.last_taken_img_array = None
         self.last_sentence = None
-
-        # initialize with uniform probabilility
+        self.quadtree_id = 0
+        self.events: List[Judgment] = []
 
     def blank_image(self):
-        self.set_image(np.empty(shape=self.array.shape))
+        self.set_image(np.empty(shape=self.dimensions))
 
     def set_image(self, img):
         self.img = img
-        original_event_array = self.transduce_raw_vision_array(img)
-
-        # assert event_array.shape == self.dimensions,\
-        #     "ERROR: Data dimensions are incompatible with Spatial Buffer dimensions " \
-        #     + str(event_array.shape) + " and " + str(self.dimensions)
-
-        self.array = np.array(original_event_array)
-        self.components_bag.clear()
-
-        maximum = 0
-        for indices, sentence in np.ndenumerate(self.array):
-            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
-                    and not (isinstance(sentence.statement,
-                                        NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
-                maximum = max(maximum, sentence.value.frequency * sentence.value.confidence)
-
-        for indices, sentence in np.ndenumerate(self.array):
-            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
-                and not (isinstance(sentence.statement,NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
-                priority = sentence.value.frequency * sentence.value.confidence / maximum
-                object = indices
-                self.components_bag.PUT_NEW(object)
-                self.components_bag.change_priority(Item.get_key_from_object(object), priority)
+        self.quadtree_id = 0
+        self.events = []
+        self.CalculateQuadTreeRecursive(self.quadtree)
 
 
-
-        # pooled
-        self.pooled_array = self.create_pooled_sensation_array(original_event_array, stride=2)
-        #self.pooled_array = self.create_pooled_sensation_array(self.pooled_array , stride=2)
-        self.pooled_components_bag.clear()
-
-        maximum = 0
-        for indices, sentence in np.ndenumerate(self.pooled_array):
-            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
-                    and not (isinstance(sentence.statement,
-                                        NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
-                maximum = max(maximum, sentence.value.frequency * sentence.value.confidence)
-
-        for indices, sentence in np.ndenumerate(self.pooled_array):
-            if sentence.value.frequency > Config.POSITIVE_THRESHOLD \
-                    and not (isinstance(sentence.statement,
-                                        NALGrammar.Terms.CompoundTerm) and sentence.statement.connector == NALSyntax.TermConnector.Negation):
-                priority = sentence.value.frequency * sentence.value.confidence / maximum
-                object = indices
-                self.pooled_components_bag.PUT_NEW(object)
-                self.pooled_components_bag.change_priority(Item.get_key_from_object(object), priority)
-
-    def take(self, pooled):
-        """
-            Probabilistically select a spatial subset of the buffer.
-            :return: an Array Judgment of the selected subset.
-        """
-        if pooled:
-            bag = self.pooled_components_bag
-            array = self.pooled_array
-        else:
-            bag = self.components_bag
-            array = self.array
-
-        # probabilistically peek the 2 vertices of the box
-        # selection 1: small fixed windows
-
-        indices = bag.peek()
-        if indices is None: return None
-
-        y, x = indices.object
-        radius = 1#random.randint(1,2)
-        min_x, min_y = max(x - radius, 0), max(y - radius, 0)
-        max_x, max_y = min(x + radius, array.shape[1] - 1), min(y + radius,array.shape[0] - 1)
-
-        extracted = array[min_y:max_y+1, min_x:max_x+1]
-        sentence_subset= []
-        for idx,sentence in np.ndenumerate(extracted):
-            if not (isinstance(sentence.statement, NALGrammar.Terms.CompoundTerm)
-                and sentence.statement.connector == NALSyntax.TermConnector.Negation):
-                sentence_subset.append(sentence)
-
-        total_truth = None
-        statement_subset = []
-        for sentence in sentence_subset:
-            if total_truth is None:
-                total_truth = sentence.value
+    def CalculateQuadTreeRecursive(self, quad_tree: QuadTree):
+        if len(quad_tree.children) == 0:
+            # leaf node, so add the event
+            y,x = quad_tree.id
+            if y >= 28 or x >= 28: # MNIST images are 28x28
+                pixel_value = float(0)
             else:
-                total_truth = NALInferenceRules.TruthValueFunctions.F_Intersection(sentence.value.frequency,
-                                                                     sentence.value.confidence,
-                                                                     total_truth.frequency,
-                                                                     total_truth.confidence)
-            statement_subset.append(sentence.statement)
-
-
-        # create conjunction of features
-        statement = NALGrammar.Terms.CompoundTerm(subterms=statement_subset,
-                                                  term_connector=NALSyntax.TermConnector.Conjunction)
-
-        event_sentence = NALGrammar.Sentences.Judgment(statement=statement,
-                                      value=total_truth,
-                                      occurrence_time=Global.Global.get_current_cycle_number())
-
-
-        if pooled:
-            img_min_x, img_min_y, img_max_x, img_max_y = 2*min_x, 2*min_y, 2*max_x, 2*max_y
+                pixel_value = float(self.img[y, x])
+            f = pixel_value / SpatialBuffer.MAX_PIXEL_VALUE
+            c = 0.5
+            event = self.create_pixel_event(subject_name=str(y) + "_" + str(x), f=f, c=c)
+            quad_tree.value = event
         else:
-            img_min_x, img_min_y, img_max_x, img_max_y = min_x, min_y, max_x, max_y
-        last_taken_img_array = np.zeros(shape=self.img.shape)
-        last_taken_img_array[img_min_y+1:(img_max_y+1)+1, img_min_x+1:(img_max_x+1)+1] = self.img[img_min_y+1:(img_max_y+1)+1, img_min_x+1:(img_max_x+1)+1]
-        self.last_taken_img_array = last_taken_img_array  # store for visualization
+            for i in range(len(quad_tree.children)):
+                child_node = quad_tree.children[i]
+                self.CalculateQuadTreeRecursive(child_node)
 
-        return event_sentence
+            quad_tree.value = self.create_spatial_conjunction(quad_tree)
 
-    def create_spatial_conjunction(self, subset):
+        Global.Global.NARS.process_judgment_sentence_initial(quad_tree.value)
+        self.events.append(quad_tree.value)
+
+
+    def create_pixel_event(self, subject_name: str, f: float, c: float):
+
+        statement = NALGrammar.Terms.from_string("(" + subject_name + "-->" + SpatialBuffer.PREDICATE_NAME + ")")
+        return NALGrammar.Sentences.Judgment(statement=statement,
+                                      value=TruthValue(f, c),
+                                      occurrence_time=None)
+
+    def create_spatial_conjunction(self, quad_tree: QuadTree):
         """
-
         :param subset: 2d Array of positive (non-negated) sentences / events
         :return:
         """
-        conjunction_truth_value = None
-        terms_array = np.empty(shape=subset.shape,
-                               dtype=NALGrammar.Terms.Term)
-        for indices, sentence in np.ndenumerate(subset):
+        frequency_sum = 0
+        for quad_child in quad_tree.children:
+            sentence = quad_child.value
             truth_value = sentence.value
-            term = sentence.statement
+            frequency_sum += truth_value.frequency
+            
+        spatial_conjunction = self.create_pixel_event("QUAD" + str(self.quadtree_id), f=frequency_sum/4, c=0.5)
+        self.quadtree_id = self.quadtree_id + 1
 
-            if conjunction_truth_value is None:
-                conjunction_truth_value = truth_value
-            else:
-                conjunction_truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(conjunction_truth_value.frequency,
-                                               conjunction_truth_value.confidence,
-                                               truth_value.frequency,
-                                               truth_value.confidence)
-
-            terms_array[indices] = term
-
-        spatial_conjunction_term = NALGrammar.Terms.SpatialTerm(spatial_subterms=terms_array,
-                                                                connector=NALSyntax.TermConnector.ArrayConjunction)
-        spatial_conjunction = NALGrammar.Sentences.Judgment(statement=spatial_conjunction_term,
-                                      value=conjunction_truth_value,
-                                      occurrence_time=Global.Global.get_current_cycle_number())
+        for quad_child in quad_tree.children:
+            sentence = quad_child.value
+            spatial_conjunction.stamp.evidential_base.merge_sentence_evidential_base_into_self(sentence)
 
         return spatial_conjunction
 
-    def create_pooled_sensation_array(self, array, stride):
-        """
-            Takes an array of events, and returns an array of events except 2x2 pooled with stride
-        :param array:
-        :param stride:
-        :return:
-        """
-        pad_sentence = Global.Global.ARRAY_NEGATIVE_SENTENCE
-        stride_original_sentences = np.empty(shape=(2,2),
-                                             dtype=NALGrammar.Sentences.Sentence)
-        if stride == 1:
-            pool_terms_array = np.empty(shape=(array.shape[0] - 1, array.shape[1] - 1),
-                                      dtype=NALGrammar.Terms.Term)
-        elif stride == 2:
-            height = array.shape[0] // 2 if array.shape[0] % 2 == 0 else (array.shape[0]+1) // 2
-            width = array.shape[1] // 2 if array.shape[1] % 2 == 0 else (array.shape[1]+1) // 2
-            pool_terms_array = np.empty(shape=(height, width), dtype=NALGrammar.Terms.Term)
-        else:
-            assert False,"ERROR: Does not support stride > 2"
 
-        for indices,sentence in np.ndenumerate(array):
-            y, x = indices
-            y, x = int(y), int(x)
-            if stride == 2 and not (x % 2 == 0 or y % 2 == 0): continue # only use even indices for stride 2
-
-            pool_y = y // 2 if stride == 2 else y
-            pool_x = x // 2 if stride == 2 else x
-
-            # pool sensation
-            if y < array.shape[0] - 1 and x < array.shape[1] - 1:
-                # not last column or row yet
-                stride_original_sentences = np.array(array[y:y+2, x:x+2])  # get 4x4
-
-            elif y == array.shape[0] - 1 and x < array.shape[1] - 1:
-                # last row, not last column
-                if stride == 1: continue
-                stride_original_sentences[0,:] = np.array([array[y, x], array[y, x+1]])
-                stride_original_sentences[1,:] = np.array([pad_sentence, pad_sentence])
-
-            elif y < array.shape[0] - 1 and x == array.shape[1] - 1:
-                # last column, not last row
-                if stride == 1: continue
-                stride_original_sentences[0,:] = np.array([array[y, x], pad_sentence])
-                stride_original_sentences[1,:] = np.array([array[y+1, x], pad_sentence])
-
-            elif y == array.shape[0] - 1 and x == array.shape[1] - 1:
-                if stride == 1: continue
-                #last row and column
-                stride_original_sentences[0, :] = np.array([array[y, x], pad_sentence])
-                stride_original_sentences[1, :] = np.array([pad_sentence, pad_sentence])
-
-            pool_terms_array[pool_y, pool_x] = self.create_spatial_disjunction(np.array(stride_original_sentences))
-
-        return pool_terms_array
-
-    def create_spatial_disjunction(self, array_of_events):
-        """
-
-        :param terms: 2x2 Array of positive (non-negated) sentences / events
-        :param terms_array: 2x2 array of potentially negated Terms
-        :return:
-        """
-        #TODO FINISH THIS
-        all_negative = True
-        for i,event in np.ndenumerate(array_of_events):
-            all_negative = all_negative \
-                           and (isinstance(event.statement, NALGrammar.Terms.CompoundTerm) and event.statement.connector == NALSyntax.TermConnector.Negation)
-
-        disjunction_truth = None
-        disjunction_subterms = np.empty(shape=array_of_events.shape,
-                                  dtype=NALGrammar.Terms.Term)
-
-        for indices, event in np.ndenumerate(array_of_events):
-            if isinstance(event.statement, NALGrammar.Terms.CompoundTerm) \
-                    and event.statement.connector == NALSyntax.TermConnector.Negation:
-                # negated event, get positive
-                truth_value = NALInferenceRules.TruthValueFunctions.F_Negation(event.value.frequency,
-                                                                 event.value.confidence) # get regular positive back
-                new_statement = event.statement.subterms[0]
-            else:
-                # already positive
-                truth_value = event.value
-                new_statement = event.statement
-
-            disjunction_subterms[indices] = new_statement
-
-            if disjunction_truth is None:
-                disjunction_truth = truth_value
-            else:
-                # OR
-                disjunction_truth = NALInferenceRules.TruthValueFunctions.F_Union(disjunction_truth.frequency,
-                                                                                  disjunction_truth.confidence,
-                                                                                  truth_value.frequency,
-                                                                                  truth_value.confidence)
-
-        disjunction_term = NALGrammar.Terms.SpatialTerm(spatial_subterms=disjunction_subterms,
-                                                                connector=NALSyntax.TermConnector.ArrayDisjunction)
-
-        if all_negative:
-            disjunction_truth = NALInferenceRules.TruthValueFunctions.F_Negation(disjunction_truth.frequency,
-                                                                           disjunction_truth.confidence)
-            disjunction_term = NALGrammar.Terms.CompoundTerm(subterms=[disjunction_term],
-                                                            term_connector=NALSyntax.TermConnector.Negation)
-
-
-        spatial_disjunction = NALGrammar.Sentences.Judgment(statement=disjunction_term,
-                                      value=disjunction_truth)
-
-        return spatial_disjunction
-
-    def transduce_raw_vision_array(self, img_array):
-        """
-            Transduce raw vision data into NARS truth-values
-            :param img_array:
-            :return: python array of NARS truth values, with the same dimensions as given raw data
-        """
-        max_value = 255
-
-        def create_2d_truth_value_array(*indices):
-            coords = tuple([int(var) for var in indices])
-            y,x = coords
-            pixel_value = float(img_array[y, x])
-
-            f = pixel_value / max_value
-            if f > 1: f = 1
-
-            relative_indices = []
-            offsets = (img_array.shape[0]-1)/2, (img_array.shape[1]-1)/2
-            for i in range(2):
-                relative_indices.append((indices[i] - offsets[i]) / offsets[i])
-
-            unit = NALInferenceRules.HelperFunctions.get_unit_evidence()
-            c = unit*math.exp(-1*((Config.FOCUSY ** 2)*(relative_indices[0]**2) + (Config.FOCUSX ** 2)*(relative_indices[1]**2)))
-
-            predicate_name = 'B'
-            subject_name = str(y) + "_" + str(x)
-
-
-            if f > Config.POSITIVE_THRESHOLD:
-                truth_value = NALGrammar.Sentences.TruthValue(f, c)
-                statement = NALGrammar.Terms.from_string("(" + subject_name + "-->" + predicate_name + ")")
-            else:
-                truth_value = NALGrammar.Sentences.TruthValue(NALInferenceRules.ExtendedBooleanOperators.bnot(f), c)
-                statement = NALGrammar.Terms.from_string("(--,(" + subject_name + "-->" + predicate_name + "))")
-
-            # create the common predicate
-
-            return NALGrammar.Sentences.Judgment(statement=statement,
-                                                       value=truth_value)
-
-
-        func_vectorized = np.vectorize(create_2d_truth_value_array)
-        truth_value_array = np.fromfunction(function=func_vectorized,
-                                            shape=img_array.shape)
-
-        return truth_value_array
 
 
 class TemporalModule(ItemContainer):
