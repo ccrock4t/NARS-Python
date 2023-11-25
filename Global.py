@@ -81,6 +81,7 @@ class Global:
     @classmethod
     def debug_print(cls,msg):
         if msg is None: return
+        if not Config.DEBUG: return
         print(str(cls.get_current_cycle_number())
               + ": gb(" + str(len(cls.NARS.global_buffer)) + "): "
               + ": mem(" + str(len(cls.NARS.memory.concepts_bag)) + "/" + str(cls.NARS.memory.concepts_bag.capacity) + "): "

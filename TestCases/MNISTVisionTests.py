@@ -19,11 +19,17 @@ from PIL import Image, ImageTk
 import os
 import tkinter as tk
 
+from NALGrammar.Sentences import Judgment
+from NARSMemory import Concept
+
+
+def get_digit_label(i):
+    return "(" + str(i) + " --> SEEN)"
 
 digit_to_label = {}
 digit_to_detected_term = {}
 for i in range(0,10):
-    term_str = "(" + str(i) + " --> SEEN)"
+    term_str = get_digit_label(i)
     term = NALGrammar.Terms.from_string(term_str)
     digit_to_label[i] = term_str + ". :|: %1.0;0.99%"
     digit_to_detected_term[i] = term
@@ -90,7 +96,7 @@ def load_dataset(length,bit=False,percent_of_train_img=0.25):
 
     return x_train, y_train, x_test, y_test
 
-def break_time(duration,clear_img=False):
+def break_time(duration,num_digits,clear_img=False):
     print('BREAK TIME...')
     # give the system a small break
     global_gui.update_test_buttons(None)
@@ -104,6 +110,8 @@ def break_time(duration,clear_img=False):
         global_gui.set_status_label('BREAK:\ncycle ' + str(i) + ' / ' + str(duration) \
                                        + '\n' + str(round(i* 100 / duration, 2)) + "%")
         global_gui.update_spotlight()
+        global_gui.update_gui_sliders(num_digits)
+
     print('END BREAK...')
 
 def seed_goals(bit):
@@ -116,13 +124,14 @@ def seed_goals(bit):
     else:
         quantity = 10
     for i in range(quantity):
-        label = "(&/,(" + str(i) + " --> SEEN),((*,{SELF}) --> press_digit_" + str(i) + "))! :|: %1.0;0.99%"
+        label = "(&/," + get_digit_label(i) + ",((*,{SELF}) --> press_digit_" + str(i) + "))! :|: %1.0;0.99%"
         InputChannel.parse_and_queue_input_string(label)
+
 
 
 def binary_memorization():
     restart_NARS()
-    training_cycles = 150
+    training_cycles = 5
 
     images_per_class = 5
     dataset_len = 2*images_per_class
@@ -196,7 +205,7 @@ def binary_classification():
 
     length = 120
     assert length % 2 == 0, "ERROR: must use divisible by 2 number to create equal dataset"
-    training_cycles = 750
+    training_cycles = 5
 
     x_train, y_train, x_test, y_test = load_dataset(length=length,
                                                     bit=True)
@@ -293,7 +302,6 @@ class MNISTVisionTestGUI:
         self.digit_to_label = {}
         self.digit_to_label_lights = {}
         self.digit_to_label_sliders = {}
-        self.digit_to_label_slider_guilabel = {}
         column = 2
 
         self.NARS_guess_label = tk.Label(window, text="NARS Guess:")
@@ -301,8 +309,10 @@ class MNISTVisionTestGUI:
         for i in range(10):
             light = tk.Button(window,text="    ",bg="black")
             label = tk.Label(window, text=i)
+            slider = tk.Scale(window,from_=1.0, to=0.0, resolution=0.01)
             self.digit_to_label_lights[i] = light
-            self.digit_to_label_slider_guilabel[i] = label
+            self.digit_to_label[i] = label
+            self.digit_to_label_sliders[i] = slider
             column += 3
 
         self.button_correct = tk.Button(bg='grey', text="CORRECT")
@@ -365,6 +375,18 @@ class MNISTVisionTestGUI:
         time.sleep(1.0)
         return predicted
 
+    def update_gui_sliders(self, num_digits):
+        for digitnum in range(num_digits):
+            digit_label_concept: Concept = Global.Global.NARS.memory.peek_concept(digit_to_detected_term[digitnum])
+            belief: Judgment = digit_label_concept.belief_table.peek()
+            if belief is None:
+                global_gui.update_gui_slider(digitnum, 0.5)
+            else:
+                global_gui.update_gui_slider(digitnum, belief.get_expectation())
+
+    def update_gui_slider(self, i, value):
+        self.digit_to_label_sliders[i].set(value=value)
+
     def get_predicted_bit(self):
         if self.gui_disabled: return
         operation_statement = Global.Global.NARS.last_executed
@@ -391,7 +413,8 @@ class MNISTVisionTestGUI:
             self.NARS_guess_label.grid(row=1, column=column,columnspan=30)
             for i in range(10):
                 self.digit_to_label_lights[i].grid(row=2,column=column)
-                self.digit_to_label_slider_guilabel[i].grid(row=3,column=column)
+                self.digit_to_label[i].grid(row=3,column=column)
+                self.digit_to_label_sliders[i].grid(row=4,column=column)
                 column += 3
         else:
             self.update_test_buttons(correct=None)
@@ -403,7 +426,8 @@ class MNISTVisionTestGUI:
             self.NARS_guess_label.grid_remove()
             for i in range(10):
                 self.digit_to_label_lights[i].grid_remove()
-                self.digit_to_label_slider_guilabel[i].grid_remove()
+                self.digit_to_label[i].grid_remove()
+                self.digit_to_label_sliders[i].grid_remove()
                 column += 3
 
 
@@ -457,7 +481,7 @@ def test(bit,
          x_test,
          y_test):
     TIMEOUT = 1500 # in working cycles
-    break_duration = 10
+    break_duration = 100
     print('Begin Testing Phase')
     # run tests
     global_gui.toggle_test_buttons(on=True)
@@ -481,7 +505,7 @@ def test(bit,
 
         # blank out GUI lights
         global_gui.update_gui_lights(predicted=-1, label_y=None)
-        break_time(break_duration)
+        break_time(break_duration,num_digits)
 
         print('TESTING next example, digit ' + str(label_y) + ':\nFile: #' + str(test_idx + 1) + "/" + str(len(x_test)))
 
@@ -492,6 +516,7 @@ def test(bit,
             Global.Global.NARS.do_working_cycle()
             global_gui.set_status_label('TESTING:\nFile: #' + str(test_idx+1) + "/" + str(len(x_test)) + '\nCycle ' + str(i))
             global_gui.update_spotlight()
+            global_gui.update_gui_sliders(num_digits)
 
             prediction = global_gui.get_predicted_digit()
             seed_goals(bit=bit)
@@ -544,8 +569,6 @@ def learn_best_params():
     # current_params = {'PROJECTION_DECAY_DESIRE': Config.PROJECTION_DECAY_DESIRE,
     #                   'PROJECTION_DECAY_EVENT': Config.PROJECTION_DECAY_EVENT,
     current_params = {'T':  Config.T,
-                      'FOCUSX': Config.FOCUSX,
-                      'FOCUSY': Config.FOCUSY,
                       'k': Config.k}
 
     best_params = current_params.copy()
@@ -576,14 +599,6 @@ def learn_best_params():
                 if sign == 0 and new_param - inc >= 1:
                     # 0 will be negative
                     new_param += -1*inc
-                else:
-                    # 1 will be positive
-                    new_param += inc
-            elif key == 'FOCUSX' or key == 'FOCUSY':
-                inc = random.random()
-                if sign == 0 and new_param - inc > 0.0:
-                    # 0 will be negative
-                    new_param -= inc
                 else:
                     # 1 will be positive
                     new_param += inc
@@ -660,7 +675,7 @@ def restart_NARS():
     gc.collect()
 
 
-def run_trials(q, current_best_score, function=digit_classification):
+def run_trials(q, current_best_score, function=binary_memorization):
     global current_trial
     sum_of_scores = 0
     trials = 3

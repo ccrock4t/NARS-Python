@@ -65,5 +65,9 @@ class TruthValue(EvidentialValue):
                + '{0:.10f}'.format(self.confidence) \
                + str(NALSyntax.StatementSyntax.TruthValMarker.value) \
 
+    def Clone(self):
+        return TruthValue(self.frequency,
+                          self.confidence)
+
     def get_formatted_string(self):
         return self.formatted_string

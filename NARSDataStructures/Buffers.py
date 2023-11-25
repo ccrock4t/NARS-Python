@@ -14,6 +14,7 @@ import NALSyntax
 import NARSInferenceEngine
 from NALGrammar.Sentences import Judgment
 from NALGrammar.Values import TruthValue
+from NALInferenceRules.TruthValueFunctions import F_Revision
 from NARSDataStructures.Bag import Bag
 from NARSDataStructures.ItemContainers import ItemContainer, Item
 from NARSDataStructures.Other import Depq, Task, QuadTree
@@ -149,13 +150,24 @@ class SpatialBuffer():
         :param subset: 2d Array of positive (non-negated) sentences / events
         :return:
         """
-        frequency_sum = 0
+
+        conjunction_truth_value = None
         for quad_child in quad_tree.children:
             sentence = quad_child.value
-            truth_value = sentence.value
-            frequency_sum += truth_value.frequency
+            truth_value: TruthValue = sentence.value
+            if conjunction_truth_value is None:
+                conjunction_truth_value = truth_value.Clone()
+            else:
+                conjunction_truth_value = F_Revision(conjunction_truth_value.frequency,
+                                                     conjunction_truth_value.confidence,
+                                                     truth_value.frequency,
+                                                     truth_value.confidence)
+
+
             
-        spatial_conjunction = self.create_pixel_event("QUAD" + str(self.quadtree_id), f=frequency_sum/4, c=NALInferenceRules.HelperFunctions.get_unit_evidence())
+        spatial_conjunction = self.create_pixel_event("QUAD" + str(self.quadtree_id),
+                                                      f=conjunction_truth_value.frequency,
+                                                      c=conjunction_truth_value.confidence)
         self.quadtree_id = self.quadtree_id + 1
 
         for quad_child in quad_tree.children:
