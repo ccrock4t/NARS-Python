@@ -98,7 +98,7 @@ class SpatialBuffer():
         # 1 node on level 0, the root
         self.quadtree : QuadTree = QuadTree()
 
-        self.quadtree.Create4ChildrenRecursive(5) #2^5=32, therefore this allows for images that are 32x32 pixels, creating 1024 leaf nodes
+        self.quadtree.Create4ChildrenRecursive(4) #2^5=32, therefore this allows for images that are 32x32 pixels, creating 1024 leaf nodes
 
         self.last_taken_img_array = None
         self.last_sentence = None
