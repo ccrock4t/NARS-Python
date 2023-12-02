@@ -181,20 +181,22 @@ class Task:
 
 class QuadTree:
 
-    MAXLEAFID = 32 # todo - make this vary
-    LEAFID = 0
-    def __init__(self):
+
+    def __init__(self, ROOTLEAFID=None):
         self.children: List[QuadTree] = []
-        self.value = None
+        self.values: List[NALGrammar.Sentences.Judgment] = []
         self.id = None
+        self.LEAFID = ROOTLEAFID if ROOTLEAFID is not None else [0]
+        self.MAXLEAFID = 32 # todo - make this vary
+
 
     def Create4ChildrenRecursive(self, depth):
         if(depth == 0):
-            self.id = (QuadTree.LEAFID // QuadTree.MAXLEAFID, QuadTree.LEAFID % QuadTree.MAXLEAFID) #(y,x)
-            QuadTree.LEAFID += 1
+            self.id = (self.LEAFID[0] // self.MAXLEAFID, self.LEAFID[0] % self.MAXLEAFID) #(y,x)
+            self.LEAFID[0] += 1
             return
 
         for _ in range(4):
-            child = QuadTree()
+            child = QuadTree(ROOTLEAFID=self.LEAFID)
             child.Create4ChildrenRecursive(depth-1)
             self.children.append(child)

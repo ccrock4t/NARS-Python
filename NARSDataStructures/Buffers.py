@@ -23,6 +23,7 @@ import NALGrammar
 import numpy as np
 import NARSDataStructures
 
+
 class Buffer(ItemContainer, Depq):
     """
         Priority-Queue
@@ -90,93 +91,127 @@ class SpatialBuffer():
         :param dimensions: dimensions of the 2d buffer as a tuple (y, x)
         """
         assert len(dimensions) == 2, "ERROR: Spatial buffer only support 2D structures"
-        self.dimensions : Tuple = dimensions
+        self.dimensions: Tuple = dimensions
 
-        self.quadtree_leaves = np.empty(shape=(8,8), dtype=QuadTree)
+        self.quadtree_leaves = np.empty(shape=(8, 8), dtype=QuadTree)
 
-        # total image
-        # 1 node on level 0, the root
-        self.quadtree : QuadTree = QuadTree()
-
-        self.quadtree.Create4ChildrenRecursive(4) #2^5=32, therefore this allows for images that are 32x32 pixels, creating 1024 leaf nodes
+        self.make_new_quadtree()
 
         self.last_taken_img_array = None
-        self.last_sentence = None
-        self.quadtree_id = 0
         self.events: List[Judgment] = []
+
+    def make_new_quadtree(self):
+        # total image
+        # 1 node on level 0, the root
+        self.quadtree: QuadTree = QuadTree()
+
+        self.quadtree.Create4ChildrenRecursive(4)  # 2^5=32, therefore this allows for images that are 32x32 pixels, creating 1024 leaf nodes
 
     def blank_image(self):
         self.set_image(np.empty(shape=self.dimensions))
 
     def set_image(self, img):
+        self.make_new_quadtree()
         self.img = img
-        self.quadtree_id = 0
         self.events = []
         self.CalculateQuadTreeRecursive(self.quadtree)
-
 
     def CalculateQuadTreeRecursive(self, quad_tree: QuadTree):
         if len(quad_tree.children) == 0:
             # leaf node, so add the event
-            y,x = quad_tree.id
-            if y >= 28 or x >= 28: # MNIST images are 28x28
-                pixel_value = float(0)
+            y, x = quad_tree.id
+            pixel_values = []
+            if y >= self.img.shape[0] or x >= self.img.shape[1]:
+                pixel_values.append(float(0))
             else:
-                pixel_value = float(self.img[y, x])
-            f = pixel_value / SpatialBuffer.MAX_PIXEL_VALUE
-            c = NALInferenceRules.HelperFunctions.get_unit_evidence()
-            event = self.create_pixel_event(subject_name=str(y) + "_" + str(x), f=f, c=c)
-            quad_tree.value = event
+                pixel = self.img[y, x]
+                if len(pixel.shape) == 1:
+                    #  RGB image
+                    pixel_values.append(float(pixel[0]))
+                    pixel_values.append(float(pixel[1]))
+                    pixel_values.append(float(pixel[2]))
+                else:
+                    # grayscale image
+                    pixel_values.append(float(pixel))
+
+            for pixel_value in pixel_values:
+                f = pixel_value / SpatialBuffer.MAX_PIXEL_VALUE
+                c = NALInferenceRules.HelperFunctions.get_unit_evidence()
+                event = self.create_pixel_event(subject_name=str(y) + "_" + str(x), f=f, c=c)
+                if event is None: continue
+                quad_tree.values.append(event)
         else:
-            for i in range(len(quad_tree.children)):
-                child_node = quad_tree.children[i]
+            for child_node in quad_tree.children:
                 self.CalculateQuadTreeRecursive(child_node)
 
-            quad_tree.value = self.create_spatial_conjunction(quad_tree)
+            conjunction = self.create_spatial_conjunction(quad_tree)
+            if conjunction is not None:
+                quad_tree.values.append(conjunction)
 
-        Global.Global.NARS.process_judgment_sentence_initial(quad_tree.value)
-        self.events.append(quad_tree.value)
+        for value in quad_tree.values:
+            Global.Global.NARS.process_judgment_sentence_initial(value)
+            self.events.append(value)
 
 
     def create_pixel_event(self, subject_name: str, f: float, c: float):
-
+        sentence = None
         statement = NALGrammar.Terms.from_string("(" + subject_name + "-->" + SpatialBuffer.PREDICATE_NAME + ")")
-        return NALGrammar.Sentences.Judgment(statement=statement,
-                                      value=TruthValue(f, c),
-                                      occurrence_time=None)
+
+        if f > Config.POSITIVE_THRESHOLD:
+            sentence = NALGrammar.Sentences.Judgment(statement=statement,
+                                                     value=TruthValue(f, c),
+                                                     occurrence_time=None)
+        else:
+            pass
+            # f = 1 - f
+            # if f > Config.POSITIVE_THRESHOLD:
+            #     sentence = NALGrammar.Sentences.Judgment(statement=NALGrammar.Terms.CompoundTerm(subterms=[statement],
+            #                                                                                      term_connector=NALSyntax.TermConnector.Negation),
+            #                                              value=TruthValue(f, c),
+            #                                              occurrence_time=None)
+
+        return sentence
 
     def create_spatial_conjunction(self, quad_tree: QuadTree):
         """
         :param subset: 2d Array of positive (non-negated) sentences / events
         :return:
         """
-
         conjunction_truth_value = None
-        for quad_child in quad_tree.children:
-            sentence = quad_child.value
-            truth_value: TruthValue = sentence.value
-            if conjunction_truth_value is None:
-                conjunction_truth_value = truth_value.Clone()
-            else:
-                conjunction_truth_value = F_Revision(conjunction_truth_value.frequency,
-                                                     conjunction_truth_value.confidence,
-                                                     truth_value.frequency,
-                                                     truth_value.confidence)
-
-
-            
-        spatial_conjunction = self.create_pixel_event("QUAD" + str(self.quadtree_id),
-                                                      f=conjunction_truth_value.frequency,
-                                                      c=conjunction_truth_value.confidence)
-        self.quadtree_id = self.quadtree_id + 1
+        terms_array = []
 
         for quad_child in quad_tree.children:
-            sentence = quad_child.value
-            spatial_conjunction.stamp.evidential_base.merge_sentence_evidential_base_into_self(sentence)
+            for sentence in quad_child.values:
+                truth_value = sentence.value
+                term = sentence.statement
+
+                if conjunction_truth_value is None:
+                    conjunction_truth_value = truth_value
+                else:
+                    conjunction_truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(
+                        conjunction_truth_value.frequency,
+                        conjunction_truth_value.confidence,
+                        truth_value.frequency,
+                        truth_value.confidence)
+
+                terms_array.append(term)
+
+
+        if conjunction_truth_value is None: return None
+
+        spatial_conjunction_term = NALGrammar.Terms.CompoundTerm(subterms=np.array(terms_array),
+                                                                 term_connector=NALSyntax.TermConnector.ArrayConjunction)
+
+        spatial_conjunction = NALGrammar.Sentences.Judgment(statement=spatial_conjunction_term,
+                                                            value=TruthValue(conjunction_truth_value.frequency,
+                                                                             conjunction_truth_value.confidence),
+                                                            occurrence_time=None)
+
+        for quad_child in quad_tree.children:
+            for sentence in quad_child.values:
+                spatial_conjunction.stamp.evidential_base.merge_sentence_evidential_base_into_self(sentence)
 
         return spatial_conjunction
-
-
 
 
 class TemporalModule(ItemContainer):
@@ -226,7 +261,6 @@ class TemporalModule(ItemContainer):
 
         self.process_temporal_chaining()
 
-
     def process_temporal_chaining(self):
         if len(self) > 0:
             self.temporal_chaining_2_conjunction()
@@ -251,7 +285,8 @@ class TemporalModule(ItemContainer):
         event_task_B = self.get_most_recent_event_task().object
         event_B = event_task_B.sentence
 
-        if not isinstance(event_B.statement, NALGrammar.Terms.StatementTerm): return #todo remove this. temporarily prevent arrays in postconditions
+        if not isinstance(event_B.statement,
+                          NALGrammar.Terms.StatementTerm): return  # todo remove this. temporarily prevent arrays in postconditions
 
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
@@ -262,7 +297,7 @@ class TemporalModule(ItemContainer):
         # produce all possible forward implication statements using temporal induction and intersection
         # A &/ B,
         # A =/> B
-        for i in range(0,num_of_events-1):  # and do induction with events occurring afterward
+        for i in range(0, num_of_events - 1):  # and do induction with events occurring afterward
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
@@ -274,7 +309,8 @@ class TemporalModule(ItemContainer):
             derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_B)
 
             for derived_sentence in derived_sentences:
-                if not isinstance(derived_sentence.statement, NALGrammar.Terms.StatementTerm): continue  # only implications
+                if not isinstance(derived_sentence.statement,
+                                  NALGrammar.Terms.StatementTerm): continue  # only implications
                 process_sentence(derived_sentence)
 
     def temporal_chaining_2_conjunction(self):
@@ -295,7 +331,8 @@ class TemporalModule(ItemContainer):
 
         if not (isinstance(event_B.statement, NALGrammar.Terms.CompoundTerm)
                 and NALSyntax.TermConnector.is_conjunction(event_B.statement.connector)
-                and (isinstance(event_B.statement.subterms[0], NALGrammar.Terms.SpatialTerm) or isinstance(event_B.statement.subterms[0], NALGrammar.Terms.StatementTerm))): return
+                and (isinstance(event_B.statement.subterms[0], NALGrammar.Terms.SpatialTerm) or isinstance(
+                    event_B.statement.subterms[0], NALGrammar.Terms.StatementTerm))): return
 
         def process_sentence(derived_sentence):
             if derived_sentence is not None:
@@ -304,7 +341,7 @@ class TemporalModule(ItemContainer):
                     NARS.global_buffer.PUT_NEW(task)
 
         # A &/ B
-        for i in range(0,num_of_events-1):
+        for i in range(0, num_of_events - 1):
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
@@ -343,39 +380,38 @@ class TemporalModule(ItemContainer):
                     task = Task(derived_sentence)
                     NARS.global_buffer.PUT_NEW(task)
 
-
         for i in range(0, num_of_events - 1):  # and do induction with events occurring afterward
             event_task_A = temporal_chain[i].object
             event_A = event_task_A.sentence
 
             if not isinstance(event_A.statement,
-                          NALGrammar.Terms.SpatialTerm) or event_A.statement == event_C.statement: continue
+                              NALGrammar.Terms.SpatialTerm) or event_A.statement == event_C.statement: continue
 
             for j in range(i + 1, num_of_events - 1):
                 event_task_B = temporal_chain[j].object
                 event_B = event_task_B.sentence
 
                 if not isinstance(event_B.statement, NALGrammar.Terms.SpatialTerm) \
-                    or event_B.statement == event_A.statement \
-                    or event_B.statement == event_C.statement: continue
+                        or event_B.statement == event_A.statement \
+                        or event_B.statement == event_C.statement: continue
 
                 result_statement = NALGrammar.Terms.CompoundTerm([event_A.statement,
                                                                   event_B.statement,
                                                                   event_C.statement],
                                                                  NALSyntax.TermConnector.Conjunction)
 
-                truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(event_A.value.frequency,
-                                                                     event_A.value.confidence,
-                                                                     event_B.value.frequency,
-                                                                     event_B.value.confidence)
+                truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(event_A.values.frequency,
+                                                                                   event_A.values.confidence,
+                                                                                   event_B.values.frequency,
+                                                                                   event_B.values.confidence)
 
                 truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(truth_value.frequency,
-                                                                     truth_value.confidence,
-                                                                     event_C.value.frequency,
-                                                                     event_C.value.confidence)
+                                                                                   truth_value.confidence,
+                                                                                   event_C.values.frequency,
+                                                                                   event_C.values.confidence)
 
                 truth_value = NALGrammar.Values.TruthValue(frequency=truth_value.frequency,
-                                                     confidence=truth_value.confidence)
+                                                           confidence=truth_value.confidence)
                 result = NALGrammar.Sentences.Judgment(statement=result_statement,
                                                        value=truth_value,
                                                        occurrence_time=Global.Global.get_current_cycle_number())
@@ -419,17 +455,17 @@ class TemporalModule(ItemContainer):
             event_A = event_task_A.sentence
 
             if not isinstance(event_A.statement,
-                          NALGrammar.Terms.SpatialTerm): continue  # todo remove this eventually. only arrays in precondition
+                              NALGrammar.Terms.SpatialTerm): continue  # todo remove this eventually. only arrays in precondition
 
             # produce statements (A =/> C) and (A &/ C)
             if isinstance(event_C.statement,
-                              NALGrammar.Terms.SpatialTerm):
+                          NALGrammar.Terms.SpatialTerm):
                 derived_sentences = NARSInferenceEngine.do_temporal_inference_two_premise(event_A, event_C)
 
                 for derived_sentence in derived_sentences:
-                    if isinstance(derived_sentence.statement, NALGrammar.Terms.StatementTerm): continue  # ignore simple implications
-                    process_sentence(derived_sentence) #todo A_C conjunction only
-
+                    if isinstance(derived_sentence.statement,
+                                  NALGrammar.Terms.StatementTerm): continue  # ignore simple implications
+                    process_sentence(derived_sentence)  # todo A_C conjunction only
 
             for j in range(i + 1, num_of_events - 1):
                 event_task_B = temporal_chain[j].object
@@ -442,7 +478,6 @@ class TemporalModule(ItemContainer):
                     derived_sentence = NALInferenceRules.Temporal.TemporalInduction(conjunction_A_B,
                                                                                     event_C)  # (A &/ B) =/> C
                     process_sentence(derived_sentence)
-
 
     def temporal_chaining_4(self):
         """
@@ -519,7 +554,7 @@ class TemporalModule(ItemContainer):
         """
             # form new anticipation from observed event
         """
-        return #todo
+        return  # todo
 
         random_prediction = self.NARS.memory.get_random_bag_prediction(observed_event)
 
@@ -527,7 +562,6 @@ class TemporalModule(ItemContainer):
             # something is anticipated
             self.anticipate_from_concept(self.NARS.memory.peek_concept(random_prediction.statement),
                                          random_prediction)
-
 
     def anticipate_from_concept(self, higher_order_anticipation_concept, best_belief=None):
         """
@@ -538,7 +572,7 @@ class TemporalModule(ItemContainer):
         :param best_belief:
         :return:
         """
-        return #todo
+        return  # todo
         if best_belief is None:
             best_belief = higher_order_anticipation_concept.belief_table.peek()
 
@@ -568,7 +602,7 @@ class TemporalModule(ItemContainer):
 
             anticipation (negative evidence for predictive implications)
         """
-        return #todo
+        return  # todo
         # process pending anticipations
         i = 0
 
