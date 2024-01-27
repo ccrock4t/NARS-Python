@@ -333,7 +333,6 @@ def new_sentence_from_string(sentence_string: str):
     elif truth_value_found:
         # Parse single truth value (f) from string, with reference to OpenNARS
         freq = float(sentence_string[start_truth_val_idx + 1:end_truth_val_idx])
-        conf = 0.9 # default confidence is 0.9
 
     # create the statement
     statement_string = sentence_string[start_idx:end_idx + 1]
