@@ -323,12 +323,17 @@ def new_sentence_from_string(sentence_string: str):
     end_truth_val_idx = sentence_string.rfind(NALSyntax.StatementSyntax.TruthValMarker.value, punctuation_idx)
 
     truth_value_found = not (start_truth_val_idx == -1 or end_truth_val_idx == -1 or start_truth_val_idx == end_truth_val_idx)
+    has_full_truth_value = middle_truth_val_idx != -1
     freq = None
     conf = None
-    if truth_value_found:
-        # Parse truth value from string
+    if has_full_truth_value:
+        # Parse truth value from string with specified frequency and confidence
         freq = float(sentence_string[start_truth_val_idx + 1:middle_truth_val_idx])
         conf = float(sentence_string[middle_truth_val_idx + 1:end_truth_val_idx])
+    elif truth_value_found:
+        # Parse single truth value (f) from string, with reference to OpenNARS
+        freq = float(sentence_string[start_truth_val_idx + 1:end_truth_val_idx])
+        conf = 0.9 # default confidence is 0.9
 
     # create the statement
     statement_string = sentence_string[start_idx:end_idx + 1]
