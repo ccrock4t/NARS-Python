@@ -23,6 +23,10 @@ import NARSDataStructures.Other
 import NARSDataStructures.ItemContainers
 
 import Global
+from NALGrammar.Sentences import Sentence, Judgment
+from NALInferenceRules import TruthValueFunctions
+from NALInferenceRules.Conditional import ConditionalJudgmentDeduction
+from NALInferenceRules.TruthValueFunctions import F_Deduction
 
 """
     Author: Christian Hahm
@@ -110,43 +114,52 @@ class NARS:
             self.last_working_cycle = Global.Global.get_current_cycle_number()
 
         # track when the cycle began
+        self.cycle_begin_time = timeit.default_timer()
+
+        # warn if buffer begins to overflow
         if len(self.global_buffer) > Config.GLOBAL_BUFFER_CAPACITY / 4.0: print("WARNING: GLOBAL BUFFER AT 1/4 CAPACITY "
                                                                                 + str(len(self.global_buffer) / Config.GLOBAL_BUFFER_CAPACITY) + "%")
-
-        self.cycle_begin_time = timeit.default_timer()
 
         # process input channel and temporal module
         InputChannel.process_input_channel()
 
-        # OBSERVE
-        #self.Observe()
-        # todo begin spatial take vvv
-
-        vision_sentence = self.vision_buffer.take(pooled=False)
-        if vision_sentence is not None:
-            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
-
-        vision_sentence = self.vision_buffer.take(pooled=True)
-        if vision_sentence is not None:
-            self.global_buffer.PUT_NEW(NARSDataStructures.Other.Task(vision_sentence))
-
-        # todo end spatial take ^^
-
         # global buffer
-        buffer_len = len(self.global_buffer)
-        tasks_left = buffer_len
-        while tasks_left > 0:
+        while len(self.global_buffer) > 0:
+            # consume and process task
             task_item = self.global_buffer.take()
-            # process task
-            self.process_task(task_item.object)
-            tasks_left -= 1
+            task: NARSDataStructures.Task = task_item.object
+            self.process_task(task)
+            task_sentence: Sentence = task.sentence
+            if isinstance(task_sentence, NALGrammar.Sentences.Judgment):
+                # make associations with vision channel and narsese channel
+                for vision_event in self.vision_buffer.events:
+                    if not vision_event.is_positive(): continue
+                    result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
+                                                                      NALSyntax.Copula.PredictiveImplication)
+                    learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
+                                      value=TruthValueFunctions.F_Intersection(vision_event.value.frequency,
+                                                                               vision_event.value.confidence,
+                                                                               task_sentence.value.frequency,
+                                                                               task_sentence.value.confidence),
+                                      occurrence_time=None)
+                    self.process_judgment_sentence_initial(learned_implication)
 
-        self.Consider()
+
+        # make predictions from all vision statements
+        for vision_event in self.vision_buffer.events:
+            if not vision_event.is_positive(): continue
+            concept: NARSMemory.Concept = self.memory.peek_concept(vision_event.statement)
+            for prediction_link in concept.prediction_links:
+                implication_concept: NARSMemory.Concept = prediction_link.object
+                implication_belief = implication_concept.belief_table.peek()
+                result: Judgment = ConditionalJudgmentDeduction(implication_belief, vision_event)
+                self.process_judgment_sentence_initial(result)
+        #self.Consider()
 
         # now execute operations
         self.execute_operation_queue()
 
-        #todo self.temporal_module.process_anticipations()
+
 
         # debug statements
         if Config.DEBUG:
@@ -397,15 +410,21 @@ class NARS:
 
         Asserts.assert_task(task)
 
-        j = task.sentence
+        j: Judgment = task.sentence
+        self.process_judgment_sentence_initial(j)
         if j.is_event():
             # only put non-derived atomic events in temporal module for now
             Global.Global.NARS.temporal_module.PUT_NEW(task)
 
-        if isinstance(j.statement, NALGrammar.Terms.CompoundTerm)\
-            and j.statement.connector == NALSyntax.TermConnector.Negation:
-            j = NALInferenceRules.Immediate.Negation(j)
+        task_statement_concept = self.memory.peek_concept_item(j.statement).object
+        current_belief = task_statement_concept.belief_table.peek()
+        self.process_judgment_sentence(current_belief)
 
+
+    def process_judgment_sentence_initial(self, j: Judgment):
+        if isinstance(j.statement, NALGrammar.Terms.CompoundTerm) \
+                and j.statement.connector == NALSyntax.TermConnector.Negation:
+            j = NALInferenceRules.Immediate.Negation(j)
 
         task_statement_concept_item = self.memory.peek_concept_item(j.statement)
         if task_statement_concept_item is None: return
@@ -414,22 +433,10 @@ class NARS:
 
         task_statement_concept = task_statement_concept_item.object
 
-        # todo commented out immediate inference because it floods the system
-        # derived_sentences = []#NARSInferenceEngine.do_inference_one_premise(j)
-        # for derived_sentence in derived_sentences:
-        #    self.global_buffer.put_new(NARSDataStructures.Other.Task(derived_sentence))
-
-        # if j.is_event():
-        #     # anticipate event j
-        #     pass #todo self.temporal_module.anticipate_from_event(j)
-
         task_statement_concept.belief_table.put(j)
 
-        current_belief = task_statement_concept.belief_table.peek()
-        self.process_judgment_sentence(current_belief)
-
         if Config.DEBUG:
-            string = "Integrated new BELIEF Task: " + j.get_formatted_string() + "from "
+            string = "Integrated new BELIEF: " + j.get_formatted_string() + "from "
             for premise in j.stamp.parent_premises:
                 string += str(premise) + ","
             Global.Global.debug_print(string)

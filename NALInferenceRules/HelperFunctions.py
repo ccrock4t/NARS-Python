@@ -98,7 +98,6 @@ def create_resultant_sentence_two_premise(j1, j2, result_statement, truth_value_
     elif result_type == NALGrammar.Sentences.Question:
         result = NALGrammar.Sentences.Question(result_statement)
 
-
     if not result.is_event():
         # merge in the parent sentences' evidential bases
         result.stamp.evidential_base.merge_sentence_evidential_base_into_self(j1)

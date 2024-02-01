@@ -8,11 +8,15 @@ import json
 import os
 import sys
 
+
 try:
     try:
         user_config = json.load(open("Config.json"))
     except:
-        user_config = json.load(open("../Config.json"))
+        try:
+            user_config = json.load(open("../Config.json"))
+        except:
+            user_config = json.load(open("../../Config.json"))
 
     """
         System Parameters
