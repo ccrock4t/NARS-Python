@@ -2,14 +2,9 @@ build
 dist
 __pycache__
 .idea
-NARS.spec
 *.nars
 *.nal
-.spec
 *.pyo
-*.spec
-main.spec
-*.spec
 TestCases/supervised_learning/0/10.png
 TestCases/supervised_learning/0/1001.png
 TestCases/supervised_learning/0/1009.png
