@@ -140,6 +140,7 @@ class GenericVisionTest:
             img = Image.fromarray(img_array)
             InputChannel.queue_visual_sensory_image_array(img)
             self.global_gui.set_visual_image(img)
+            self.global_gui.update_test_actual_label(label=str(label_y) + " (" + self.global_gui.class_number_to_string_label(label_y) + ")")
 
             # blank out GUI lights
             self.global_gui.update_gui_lights(predicted=-1, label_y=None)
@@ -462,6 +463,7 @@ class VisionTestGUI:
         # label
         self.status_label = tk.Label(window, text="Initializing...")
         self.test_accuracy_label = tk.Label(window, text="Test Accuracy: Need more data")
+        self.test_actual_label = tk.Label(window, text="Actual Label: ")
 
         # attended image
         self.attended_image_canvas = tk.Canvas(window,
@@ -571,6 +573,7 @@ class VisionTestGUI:
             self.button_correct.grid(row=2, column=0)
             self.button_wrong.grid(row=3, column=0)
             self.test_accuracy_label.grid(row=2, column=1)
+            self.test_actual_label.grid(row=3, column=1)
 
             column = 4
             self.NARS_guess_label.grid(row=1, column=column, columnspan=30)
@@ -584,6 +587,7 @@ class VisionTestGUI:
             self.button_correct.grid_remove()
             self.button_wrong.grid_remove()
             self.test_accuracy_label.grid_remove()
+            self.test_actual_label.grid_remove()
 
             column = 4
             self.NARS_guess_label.grid_remove()
@@ -607,11 +611,15 @@ class VisionTestGUI:
             self.button_correct.config(bg='grey')
             self.button_wrong.config(bg='grey')
 
-    def update_test_accuracy(self, accuracy, current_trial):
+    def update_test_accuracy(self, accuracy: float, current_trial: int):
         if self.gui_disabled: return
         self.test_accuracy_label.config(text="TRIAL " + str(current_trial + 1) + " ACCURACY: " + str(accuracy) + "%")
 
-    def create_final_score_popup_window(self, final_score):
+    def update_test_actual_label(self, label: str):
+        if self.gui_disabled: return
+        self.test_actual_label.config(text="Actual Label: " + label)
+
+    def create_final_score_popup_window(self, final_score: float):
         if self.gui_disabled: return
         popup_window = tk.Toplevel(self.window)
         labelExample = tk.Label(popup_window,
