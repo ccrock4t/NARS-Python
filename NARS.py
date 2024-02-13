@@ -135,7 +135,6 @@ class NARS:
                 item: Item = self.vision_buffer.events_bag.peek()
                 if item is not None:
                     vision_event: Judgment = item.object
-                    if not vision_event.is_positive(): continue
                     result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
                                                                       NALSyntax.Copula.PredictiveImplication)
                     learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
@@ -146,8 +145,21 @@ class NARS:
                                       occurrence_time=None)
                     self.process_judgment_sentence_initial(learned_implication)
 
+        # Consider, special for vision tests
+
+        concept_item = self.memory.get_random_concept_item()
+        if concept_item is not None:
+            concept: NARSMemory.Concept = concept_item.object
+            term: NALGrammar.Terms.Term = concept.term
+            if isinstance(term, NALGrammar.Terms.StatementTerm) and (not term.is_first_order()):
+                j1: Judgment = concept.belief_table.peek()
+                j2: Judgment = self.memory.peek_concept(term.get_subject_term()).belief_table.peek()
+                result = ConditionalJudgmentDeduction(j1, j2)
+                self.process_judgment_sentence_initial(result)
+
+
         # probabilistically consider a concept
-        self.Consider()
+        #self.Consider()
 
         # now execute operations
         self.execute_operation_queue()
@@ -230,8 +242,8 @@ class NARS:
 
 
         # decay priority;
-        if concept_item is not None:
-            self.memory.concepts_bag.decay_item(concept_item.key)
+        #if concept_item is not None:
+         #   self.memory.concepts_bag.decay_item(concept_item.key)
 
 
 
@@ -430,7 +442,11 @@ class NARS:
 
         best_belief: Judgment = belief_table.peek_max()
 
-        self.memory.concepts_bag.change_priority(key=statement_concept_item.key,new_priority=best_belief.get_expectation())
+        if j.statement.is_first_order():
+            self.memory.concepts_bag.change_priority(key=statement_concept_item.key,
+                                                     new_priority=0)
+        else:
+            self.memory.concepts_bag.change_priority(key=statement_concept_item.key,new_priority=best_belief.get_expectation())
 
         if Config.DEBUG:
             string = "Integrated new BELIEF: " + j.get_formatted_string() + "from "
@@ -797,8 +813,8 @@ class NARS:
 
 
         # input the operation statement
-        operation_event = NALGrammar.Sentences.Judgment(operation_statement_to_execute,
-                                                        NALGrammar.Values.TruthValue(),
-                                                        occurrence_time=Global.Global.get_current_cycle_number())
-        InputChannel.process_sentence_into_task(operation_event)
+        # operation_event = NALGrammar.Sentences.Judgment(operation_statement_to_execute,
+        #                                                 NALGrammar.Values.TruthValue(),
+        #                                                 occurrence_time=Global.Global.get_current_cycle_number())
+        # InputChannel.process_sentence_into_task(operation_event)
 

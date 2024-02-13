@@ -67,8 +67,8 @@ def F_Deduction(f1, c1, f2, c2):
 
         :return: F_ded: Truth-Value (f,c)
     """
-    f3 = ExtendedBooleanOperators.band(f1, f2)
-    c3 = ExtendedBooleanOperators.band(f1, f2, c1, c2)
+    f3 = ExtendedBooleanOperators.band_average(f1, f2)
+    c3 = ExtendedBooleanOperators.band_average(f1, f2, c1, c2)
     return NALGrammar.Values.TruthValue(f3, c3)
 
 
@@ -156,7 +156,7 @@ def F_Union(f1, c1, f2, c2):
     :return: F_uni: Truth-Value (f,c)
     """
     f3 = ExtendedBooleanOperators.bor(f1, f2)
-    c3 = ExtendedBooleanOperators.bor(c1, c2)
+    c3 = ExtendedBooleanOperators.band_average(c1, c2)
     return NALGrammar.Values.TruthValue(f3, c3)
 
 

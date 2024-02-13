@@ -228,8 +228,9 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         if len(self) == 0: return None
         self.level = random.randint(0, self.granularity - 1)
 
+        MAX_ATTEMPTS = 10
         num_attempts: int = 0
-        while True and num_attempts < 100:
+        while True and num_attempts < MAX_ATTEMPTS:
             level_bucket = buckets[self.level]
             if level_bucket is None or len(level_bucket) == 0:
                 self.level = (self.level + 1) % self.granularity
@@ -247,7 +248,7 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
 
             num_attempts += 1
 
-        if num_attempts >= 100: return None
+        if num_attempts >= MAX_ATTEMPTS: return None
 
         rnd_idx = random.randint(0,len(level_bucket)-1)
         _, item = level_bucket[rnd_idx]

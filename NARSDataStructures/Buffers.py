@@ -131,48 +131,50 @@ class SpatialBuffer():
                     pixel_values.append(float(pixel[0]))
                     pixel_values.append(float(pixel[1]))
                     pixel_values.append(float(pixel[2]))
+                    #pixel_sum = float(pixel[0]) + float(pixel[1]) + float(pixel[2])
+                    #pixel_values.append(float(pixel_sum/3)) # TODO grayscale color images
                 else:
                     # grayscale image
                     pixel_values.append(float(pixel))
 
+            i = 0
             for pixel_value in pixel_values:
                 f = pixel_value / SpatialBuffer.MAX_PIXEL_VALUE
                 c = NALInferenceRules.HelperFunctions.get_unit_evidence()
-                event = self.create_pixel_event(subject_name=str(y) + "_" + str(x), f=f, c=c)
-                if event is None: continue
+                event = self.create_pixel_event(subject_name="quadleaf_0",predicate_name=str(i), f=f, c=c)
                 quad_tree.values.append(event)
+                i = i + 1
         else:
             for child_node in quad_tree.children:
                 self.CalculateQuadTreeRecursive(child_node)
 
-            conjunction = self.create_spatial_conjunction(quad_tree)
-            if conjunction is not None:
-                quad_tree.values.append(conjunction)
+            values = self.create_spatial_conjunction(quad_tree)
+            quad_tree.values = values
 
         value: Judgment
         for value in quad_tree.values:
             self.events_bag.PUT_NEW(value)
-            self.events_bag.change_priority(Item.get_key_from_object(value), new_priority=value.get_present_value().confidence)
+            self.events_bag.change_priority(Item.get_key_from_object(value), new_priority=value.get_eternal_expectation())
             Global.Global.NARS.process_judgment_sentence_initial(value)
 
 
 
-    def create_pixel_event(self, subject_name: str, f: float, c: float):
+    def create_pixel_event(self, subject_name: str, predicate_name: str, f: float, c: float):
         sentence = None
-        statement = NALGrammar.Terms.from_string("(" + subject_name + "-->" + SpatialBuffer.PREDICATE_NAME + ")")
+        statement = NALGrammar.Terms.from_string("(" + subject_name + "-->" + predicate_name + ")")
 
-        if f > Config.POSITIVE_THRESHOLD:
-            sentence = NALGrammar.Sentences.Judgment(statement=statement,
-                                                     value=TruthValue(f, c),
-                                                     occurrence_time=None)
-        else:
-            pass
-            # f = 1 - f
-            # if f > Config.POSITIVE_THRESHOLD:
-            #     sentence = NALGrammar.Sentences.Judgment(statement=NALGrammar.Terms.CompoundTerm(subterms=[statement],
-            #                                                                                      term_connector=NALSyntax.TermConnector.Negation),
-            #                                              value=TruthValue(f, c),
-            #                                              occurrence_time=None)
+       # if f > Config.POSITIVE_THRESHOLD:
+        sentence = NALGrammar.Sentences.Judgment(statement=statement,
+                                                 value=TruthValue(f, c),
+                                                 occurrence_time=None)
+        # else:
+        #     pass
+        #     # f = 1 - f
+        #     # if f > Config.POSITIVE_THRESHOLD:
+        #     #     sentence = NALGrammar.Sentences.Judgment(statement=NALGrammar.Terms.CompoundTerm(subterms=[statement],
+        #     #                                                                                      term_connector=NALSyntax.TermConnector.Negation),
+        #     #                                              value=TruthValue(f, c),
+        #     #                                              occurrence_time=None)
 
         return sentence
 
@@ -181,42 +183,41 @@ class SpatialBuffer():
         :param subset: 2d Array of positive (non-negated) sentences / events
         :return:
         """
-        conjunction_truth_value = None
-        terms_array = []
-
-        for quad_child in quad_tree.children:
-            for sentence in quad_child.values:
+        values = []
+        for i in range(3): #RGB
+            conjunction_truth_value = None
+            for quad_child in quad_tree.children:
+                sentence = quad_child.values[i]
                 truth_value = sentence.value
-                term = sentence.statement
+                term: NALGrammar.Terms.StatementTerm = sentence.statement
+
+                quadtree_level = int(str(term.get_subject_term()).split("_")[1])
+                predicate_term = term.get_predicate_term()
 
                 if conjunction_truth_value is None:
                     conjunction_truth_value = truth_value
                 else:
-                    conjunction_truth_value = NALInferenceRules.TruthValueFunctions.F_Union(
+                    conjunction_truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(
                         conjunction_truth_value.frequency,
                         conjunction_truth_value.confidence,
                         truth_value.frequency,
                         truth_value.confidence)
 
-                terms_array.append(term)
 
+            statement_term = NALGrammar.Terms.StatementTerm(subject_term=NALGrammar.Terms.from_string("quadtree_"+str(quadtree_level+1)),
+                                           predicate_term=predicate_term,
+                                            copula=NALSyntax.Copula.Inheritance)
 
-        if conjunction_truth_value is None: return None
-        if len(terms_array) == 1: return None
+            spatial_conjunction = NALGrammar.Sentences.Judgment(statement=statement_term,
+                                                                value=TruthValue(conjunction_truth_value.frequency,
+                                                                                 conjunction_truth_value.confidence),
+                                                                occurrence_time=None)
+            values.append(spatial_conjunction)
+        # for quad_child in quad_tree.children:
+        #     for sentence in quad_child.values:
+        #         spatial_conjunction.stamp.evidential_base.merge_sentence_evidential_base_into_self(sentence)
 
-        spatial_conjunction_term = NALGrammar.Terms.CompoundTerm(subterms=np.array(terms_array),
-                                                                 term_connector=NALSyntax.TermConnector.ArrayConjunction)
-
-        spatial_conjunction = NALGrammar.Sentences.Judgment(statement=spatial_conjunction_term,
-                                                            value=TruthValue(conjunction_truth_value.frequency,
-                                                                             conjunction_truth_value.confidence),
-                                                            occurrence_time=None)
-
-        for quad_child in quad_tree.children:
-            for sentence in quad_child.values:
-                spatial_conjunction.stamp.evidential_base.merge_sentence_evidential_base_into_self(sentence)
-
-        return spatial_conjunction
+        return values
 
 
 class TemporalModule(ItemContainer):
