@@ -147,7 +147,7 @@ def F_Intersection(f1, c1, f2, c2):
     :return: F_int: Truth-Value (f,c)
     """
     f_int = ExtendedBooleanOperators.band_average(f1, f2)
-    c_int = ExtendedBooleanOperators.band_average(c1, c2)
+    c_int = ExtendedBooleanOperators.bor(c1, c2)
     return NALGrammar.Values.TruthValue(f_int, c_int)
 
 

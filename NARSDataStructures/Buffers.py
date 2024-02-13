@@ -95,7 +95,7 @@ class SpatialBuffer():
 
         self.quadtree_leaves = np.empty(shape=(8, 8), dtype=QuadTree)
 
-        self.events_bag = Bag(item_type=object, capacity=1000, granularity=100)
+        self.events_bag = Bag(item_type=NALGrammar.Sentences.Judgment, capacity=1000, granularity=100)
 
         self.make_new_quadtree()
 
@@ -141,7 +141,7 @@ class SpatialBuffer():
             for pixel_value in pixel_values:
                 f = pixel_value / SpatialBuffer.MAX_PIXEL_VALUE
                 c = NALInferenceRules.HelperFunctions.get_unit_evidence()
-                event = self.create_pixel_event(subject_name="quadleaf_0",predicate_name=str(i), f=f, c=c)
+                event = self.create_pixel_event(subject_name="quadleaf_" + str(x) + "_" + str(y),predicate_name=str(i), f=f, c=c)
                 quad_tree.values.append(event)
                 i = i + 1
         else:
@@ -155,6 +155,8 @@ class SpatialBuffer():
         for value in quad_tree.values:
             self.events_bag.PUT_NEW(value)
             self.events_bag.change_priority(Item.get_key_from_object(value), new_priority=value.get_eternal_expectation())
+            concept = Global.Global.NARS.memory.peek_concept(value.statement)
+            concept.belief_table.clear()
             Global.Global.NARS.process_judgment_sentence_initial(value)
 
 
@@ -183,15 +185,18 @@ class SpatialBuffer():
         :param subset: 2d Array of positive (non-negated) sentences / events
         :return:
         """
+
         values = []
         for i in range(3): #RGB
             conjunction_truth_value = None
+            terms = []
             for quad_child in quad_tree.children:
+                if i >= len(quad_child.values): break
                 sentence = quad_child.values[i]
                 truth_value = sentence.value
                 term: NALGrammar.Terms.StatementTerm = sentence.statement
 
-                quadtree_level = int(str(term.get_subject_term()).split("_")[1])
+                #quadtree_level = int(str(term.get_subject_term()).split("_")[1])
                 predicate_term = term.get_predicate_term()
 
                 if conjunction_truth_value is None:
@@ -203,8 +208,14 @@ class SpatialBuffer():
                         truth_value.frequency,
                         truth_value.confidence)
 
+                terms.append(term.get_subject_term())
 
-            statement_term = NALGrammar.Terms.StatementTerm(subject_term=NALGrammar.Terms.from_string("quadtree_"+str(quadtree_level+1)),
+            if conjunction_truth_value is None: break
+
+            compound = NALGrammar.Terms.CompoundTerm(subterms=terms,
+                                                     term_connector=NALSyntax.TermConnector.Conjunction)
+
+            statement_term = NALGrammar.Terms.StatementTerm(subject_term=compound,
                                            predicate_term=predicate_term,
                                             copula=NALSyntax.Copula.Inheritance)
 

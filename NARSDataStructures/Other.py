@@ -92,6 +92,10 @@ class Table(Depq):
         self.capacity = capacity
         Depq.__init__(self)
 
+    def clear(self):
+        while len(self) > 0:
+            self.take()
+
     def put(self, sentence):
         """
             Insert a Sentence into the depq, sorted by confidence (time-projected confidence if it's an event).

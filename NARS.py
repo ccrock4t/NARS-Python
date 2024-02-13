@@ -138,10 +138,8 @@ class NARS:
                     result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
                                                                       NALSyntax.Copula.PredictiveImplication)
                     learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
-                                      value=TruthValueFunctions.F_Intersection(vision_event.value.frequency,
-                                                                               vision_event.value.confidence,
-                                                                               task_sentence.value.frequency,
-                                                                               task_sentence.value.confidence),
+                                      value=NALGrammar.Values.TruthValue(NALInferenceRules.ExtendedBooleanOperators.band_average(vision_event.value.frequency, task_sentence.value.frequency),
+                                                       NALInferenceRules.ExtendedBooleanOperators.band_average(vision_event.value.confidence, task_sentence.value.confidence)),
                                       occurrence_time=None)
                     self.process_judgment_sentence_initial(learned_implication)
 
@@ -155,6 +153,7 @@ class NARS:
                 j1: Judgment = concept.belief_table.peek()
                 j2: Judgment = self.memory.peek_concept(term.get_subject_term()).belief_table.peek()
                 result = ConditionalJudgmentDeduction(j1, j2)
+                result.stamp.occurrence_time = Global.Global.get_current_cycle_number()
                 self.process_judgment_sentence_initial(result)
 
 
