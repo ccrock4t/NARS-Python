@@ -223,11 +223,13 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
         """
             Probabilistically selects a priority value / bucket, then peeks an item from that bucket.
 
-            :returns (item, index of item in the current bucket)
+            :returns item
         """
-        if len(self) == 0: return None, None
+        if len(self) == 0: return None
         self.level = random.randint(0, self.granularity - 1)
-        while True:
+
+        num_attempts: int = 0
+        while True and num_attempts < 100:
             level_bucket = buckets[self.level]
             if level_bucket is None or len(level_bucket) == 0:
                 self.level = (self.level + 1) % self.granularity
@@ -242,6 +244,10 @@ class Bag(NARSDataStructures.ItemContainers.ItemContainer):
                 break
             else:
                 self.level = (self.level + 1) % self.granularity
+
+            num_attempts += 1
+
+        if num_attempts >= 100: return None
 
         rnd_idx = random.randint(0,len(level_bucket)-1)
         _, item = level_bucket[rnd_idx]

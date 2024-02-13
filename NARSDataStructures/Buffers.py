@@ -95,10 +95,11 @@ class SpatialBuffer():
 
         self.quadtree_leaves = np.empty(shape=(8, 8), dtype=QuadTree)
 
+        self.events_bag = Bag(item_type=object, capacity=1000, granularity=100)
+
         self.make_new_quadtree()
 
         self.last_taken_img_array = None
-        self.events: List[Judgment] = []
 
     def make_new_quadtree(self):
         # total image
@@ -111,9 +112,9 @@ class SpatialBuffer():
         self.set_image(np.empty(shape=self.dimensions))
 
     def set_image(self, img):
+        self.events_bag.clear()
         self.make_new_quadtree()
         self.img = img
-        self.events = []
         self.CalculateQuadTreeRecursive(self.quadtree)
 
     def CalculateQuadTreeRecursive(self, quad_tree: QuadTree):
@@ -148,9 +149,12 @@ class SpatialBuffer():
             if conjunction is not None:
                 quad_tree.values.append(conjunction)
 
+        value: Judgment
         for value in quad_tree.values:
+            self.events_bag.PUT_NEW(value)
+            self.events_bag.change_priority(Item.get_key_from_object(value), new_priority=value.get_present_value().confidence)
             Global.Global.NARS.process_judgment_sentence_initial(value)
-            self.events.append(value)
+
 
 
     def create_pixel_event(self, subject_name: str, f: float, c: float):

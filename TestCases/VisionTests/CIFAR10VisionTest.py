@@ -7,5 +7,5 @@ if __name__ == "__main__":
                                     gui_enabled=True,
                                     train_size=10,
                                     test_size=10,
-                                    training_cycles=5)
+                                    training_cycles=100)
     vision_test.run_main_test()

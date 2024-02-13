@@ -130,36 +130,25 @@ class NARS:
             task: NARSDataStructures.Task = task_item.object
             self.process_task(task)
             task_sentence: Sentence = task.sentence
-            if isinstance(task_sentence, NALGrammar.Sentences.Judgment):
-                # make associations with vision channel and narsese channel
-                for vision_event in self.vision_buffer.events:
-                    if not vision_event.is_positive(): continue
-                    result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
-                                                                      NALSyntax.Copula.PredictiveImplication)
-                    learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
-                                      value=TruthValueFunctions.F_Intersection(vision_event.value.frequency,
-                                                                               vision_event.value.confidence,
-                                                                               task_sentence.value.frequency,
-                                                                               task_sentence.value.confidence),
-                                      occurrence_time=None)
-                    self.process_judgment_sentence_initial(learned_implication)
+            if isinstance(task_sentence, NALGrammar.Sentences.Judgment) and len(self.vision_buffer.events_bag) > 0:
+                # make associations with a vision event and narsese event
+                vision_event: Judgment = self.vision_buffer.events_bag.peek().object
+                if not vision_event.is_positive(): continue
+                result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
+                                                                  NALSyntax.Copula.PredictiveImplication)
+                learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
+                                  value=TruthValueFunctions.F_Intersection(vision_event.value.frequency,
+                                                                           vision_event.value.confidence,
+                                                                           task_sentence.value.frequency,
+                                                                           task_sentence.value.confidence),
+                                  occurrence_time=None)
+                self.process_judgment_sentence_initial(learned_implication)
 
-
-        # make predictions from all vision statements
-        for vision_event in self.vision_buffer.events:
-            if not vision_event.is_positive(): continue
-            concept: NARSMemory.Concept = self.memory.peek_concept(vision_event.statement)
-            for prediction_link in concept.prediction_links:
-                implication_concept: NARSMemory.Concept = prediction_link.object
-                implication_belief = implication_concept.belief_table.peek()
-                result: Judgment = ConditionalJudgmentDeduction(implication_belief, vision_event)
-                self.process_judgment_sentence_initial(result)
-        #self.Consider()
+        # probabilistically consider a concept
+        self.Consider()
 
         # now execute operations
         self.execute_operation_queue()
-
-
 
         # debug statements
         if Config.DEBUG:
