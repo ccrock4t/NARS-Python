@@ -192,7 +192,7 @@ class SpatialBuffer():
                 if conjunction_truth_value is None:
                     conjunction_truth_value = truth_value
                 else:
-                    conjunction_truth_value = NALInferenceRules.TruthValueFunctions.F_Intersection(
+                    conjunction_truth_value = NALInferenceRules.TruthValueFunctions.F_Union(
                         conjunction_truth_value.frequency,
                         conjunction_truth_value.confidence,
                         truth_value.frequency,
@@ -202,6 +202,7 @@ class SpatialBuffer():
 
 
         if conjunction_truth_value is None: return None
+        if len(terms_array) == 1: return None
 
         spatial_conjunction_term = NALGrammar.Terms.CompoundTerm(subterms=np.array(terms_array),
                                                                  term_connector=NALSyntax.TermConnector.ArrayConjunction)

@@ -35,7 +35,7 @@ class Global:
 
     @classmethod
     def get_current_cycle_number(cls):
-        return cls.NARS.memory.current_cycle_number
+        return cls.NARS.current_cycle_number
 
     @classmethod
     def print_to_output(cls, msg, data_structure=None):

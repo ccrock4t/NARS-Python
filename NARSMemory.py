@@ -30,7 +30,6 @@ class Memory:
         self.concepts_bag = NARSDataStructures.Bag.Bag(item_type=Concept,
                                                        capacity=Config.MEMORY_CONCEPT_CAPACITY,
                                                        granularity=10000)
-        self.current_cycle_number = 0
 
     def __len__(self):
         return self.get_number_of_concepts()

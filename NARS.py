@@ -44,7 +44,7 @@ class NARS:
         if Config.USE_PROFILER:
             self.pr = cProfile.Profile()
             self.pr.enable()
-
+        self.current_cycle_number = 0
         self.prev_take_time = -1
 
         self.memory = NARSMemory.Memory()
@@ -105,7 +105,7 @@ class NARS:
         """
 
         #time.sleep(0.1)
-        self.memory.current_cycle_number += 1
+        self.current_cycle_number += 1
 
         # debug
         if timeit.default_timer() - self.cycles_per_second_timer > 1.0:
@@ -132,17 +132,19 @@ class NARS:
             task_sentence: Sentence = task.sentence
             if isinstance(task_sentence, NALGrammar.Sentences.Judgment) and len(self.vision_buffer.events_bag) > 0:
                 # make associations with a vision event and narsese event
-                vision_event: Judgment = self.vision_buffer.events_bag.peek().object
-                if not vision_event.is_positive(): continue
-                result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
-                                                                  NALSyntax.Copula.PredictiveImplication)
-                learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
-                                  value=TruthValueFunctions.F_Intersection(vision_event.value.frequency,
-                                                                           vision_event.value.confidence,
-                                                                           task_sentence.value.frequency,
-                                                                           task_sentence.value.confidence),
-                                  occurrence_time=None)
-                self.process_judgment_sentence_initial(learned_implication)
+                item: Item = self.vision_buffer.events_bag.peek()
+                if item is not None:
+                    vision_event: Judgment = item.object
+                    if not vision_event.is_positive(): continue
+                    result_statement = NALGrammar.Terms.StatementTerm(vision_event.statement, task_sentence.statement,
+                                                                      NALSyntax.Copula.PredictiveImplication)
+                    learned_implication = NALGrammar.Sentences.Judgment(statement=result_statement,
+                                      value=TruthValueFunctions.F_Intersection(vision_event.value.frequency,
+                                                                               vision_event.value.confidence,
+                                                                               task_sentence.value.frequency,
+                                                                               task_sentence.value.confidence),
+                                      occurrence_time=None)
+                    self.process_judgment_sentence_initial(learned_implication)
 
         # probabilistically consider a concept
         self.Consider()
@@ -266,7 +268,7 @@ class NARS:
                             Global.Global.print_to_output(msg=str(item), data_structure=self.memory.concepts_bag)
 
                 if Config.GUI_USE_INTERFACE:
-                    NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.memory.current_cycle_number))
+                    NARSGUI.NARSGUI.gui_total_cycles_stringvar.set("Cycle #" + str(self.current_cycle_number))
 
                 Global.Global.print_to_output("LOAD MEMORY SUCCESS")
         except:
@@ -276,7 +278,7 @@ class NARS:
         if Global.Global.NARS_object_pipe is None: return
 
         # GUI
-        Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.memory.current_cycle_number), None, 0))
+        Global.Global.NARS_string_pipe.send(("cycles", "Cycle #" + str(self.current_cycle_number), None, 0))
 
 
         while Global.Global.NARS_object_pipe.poll():
@@ -415,14 +417,20 @@ class NARS:
                 and j.statement.connector == NALSyntax.TermConnector.Negation:
             j = NALInferenceRules.Immediate.Negation(j)
 
-        task_statement_concept_item = self.memory.peek_concept_item(j.statement)
-        if task_statement_concept_item is None: return
+        statement_concept_item = self.memory.peek_concept_item(j.statement)
+        if statement_concept_item is None: return
 
-        self.memory.concepts_bag.strengthen_item_quality(task_statement_concept_item.key)
+        #self.memory.concepts_bag.strengthen_item_quality(task_statement_concept_item.key)
 
-        task_statement_concept = task_statement_concept_item.object
 
-        task_statement_concept.belief_table.put(j)
+        statement_concept: Concept = statement_concept_item.object
+
+        belief_table: Table = statement_concept.belief_table
+        belief_table.put(j)
+
+        best_belief: Judgment = belief_table.peek_max()
+
+        self.memory.concepts_bag.change_priority(key=statement_concept_item.key,new_priority=best_belief.get_expectation())
 
         if Config.DEBUG:
             string = "Integrated new BELIEF: " + j.get_formatted_string() + "from "

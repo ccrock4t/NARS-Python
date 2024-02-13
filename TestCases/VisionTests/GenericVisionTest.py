@@ -32,7 +32,7 @@ class GenericVisionTest:
         self.current_trial = 0
         (self.x_train, self.y_train), (self.x_test, self.y_test) = dataset_loader.load_data()
 
-        self.break_duration = 20
+        self.break_duration = 1000
 
         # shuffle dataset
         p = np.random.permutation(len(self.x_train))
@@ -66,7 +66,7 @@ class GenericVisionTest:
                                         gui_enabled,
                                         dataset_loader=dataset_loader)
         self.training_cycles = training_cycles
-        self.TIMEOUT = 500  # in working cycles
+        self.TIMEOUT = 1000  # in working cycles
 
     def run_main_test(self):
         if self.global_gui.gui_disabled:
@@ -424,7 +424,6 @@ class VisionTestGUI:
         self.numeric_label_to_term = numeric_label_to_term
         self.HEIGHT, self.WIDTH = size, size
         self.numeric_labels = numeric_labels
-        self.numeric_label_to_term = numeric_label_to_term
         self.gui_disabled = not gui_enabled
         self.dataset_loader = dataset_loader
 

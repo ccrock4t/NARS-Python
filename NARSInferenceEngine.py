@@ -103,6 +103,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
             if j2.statement.get_copula() == NALSyntax.Copula.Implication \
                 or  j2.statement.get_copula() == NALSyntax.Copula.PredictiveImplication:
                 derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j2, j1)  # S-->P
+                if j2.statement.get_copula() == NALSyntax.Copula.PredictiveImplication: derived_sentence.stamp.occurrence_time = Global.Global.get_current_cycle_number()
                 add_to_derived_sentences(derived_sentence, all_derived_sentences, j2, j1)
                 return all_derived_sentences
 
@@ -112,6 +113,7 @@ def do_semantic_inference_two_judgment(j1: NALGrammar.Sentences, j2: NALGrammar.
             if j1.statement.get_copula() == NALSyntax.Copula.Implication \
                 or j1.statement.get_copula() == NALSyntax.Copula.PredictiveImplication:
                 derived_sentence = NALInferenceRules.Conditional.ConditionalJudgmentDeduction(j1, j2)  # S-->P
+                if j1.statement.get_copula() == NALSyntax.Copula.PredictiveImplication: derived_sentence.stamp.occurrence_time = Global.Global.get_current_cycle_number()
                 add_to_derived_sentences(derived_sentence, all_derived_sentences, j1, j2)
                 return all_derived_sentences
 
